@@ -1,10 +1,11 @@
 import 'package:bikesetupapp/Pages/nav_drawer.dart';
+import 'package:bikesetupapp/Services/database.dart';
 import 'package:bikesetupapp/Widgets/Bubbles.dart';
-import 'package:bikesetupapp/Widgets/homepagelistview.dart';
+import 'package:bikesetupapp/Widgets/homepage_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../Services/alertdialogs.dart';
+import '../Services/alert_dialogs.dart';
 
 const double borderrad = 35;
 const String bikeImage = 'assets/bike.png';
@@ -40,14 +41,21 @@ class _MyHomePageState extends State<MyHomePage> {
     chosensetup = 'Standard';
     chosenCategory = ChosenCategory.reartire;
   }
+
   @override
   Widget build(BuildContext context) {
+
+    DatabaseService(widget.user!.uid)
+        .setDefaultBike(widget.bikename); //Macht das Sinn??
+
     final Size size = MediaQuery.of(context).size;
     final double boxHeight = size.height / 3.5;
-    const double overLap = 40;
 
     return Scaffold(
-      drawer: NavDrawer(user: widget.user, bikename: widget.bikename,),
+      drawer: NavDrawer(
+        user: widget.user,
+        bikename: widget.bikename,
+      ),
       appBar: AppBar(
         title: Text(
           widget.bikename,
@@ -57,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Stack(
         children: [
           Column(children: [
-            SizedBox(height: boxHeight - overLap),
+            SizedBox(height: boxHeight),
             Expanded(
                 child: HomePageListView(
                     user: widget.user,
@@ -70,6 +78,13 @@ class _MyHomePageState extends State<MyHomePage> {
             height: boxHeight,
             decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3))
+                ],
                 borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(borderrad),
                     bottomRight: Radius.circular(borderrad))),
@@ -92,7 +107,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 onValueChange: (value) {
                   chosenCategory = ChosenCategory.reartire;
-                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
+                  AlertDialogs.editValue(
+                      context,
+                      widget.user!,
+                      'Pressure',
+                      value,
+                      widget.bikename,
+                      chosenCategory.category,
+                      chosensetup);
                 },
               ),
               Bubble(
@@ -110,7 +132,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 onValueChange: (value) {
                   chosenCategory = ChosenCategory.fronttire;
-                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
+                  AlertDialogs.editValue(
+                      context,
+                      widget.user!,
+                      'Pressure',
+                      value,
+                      widget.bikename,
+                      chosenCategory.category,
+                      chosensetup);
                 },
               ),
               Bubble(
@@ -127,7 +156,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 onValueChange: (value) {
                   chosenCategory = ChosenCategory.shock;
-                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
+                  AlertDialogs.editValue(
+                      context,
+                      widget.user!,
+                      'Pressure',
+                      value,
+                      widget.bikename,
+                      chosenCategory.category,
+                      chosensetup);
                 },
               ),
               Bubble(
@@ -142,8 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     chosenCategory = ChosenCategory.generalsettings;
                   });
                 },
-                onValueChange: (value) {
-                },
+                onValueChange: (value) {},
               ),
               Bubble(
                 user: widget.user,
@@ -159,7 +194,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 onValueChange: (value) {
                   chosenCategory = ChosenCategory.fork;
-                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
+                  AlertDialogs.editValue(
+                      context,
+                      widget.user!,
+                      'Pressure',
+                      value,
+                      widget.bikename,
+                      chosenCategory.category,
+                      chosensetup);
                 },
               ),
             ]),
@@ -167,8 +209,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {AlertDialogs.newKey(context, widget.user!,
-                              widget.bikename, chosenCategory.category, chosensetup);},
+        onPressed: () {
+          AlertDialogs.newKey(context, widget.user!, widget.bikename,
+              chosenCategory.category, chosensetup);
+        },
         tooltip: 'Add Setting',
         child: const Icon(Icons.add),
       ),

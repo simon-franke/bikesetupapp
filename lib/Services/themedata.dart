@@ -4,49 +4,55 @@ class AppTheme {
   AppTheme._();
 
   static final ThemeData lightTheme = ThemeData(
-    primaryColor: const Color(0xff2e8bc1),
-    scaffoldBackgroundColor: Colors.white,
-    cardTheme: CardTheme(color: Colors.blueGrey[100]),
+    primaryColor: const Color(0xFF4D7EA8),
+    scaffoldBackgroundColor: const Color(0xFFE7EEEB),
+    cardTheme: const CardTheme(color: Color(0xFF8EAFB6)),
     appBarTheme: const AppBarTheme(
         elevation: 0,
-        color: Color(0xff2e8bc1),
+        color: Color(0xFF4D7EA8),
         iconTheme: IconThemeData(color: Colors.white)),
-    cardColor: Colors.blueGrey[200], //Positioned Circles
+    cardColor: const Color(0xFF8EAFB6), //Positioned Circles
     iconTheme: IconThemeData(color: Colors.grey[800]),
-    textTheme: TextTheme(
-      titleLarge: TextStyle(color: Colors.grey[800], fontSize: 22),
-      titleMedium: TextStyle(color: Colors.grey[800], fontSize: 20),
-      titleSmall: TextStyle(color: Colors.grey[800], fontSize: 18),
-      bodyLarge: TextStyle(color: Colors.grey[800], fontSize: 18),
-      bodySmall: TextStyle(color: Colors.grey[800], fontSize: 16),
-      bodyMedium: TextStyle(color: Colors.grey[800], fontSize: 14),
-      labelLarge: TextStyle(color: Colors.grey[800], fontSize: 14),
-      labelMedium: TextStyle(color: Colors.grey[800], fontSize: 12),
-      labelSmall: TextStyle(color: Colors.grey[800], fontSize: 10),
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(color: Colors.white, fontSize: 22),
+      titleMedium: TextStyle(color: Colors.white, fontSize: 18),
+      titleSmall: TextStyle(color: Colors.white, fontSize: 14),
+      bodyLarge: TextStyle(color: Color(0xFF424242), fontSize: 18),
+      bodySmall: TextStyle(color: Color(0xFF424242), fontSize: 16),
+      bodyMedium: TextStyle(color: Color(0xFF424242), fontSize: 14),
+      labelLarge: TextStyle(color: Color(0xFF424242), fontSize: 22),
+      labelMedium: TextStyle(color: Color(0xFF424242), fontSize: 20),
+      labelSmall: TextStyle(color: Color(0xFF424242), fontSize: 16),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: Color(0xFFF4A259),
     ),
   );
 
   static final ThemeData darkTheme = ThemeData(
-    primaryColor: const Color(0xff2e8bc1),
-    //primaryColor: Colors.red,
-    scaffoldBackgroundColor: Colors.blueGrey[900],
-    cardTheme: CardTheme(color: Colors.blueGrey[800]),
+    primaryColor: const Color(0xFF4D7EA8),
+    scaffoldBackgroundColor: const Color(0xFF272932),
+    cardTheme: const CardTheme(color: Color(0xFF3A546D)),
     appBarTheme: const AppBarTheme(
         elevation: 0,
-        color: Color(0xff2e8bc1),
+        color: Color(0xFF4D7EA8),
         iconTheme: IconThemeData(color: Colors.white)),
-    cardColor: Colors.blueGrey[700], //Positioned Circles
+        
+    cardColor: const Color(0xFF8EAFB6), //Positioned Circles
     iconTheme: const IconThemeData(color: Colors.white),
     textTheme: const TextTheme(
       titleLarge: TextStyle(color: Colors.white, fontSize: 22),
-      titleMedium: TextStyle(color: Colors.white, fontSize: 20),
-      titleSmall: TextStyle(color: Colors.white, fontSize: 18),
+      titleMedium: TextStyle(color: Colors.white, fontSize: 18),
+      titleSmall: TextStyle(color: Colors.white, fontSize: 14),
       bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
       bodySmall: TextStyle(color: Colors.white, fontSize: 16),
       bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
-      labelLarge: TextStyle(color: Colors.white, fontSize: 14),
-      labelMedium: TextStyle(color: Colors.white, fontSize: 12),
-      labelSmall: TextStyle(color: Colors.white, fontSize: 10),
+      labelLarge: TextStyle(color: Colors.white, fontSize: 22),
+      labelMedium: TextStyle(color: Colors.white, fontSize: 20),
+      labelSmall: TextStyle(color: Colors.white, fontSize: 16),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: Color(0xFFF4A259),
     ),
   );
 }

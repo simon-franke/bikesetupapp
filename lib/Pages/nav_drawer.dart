@@ -1,6 +1,6 @@
-import 'package:bikesetupapp/Pages/newbike.dart';
+import 'package:bikesetupapp/Pages/new_bike.dart';
 import 'package:bikesetupapp/Pages/settings.dart';
-import 'package:bikesetupapp/Widgets/navdrawerbikelist.dart';
+import 'package:bikesetupapp/Widgets/navdrawer_bike_list.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -51,27 +51,17 @@ class _NavDrawerState extends State<NavDrawer> {
                     ),
                       title: Text('Bike Setup',
                             style: Theme.of(context).textTheme.titleLarge),
-                      subtitle: widget.user != null ? Text('${widget.user?.email}', style: Theme.of(context).textTheme.labelMedium,) : Text('No User logged in', style: Theme.of(context).textTheme.labelMedium,),
+                      subtitle: widget.user != null ? Text('${widget.user?.email}', style: Theme.of(context).textTheme.titleSmall,) : Text('No User logged in', style: Theme.of(context).textTheme.labelMedium,),
                     ),)
                   )),
-              SizedBox(
+              Expanded(child: SizedBox(
                 height: size.height * 0.73,
-                  child: BikeList(user: widget.user)),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  width: size.width * 0.75,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  child: BikeList(user: widget.user)),),
+              Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SizedBox(
-                            width: size.width * 0.75 / 2,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.only(left: 20, right: 20),
-                              child: ElevatedButton(
+                        Padding(padding: const EdgeInsets.all(5), child: ElevatedButton (
                                   onPressed: () {
                                     if (widget.user != null) {
                                       Navigator.of(context).push(
@@ -86,28 +76,20 @@ class _NavDrawerState extends State<NavDrawer> {
                                     } else {
                                       // TODO: add alert dialog
                                     }
-
-                                    
                                   },
                                   style: ElevatedButton.styleFrom(
                                       backgroundColor:
-                                          Theme.of(context).primaryColor),
-                                  child: Text('New Bike', style: Theme.of(context).textTheme.labelLarge,)),
-                            )),
-                        SizedBox(
-                          width: size.width * 0.75 / 2,
-                          child: IconButton(
+                                          Theme.of(context).floatingActionButtonTheme.backgroundColor),
+                                  child: Text('New Bike', style: Theme.of(context).textTheme.labelLarge,)),),
+                        Padding(padding: const EdgeInsets.all(5), child: IconButton(
                               onPressed: () {
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (BuildContext context) =>
                                         SettingsPage(bikename: widget.bikename,)));
                               },
-                              icon: const Icon(Icons.settings)),
-                        )
+                              icon: const Icon(Icons.settings)),)
                       ],
                     ),
-                  )),
-              )
             ],
           ),
         ));

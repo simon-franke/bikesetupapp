@@ -20,7 +20,7 @@ class DatabaseService {
     await createFrontTire(bikename, frontwheelsize);
     await createRearTire(bikename, rearwheelsize);
     await createGeneralSettings(bikename);
-    if (isdefaultbike == true) {
+    if (isdefaultbike) {
       await setDefaultBike(bikename);
     }
     await createSetupList(bikename, suspension);
@@ -160,6 +160,26 @@ class DatabaseService {
         .collection(bikename)
         .doc('$category$setup')
         .snapshots();
+  }
+
+  Future<String> getDefaultBike() async {
+    try {
+      DocumentSnapshot snapshot =
+          await userbikesetup.doc(userID).collection('UserData').doc('DefaultBike').get();
+
+      if (snapshot.exists) {
+        dynamic value = snapshot['default'];
+        if (value != null) {
+          return value.toString();
+        } else {
+          return "";
+        }
+      } else {
+        return "";
+      }
+    } catch (e) {
+      return "";
+    }
   }
 
   Future<String> getSuspensionType(String bikename) async {

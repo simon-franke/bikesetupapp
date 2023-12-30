@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/Pages/home_page.dart';
-import 'package:bikesetupapp/Pages/newbike.dart';
+import 'package:bikesetupapp/Pages/new_bike.dart';
+import 'package:bikesetupapp/Services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/Services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text("Login"),
+          title: Text("Login", style: Theme.of(context).textTheme.titleLarge,),
           backgroundColor: Theme.of(context).primaryColor,
         ),
         body: Center(
@@ -57,39 +58,25 @@ class _LoginPageState extends State<LoginPage> {
                                   bike: '',
                                 )));
                       } else if (user != null) {
-                        await FirebaseFirestore.instance
-                            .collection('UserBikeSetup')
-                            .doc(user.uid)
-                            .collection('UserData')
-                            .doc('DefaultBike')
-                            .get()
-                            .then((DocumentSnapshot documentSnapshot) {
-                          if (documentSnapshot.exists) {
-                            //if default bike exists, go to home page
-                            defaultBike = (documentSnapshot.data()
-                                as Map<String, dynamic>)['default'];
-
-                            print(defaultBike);
-                            if (!mounted) return;
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (BuildContext context) => MyHomePage(
-                                      user: user,
-                                      bikename: defaultBike,
-                                    )));
-                          } else {
-                            //if can't find default bike, go to new bike page
-                            print("no default bike");
-                            if (!mounted) return;
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (BuildContext context) =>
-                                    NewBike(
-                                      user: user,
-                                      isnewbike: true,
-                                      isdefaultbike: true,
-                                      bike: '',
-                                    )));
-                          }
-                        });
+                        defaultBike =
+                            await DatabaseService(user.uid).getDefaultBike();
+                        if (defaultBike == "") {
+                          if (!mounted) return;
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (BuildContext context) => NewBike(
+                                    user: user,
+                                    isnewbike: true,
+                                    isdefaultbike: true,
+                                    bike: '',
+                                  )));
+                        } else {
+                          if (!mounted) return;
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (BuildContext context) => MyHomePage(
+                                    user: user,
+                                    bikename: defaultBike,
+                                  )));
+                        }
                       }
                     }),
                     child: Padding(
@@ -121,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: (() async {
                       final userCredential =
                           await FirebaseAuth.instance.signInAnonymously();
-                      
+
                       User? user = FirebaseAuth.instance.currentUser;
 
                       if (user != null &&
@@ -157,8 +144,7 @@ class _LoginPageState extends State<LoginPage> {
                             //if can't find default bike, go to new bike page
                             if (!mounted) return;
                             Navigator.of(context).push(MaterialPageRoute(
-                                builder: (BuildContext context) =>
-                                    NewBike(
+                                builder: (BuildContext context) => NewBike(
                                       user: user,
                                       isnewbike: true,
                                       isdefaultbike: true,

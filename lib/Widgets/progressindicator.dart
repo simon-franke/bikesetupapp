@@ -23,7 +23,7 @@ class _PulsatingCircleState extends State<PulsatingCircle>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 500),
     )..repeat(reverse: false);
   }
 

@@ -28,8 +28,16 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         leading: IconButton(
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (BuildContext context) => MyHomePage(user: user, bikename: widget.bikename,)));
+              if (user == null) {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (BuildContext context) => const LoginPage()));
+              } else {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (BuildContext context) => MyHomePage(
+                          user: user,
+                          bikename: widget.bikename,
+                        )));
+              }
             },
             icon: const Icon(Icons.arrow_back)),
         title: Text(
@@ -41,7 +49,10 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           Card(
             child: ListTile(
-              title: const Text('Theme'),
+              title: Text(
+                'Theme',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               trailing: Switch(
                   value: Provider.of<AppStateNotifier>(context).isDarkModeOn,
                   onChanged: (boolVal) {
@@ -68,14 +79,29 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
               title: user != null
-                  ? Text('${user?.displayName}', style: Theme.of(context).textTheme.titleLarge,)
-                  : Text('No User', style: Theme.of(context).textTheme.titleLarge,),
+                  ? Text(
+                      '${user?.displayName}',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    )
+                  : Text(
+                      'No User',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
               subtitle: user != null
-                  ? Text('${user?.email}', style: Theme.of(context).textTheme.labelMedium,)
-                  : Text('No User logged in', style: Theme.of(context).textTheme.labelMedium,),
+                  ? Text(
+                      '${user?.email}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    )
+                  : Text(
+                      'No User logged in',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
               trailing: user != null
                   ? IconButton(
-                      icon: Icon(Icons.logout, color: Theme.of(context).iconTheme.color,),
+                      icon: Icon(
+                        Icons.logout,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
                       onPressed: () {
                         AuthService().signOut();
                         setState(() {
@@ -84,12 +110,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       },
                     )
                   : IconButton(
-                      icon: Icon(Icons.login, color: Theme.of(context).iconTheme.color,),
+                      icon: Icon(
+                        Icons.login,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
                       onPressed: () async {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (BuildContext context) =>
                                 const LoginPage()));
-                        
                       },
                     ),
             ),

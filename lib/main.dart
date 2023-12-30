@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bikesetupapp/Services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/Pages/home_page.dart';
 import 'Pages/google_sign_in.dart';
@@ -22,18 +22,8 @@ void main() async {
 
   if (user != null) {
     isSignedIn = true;
-    await FirebaseFirestore.instance
-        .collection('UserBikeSetup')
-        .doc(user.uid)
-        .collection('UserData')
-        .doc('DefaultBike')
-        .get()
-        .then((DocumentSnapshot documentSnapshot) {
-      if (documentSnapshot.exists) {
-        defaultBike =
-            (documentSnapshot.data() as Map<String, dynamic>)['default'];
-      }
-    });
+    defaultBike = await DatabaseService(user.uid).getDefaultBike();
+    //TODO check if defaultBike for faults
   }
 
   runApp(ChangeNotifierProvider<AppStateNotifier>(

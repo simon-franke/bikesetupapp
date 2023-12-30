@@ -1,6 +1,6 @@
 import 'package:bikesetupapp/Pages/home_page.dart';
-import 'package:bikesetupapp/Pages/newbike.dart'; // Add this line
-import 'package:bikesetupapp/Services/alertdialogs.dart';
+import 'package:bikesetupapp/Pages/new_bike.dart'; // Add this line
+import 'package:bikesetupapp/Services/alert_dialogs.dart';
 import 'package:bikesetupapp/Services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +39,7 @@ class _BikeListState extends State<BikeList> {
             else {
               return ListView.builder(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 30),
+              padding: const EdgeInsets.only(top: 0),
               itemCount: bikes.length,
               itemBuilder: (context, index) {
                 return Card(
@@ -73,7 +73,7 @@ class _BikeListState extends State<BikeList> {
                         color: Theme.of(context).iconTheme.color,
                       ),
                     ),
-                    title: Text(bikes.keys.elementAt(index)),
+                    title: Text(bikes.keys.elementAt(index), style: Theme.of(context).textTheme.labelLarge,),
                     trailing: IconButton(
                       onPressed: () async {
                         AlertDialogs.deleteBike(
