@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/Pages/home_page.dart';
 import 'package:bikesetupapp/Pages/newbike.dart'; // Add this line
+import 'package:bikesetupapp/Services/alertdialogs.dart';
 import 'package:bikesetupapp/Services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -20,8 +21,8 @@ class _BikeListState extends State<BikeList> {
         child: Text('No User'),
       );
     } else { // User is signed in
-      return FutureBuilder(
-        future: DatabaseService(widget.user!.uid).getBikes(),
+      return StreamBuilder(
+        stream: DatabaseService(widget.user!.uid).getBikes(),
         builder: ((context, AsyncSnapshot snapshot) {
           if (ConnectionState.waiting == snapshot.connectionState) {
             return const Center(child: CircularProgressIndicator());
@@ -75,7 +76,10 @@ class _BikeListState extends State<BikeList> {
                     title: Text(bikes.keys.elementAt(index)),
                     trailing: IconButton(
                       onPressed: () async {
-                        //removebike(index, bikes);
+                        AlertDialogs.deleteBike(
+                            context,
+                            widget.user!,
+                            bikes.keys.elementAt(index));
                       },
                       icon: Icon(
                         Icons.delete,

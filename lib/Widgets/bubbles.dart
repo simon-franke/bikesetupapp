@@ -11,7 +11,8 @@ class Bubble extends StatefulWidget {
   final String category;
   final String setup;
   final VoidCallback? onPressed;
-  final VoidCallback? onLongPress;
+  //final VoidCallback? onLongPress;
+  final Function(String) onValueChange;
   const Bubble(
       {super.key,
       required this.user,
@@ -20,8 +21,9 @@ class Bubble extends StatefulWidget {
       required this.bikename,
       required this.category,
       required this.setup,
-      this.onPressed,
-      required this.onLongPress});
+      required this.onPressed,
+      //required this.onLongPress,
+      required this.onValueChange});
 
   @override
   State<Bubble> createState() => _BubbleState();
@@ -35,7 +37,6 @@ class _BubbleState extends State<Bubble> {
       bottom: widget.bottom,
       child: ElevatedButton(
         onPressed: widget.onPressed,
-        onLongPress: widget.onLongPress,
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.all(0),
           fixedSize: const Size(50, 50),
@@ -53,19 +54,26 @@ class _BubbleState extends State<Bubble> {
                           widget.bikename, widget.category, widget.setup),
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
                     if (ConnectionState.waiting == snapshot.connectionState) {
-                      return PulsatingCircle(color: Theme.of(context).cardColor, size: 50);
+                      return PulsatingCircle(
+                          color: Theme.of(context).cardColor, size: 50);
                     } else if (snapshot.hasError) {
                       return const Center(child: Text('Error'));
-                    } else if (snapshot.hasData && snapshot.data.toString() != "") {
+                    } else if (snapshot.hasData &&
+                        snapshot.data.toString() != "") {
                       try {
                         final element = snapshot.data?['Pressure'];
-                        
+
                         if (element != null &&
                             element is String &&
                             element != "") {
-                          return Text(
-                            element.toString(),
-                            style: const TextStyle(color: Colors.white),
+                          return GestureDetector(
+                            onLongPress: () {
+                              widget.onValueChange(element);
+                            },
+                            child: Text(
+                              element.toString(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           );
                         } else {
                           return const Icon(

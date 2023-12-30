@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/Services/alertdialogs.dart';
 import 'package:bikesetupapp/Services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +57,16 @@ class _HomePageListViewState extends State<HomePageListView> {
                   child: ListTile(
                     leading: IconButton(
                         tooltip: 'Edit Setting',
-                        onPressed: () {},
+                        onPressed: () {
+                          AlertDialogs.editValue(
+                              context,
+                              widget.user!,
+                              settings!.keys.elementAt(index),
+                              settings.values.elementAt(index),
+                              widget.bikename,
+                              widget.category,
+                              widget.setup);
+                        },
                         icon: Icon(
                           Icons.edit,
                           color: Theme.of(context).iconTheme.color,
@@ -75,7 +85,15 @@ class _HomePageListViewState extends State<HomePageListView> {
                           ),
                     trailing: IconButton(
                         tooltip: 'Delete Setting',
-                        onPressed: () {},
+                        onPressed: () {
+                          AlertDialogs.deleteCategory(
+                              context,
+                              widget.user!,
+                              settings!.keys.elementAt(index),
+                              widget.bikename,
+                              widget.category,
+                              widget.setup);
+                        },
                         icon: Icon(Icons.delete,
                             color: Theme.of(context).iconTheme.color)),
                   ),

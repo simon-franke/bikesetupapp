@@ -19,59 +19,8 @@ class _NavDrawerState extends State<NavDrawer> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    /*void removebike(index, bikes) async {
-      final CollectionReference userbikeslist =
-          FirebaseFirestore.instance.collection('UserBikeSetup');
-      await userbikeslist
-          .doc(user?.uid)
-          .collection('UserData')
-          .doc('DefaultBike')
-          .get()
-          .then((value) {
-        defaultbikemap = value.data();
-      });
-      if (bikes.keys.elementAt(index) != defaultbikemap!['default']) {
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('Delete Bike'),
-                content: const Text(
-                  'Do you really want to delete this bike?',
-                  style: TextStyle(color: Colors.black),
-                ),
-                actions: <Widget>[
-                  TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('No')),
-                  TextButton(
-                      onPressed: () {
-                        DatabaseService(user!.uid).deleteBike(
-                            bikes.keys.elementAt(index), {'Standard': 'test'});
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('Yes'))
-                ],
-              );
-            });
-      } else {
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return const AlertDialog(
-                content: Text(
-                  "Can't delete default Bike",
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                ),
-              );
-            });
-      }
-    }*/
-
     return SizedBox(
-        width: size.width / 1.33,
+        width: size.width * 0.75,
         child: Drawer(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           child: Column(
@@ -106,14 +55,16 @@ class _NavDrawerState extends State<NavDrawer> {
                     ),)
                   )),
               SizedBox(
-                  height: size.height * 0.65,
+                height: size.height * 0.73,
                   child: BikeList(user: widget.user)),
-              SizedBox(
-                  height: size.height * 0.1,
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
                   width: size.width * 0.75,
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(
                             width: size.width * 0.75 / 2,
@@ -155,7 +106,8 @@ class _NavDrawerState extends State<NavDrawer> {
                         )
                       ],
                     ),
-                  ))
+                  )),
+              )
             ],
           ),
         ));

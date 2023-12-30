@@ -4,6 +4,8 @@ import 'package:bikesetupapp/Widgets/homepagelistview.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../Services/alertdialogs.dart';
+
 const double borderrad = 35;
 const String bikeImage = 'assets/bike.png';
 
@@ -88,10 +90,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
                   //print(chosencategory);
                 },
-                onLongPress: () {
-                  setState(() {
-                    chosenCategory = ChosenCategory.reartire;
-                  });
+                onValueChange: (value) {
+                  chosenCategory = ChosenCategory.reartire;
+                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
                 },
               ),
               Bubble(
@@ -107,10 +108,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
                   //print(chosencategory);
                 },
-                onLongPress: () {
-                  setState(() {
-                    chosenCategory = ChosenCategory.fronttire;
-                  });
+                onValueChange: (value) {
+                  chosenCategory = ChosenCategory.fronttire;
+                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
                 },
               ),
               Bubble(
@@ -125,10 +125,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     chosenCategory = ChosenCategory.shock;
                   });
                 },
-                onLongPress: () {
-                  setState(() {
-                    chosenCategory = ChosenCategory.shock;
-                  });
+                onValueChange: (value) {
+                  chosenCategory = ChosenCategory.shock;
+                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
                 },
               ),
               Bubble(
@@ -143,10 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     chosenCategory = ChosenCategory.generalsettings;
                   });
                 },
-                onLongPress: () {
-                  setState(() {
-                    chosenCategory = ChosenCategory.generalsettings;
-                  });
+                onValueChange: (value) {
                 },
               ),
               Bubble(
@@ -161,10 +157,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     chosenCategory = ChosenCategory.fork;
                   });
                 },
-                onLongPress: () {
-                  setState(() {
-                    chosenCategory = ChosenCategory.fork;
-                  });
+                onValueChange: (value) {
+                  chosenCategory = ChosenCategory.fork;
+                  AlertDialogs.editValue(context, widget.user!, 'Pressure', value, widget.bikename, chosenCategory.category, chosensetup);
                 },
               ),
             ]),
@@ -172,7 +167,8 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {AlertDialogs.newKey(context, widget.user!,
+                              widget.bikename, chosenCategory.category, chosensetup);},
         tooltip: 'Add Setting',
         child: const Icon(Icons.add),
       ),
