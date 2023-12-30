@@ -33,11 +33,8 @@ The settings are displayed on this page using a StreamBuilder, which allows for 
 The NavDrawer provides access to bike modification, editing, and creation. 
 The settings page enables users to log in or out of the app and change the theme.
 
-## Pictures
-> ![Screenshot_2023-12-30-23-05-06-30_b2354b5eb2326cbd06ddb9d5d198597e](https://github.com/SimonFran/bikesetupapp/assets/40801103/aedfd251-af2b-4139-95f1-0301e571d4d3)
-
-> ![Screenshot_2023-12-30-23-05-18-31_b2354b5eb2326cbd06ddb9d5d198597e](https://github.com/SimonFran/bikesetupapp/assets/40801103/93cf4c54-6876-4c50-b7bb-99b460a82b4a)
-
-> ![Screenshot_2023-12-30-23-05-21-26_b2354b5eb2326cbd06ddb9d5d198597e](https://github.com/SimonFran/bikesetupapp/assets/40801103/6ca8094c-138b-46de-a058-75ac4d906c8c)
-
->![Screenshot_2023-12-30-23-05-35-05_b2354b5eb2326cbd06ddb9d5d198597e](https://github.com/SimonFran/bikesetupapp/assets/40801103/330b1e93-f7e5-4bba-87b5-69158183cced)
+## Screenshots
+<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/aedfd251-af2b-4139-95f1-0301e571d4d3" alt="drawing" width="200"/>
+<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/93cf4c54-6876-4c50-b7bb-99b460a82b4a)" alt="drawing" width="200"/>
+<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/330b1e93-f7e5-4bba-87b5-69158183cced" alt="drawing" width="200"/>
+<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/6ca8094c-138b-46de-a058-75ac4d906c8c" alt="drawing" width="200"/>
