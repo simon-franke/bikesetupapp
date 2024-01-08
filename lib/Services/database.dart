@@ -87,7 +87,7 @@ class DatabaseService {
     return await userbikesetup
         .doc(userID)
         .collection(bikename)
-        .doc('General$setupname')
+        .doc('GeneralSettings$setupname')
         .set({'Reach': '90cm'}, SetOptions(merge: true));
   }
 
