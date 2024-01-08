@@ -16,11 +16,13 @@ class BikeList extends StatefulWidget {
 class _BikeListState extends State<BikeList> {
   @override
   Widget build(BuildContext context) {
-    if (widget.user == null) { // No user is signed in
+    if (widget.user == null) {
+      // No user is signed in
       return const Center(
         child: Text('No User'),
       );
-    } else { // User is signed in
+    } else {
+      // User is signed in
       return StreamBuilder(
         stream: DatabaseService(widget.user!.uid).getBikes(),
         builder: ((context, AsyncSnapshot snapshot) {
@@ -35,67 +37,70 @@ class _BikeListState extends State<BikeList> {
               return const Center(
                 child: Text('No Bikes'),
               );
-            }
-            else {
+            } else {
               return ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 0),
-              itemCount: bikes.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 5,
-                  child: ListTile(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => MyHomePage(
-                            bikename: bikes.keys.elementAt(index),
-                            user: widget.user,
-                          ),
-                        ),
-                      );
-                    },
-                    leading: IconButton(
-                      onPressed: () {
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(top: 0),
+                itemCount: bikes.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    elevation: 5,
+                    child: ListTile(
+                      onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (BuildContext context) => NewBike(
-                              user: widget.user!,
-                              isnewbike: false,
-                              isdefaultbike: false,
-                              bike: bikes.keys.elementAt(index),
-                              setup: 'Standard', //TODO: Change
-                              biketype: 'Hardtail',
+                            builder: (BuildContext context) => MyHomePage(
+                              bikename: bikes.keys.elementAt(index),
+                              user: widget.user,
+                              biketype: bikes.values.elementAt(index),
+                              chosensetup: "Standard",
                             ),
                           ),
                         );
                       },
-                      icon: Icon(
-                        Icons.edit,
-                        color: Theme.of(context).iconTheme.color,
+                      leading: IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (BuildContext context) => NewBike(
+                                user: widget.user!,
+                                isnewbike: false,
+                                isdefaultbike: false,
+                                bike: bikes.keys.elementAt(index),
+                                setup: 'Standard', //TODO: Change
+                                biketype: bikes.values.elementAt(index),
+                              ),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.edit,
+                          color: Theme.of(context).iconTheme.color,
+                        ),
+                      ),
+                      title: Text(
+                        bikes.keys.elementAt(index),
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      subtitle: Text(
+                        bikes.values.elementAt(index),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      trailing: IconButton(
+                        onPressed: () async {
+                          AlertDialogs.deleteBike(context, widget.user!,
+                              bikes.keys.elementAt(index));
+                        },
+                        icon: Icon(
+                          Icons.delete,
+                          color: Theme.of(context).iconTheme.color,
+                        ),
                       ),
                     ),
-                    title: Text(bikes.keys.elementAt(index), style: Theme.of(context).textTheme.labelLarge,),
-                    subtitle: Text(bikes.values.elementAt(index), style: Theme.of(context).textTheme.bodySmall,),
-                    trailing: IconButton(
-                      onPressed: () async {
-                        AlertDialogs.deleteBike(
-                            context,
-                            widget.user!,
-                            bikes.keys.elementAt(index));
-                      },
-                      icon: Icon(
-                        Icons.delete,
-                        color: Theme.of(context).iconTheme.color,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
+                  );
+                },
+              );
             }
-            
-            
           }
         }),
       );

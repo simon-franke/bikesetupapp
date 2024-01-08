@@ -8,7 +8,9 @@ import 'package:bikesetupapp/Services/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   final String bikename;
-  const SettingsPage({Key? key, required this.bikename}) : super(key: key);
+  final String biketype;
+  final String chosensetup;
+  const SettingsPage({Key? key, required this.bikename, required this.biketype, required this.chosensetup}) : super(key: key);
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -36,6 +38,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     builder: (BuildContext context) => MyHomePage(
                           user: user,
                           bikename: widget.bikename,
+                          biketype: widget.biketype,
+                          chosensetup: widget.chosensetup,
                         )));
               }
             },

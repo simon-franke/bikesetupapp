@@ -16,7 +16,7 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    PageController _pageController = PageController(viewportFraction: 0.8);
+    PageController pageController = PageController(viewportFraction: 0.8);
 
     return Scaffold(
         appBar: AppBar(
@@ -38,10 +38,11 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                         child: SizedBox(
                       height: size.height / 3,
                       child: PageView(
-                        controller: _pageController,
+                        controller: pageController,
                         children: const <Widget>[
-                          BikeSelectorWidget(bikeType: "Full Suspension"),
+                          BikeSelectorWidget(bikeType: "FullSuspension"),
                           BikeSelectorWidget(bikeType: "Hardtail"),
+                          BikeSelectorWidget(bikeType: "Road"),
                         ],
                       ),
                     )),
@@ -81,11 +82,11 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                       backgroundColor:
                                           Theme.of(context).primaryColor),
                                   onPressed: () {
-                                    int currentPageIndex = _pageController.page?.round() ?? 0;
+                                    int currentPageIndex = pageController.page?.round() ?? 0;
                                     String biketype;
                                     switch (currentPageIndex) {
                                       case 0:
-                                        biketype = 'Full Suspension';
+                                        biketype = 'FullSuspension';
                                         break;
                                       case 1:
                                         biketype = 'Hardtail';

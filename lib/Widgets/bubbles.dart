@@ -13,6 +13,7 @@ class Bubble extends StatefulWidget {
   final String setup;
   final VoidCallback? onPressed;
   final Function(String) onValueChange;
+  final bool show;
   const Bubble(
       {super.key,
       required this.user,
@@ -23,8 +24,8 @@ class Bubble extends StatefulWidget {
       required this.chosencategory,
       required this.setup,
       required this.onPressed,
-      //required this.onLongPress,
-      required this.onValueChange});
+      required this.onValueChange,
+      required this.show});
 
   @override
   State<Bubble> createState() => _BubbleState();
@@ -33,6 +34,9 @@ class Bubble extends StatefulWidget {
 class _BubbleState extends State<Bubble> {
   @override
   Widget build(BuildContext context) {
+    if (!widget.show) {
+      return const SizedBox.shrink();
+    }
     return Positioned(
       left: widget.left,
       bottom: widget.bottom,

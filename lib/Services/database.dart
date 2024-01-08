@@ -184,6 +184,29 @@ class DatabaseService {
     }
   }
 
+  Future<String> getBikeType(String bikename) async {
+    try {
+      DocumentSnapshot snapshot = await userbikesetup
+          .doc(userID)
+          .collection('UserData')
+          .doc('BikeList')
+          .get();
+
+      if (snapshot.exists) {
+        dynamic value = snapshot[bikename];
+        if (value != null) {
+          return value.toString();
+        } else {
+          return '""';
+        }
+      } else {
+        return '""';
+      }
+    } catch (e) {
+      return '""';
+    }
+  }
+
   Future<String> getSuspensionType(String bikename) async {
     try {
       DocumentSnapshot snapshot = await userbikesetup

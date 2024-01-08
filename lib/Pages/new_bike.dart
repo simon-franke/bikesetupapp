@@ -42,7 +42,6 @@ class _NewBikeState extends State<NewBike> {
     Map<String, dynamic> setupdata = snapshot[widget.setup]!;
 
     setState(() {
-      //TODO: Remove tmp variables
       fronttravel = setupdata['fronttravel']!.toString().replaceAll('mm', "");
       reartravel = setupdata['reartravel']!.toString().replaceAll('mm', "");
       frontwheelsize = setupdata['frontwheelsize']!.toString().replaceAll('"', "");
@@ -464,6 +463,8 @@ class _NewBikeState extends State<NewBike> {
                                                         MyHomePage(
                                                           user: widget.user,
                                                           bikename: bikename,
+                                                          biketype: widget.biketype,
+                                                          chosensetup: "Standard",
                                                         )));
                                       }
                                     },

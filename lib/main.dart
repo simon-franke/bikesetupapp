@@ -18,13 +18,17 @@ void main() async {
 
   bool isSignedIn = false;
   String defaultBike = "";
+  String biketype = "";
 
   User? user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
     isSignedIn = true;
     defaultBike = await DatabaseService(user.uid).getDefaultBike();
-    //TODO check if defaultBike for faults
+    biketype = await DatabaseService(user.uid).getBikeType(defaultBike);
+    if (defaultBike == "" || biketype == "") {
+      isSignedIn = false;
+    }
   }
 
   runApp(ChangeNotifierProvider<AppStateNotifier>(
@@ -33,6 +37,7 @@ void main() async {
         isSignedIn: isSignedIn,
         user: FirebaseAuth.instance.currentUser,
         defaultBike: defaultBike,
+        biketype: biketype,
       )));
 }
 
@@ -40,11 +45,13 @@ class MyApp extends StatelessWidget {
   final bool isSignedIn;
   final User? user;
   final String defaultBike;
+  final String biketype;
   const MyApp(
       {Key? key,
       required this.isSignedIn,
       required this.user,
-      required this.defaultBike})
+      required this.defaultBike,
+      required this.biketype})
       : super(key: key);
 
   @override
@@ -57,7 +64,7 @@ class MyApp extends StatelessWidget {
         ]);
         return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Bike Setup',
+            title: "Bike Setup",
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: appState.isDarkModeOn ? ThemeMode.dark : ThemeMode.light,
@@ -65,6 +72,8 @@ class MyApp extends StatelessWidget {
                 ? MyHomePage(
                     user: user,
                     bikename: defaultBike,
+                    biketype: biketype,
+                    chosensetup: "Standard",
                   )
                 : const LoginPage());
       },
