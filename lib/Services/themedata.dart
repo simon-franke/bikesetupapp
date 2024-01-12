@@ -27,6 +27,7 @@ class AppTheme {
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: Color(0xFFF4A259),
     ),
+    dividerColor: Colors.transparent
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -54,5 +55,6 @@ class AppTheme {
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: Color(0xFFF4A259),
     ),
+    dividerColor: Colors.transparent
   );
 }

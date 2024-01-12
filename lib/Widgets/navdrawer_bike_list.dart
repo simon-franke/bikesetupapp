@@ -45,39 +45,8 @@ class _BikeListState extends State<BikeList> {
                 itemBuilder: (context, index) {
                   return Card(
                     elevation: 5,
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (BuildContext context) => MyHomePage(
-                              bikename: bikes.keys.elementAt(index),
-                              user: widget.user,
-                              biketype: bikes.values.elementAt(index),
-                              chosensetup: "Standard",
-                            ),
-                          ),
-                        );
-                      },
-                      leading: IconButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (BuildContext context) => NewBike(
-                                user: widget.user!,
-                                isnewbike: false,
-                                isdefaultbike: false,
-                                bike: bikes.keys.elementAt(index),
-                                setup: 'Standard', //TODO: Change
-                                biketype: bikes.values.elementAt(index),
-                              ),
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.edit,
-                          color: Theme.of(context).iconTheme.color,
-                        ),
-                      ),
+                    child: ExpansionTile(
+                      onExpansionChanged: (value) {},
                       title: Text(
                         bikes.keys.elementAt(index),
                         style: Theme.of(context).textTheme.labelLarge,
@@ -100,6 +69,111 @@ class _BikeListState extends State<BikeList> {
                           color: Theme.of(context).iconTheme.color,
                         ),
                       ),
+                      children: <Widget>[
+                        StreamBuilder(
+                            stream: DatabaseService(widget.user!.uid)
+                                .getSetups(bikes.keys.elementAt(index)),
+                            builder: ((context, AsyncSnapshot snapshot) {
+                              String bikename = bikes.keys.elementAt(index);
+                              String biketype = bikes.values.elementAt(index);
+                              if (ConnectionState.waiting ==
+                                  snapshot.connectionState) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              } else if (snapshot.hasError) {
+                                return const Center(child: Text('Error'));
+                              } else {
+                                Map<String, dynamic>? setuplist = snapshot.data!
+                                    .data() as Map<String, dynamic>?;
+                                if (setuplist == null) {
+                                  return const Center(
+                                    child: Text('No Setups'),
+                                  );
+                                } else {
+                                  return SizedBox(
+                                      child: ListView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const BouncingScrollPhysics(),
+                                          padding:
+                                              const EdgeInsets.only(top: 0),
+                                          itemCount: setuplist.length,
+                                          itemBuilder: (context, index) {
+                                            return ListTile(
+                                              
+                                                leading: IconButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (BuildContext
+                                                                context) =>
+                                                            NewBike(
+                                                          user: widget.user!,
+                                                          isnewbike: false,
+                                                          isnewsetup: false,
+                                                          isdefaultbike: false,
+                                                          bike: bikename,
+                                                          setup:setuplist.keys.elementAt(index),
+                                                          biketype: biketype
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.edit,
+                                                    color: Theme.of(context)
+                                                        .iconTheme
+                                                        .color,
+                                                  ),
+                                                ),
+                                                title: Text(setuplist.keys
+                                                    .elementAt(index), style: Theme.of(context).textTheme.labelMedium,),
+                                                onTap: () {
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (BuildContext
+                                                              context) =>
+                                                          MyHomePage(
+                                                        bikename: bikename,
+                                                        user: widget.user,
+                                                        biketype: biketype,
+                                                        chosensetup: setuplist
+                                                            .keys
+                                                            .elementAt(index),
+                                                      ),
+                                                    ),
+                                                  );
+                                                });
+                                          }));
+                                }
+                              }
+                            })),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (BuildContext context) => NewBike(
+                                  user: widget.user!,
+                                  isnewbike: false,
+                                  isnewsetup: true,
+                                  isdefaultbike: false,
+                                  setup: "",
+                                  bike: bikes.keys.elementAt(index),
+                                  biketype: bikes.values.elementAt(index),
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context)
+                                  .floatingActionButtonTheme
+                                  .backgroundColor),
+                          child: Text(
+                            'New Setup',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        )
+                      ],
                     ),
                   );
                 },

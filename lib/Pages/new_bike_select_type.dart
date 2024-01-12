@@ -99,7 +99,7 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
                                         transitionDuration:
-                                            const Duration(milliseconds: 500),
+                                            const Duration(milliseconds: 200),
                                         transitionsBuilder:
                                             (BuildContext context,
                                                 Animation<double> animation,
@@ -121,6 +121,7 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                           return NewBike(
                                             user: widget.user,
                                             isnewbike: true,
+                                            isnewsetup: false,
                                             isdefaultbike: true,
                                             bike: "",
                                             setup: 'Standard', //TODO: Change

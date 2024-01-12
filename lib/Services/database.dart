@@ -163,6 +163,14 @@ class DatabaseService {
         .snapshots();
   }
 
+   Stream getSetups(String bikename) {
+    return userbikesetup
+        .doc(userID)
+        .collection(bikename)
+        .doc('SetupList')
+        .snapshots();
+  }
+
   Stream getDocumentElement(String bikename, String category, String setup) {
     return userbikesetup
         .doc(userID)

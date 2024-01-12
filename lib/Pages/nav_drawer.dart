@@ -27,14 +27,14 @@ class _NavDrawerState extends State<NavDrawer> {
     final Size size = MediaQuery.of(context).size;
 
     return SizedBox(
-        width: size.width * 0.75,
+        width: size.width * 0.85,
         child: Drawer(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           child: Column(
             //padding: EdgeInsets.zero,
             children: [
               SizedBox(
-                  width: size.width * 0.75,
+                  width: size.width * 0.85,
                   height: size.height * 0.20,
                   child: DrawerHeader(
                       decoration:
