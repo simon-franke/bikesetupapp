@@ -1,4 +1,5 @@
 import 'package:bikesetupapp/Services/database.dart';
+import 'package:bikesetupapp/Services/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/Pages/home_page.dart';
 import 'package:flutter/services.dart';
@@ -18,15 +19,16 @@ void main() async {
 
   bool isSignedIn = false;
   String defaultBike = "";
-  String biketype = "";
+  BikeType biketype = BikeType.error;
 
   User? user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
     isSignedIn = true;
     defaultBike = await DatabaseService(user.uid).getDefaultBike();
-    biketype = await DatabaseService(user.uid).getBikeType(defaultBike);
-    if (defaultBike == "" || biketype == "") {
+    biketype = BikeType.fromString(await DatabaseService(user.uid).getBikeType(defaultBike));
+
+    if (defaultBike == "" || biketype == BikeType.error) {
       isSignedIn = false;
     }
   }
@@ -45,7 +47,7 @@ class MyApp extends StatelessWidget {
   final bool isSignedIn;
   final User? user;
   final String defaultBike;
-  final String biketype;
+  final BikeType biketype;
   const MyApp(
       {Key? key,
       required this.isSignedIn,

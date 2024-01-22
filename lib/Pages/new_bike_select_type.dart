@@ -41,9 +41,9 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                       child: PageView(
                         controller: pageController,
                         children: const <Widget>[
-                          BikeSelectorWidget(bikeType: "Fullsuspension"),
-                          BikeSelectorWidget(bikeType: "Hardtail"),
-                          BikeSelectorWidget(bikeType: "Road"),
+                          BikeSelectorWidget(bikeType: BikeType.fullsuspension),
+                          BikeSelectorWidget(bikeType: BikeType.hardtail),
+                          BikeSelectorWidget(bikeType: BikeType.road),
                         ],
                       ),
                     )),

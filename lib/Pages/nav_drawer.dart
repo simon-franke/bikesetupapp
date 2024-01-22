@@ -1,12 +1,13 @@
 import 'package:bikesetupapp/Pages/new_bike_select_type.dart';
 import 'package:bikesetupapp/Pages/settings.dart';
+import 'package:bikesetupapp/Services/enums.dart';
 import 'package:bikesetupapp/Widgets/navdrawer_bike_list.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class NavDrawer extends StatefulWidget {
   final String bikename;
-  final String biketype;
+  final BikeType biketype;
   final String chosensetup;
   final User? user;
   const NavDrawer(

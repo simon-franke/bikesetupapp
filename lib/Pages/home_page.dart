@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/Pages/general_settings.dart';
 import 'package:bikesetupapp/Pages/nav_drawer.dart';
 import 'package:bikesetupapp/Services/database.dart';
 import 'package:bikesetupapp/Widgets/Bubbles.dart';
@@ -13,7 +14,7 @@ const double borderrad = 35;
 class MyHomePage extends StatefulWidget {
   final User? user;
   final String bikename;
-  final String biketype;
+  final BikeType biketype;
   final String chosensetup;
   const MyHomePage(
       {Key? key,
@@ -28,12 +29,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late ChosenCategory chosenCategory;
+  late Category chosenCategory;
 
   @override
   void initState() {
     super.initState();
-    chosenCategory = ChosenCategory.reartire;
+    chosenCategory = Category.reartire;
   }
 
   @override
@@ -45,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final double boxHeight = size.height / 3.5;
     const double offset = 40;
 
-    String bikeImage = 'assets/${widget.biketype}.png';
+    String bikeImage = 'assets/${widget.biketype.biketype}.png';
 
     return Scaffold(
       drawer: NavDrawer(
@@ -104,17 +105,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 left: size.width / 40,
                 bottom: size.height / 6.66,
                 bikename: widget.bikename,
-                category: 'RearTire',
-                chosencategory: chosenCategory.category,
+                category: Category.reartire,
+                chosencategory: chosenCategory,
                 setup: widget.chosensetup,
                 onPressed: () {
                   setState(() {
-                    chosenCategory = ChosenCategory.reartire;
+                    chosenCategory = Category.reartire;
                   });
                   //print(chosencategory);
                 },
                 onValueChange: (value) {
-                  chosenCategory = ChosenCategory.reartire;
+                  chosenCategory = Category.reartire;
                   AlertDialogs.editValue(
                       context,
                       widget.user!,
@@ -131,16 +132,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 left: size.width / 1.20,
                 bottom: size.height / 6.66,
                 bikename: widget.bikename,
-                category: 'FrontTire',
-                chosencategory: chosenCategory.category,
+                category: Category.fronttire,
+                chosencategory: chosenCategory,
                 setup: widget.chosensetup,
                 onPressed: () {
                   setState(() {
-                    chosenCategory = ChosenCategory.fronttire;
+                    chosenCategory = Category.fronttire;
                   });
                 },
                 onValueChange: (value) {
-                  chosenCategory = ChosenCategory.fronttire;
+                  chosenCategory = Category.fronttire;
                   AlertDialogs.editValue(
                       context,
                       widget.user!,
@@ -157,16 +158,16 @@ class _MyHomePageState extends State<MyHomePage> {
                   left: size.width / 2.2,
                   bottom: size.height / 8,
                   bikename: widget.bikename,
-                  category: 'Shock',
-                  chosencategory: chosenCategory.category,
+                  category: Category.shock,
+                  chosencategory: chosenCategory,
                   setup: widget.chosensetup,
                   onPressed: () {
                     setState(() {
-                      chosenCategory = ChosenCategory.shock;
+                      chosenCategory = Category.shock;
                     });
                   },
                   onValueChange: (value) {
-                    chosenCategory = ChosenCategory.shock;
+                    chosenCategory = Category.shock;
                     AlertDialogs.editValue(
                         context,
                         widget.user!,
@@ -176,21 +177,30 @@ class _MyHomePageState extends State<MyHomePage> {
                         chosenCategory.category,
                         widget.chosensetup);
                   },
-                  show: widget.biketype == "FullSuspension"),
+                  show: widget.biketype == BikeType.fullsuspension),
               Bubble(
                 user: widget.user,
                 left: size.width / 2.65,
                 bottom: size.height / 5.33,
                 bikename: widget.bikename,
-                category: 'GeneralSettings',
-                chosencategory: chosenCategory.category,
+                category: Category.generalsettings,
+                chosencategory: chosenCategory,
                 setup: widget.chosensetup,
                 onPressed: () {
                   setState(() {
-                    chosenCategory = ChosenCategory.generalsettings;
+                    chosenCategory = Category.generalsettings;
                   });
                 },
-                onValueChange: (value) {},
+                onValueChange: (value) {
+                  if (widget.user != null) {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (BuildContext context) =>
+                            GeneralSettings(
+                                user: widget.user!,
+                                bikename: widget.bikename,
+                                setupname: widget.chosensetup)));
+                  }
+                },
                 show: true,
               ),
               Bubble(
@@ -198,16 +208,16 @@ class _MyHomePageState extends State<MyHomePage> {
                   left: size.width / 1.5,
                   bottom: size.height / 5.33,
                   bikename: widget.bikename,
-                  category: 'Fork',
-                  chosencategory: chosenCategory.category,
+                  category: Category.fork,
+                  chosencategory: chosenCategory,
                   setup: widget.chosensetup,
                   onPressed: () {
                     setState(() {
-                      chosenCategory = ChosenCategory.fork;
+                      chosenCategory = Category.fork;
                     });
                   },
                   onValueChange: (value) {
-                    chosenCategory = ChosenCategory.fork;
+                    chosenCategory = Category.fork;
                     AlertDialogs.editValue(
                         context,
                         widget.user!,
@@ -217,7 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         chosenCategory.category,
                         widget.chosensetup);
                   },
-                  show: widget.biketype != "Road"),
+                  show: widget.biketype != BikeType.road),
             ]),
           ),
         ],

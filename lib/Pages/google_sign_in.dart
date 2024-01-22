@@ -1,6 +1,7 @@
 import 'package:bikesetupapp/Pages/home_page.dart';
 import 'package:bikesetupapp/Pages/new_bike_select_type.dart';
 import 'package:bikesetupapp/Services/database.dart';
+import 'package:bikesetupapp/Services/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/Services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,8 +58,9 @@ class _LoginPageState extends State<LoginPage> {
                       } else if (user != null) {
                         String defaultBike =
                             await DatabaseService(user.uid).getDefaultBike();
-                        String biketype = await DatabaseService(user.uid)
-                            .getBikeType(defaultBike);
+                        BikeType biketype = BikeType.fromString(
+                            await DatabaseService(user.uid)
+                                .getBikeType(defaultBike));
                         if (defaultBike == "") {
                           if (!mounted) return;
                           Navigator.of(context).push(MaterialPageRoute(
@@ -122,8 +124,9 @@ class _LoginPageState extends State<LoginPage> {
                         String defaultBike =
                             await DatabaseService(user.uid).getDefaultBike();
 
-                        String biketype = await DatabaseService(user.uid)
-                            .getBikeType(defaultBike);
+                        BikeType biketype = BikeType.fromString(
+                            await DatabaseService(user.uid)
+                                .getBikeType(defaultBike));
 
                         if (defaultBike == "") {
                           if (!mounted) return;

@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/Pages/google_sign_in.dart';
 import 'package:bikesetupapp/Pages/home_page.dart';
+import 'package:bikesetupapp/Services/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bikesetupapp/Services/app_state_notifier.dart';
@@ -8,7 +9,7 @@ import 'package:bikesetupapp/Services/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   final String bikename;
-  final String biketype;
+  final BikeType biketype;
   final String chosensetup;
   const SettingsPage({Key? key, required this.bikename, required this.biketype, required this.chosensetup}) : super(key: key);
 

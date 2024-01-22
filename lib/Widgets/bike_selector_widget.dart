@@ -1,7 +1,8 @@
+import 'package:bikesetupapp/Services/enums.dart';
 import 'package:flutter/material.dart';
 
 class BikeSelectorWidget extends StatelessWidget {
-  final String bikeType;
+  final BikeType bikeType;
   const BikeSelectorWidget({super.key, required this.bikeType});
 
   @override
@@ -20,7 +21,7 @@ class BikeSelectorWidget extends StatelessWidget {
                 ],
       ),
       child: Image.asset(
-        'assets/$bikeType.png',
+        'assets/${bikeType.biketype}.png',
         fit: BoxFit.contain,
       )
     ),);

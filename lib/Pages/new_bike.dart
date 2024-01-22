@@ -132,7 +132,7 @@ class _NewBikeState extends State<NewBike> {
                         Expanded(
                           child: ListView(children: [
                             Visibility(
-                                visible: widget.biketype == 'Fullsuspension',
+                                visible: widget.biketype.biketype == 'Fullsuspension',
                                 child: ListTile(
                                   leading: Icon(
                                     Icons.alarm,
@@ -177,7 +177,7 @@ class _NewBikeState extends State<NewBike> {
                                   ),
                                 )),
                             Visibility(
-                              visible: widget.biketype != 'Road',
+                              visible: widget.biketype.biketype != 'Road',
                               child: ListTile(
                                 leading: Icon(
                                   Icons.alarm,
@@ -221,7 +221,7 @@ class _NewBikeState extends State<NewBike> {
                               ),
                             ),
                             Visibility(
-                              visible: widget.biketype == 'Fullsuspension',
+                              visible: widget.biketype.biketype == 'Fullsuspension',
                               child: ListTile(
                                 leading: Icon(
                                   Icons.straighten,
@@ -281,7 +281,7 @@ class _NewBikeState extends State<NewBike> {
                               ),
                             ),
                             Visibility(
-                              visible: widget.biketype != 'Road',
+                              visible: widget.biketype.biketype != 'Road',
                               child: ListTile(
                                 leading: Icon(
                                   Icons.straighten,
@@ -523,7 +523,7 @@ class _NewBikeState extends State<NewBike> {
                                                     MyHomePage(
                                                       user: widget.user,
                                                       bikename: bikename,
-                                                      biketype: widget.biketype.biketype,
+                                                      biketype: widget.biketype,
                                                       chosensetup: setupname,
                                                     )));
                                       }

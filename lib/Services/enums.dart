@@ -27,7 +27,7 @@ enum BikeType {
   }
 }
 
-enum ChosenCategory {
+enum Category {
   reartire(category: 'RearTire'),
   fronttire(category: 'FrontTire'),
   shock(category: 'Shock'),
@@ -35,5 +35,5 @@ enum ChosenCategory {
   fork(category: 'Fork');
 
   final String category;
-  const ChosenCategory({required this.category});
+  const Category({required this.category});
 }

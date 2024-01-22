@@ -154,7 +154,7 @@ class _BikeListState extends State<BikeList> {
                                                         MyHomePage(
                                                       bikename: bikename,
                                                       user: widget.user,
-                                                      biketype: biketype.biketype,
+                                                      biketype: biketype,
                                                       chosensetup: setuplist
                                                           .keys
                                                           .elementAt(index),
