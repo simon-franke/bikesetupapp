@@ -67,7 +67,19 @@ class _MyHomePageState extends State<MyHomePage> {
               Text(
                 widget.chosensetup,
                 style: Theme.of(context).textTheme.titleLarge,
-              )
+              ),
+              IconButton(
+                  onPressed: () {
+                    if (widget.user != null) {
+                      AlertDialogs.showSetupInformation(
+                          context,
+                          size,
+                          widget.user!.uid,
+                          widget.bikename,
+                          widget.chosensetup);
+                    }
+                  },
+                  icon: const Icon(Icons.info_rounded)),
             ],
           )),
       body: Stack(
@@ -194,11 +206,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 onValueChange: (value) {
                   if (widget.user != null) {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (BuildContext context) =>
-                            GeneralSettings(
-                                user: widget.user!,
-                                bikename: widget.bikename,
-                                setupname: widget.chosensetup)));
+                        builder: (BuildContext context) => GeneralSettings(
+                            user: widget.user!,
+                            bikename: widget.bikename,
+                            setupname: widget.chosensetup)));
                   }
                 },
                 show: true,

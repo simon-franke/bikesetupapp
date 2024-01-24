@@ -3,6 +3,7 @@ import 'package:bikesetupapp/Services/enums.dart';
 import 'package:bikesetupapp/Widgets/bike_selector_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BikeTypeSelector extends StatefulWidget {
   final User user;
@@ -40,6 +41,9 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                       height: size.height / 3,
                       child: PageView(
                         controller: pageController,
+                        onPageChanged: (value) {
+                          HapticFeedback.mediumImpact();
+                        },
                         children: const <Widget>[
                           BikeSelectorWidget(bikeType: BikeType.fullsuspension),
                           BikeSelectorWidget(bikeType: BikeType.hardtail),

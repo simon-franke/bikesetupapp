@@ -51,6 +51,13 @@ class _BikeListState extends State<BikeList> {
                       initiallyExpanded:
                           bikes.keys.elementAt(index) == widget.bikename,
                       onExpansionChanged: (value) {},
+                      leading: IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.checklist,
+                          color: Theme.of(context).iconTheme.color,
+                        ),
+                      ),
                       title: Text(
                         bikes.keys.elementAt(index),
                         style: Theme.of(context).textTheme.labelLarge,
@@ -79,8 +86,9 @@ class _BikeListState extends State<BikeList> {
                                 .getSetups(bikes.keys.elementAt(index)),
                             builder: ((context, AsyncSnapshot snapshot) {
                               String bikename = bikes.keys.elementAt(index);
-                              
-                              BikeType biketype = BikeType.fromString(bikes.values.elementAt(index));
+
+                              BikeType biketype = BikeType.fromString(
+                                  bikes.values.elementAt(index));
                               if (biketype == BikeType.error) {
                                 return const Center(
                                   child: Text('Error'),
@@ -119,8 +127,9 @@ class _BikeListState extends State<BikeList> {
                                                           NewBike(
                                                               user:
                                                                   widget.user!,
-                                                              newbikemode: NewBikeMode
-                                                                  .editSetup,
+                                                              newbikemode:
+                                                                  NewBikeMode
+                                                                      .editSetup,
                                                               isdefaultbike:
                                                                   false,
                                                               bike: bikename,
@@ -191,7 +200,8 @@ class _BikeListState extends State<BikeList> {
                             })),
                         ElevatedButton(
                           onPressed: () {
-                            BikeType biketype = BikeType.fromString(bikes.values.elementAt(index));
+                            BikeType biketype = BikeType.fromString(
+                                bikes.values.elementAt(index));
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (BuildContext context) => NewBike(

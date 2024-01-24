@@ -202,7 +202,8 @@ class AlertDialogs {
                 style: Theme.of(context).textTheme.labelLarge,
               ),
               onPressed: () {
-                if (key == "Pressure" && value.trim().replaceAll(',', '').length > 3) {
+                if (key == "Pressure" &&
+                    value.trim().replaceAll(',', '').length > 3) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Pressure must be 3 digits or less'),
@@ -211,8 +212,8 @@ class AlertDialogs {
                   return;
                 } else {
                   Navigator.of(context).pop();
-                  DatabaseService(user.uid)
-                      .editSetting(key.trim(), value.trim(), bikename, category, setup);
+                  DatabaseService(user.uid).editSetting(
+                      key.trim(), value.trim(), bikename, category, setup);
                 }
               },
             ),
@@ -308,8 +309,8 @@ class AlertDialogs {
     );
   }
 
-  static Future<void> deleteSetup(
-      BuildContext context, User user, String bikename, String setupname) async {
+  static Future<void> deleteSetup(BuildContext context, User user,
+      String bikename, String setupname) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -370,5 +371,64 @@ class AlertDialogs {
         );
       },
     );
+  }
+
+  static Future<void> showSetupInformation(BuildContext context, Size size, String userID,
+      String bikename, String setupname) async {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Theme.of(context).cardTheme.color,
+            title: Text(
+              'Setup Information',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            content: FutureBuilder(
+                future: DatabaseService(userID)
+                    .getSetupInformation(bikename, setupname),
+                builder: ((context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    if (snapshot.data == null) {
+                      return Text(
+                        'No Information Available',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      );
+                    }
+                    Map <String, dynamic> setupinformation = snapshot.data as Map<String, dynamic>;
+                    return SizedBox(
+                      height: 200,
+                      width: size.height * 0.8,
+                      child: ListView.builder(
+                        itemCount: setupinformation.length,
+                        itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(
+                            setupinformation.keys.elementAt(index),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          subtitle: Text(
+                            setupinformation.values.elementAt(index),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        );
+                      }),
+                    );
+                  }
+                  return const CircularProgressIndicator();
+                })),
+            actionsAlignment: MainAxisAlignment.spaceAround,
+            actions: [
+              ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Ok',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ))
+            ],
+          );
+        });
   }
 }
