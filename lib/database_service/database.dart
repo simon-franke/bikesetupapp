@@ -268,12 +268,11 @@ class DatabaseService {
         dynamic value = snapshot[setupname];
         if (value != null) {
           return value;
-        } else {
-          return '""';
         }
-      } else {
         return '""';
       }
+      return '""';
+
     } catch (e) {
       return '""';
     }

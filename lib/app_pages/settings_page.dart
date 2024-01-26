@@ -1,11 +1,12 @@
-import 'package:bikesetupapp/Pages/google_sign_in.dart';
-import 'package:bikesetupapp/Pages/home_page.dart';
-import 'package:bikesetupapp/Services/enums.dart';
+import 'package:bikesetupapp/app_pages/google_sign_in.dart';
+import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/app_services/app_state_notifier.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bikesetupapp/Services/app_state_notifier.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bikesetupapp/Services/auth_service.dart';
+import 'package:bikesetupapp/database_service/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   final String bikename;

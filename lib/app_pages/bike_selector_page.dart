@@ -1,8 +1,10 @@
-import 'package:bikesetupapp/Pages/new_bike.dart';
-import 'package:bikesetupapp/Services/enums.dart';
-import 'package:bikesetupapp/Widgets/bike_selector_widget.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bikesetupapp/app_pages/new_bike_page.dart';
+import 'package:bikesetupapp/widgets/bike_selector_widget.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
 class BikeTypeSelector extends StatefulWidget {

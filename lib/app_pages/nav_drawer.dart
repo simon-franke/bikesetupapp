@@ -1,7 +1,8 @@
-import 'package:bikesetupapp/Pages/new_bike_select_type.dart';
-import 'package:bikesetupapp/Pages/settings.dart';
-import 'package:bikesetupapp/Services/enums.dart';
-import 'package:bikesetupapp/Widgets/navdrawer_bike_list.dart';
+import 'package:bikesetupapp/app_pages/bike_selector_page.dart';
+import 'package:bikesetupapp/app_pages/settings_page.dart';
+import 'package:bikesetupapp/widgets/navdrawer_bike_list.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

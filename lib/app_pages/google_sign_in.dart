@@ -1,9 +1,10 @@
-import 'package:bikesetupapp/Pages/home_page.dart';
-import 'package:bikesetupapp/Pages/new_bike_select_type.dart';
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:bikesetupapp/Services/enums.dart';
+import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/app_pages/bike_selector_page.dart';
+import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/database_service/auth_service.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+
 import 'package:flutter/material.dart';
-import 'package:bikesetupapp/Services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 const String googleIcon = 'assets/google_icon.png';

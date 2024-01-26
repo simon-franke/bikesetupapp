@@ -1,8 +1,10 @@
+import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bikesetupapp/Pages/home_page.dart';
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:bikesetupapp/Services/enums.dart';
 
 class NewBike extends StatefulWidget {
   final User user;

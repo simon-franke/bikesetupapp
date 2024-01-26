@@ -1,6 +1,6 @@
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bikesetupapp/database_service/database.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AlertDialogs {
   static Future<void> newKey(BuildContext context, User user, String bikename,
@@ -373,8 +373,8 @@ class AlertDialogs {
     );
   }
 
-  static Future<void> showSetupInformation(BuildContext context, Size size, String userID,
-      String bikename, String setupname) async {
+  static Future<void> showSetupInformation(BuildContext context, Size size,
+      String userID, String bikename, String setupname) async {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -388,34 +388,44 @@ class AlertDialogs {
                 future: DatabaseService(userID)
                     .getSetupInformation(bikename, setupname),
                 builder: ((context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.data == null) {
-                      return Text(
-                        'No Information Available',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      );
-                    }
-                    Map <String, dynamic> setupinformation = snapshot.data as Map<String, dynamic>;
+                  if (ConnectionState.waiting == snapshot.connectionState) {
+                    return Center(
+                      child: CircularProgressIndicator.adaptive(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context)
+                                  .floatingActionButtonTheme
+                                  .backgroundColor!)),
+                    );
+                  } else if (snapshot.hasError) {
+                    return const Center(child: Text('Error'));
+                  } else if (snapshot.data == null) {
+                    return const Center(
+                        child: CircularProgressIndicator.adaptive());
+                  } else {
+                    Map<String, dynamic> setupinformation =
+                        snapshot.data as Map<String, dynamic>;
                     return SizedBox(
                       height: 200,
                       width: size.height * 0.8,
                       child: ListView.builder(
-                        itemCount: setupinformation.length,
-                        itemBuilder: (context, index) {
-                        return ListTile(
-                          title: Text(
-                            setupinformation.keys.elementAt(index),
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          subtitle: Text(
-                            setupinformation.values.elementAt(index),
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        );
-                      }),
+                          itemCount: setupinformation.length,
+                          itemBuilder: (context, index) {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  setupinformation.keys.elementAt(index),
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                Text(
+                                  setupinformation.values.elementAt(index),
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                              ],
+                            );
+                          }),
                     );
                   }
-                  return const CircularProgressIndicator();
                 })),
             actionsAlignment: MainAxisAlignment.spaceAround,
             actions: [

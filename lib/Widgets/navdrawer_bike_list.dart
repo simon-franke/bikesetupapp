@@ -1,10 +1,12 @@
-import 'package:bikesetupapp/Pages/home_page.dart';
-import 'package:bikesetupapp/Pages/new_bike.dart'; // Add this line
-import 'package:bikesetupapp/Services/alert_dialogs.dart';
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:bikesetupapp/Services/enums.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bikesetupapp/alert_dialogs/alert_dialogs.dart';
+import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/app_pages/new_bike_page.dart';
+import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BikeList extends StatefulWidget {
   final User? user;
@@ -86,7 +88,6 @@ class _BikeListState extends State<BikeList> {
                                 .getSetups(bikes.keys.elementAt(index)),
                             builder: ((context, AsyncSnapshot snapshot) {
                               String bikename = bikes.keys.elementAt(index);
-
                               BikeType biketype = BikeType.fromString(
                                   bikes.values.elementAt(index));
                               if (biketype == BikeType.error) {

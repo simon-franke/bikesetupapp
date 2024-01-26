@@ -1,13 +1,13 @@
-import 'package:bikesetupapp/Pages/general_settings.dart';
-import 'package:bikesetupapp/Pages/nav_drawer.dart';
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:bikesetupapp/Widgets/Bubbles.dart';
-import 'package:bikesetupapp/Widgets/homepage_list_view.dart';
+import 'package:bikesetupapp/app_pages/nav_drawer.dart';
+import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/alert_dialogs/alert_dialogs.dart';
+import 'package:bikesetupapp/widgets/homepage_list_view.dart';
+import 'package:bikesetupapp/widgets/home_page_bubbles.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+import 'package:bikesetupapp/bike_enums/category.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bikesetupapp/Services/enums.dart';
-
-import '../Services/alert_dialogs.dart';
 
 const double borderrad = 35;
 
@@ -203,15 +203,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     chosenCategory = Category.generalsettings;
                   });
                 },
-                onValueChange: (value) {
-                  if (widget.user != null) {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (BuildContext context) => GeneralSettings(
-                            user: widget.user!,
-                            bikename: widget.bikename,
-                            setupname: widget.chosensetup)));
-                  }
-                },
+                onValueChange: (value) {},
                 show: true,
               ),
               Bubble(

@@ -1,11 +1,12 @@
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:bikesetupapp/Services/enums.dart';
+import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/app_pages/google_sign_in.dart';
+import 'package:bikesetupapp/app_services/themedata.dart';
+import 'package:bikesetupapp/app_services/app_state_notifier.dart';
+import 'package:bikesetupapp/bike_enums/biketype.dart';
+import 'package:bikesetupapp/database_service/database.dart';
+
 import 'package:flutter/material.dart';
-import 'package:bikesetupapp/Pages/home_page.dart';
 import 'package:flutter/services.dart';
-import 'Pages/google_sign_in.dart';
-import 'package:bikesetupapp/Services/themedata.dart';
-import 'package:bikesetupapp/Services/app_state_notifier.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -26,7 +27,8 @@ void main() async {
   if (user != null) {
     isSignedIn = true;
     defaultBike = await DatabaseService(user.uid).getDefaultBike();
-    biketype = BikeType.fromString(await DatabaseService(user.uid).getBikeType(defaultBike));
+    biketype = BikeType.fromString(
+        await DatabaseService(user.uid).getBikeType(defaultBike));
 
     if (defaultBike == "" || biketype == BikeType.error) {
       isSignedIn = false;

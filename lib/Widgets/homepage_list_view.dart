@@ -1,7 +1,8 @@
-import 'package:bikesetupapp/Services/alert_dialogs.dart';
-import 'package:bikesetupapp/Services/database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bikesetupapp/alert_dialogs/alert_dialogs.dart';
+import 'package:bikesetupapp/database_service/database.dart';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePageListView extends StatefulWidget {
   final User? user;
@@ -43,7 +44,6 @@ class _HomePageListViewState extends State<HomePageListView> {
         } else if (snapshot.hasError) {
           return const Center(child: Text('Error'));
         } else if (snapshot.data == null || snapshot.data!.data() == null) {
-          // Data is still being fetched or it's null, show a loading indicator or message
           return const Center(child: CircularProgressIndicator.adaptive());
         } else {
           Map<String, dynamic>? settings =
