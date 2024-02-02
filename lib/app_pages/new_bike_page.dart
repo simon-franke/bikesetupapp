@@ -239,8 +239,8 @@ class _NewBikeState extends State<NewBike> {
                                         flex: 3,
                                         child: TextFormField(
                                           cursorColor: Theme.of(context).textTheme.labelMedium!.color,
-                                          initialValue: (widget
-                                                  .newbikemode.isEdit)
+                                          initialValue: !widget
+                                                  .newbikemode.isEdit
                                               ? null
                                               : setupinformation['fronttravel'],
                                           keyboardType: TextInputType.number,
@@ -297,7 +297,7 @@ class _NewBikeState extends State<NewBike> {
                                         flex: 3,
                                         child: TextFormField(
                                           cursorColor: Theme.of(context).textTheme.labelMedium!.color,
-                                          initialValue: widget
+                                          initialValue: !widget
                                                   .newbikemode.isEdit
                                               ? null
                                               : setupinformation['reartravel'],
@@ -359,7 +359,7 @@ class _NewBikeState extends State<NewBike> {
                                             hintText: !widget.newbikemode.isEdit
                                                 ? 'Size'
                                                 : null),
-                                        initialValue: widget.newbikemode.isEdit
+                                        initialValue: !widget.newbikemode.isEdit
                                             ? null
                                             : setupinformation['rearwheelsize'],
                                         keyboardType: TextInputType.number,
@@ -407,7 +407,7 @@ class _NewBikeState extends State<NewBike> {
                                             hintText: !widget.newbikemode.isEdit
                                                 ? 'Size'
                                                 : null),
-                                        initialValue: widget.newbikemode.isEdit
+                                        initialValue: !widget.newbikemode.isEdit
                                             ? null
                                             : setupinformation[
                                                 'frontwheelsize'],
