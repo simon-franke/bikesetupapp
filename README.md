@@ -1,42 +1,46 @@
 # bikesetupapp
-#### Video Demo: [BikeSetupDemoVideo](https://youtu.be/Hei2Tvx4LfY)
 #### Description:
 > Flutter App to Store Bike Setup Information in Google Firestore Database with Google SignIn
 ## Features
-* Setup Information is linked to Google Account (alternative: Anonymus SignIn)
-* Multiple Bikes (App opens with the last opened bike)
-* Page to easily create new Bikes and set basic settings like wheelsize, travel, shock/fork type
-* Quick and easy changing and viewing of frequently used settings
-* Settings are categorised by 5 categories (Rear Tire, Front Tire, Shock, Fork, General/Frame)
-* easily change categories
-* "Unlimited" number of settings in each category
-* Settings Page to log out your account and change the theme
+* Setup information linked to Google account (alternative: Anonymous SignIn)
+* Multiple bikes (set default bike in settings (bike that opens))
+* Multiple setups per bike
+* Store basic setup information and see it in bike information popup
+* Page to easily create new bikes/setups and set basic settings such as wheel size, travel, shock/fork type
+* Quickly and easily change and view frequently used settings
+* Settings are divided into 5 categories (rear tyre, front tyre, shock, fork, general/frame)
+* Easily change categories
+* Unlimited number of settings in each category
+* Todo list to keep track of things that need fixing on your bike
+* Settings page to log out your account, change theme and set default bike
 
 ## Implemention details
-### DatabaseService
-Class with every method that acceses the Database
+### database_service
+Contains everything that has to do with writing and retrieving data from Firebase and authenticating the user.
 
-### ThemeData
-Contains information about light and dark Theme
+### app_services
+contains themeinformation and the appstate notifier that handles the changing of themes
 
-### AuthService
-handles authentication with Firestore Database
-
-### AlertDialogs
+### alert_dialogs
 contains all Alert Dialogs
 
-### Bubbles
-This widget takes two methods as Parameters, which are implemented in the widget's parent widget but called within the widget itself. This allows the methods to change variables of the parent widget. The 'onValueChanged' function passes a string from its StreamBuilder to the parent Widget.
+### app_pages
+contains every page of the app
+
+### bike_enums
+contains the enums biketype, category, new_bike_mode used throughout the application
+
+### widgets
+contains widgets, that complement the pages and alert dialogs
 
 ## Description
 
-When the application is launched, it checks if the user is logged in and if their default bike exists. If either of these conditions is not met, the user is redirected to the login page.  If both conditions are met, the user is directed to the HomePage. 
-The settings are displayed on this page using a StreamBuilder, which allows for immediate display upon availability, as opposed to a FutureBuilder. The HomePage allows users to modify, delete, and add settings. 
-The NavDrawer provides access to bike modification, editing, and creation. 
-The settings page enables users to log in or out of the app and change the theme.
 
-## Screenshots
-<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/aedfd251-af2b-4139-95f1-0301e571d4d3" alt="drawing" width="200"/>
-<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/93cf4c54-6876-4c50-b7bb-99b460a82b4a)" alt="drawing" width="200"/>
-<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/330b1e93-f7e5-4bba-87b5-69158183cced" alt="drawing" width="200"/>
-<img src="https://github.com/SimonFran/bikesetupapp/assets/40801103/6ca8094c-138b-46de-a058-75ac4d906c8c" alt="drawing" width="200"/>
+Upon launching the application, it verifies whether the user is logged in and if their default bike exists. If either of these conditions is not met, the user is redirected to the login page.  If both conditions are met, the user is directed to the HomePage. 
+The settings are displayed on this page using a StreamBuilder, which enables immediate display upon availability, as opposed to a FutureBuilder. The HomePage enables users to modify, delete, and add settings. The user can easily switch between categories by clicking the bubbles. General information about their setup can be accessed via the 'i' button on the top right.
+The NavDrawer allows for bike and setup modification, deletion, and creation. Each bike has its own to-do list for tracking necessary repairs.
+The settings page enables users to log in or out of the app, change the theme, and set their default bike.
+
+## Firebase
+
+Each user has their own document that they can reference using their user ID. This document contains collections for Bikes, TodoLists, and UserData. The UserData collection contains two documents: one stores the user's default bike and the other stores a list of the user's bikes with their corresponding bike types.
