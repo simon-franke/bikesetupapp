@@ -45,7 +45,6 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                         controller: pageController,
                         onPageChanged: (value) {
                           HapticFeedback.mediumImpact();
-                          
                         },
                         children: const <Widget>[
                           BikeSelectorWidget(bikeType: BikeType.fullsuspension),
@@ -92,7 +91,8 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                   onPressed: () {
                                     int currentPageIndex =
                                         pageController.page?.round() ?? 0;
-                                    BikeType biketype = BikeType.values[currentPageIndex ];
+                                    BikeType biketype =
+                                        BikeType.values[currentPageIndex];
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
                                         transitionDuration:

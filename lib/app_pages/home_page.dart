@@ -16,7 +16,7 @@ class MyHomePage extends StatefulWidget {
   final String bikename;
   final String ubid;
   final BikeType biketype;
-  final String chosensetup;
+  final String setupname;
   final String usid;
   const MyHomePage(
       {Key? key,
@@ -24,7 +24,7 @@ class MyHomePage extends StatefulWidget {
       required this.biketype,
       required this.bikename,
       required this.ubid,
-      required this.chosensetup,
+      required this.setupname,
       required this.usid})
       : super(key: key);
 
@@ -43,7 +43,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     final Size size = MediaQuery.of(context).size;
     final double boxHeight = size.height / 3.5;
     const double offset = 40;
@@ -55,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
         user: widget.user,
         bikename: widget.bikename,
         biketype: widget.biketype,
-        chosensetup: widget.chosensetup,
+        chosensetup: widget.setupname,
       ),
       appBar: AppBar(
           scrolledUnderElevation: 0,
@@ -75,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           widget.user!.uid,
                           widget.ubid,
                           widget.usid,
-                          widget.chosensetup,
+                          widget.setupname,
                           widget.biketype);
                     }
                   },
@@ -90,9 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: HomePageListView(
                     user: widget.user,
                     bikename: widget.bikename,
-                    ubid : widget.ubid,
+                    ubid: widget.ubid,
                     category: chosenCategory.category,
-                    setup: widget.chosensetup,
+                    setup: widget.setupname,
                     usid: widget.usid))
           ]),
           Container(
@@ -126,18 +125,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() {
                     chosenCategory = Category.reartire;
                   });
-                  //print(chosencategory);
                 },
                 onValueChange: (value) {
                   chosenCategory = Category.reartire;
-                  SettingsAlerts.editValue(
-                      context,
-                      widget.user!,
-                      'Pressure',
-                      value,
-                      widget.ubid,
-                      chosenCategory.category,
-                      widget.usid);
+                  SettingsAlerts.editValue(context, widget.user!, 'Pressure',
+                      value, widget.ubid, chosenCategory.category, widget.usid);
                 },
                 show: true,
               ),
@@ -156,14 +148,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 onValueChange: (value) {
                   chosenCategory = Category.fronttire;
-                  SettingsAlerts.editValue(
-                      context,
-                      widget.user!,
-                      'Pressure',
-                      value,
-                      widget.ubid,
-                      chosenCategory.category,
-                      widget.usid);
+                  SettingsAlerts.editValue(context, widget.user!, 'Pressure',
+                      value, widget.ubid, chosenCategory.category, widget.usid);
                 },
                 show: true,
               ),
@@ -239,8 +225,8 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          SettingsAlerts.newKey(context, widget.user!, widget.bikename,
-              chosenCategory.category, widget.chosensetup);
+          SettingsAlerts.newKey(context, widget.user!, widget.ubid,
+              chosenCategory.category, widget.usid);
         },
         tooltip: 'Add Setting',
         child: const Icon(Icons.add),

@@ -77,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                                     bikename: 'Test',
                                     ubid: defaultBike,
                                     biketype: biketype,
-                                    chosensetup: "Default",
+                                    setupname: "Default",
                                     usid: "Default",
                                   )));
                         }
@@ -146,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                                     bikename: 'Test',
                                     ubid: defaultBike,
                                     biketype: biketype,
-                                    chosensetup: "Default",
+                                    setupname: "Default",
                                     usid: "Default",
                                   )));
                         }

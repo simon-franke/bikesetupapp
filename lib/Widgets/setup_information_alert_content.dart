@@ -19,8 +19,7 @@ class SetupInformation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future:
-            DatabaseService(userID).getSetupInformation(ubid, usid),
+        future: DatabaseService(userID).getSetupInformation(ubid, usid),
         builder: ((context, snapshot) {
           if (ConnectionState.waiting == snapshot.connectionState) {
             return const SizedBox(

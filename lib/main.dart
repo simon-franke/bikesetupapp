@@ -33,11 +33,16 @@ void main() async {
     defaultBikebuid = await DatabaseService(user.uid).getDefaultBike();
     biketype = BikeType.fromString(
         await DatabaseService(user.uid).getBikeType(defaultBikebuid));
-    defaultBike = await DatabaseService(user.uid).getBikeNameFromID(defaultBikebuid);
-    defaultSetupusid = await DatabaseService(user.uid).getDefaultSetup(defaultBikebuid);
-    defaultSetup = await DatabaseService(user.uid).getSetupNameFromID(defaultBikebuid, defaultSetupusid);
+    defaultBike =
+        await DatabaseService(user.uid).getBikeNameFromID(defaultBikebuid);
+    defaultSetupusid =
+        await DatabaseService(user.uid).getDefaultSetup(defaultBikebuid);
+    defaultSetup = await DatabaseService(user.uid)
+        .getSetupNameFromID(defaultBikebuid, defaultSetupusid);
 
-    if (defaultBikebuid == "" || biketype == BikeType.error || defaultBike == "") {
+    if (defaultBikebuid == "" ||
+        biketype == BikeType.error ||
+        defaultBike == "") {
       isSignedIn = false;
     }
   }
@@ -46,7 +51,8 @@ void main() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
   runApp(ChangeNotifierProvider<AppStateNotifier>(
-      create: (context) => AppStateNotifier(prefs.getBool('isDarkModeOn') ?? false),
+      create: (context) =>
+          AppStateNotifier(prefs.getBool('isDarkModeOn') ?? false),
       child: MyApp(
         isSignedIn: isSignedIn,
         user: FirebaseAuth.instance.currentUser,
@@ -97,7 +103,7 @@ class MyApp extends StatelessWidget {
                     bikename: defaultBike,
                     ubid: defaultBikebuid,
                     biketype: biketype,
-                    chosensetup: defaultSetup,
+                    setupname: defaultSetup,
                     usid: defaultSetupusid,
                   )
                 : const LoginPage());

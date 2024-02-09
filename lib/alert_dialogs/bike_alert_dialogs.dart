@@ -53,8 +53,8 @@ class BikeAlerts {
     );
   }
 
-  static Future<void> deleteSetup(BuildContext context, User user,
-      String ubid, String usid) async {
+  static Future<void> deleteSetup(
+      BuildContext context, User user, String ubid, String usid) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -100,8 +100,9 @@ class BikeAlerts {
     );
   }
 
-  static Future<void> renameBike(BuildContext context, String ubid, String bikeNameOld) async {
-    TextEditingController controller = TextEditingController();
+  static Future<void> renameBike(
+      BuildContext context, String ubid, String bikeNameOld) async {
+    TextEditingController controller = TextEditingController(text: bikeNameOld);
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -109,13 +110,14 @@ class BikeAlerts {
         return AlertDialog(
           backgroundColor: Theme.of(context).cardTheme.color,
           title: Text(
-            'Rename $bikeNameOld',
+            'Rename Bike',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           content: TextField(
+            cursorColor: Theme.of(context).textTheme.labelMedium!.color,
             controller: controller,
             style: Theme.of(context).textTheme.titleMedium,
-            decoration: InputDecoration(
+            decoration: InputDecoration.collapsed(
               hintText: 'Enter new name',
               hintStyle: Theme.of(context).textTheme.titleMedium,
             ),

@@ -60,7 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: Theme.of(context).textTheme.labelLarge,
               ),
               trailing: Switch(
-                activeColor: Colors.grey,
+                  activeColor: Colors.grey,
                   value: Provider.of<AppStateNotifier>(context).isDarkModeOn,
                   onChanged: (boolVal) {
                     Provider.of<AppStateNotifier>(context, listen: false)
@@ -135,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: ListTile(
                       title: Text(
                         'Select default Bike',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.labelLarge,
                       ),
                       trailing: IconButton(
                         onPressed: () {

@@ -11,7 +11,7 @@ class AppTheme {
         elevation: 0,
         color: Color(0xFF4D7EA8),
         iconTheme: IconThemeData(color: Colors.white)),
-    cardColor: const Color(0xFF8EAFB6), //Positioned Circles
+    cardColor: const Color(0xFF3A546D), //Positioned Circles
     iconTheme: IconThemeData(color: Colors.grey[800]),
     textTheme: const TextTheme(
       titleLarge: TextStyle(color: Colors.white, fontSize: 22),
@@ -31,30 +31,28 @@ class AppTheme {
   );
 
   static final ThemeData darkTheme = ThemeData(
-    primaryColor: const Color(0xFF4D7EA8),
-    scaffoldBackgroundColor: const Color(0xFF272932),
-    cardTheme: const CardTheme(color: Color(0xFF3A546D)),
-    appBarTheme: const AppBarTheme(
-        elevation: 0,
-        color: Color(0xFF4D7EA8),
-        iconTheme: IconThemeData(color: Colors.white)),
-        
-    cardColor: const Color(0xFF8EAFB6), //Positioned Circles
-    iconTheme: const IconThemeData(color: Colors.white),
-    textTheme: const TextTheme(
-      titleLarge: TextStyle(color: Colors.white, fontSize: 22),
-      titleMedium: TextStyle(color: Colors.white, fontSize: 18),
-      titleSmall: TextStyle(color: Colors.white, fontSize: 14),
-      bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
-      bodyMedium: TextStyle(color: Colors.white, fontSize: 16),
-      bodySmall: TextStyle(color: Colors.white, fontSize: 14),
-      labelLarge: TextStyle(color: Colors.white, fontSize: 22),
-      labelMedium: TextStyle(color: Colors.white, fontSize: 20),
-      labelSmall: TextStyle(color: Colors.white, fontSize: 16),
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Color(0xFFF4A259),
-    ),
-    dividerColor: Colors.transparent
-  );
+      primaryColor: const Color(0xFF4D7EA8),
+      scaffoldBackgroundColor: const Color(0xFF272932),
+      cardTheme: const CardTheme(color: Color(0xFF3A546D)),
+      appBarTheme: const AppBarTheme(
+          elevation: 0,
+          color: Color(0xFF4D7EA8),
+          iconTheme: IconThemeData(color: Colors.white)),
+      cardColor: const Color(0xFF8EAFB6), //Positioned Circles
+      iconTheme: const IconThemeData(color: Colors.white),
+      textTheme: const TextTheme(
+        titleLarge: TextStyle(color: Colors.white, fontSize: 22),
+        titleMedium: TextStyle(color: Colors.white, fontSize: 18),
+        titleSmall: TextStyle(color: Colors.white, fontSize: 14),
+        bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
+        bodyMedium: TextStyle(color: Colors.white, fontSize: 16),
+        bodySmall: TextStyle(color: Colors.white, fontSize: 14),
+        labelLarge: TextStyle(color: Colors.white, fontSize: 22),
+        labelMedium: TextStyle(color: Colors.white, fontSize: 20),
+        labelSmall: TextStyle(color: Colors.white, fontSize: 16),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Color(0xFFF4A259),
+      ),
+      dividerColor: Colors.transparent);
 }

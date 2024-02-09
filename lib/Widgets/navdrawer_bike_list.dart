@@ -23,12 +23,10 @@ class _BikeListState extends State<BikeList> {
   @override
   Widget build(BuildContext context) {
     if (widget.user == null) {
-      // No user is signed in
       return const Center(
         child: Text('No User'),
       );
     } else {
-      // User is signed in
       return StreamBuilder(
         stream: DatabaseService(widget.user!.uid).getBikes(),
         builder: ((context, AsyncSnapshot snapshot) {
@@ -42,7 +40,6 @@ class _BikeListState extends State<BikeList> {
                 child: Text('No Bikes'),
               );
             } else {
-              
               return ListView.builder(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(top: 0),
@@ -77,7 +74,7 @@ class _BikeListState extends State<BikeList> {
                           }
                         },
                         icon: Icon(
-                          Icons.done_all,
+                          Icons.edit_calendar_outlined,
                           color: Theme.of(context).iconTheme.color,
                         ),
                       ),
@@ -219,7 +216,7 @@ class _BikeListState extends State<BikeList> {
                                                         ubid: ubid,
                                                         user: widget.user,
                                                         biketype: biketype,
-                                                        chosensetup:
+                                                        setupname:
                                                             setup['setupname'],
                                                         usid: setup.id,
                                                       );
@@ -291,7 +288,7 @@ class _BikeListState extends State<BikeList> {
                                   .backgroundColor),
                           child: Text(
                             'New Setup',
-                            style: Theme.of(context).textTheme.labelSmall,
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                         )
                       ],

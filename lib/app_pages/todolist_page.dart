@@ -8,7 +8,11 @@ class ToDoList extends StatefulWidget {
   final User user;
   final String ubid;
   final String bikename;
-  const ToDoList({super.key, required this.user, required this.ubid, required this.bikename});
+  const ToDoList(
+      {super.key,
+      required this.user,
+      required this.ubid,
+      required this.bikename});
 
   @override
   State<ToDoList> createState() => _ToDoListState();
@@ -88,8 +92,8 @@ class _ToDoListState extends State<ToDoList> {
                                     onChanged: (bool? value) {
                                       setState(() {
                                         DatabaseService(widget.user.uid)
-                                            .updateTodoList(widget.ubid,
-                                                data.id, value!);
+                                            .updateTodoList(
+                                                widget.ubid, data.id, value!);
                                       });
                                     },
                                   ),

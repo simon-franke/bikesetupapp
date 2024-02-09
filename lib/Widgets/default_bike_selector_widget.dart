@@ -37,7 +37,7 @@ class DefaultBikeSelector extends StatelessWidget {
                       itemCount: snapshot.data.docs.length,
                       shrinkWrap: true,
                       itemBuilder: (context, index) {
-                        DocumentSnapshot bike= snapshot.data.docs[index];
+                        DocumentSnapshot bike = snapshot.data.docs[index];
                         return Card(
                             color: Theme.of(context).scaffoldBackgroundColor,
                             child: ListTile(
@@ -47,8 +47,8 @@ class DefaultBikeSelector extends StatelessWidget {
                                       Theme.of(context).textTheme.labelMedium,
                                 ),
                                 onTap: () {
-                                  DatabaseService(user.uid).setDefaultBike(
-                                      bike.id);
+                                  DatabaseService(user.uid)
+                                      .setDefaultBike(bike.id);
                                   Navigator.of(context).pop();
                                 },
                                 trailing: IconButton(

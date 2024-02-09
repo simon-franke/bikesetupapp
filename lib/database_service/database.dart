@@ -1,4 +1,3 @@
-import 'package:bikesetupapp/bike_enums/biketype.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 import 'package:uuid/uuid.dart';
@@ -197,7 +196,7 @@ class DatabaseService {
   /**
    * This function is used to set the default bike.
    * 
-   * @param bikename The name of the bike.
+   * @param ubid The unique id of the bike.
    */ ///
   Future setDefaultBike(String ubid) async {
     return await userbikesetup
@@ -278,7 +277,7 @@ class DatabaseService {
     }, SetOptions(merge: true));
   }
 
-  Future renameBike (String ubid, String bikename) {
+  Future renameBike(String ubid, String bikename) {
     return userbikesetup
         .doc(userID)
         .collection('Bikes')
@@ -316,6 +315,7 @@ class DatabaseService {
    * This function is used to delete a todo for a bike.
    * 
    * @param ubid The unique id of the bike.
+   * @param todoid The unique id of the todo.
    */ ///
   Future deleteTodo(String ubid, String todoid) async {
     return await userbikesetup
@@ -325,41 +325,6 @@ class DatabaseService {
         .collection('MyList')
         .doc(todoid)
         .delete();
-  }
-
-  /**
-   * This function is used to change the name of a bike.
-   * 
-   * @param bikeNameOld The old name of the bike.
-   * @param bikeNameNew The new name of the bike.
-   * @param biketype The type of the bike.
-   */ ///
-  Future setBikeName(
-      String bikeNameOld, String bikeNameNew, BikeType biketype) async {
-    await userbikesetup
-        .doc(userID)
-        .collection('Bikes')
-        .doc(bikeNameOld)
-        .get()
-        .then((value) {
-      if (value.exists) {
-        userbikesetup
-            .doc(userID)
-            .collection('Bikes')
-            .doc(bikeNameNew)
-            .set(value.data()!);
-      }
-    });
-    await userbikesetup
-        .doc(userID)
-        .collection('UserData')
-        .doc('BikeList')
-        .update({bikeNameOld: FieldValue.delete()});
-    return await userbikesetup
-        .doc(userID)
-        .collection('UserData')
-        .doc('BikeList')
-        .set({bikeNameNew: biketype.biketype}, SetOptions(merge: true));
   }
 
   /**
@@ -380,6 +345,12 @@ class DatabaseService {
   }
 
   //Delete functions
+
+  /**
+   * This function is used to delete a bike.
+   * 
+   * @param ubid The unique id of the bike.
+   */ ///
   Future deleteBike(String ubid) async {
     var setups = await userbikesetup
         .doc(userID)
@@ -394,6 +365,12 @@ class DatabaseService {
     await userbikesetup.doc(userID).collection('Bikes').doc(ubid).delete();
   }
 
+  /**
+   * This function is used to delete a setup.
+   * 
+   * @param ubid The unique id of the bike.
+   * @param usid The unique id of the setup.
+   */ ///
   Future deleteSetup(String ubid, String usid) async {
     var setups = await userbikesetup
         .doc(userID)
@@ -415,13 +392,21 @@ class DatabaseService {
         .delete();
   }
 
+  /**
+   * This function is used to delete a setting.
+   * 
+   * @param key The key of the setting.
+   * @param ubid The unique id of the bike.
+   * @param category The category of the setting.
+   * @param usid The unique id of the setup.
+   */ ///
   Future deleteSetting(
-      String key, String bikename, String category, String setup) async {
+      String key, String ubid, String category, String usid) async {
     return await userbikesetup
         .doc(userID)
         .collection('Bikes')
-        .doc(bikename)
-        .collection(setup)
+        .doc(ubid)
+        .collection(usid)
         .doc(category)
         .update({
       key: FieldValue.delete(),
@@ -429,20 +414,36 @@ class DatabaseService {
   }
 
   //Get functions (snapshots)
-  Stream getSettings(String bikename, String category, String setup) {
+
+  /**
+   * This function is used to get the settings of a bike.
+   * 
+   * @param ubid The unique id of the bike.
+   * @param category The category of the setting.
+   * @param usid The unique id of the setup.
+   */ ///
+  Stream getSettings(String ubid, String category, String usid) {
     return userbikesetup
         .doc(userID)
         .collection('Bikes')
-        .doc(bikename)
-        .collection(setup)
+        .doc(ubid)
+        .collection(usid)
         .doc(category)
         .snapshots();
   }
 
+  /**
+   * This function is used to get the bikes.
+   */ ///
   Stream getBikes() {
     return userbikesetup.doc(userID).collection('Bikes').snapshots();
   }
 
+  /**
+   * This function is used to get the setups of a bike.
+   * 
+   * @param ubid The unique id of the bike.
+   */ ///
   Stream getSetups(String ubid) {
     return userbikesetup
         .doc(userID)
@@ -452,26 +453,41 @@ class DatabaseService {
         .snapshots();
   }
 
-  Stream getDocumentElement(String bikename, String category, String setup) {
+  /**
+   * This function is used to get the settings of a setup.
+   * 
+   * @param ubid The unique id of the bike.
+   * @param usid The unique id of the setup.
+   */ ///
+  Stream getDocumentElement(String ubid, String category, String usid) {
     return userbikesetup
         .doc(userID)
         .collection('Bikes')
-        .doc(bikename)
-        .collection(setup)
+        .doc(ubid)
+        .collection(usid)
         .doc(category)
         .snapshots();
   }
 
-  Stream getTodoList(String bikename) {
+  /**
+   * This function is used to get the todo list of a bike.
+   * 
+   * @param bikename The name of the bike.
+   */ ///
+  Stream getTodoList(String ubid) {
     return userbikesetup
         .doc(userID)
         .collection('ToDoList')
-        .doc(bikename)
+        .doc(ubid)
         .collection('MyList')
         .snapshots();
   }
 
   //get functions (single values)
+
+  /**
+   * This function is used to get the default bike.
+   */ ///
   Future<String> getDefaultBike() async {
     try {
       DocumentSnapshot snapshot = await userbikesetup.doc(userID).get();
@@ -490,6 +506,11 @@ class DatabaseService {
     }
   }
 
+  /**
+   * This function is used to get the default setup from a bike.
+   * 
+   * @param ubid The unique id of the bike.
+   */ ///
   Future<String> getDefaultSetup(String ubid) async {
     try {
       DocumentSnapshot snapshot =
@@ -509,6 +530,11 @@ class DatabaseService {
     }
   }
 
+  /**
+   * This function is used to get the name of a bike from its unique id.
+   * 
+   * @param ubid The unique id of the bike.
+   */ ///
   Future<String> getBikeNameFromID(String ubid) async {
     try {
       DocumentSnapshot snapshot =
@@ -529,6 +555,12 @@ class DatabaseService {
     }
   }
 
+  /**
+   * This function is used to get the name of a setup from its unique id.
+   * 
+   * @param ubid The unique id of the bike.
+   * @param usid The unique id of the setup.
+   */ ///
   Future<String> getSetupNameFromID(String ubid, String usid) async {
     try {
       DocumentSnapshot snapshot = await userbikesetup
@@ -554,22 +586,11 @@ class DatabaseService {
     }
   }
 
-  Future<String> getFirstBike() async {
-    final DocumentSnapshot documentSnapshot = await userbikesetup
-        .doc(userID)
-        .collection('UserData')
-        .doc('BikeList')
-        .get();
-
-    final Map<String, dynamic>? data =
-        documentSnapshot.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return '';
-    }
-    final String firstField = data.entries.first.key.toString();
-    return firstField;
-  }
-
+  /**
+   * This function is used to get the type of a bike from its unique id.
+   * 
+   * @param ubid The unique id of the bike.
+   */ ///
   Future<String> getBikeType(String ubid) async {
     try {
       DocumentSnapshot snapshot =
@@ -590,6 +611,12 @@ class DatabaseService {
     }
   }
 
+  /**
+   * This function is used to get the information of a setup.
+   * 
+   * @param ubid The unique id of the bike.
+   * @param usid The unique id of the setup.
+   */ ///
   Future getSetupInformation(String ubid, String usid) async {
     return userbikesetup
         .doc(userID)
@@ -600,15 +627,15 @@ class DatabaseService {
         .get();
   }
 
+  /**
+   * This function is used to get the information of a setup as a map.
+   * 
+   * @param ubid The unique id of the bike.
+   * @param usid The unique id of the setup.
+   */ ///
   Future<Map<String, dynamic>> getSetupInformationAsMap(
       String ubid, String usid) async {
-    DocumentSnapshot snapshot = await userbikesetup
-        .doc(userID)
-        .collection('Bikes')
-        .doc(ubid)
-        .collection('SetupList')
-        .doc(usid)
-        .get();
+    DocumentSnapshot snapshot = await getSetupInformation(ubid, usid);
 
     if (snapshot.exists) {
       return snapshot.data() as Map<String, dynamic>;

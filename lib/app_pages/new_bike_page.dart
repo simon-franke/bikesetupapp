@@ -133,7 +133,7 @@ class _NewBikeState extends State<NewBike> {
                               visible: widget.biketype.hasFork,
                               child: ListTile(
                                 leading: Icon(
-                                  Icons.alarm,
+                                  Icons.compress_rounded,
                                   color: Theme.of(context).iconTheme.color,
                                 ),
                                 title: Text(
@@ -181,7 +181,7 @@ class _NewBikeState extends State<NewBike> {
                                 visible: widget.biketype.hasShock,
                                 child: ListTile(
                                   leading: Icon(
-                                    Icons.alarm,
+                                    Icons.compress_rounded,
                                     color: Theme.of(context).iconTheme.color,
                                   ),
                                   title: Text(
@@ -546,9 +546,9 @@ class _NewBikeState extends State<NewBike> {
                                                         user: widget.user,
                                                         biketype:
                                                             widget.biketype,
-                                                        bikename:bikename,
+                                                        bikename: bikename,
                                                         ubid: ubid,
-                                                        chosensetup: setupname,
+                                                        setupname: setupname,
                                                         usid: usid)));
                                       }
                                     },

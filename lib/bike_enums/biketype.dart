@@ -7,7 +7,8 @@ enum BikeType {
   final String biketype;
   final bool hasShock;
   final bool hasFork;
-  const BikeType({required this.biketype, required this.hasShock, required this.hasFork});
+  const BikeType(
+      {required this.biketype, required this.hasShock, required this.hasFork});
 
   static BikeType fromString(String biketype) {
     try {

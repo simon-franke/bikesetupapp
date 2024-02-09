@@ -72,9 +72,9 @@ class _HomePageListViewState extends State<HomePageListView> {
                             widget.user!,
                             settings!.keys.elementAt(index),
                             settings.values.elementAt(index),
-                            widget.bikename,
+                            widget.ubid,
                             widget.category,
-                            widget.setup);
+                            widget.usid);
                       },
                       icon: Icon(
                         Icons.edit,
@@ -104,9 +104,9 @@ class _HomePageListViewState extends State<HomePageListView> {
                                 context,
                                 widget.user!,
                                 settings!.keys.elementAt(index),
-                                widget.bikename,
+                                widget.ubid,
                                 widget.category,
-                                widget.setup);
+                                widget.usid);
                           },
                           icon: Icon(Icons.delete,
                               color: Theme.of(context).iconTheme.color))),

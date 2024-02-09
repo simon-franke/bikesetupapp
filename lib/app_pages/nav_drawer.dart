@@ -101,9 +101,10 @@ class _NavDrawerState extends State<NavDrawer> {
                           backgroundColor: Theme.of(context)
                               .floatingActionButtonTheme
                               .backgroundColor),
-                              child: Text('Settings',
-                              style: Theme.of(context).textTheme.titleLarge,),
-                              
+                      child: Text(
+                        'Settings',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
                   ),
                   Padding(
@@ -128,8 +129,10 @@ class _NavDrawerState extends State<NavDrawer> {
                           backgroundColor: Theme.of(context)
                               .floatingActionButtonTheme
                               .backgroundColor),
-                              child: Text('New Bike',
-                              style: Theme.of(context).textTheme.titleLarge,),
+                      child: Text(
+                        'New Bike',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
                   ),
                 ],
