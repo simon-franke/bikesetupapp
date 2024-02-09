@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 
 class SetupInformation extends StatelessWidget {
   final String userID;
-  final String bikename;
-  final String setupname;
+  final String ubid;
+  final String usid;
   final BikeType biketype;
   const SetupInformation({
     super.key,
     required this.userID,
-    required this.bikename,
-    required this.setupname,
+    required this.ubid,
+    required this.usid,
     required this.biketype,
   });
 
@@ -20,7 +20,7 @@ class SetupInformation extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder(
         future:
-            DatabaseService(userID).getSetupInformation(bikename, setupname),
+            DatabaseService(userID).getSetupInformation(ubid, usid),
         builder: ((context, snapshot) {
           if (ConnectionState.waiting == snapshot.connectionState) {
             return const SizedBox(
@@ -33,37 +33,37 @@ class SetupInformation extends StatelessWidget {
             return const SizedBox(
               height: 100.0,
               width: 100.0,
+              child: Text('Error'),
             );
           } else {
-            Map<String, dynamic> setupinformation =
-                snapshot.data as Map<String, dynamic>;
+            var data = snapshot.data.data() as Map<String, dynamic>;
             return SizedBox(
                 child: IntrinsicHeight(
                     child: Column(
               children: [
                 SetupInformationListElement(
                     name: 'Fork Type',
-                    value: setupinformation['fork'],
+                    value: data['fork'] ?? '',
                     visible: biketype.hasFork),
                 SetupInformationListElement(
                     name: 'Shock Type',
-                    value: setupinformation['shock'],
+                    value: data['shock'] ?? '',
                     visible: biketype.hasShock),
                 SetupInformationListElement(
                     name: 'Front Travel',
-                    value: '${setupinformation['fronttravel']} mm',
+                    value: '${data['fronttravel']} mm',
                     visible: biketype.hasFork),
                 SetupInformationListElement(
                     name: 'Rear Travel',
-                    value: '${setupinformation['reartravel']} mm',
+                    value: '${data['reartravel']} mm',
                     visible: biketype.hasShock),
                 SetupInformationListElement(
                     name: 'Front Wheel Size',
-                    value: '${setupinformation['frontwheelsize']}"',
+                    value: '${data['frontwheelsize']}"',
                     visible: true),
                 SetupInformationListElement(
                     name: 'Rear Wheel Size',
-                    value: '${setupinformation['rearwheelsize']}"',
+                    value: '${data['rearwheelsize']}"',
                     visible: true),
               ],
             )));

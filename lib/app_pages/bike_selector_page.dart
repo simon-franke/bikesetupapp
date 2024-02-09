@@ -45,6 +45,7 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                         controller: pageController,
                         onPageChanged: (value) {
                           HapticFeedback.mediumImpact();
+                          
                         },
                         children: const <Widget>[
                           BikeSelectorWidget(bikeType: BikeType.fullsuspension),
@@ -91,7 +92,7 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                   onPressed: () {
                                     int currentPageIndex =
                                         pageController.page?.round() ?? 0;
-                                    BikeType biketype = BikeType.values[currentPageIndex + 1];
+                                    BikeType biketype = BikeType.values[currentPageIndex ];
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
                                         transitionDuration:
@@ -119,7 +120,9 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                             newbikemode: NewBikeMode.newBike,
                                             isdefaultbike: true,
                                             bikename: "",
+                                            ubid: "",
                                             setupname: 'Default',
+                                            usid: "",
                                             biketype: biketype,
                                           );
                                         },

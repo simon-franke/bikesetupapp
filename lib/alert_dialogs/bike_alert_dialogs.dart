@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class BikeAlerts {
   static Future<void> deleteBike(
-      BuildContext context, User user, String bikename) async {
+      BuildContext context, User user, String ubid) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -44,7 +44,7 @@ class BikeAlerts {
                   Text('Delete', style: Theme.of(context).textTheme.labelLarge),
               onPressed: () {
                 Navigator.of(context).pop();
-                DatabaseService(user.uid).deleteBike(bikename);
+                DatabaseService(user.uid).deleteBike(ubid);
               },
             ),
           ],
@@ -54,7 +54,7 @@ class BikeAlerts {
   }
 
   static Future<void> deleteSetup(BuildContext context, User user,
-      String bikename, String setupname) async {
+      String ubid, String usid) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -91,7 +91,7 @@ class BikeAlerts {
                   Text('Delete', style: Theme.of(context).textTheme.labelLarge),
               onPressed: () {
                 Navigator.of(context).pop();
-                DatabaseService(user.uid).deleteSetup(bikename, setupname);
+                DatabaseService(user.uid).deleteSetup(ubid, usid);
               },
             ),
           ],
@@ -100,8 +100,8 @@ class BikeAlerts {
     );
   }
 
-  static Future<void> renameBike(BuildContext context, String bikeNameOld, String biketype) async {
-    TextEditingController _controller = TextEditingController();
+  static Future<void> renameBike(BuildContext context, String ubid, String bikeNameOld) async {
+    TextEditingController controller = TextEditingController();
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -113,7 +113,7 @@ class BikeAlerts {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           content: TextField(
-            controller: _controller,
+            controller: controller,
             style: Theme.of(context).textTheme.titleMedium,
             decoration: InputDecoration(
               hintText: 'Enter new name',
@@ -142,8 +142,8 @@ class BikeAlerts {
                   Text('Rename', style: Theme.of(context).textTheme.labelLarge),
               onPressed: () {
                 Navigator.of(context).pop();
-                //DatabaseService(FirebaseAuth.instance.currentUser!.uid)
-                //    .renameBike(bikeNameOld, _controller.text, biketype);
+                DatabaseService(FirebaseAuth.instance.currentUser!.uid)
+                    .renameBike(ubid, controller.text);
               },
             ),
           ],
@@ -222,6 +222,7 @@ class BikeAlerts {
       Size size,
       String userID,
       String bikename,
+      String ubid,
       String setupname,
       BikeType biketype) async {
     return showDialog(
@@ -235,8 +236,8 @@ class BikeAlerts {
             ),
             content: SetupInformation(
               userID: userID,
-              bikename: bikename,
-              setupname: setupname,
+              ubid: bikename,
+              usid: ubid,
               biketype: biketype,
             ),
             actionsAlignment: MainAxisAlignment.spaceAround,

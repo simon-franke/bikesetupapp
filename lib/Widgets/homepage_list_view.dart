@@ -7,14 +7,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 class HomePageListView extends StatefulWidget {
   final User? user;
   final String bikename;
+  final String ubid;
   final String category;
   final String setup;
+  final String usid;
   const HomePageListView(
       {super.key,
       required this.user,
       required this.bikename,
+      required this.ubid,
       required this.category,
-      required this.setup});
+      required this.setup,
+      required this.usid});
 
   @override
   State<HomePageListView> createState() => _HomePageListViewState();
@@ -33,7 +37,7 @@ class _HomePageListViewState extends State<HomePageListView> {
   Widget build(BuildContext context) {
     return StreamBuilder(
       stream: DatabaseService('${widget.user?.uid}')
-          .getSettings(widget.bikename, widget.category, widget.setup),
+          .getSettings(widget.ubid, widget.category, widget.usid),
       builder: ((context, AsyncSnapshot snapshot) {
         if (ConnectionState.waiting == snapshot.connectionState) {
           return Center(

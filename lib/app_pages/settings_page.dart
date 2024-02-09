@@ -1,6 +1,5 @@
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
-import 'package:bikesetupapp/app_pages/home_page.dart';
 import 'package:bikesetupapp/app_services/app_state_notifier.dart';
 import 'package:bikesetupapp/bike_enums/biketype.dart';
 
@@ -43,13 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (BuildContext context) => const LoginPage()));
               } else {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (BuildContext context) => MyHomePage(
-                          user: user,
-                          bikename: widget.bikename,
-                          biketype: widget.biketype,
-                          chosensetup: widget.chosensetup,
-                        )));
+                Navigator.of(context).pop();
               }
             },
             icon: const Icon(Icons.arrow_back)),

@@ -1,7 +1,7 @@
 enum BikeType {
-  road(biketype: 'Road', hasShock: false, hasFork: false),
   fullsuspension(biketype: 'Fullsuspension', hasShock: true, hasFork: true),
   hardtail(biketype: 'Hardtail', hasShock: false, hasFork: true),
+  road(biketype: 'Road', hasShock: false, hasFork: false),
   error(biketype: 'Error', hasShock: false, hasFork: false);
 
   final String biketype;

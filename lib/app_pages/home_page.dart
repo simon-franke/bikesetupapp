@@ -14,14 +14,18 @@ const double borderrad = 35;
 class MyHomePage extends StatefulWidget {
   final User? user;
   final String bikename;
+  final String ubid;
   final BikeType biketype;
   final String chosensetup;
+  final String usid;
   const MyHomePage(
       {Key? key,
       required this.user,
       required this.biketype,
       required this.bikename,
-      required this.chosensetup})
+      required this.ubid,
+      required this.chosensetup,
+      required this.usid})
       : super(key: key);
 
   @override
@@ -69,7 +73,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           context,
                           size,
                           widget.user!.uid,
-                          widget.bikename,
+                          widget.ubid,
+                          widget.usid,
                           widget.chosensetup,
                           widget.biketype);
                     }
@@ -85,8 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: HomePageListView(
                     user: widget.user,
                     bikename: widget.bikename,
+                    ubid : widget.ubid,
                     category: chosenCategory.category,
-                    setup: widget.chosensetup))
+                    setup: widget.chosensetup,
+                    usid: widget.usid))
           ]),
           Container(
             width: size.width,
@@ -111,10 +118,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 user: widget.user,
                 left: size.width / 40,
                 bottom: size.height / 6.66,
-                bikename: widget.bikename,
+                bikename: widget.ubid,
                 category: Category.reartire,
                 chosencategory: chosenCategory,
-                setup: widget.chosensetup,
+                setup: widget.usid,
                 onPressed: () {
                   setState(() {
                     chosenCategory = Category.reartire;
@@ -128,9 +135,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       widget.user!,
                       'Pressure',
                       value,
-                      widget.bikename,
+                      widget.ubid,
                       chosenCategory.category,
-                      widget.chosensetup);
+                      widget.usid);
                 },
                 show: true,
               ),
@@ -138,10 +145,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 user: widget.user,
                 left: size.width / 1.20,
                 bottom: size.height / 6.66,
-                bikename: widget.bikename,
+                bikename: widget.ubid,
                 category: Category.fronttire,
                 chosencategory: chosenCategory,
-                setup: widget.chosensetup,
+                setup: widget.usid,
                 onPressed: () {
                   setState(() {
                     chosenCategory = Category.fronttire;
@@ -154,9 +161,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       widget.user!,
                       'Pressure',
                       value,
-                      widget.bikename,
+                      widget.ubid,
                       chosenCategory.category,
-                      widget.chosensetup);
+                      widget.usid);
                 },
                 show: true,
               ),
@@ -164,10 +171,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   user: widget.user,
                   left: size.width / 2.2,
                   bottom: size.height / 8,
-                  bikename: widget.bikename,
+                  bikename: widget.ubid,
                   category: Category.shock,
                   chosencategory: chosenCategory,
-                  setup: widget.chosensetup,
+                  setup: widget.usid,
                   onPressed: () {
                     setState(() {
                       chosenCategory = Category.shock;
@@ -180,19 +187,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         widget.user!,
                         'Pressure',
                         value,
-                        widget.bikename,
+                        widget.ubid,
                         chosenCategory.category,
-                        widget.chosensetup);
+                        widget.usid);
                   },
                   show: widget.biketype == BikeType.fullsuspension),
               Bubble(
                 user: widget.user,
                 left: size.width / 2.65,
                 bottom: size.height / 5.33,
-                bikename: widget.bikename,
+                bikename: widget.ubid,
                 category: Category.generalsettings,
                 chosencategory: chosenCategory,
-                setup: widget.chosensetup,
+                setup: widget.usid,
                 onPressed: () {
                   setState(() {
                     chosenCategory = Category.generalsettings;
@@ -205,10 +212,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   user: widget.user,
                   left: size.width / 1.5,
                   bottom: size.height / 5.33,
-                  bikename: widget.bikename,
+                  bikename: widget.ubid,
                   category: Category.fork,
                   chosencategory: chosenCategory,
-                  setup: widget.chosensetup,
+                  setup: widget.usid,
                   onPressed: () {
                     setState(() {
                       chosenCategory = Category.fork;
@@ -221,9 +228,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         widget.user!,
                         'Pressure',
                         value,
-                        widget.bikename,
+                        widget.ubid,
                         chosenCategory.category,
-                        widget.chosensetup);
+                        widget.usid);
                   },
                   show: widget.biketype != BikeType.road),
             ]),

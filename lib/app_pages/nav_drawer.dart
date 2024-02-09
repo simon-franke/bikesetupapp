@@ -111,6 +111,7 @@ class _NavDrawerState extends State<NavDrawer> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (widget.user != null) {
+                          Navigator.of(context).pop();
                           Navigator.of(context).push(MaterialPageRoute(
                               builder: (BuildContext context) =>
                                   BikeTypeSelector(

@@ -20,18 +20,24 @@ void main() async {
   );
 
   bool isSignedIn = false;
+  String defaultBikebuid = "";
   String defaultBike = "";
+  String defaultSetupusid = "";
+  String defaultSetup = "";
   BikeType biketype = BikeType.error;
 
   User? user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
     isSignedIn = true;
-    defaultBike = await DatabaseService(user.uid).getDefaultBike();
+    defaultBikebuid = await DatabaseService(user.uid).getDefaultBike();
     biketype = BikeType.fromString(
-        await DatabaseService(user.uid).getBikeType(defaultBike));
+        await DatabaseService(user.uid).getBikeType(defaultBikebuid));
+    defaultBike = await DatabaseService(user.uid).getBikeNameFromID(defaultBikebuid);
+    defaultSetupusid = await DatabaseService(user.uid).getDefaultSetup(defaultBikebuid);
+    defaultSetup = await DatabaseService(user.uid).getSetupNameFromID(defaultBikebuid, defaultSetupusid);
 
-    if (defaultBike == "" || biketype == BikeType.error) {
+    if (defaultBikebuid == "" || biketype == BikeType.error || defaultBike == "") {
       isSignedIn = false;
     }
   }
@@ -44,7 +50,10 @@ void main() async {
       child: MyApp(
         isSignedIn: isSignedIn,
         user: FirebaseAuth.instance.currentUser,
+        defaultBikebuid: defaultBikebuid,
         defaultBike: defaultBike,
+        defaultSetupusid: defaultSetupusid,
+        defaultSetup: defaultSetup,
         biketype: biketype,
       )));
 }
@@ -52,13 +61,19 @@ void main() async {
 class MyApp extends StatelessWidget {
   final bool isSignedIn;
   final User? user;
+  final String defaultBikebuid;
   final String defaultBike;
+  final String defaultSetupusid;
+  final String defaultSetup;
   final BikeType biketype;
   const MyApp(
       {Key? key,
       required this.isSignedIn,
       required this.user,
+      required this.defaultBikebuid,
       required this.defaultBike,
+      required this.defaultSetupusid,
+      required this.defaultSetup,
       required this.biketype})
       : super(key: key);
 
@@ -80,8 +95,10 @@ class MyApp extends StatelessWidget {
                 ? MyHomePage(
                     user: user,
                     bikename: defaultBike,
+                    ubid: defaultBikebuid,
                     biketype: biketype,
-                    chosensetup: "Default",
+                    chosensetup: defaultSetup,
+                    usid: defaultSetupusid,
                   )
                 : const LoginPage());
       },

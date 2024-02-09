@@ -5,6 +5,7 @@ import 'package:bikesetupapp/app_pages/todolist_page.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/bike_enums/biketype.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,23 +37,31 @@ class _BikeListState extends State<BikeList> {
           } else if (snapshot.hasError) {
             return const Center(child: Text('Error'));
           } else {
-            Map<String, dynamic>? bikes =
-                snapshot.data!.data() as Map<String, dynamic>?;
-            if (bikes == null) {
+            if (snapshot.data.docs.isEmpty) {
               return const Center(
                 child: Text('No Bikes'),
               );
             } else {
+              
               return ListView.builder(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(top: 0),
-                itemCount: bikes.length,
+                itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
+                  DocumentSnapshot bike = snapshot.data.docs[index];
+                  String currentbikename;
+                  String currentbiketype;
+                  try {
+                    currentbikename = bike['bikename'];
+                    currentbiketype = bike['biketype'];
+                  } catch (e) {
+                    currentbikename = "";
+                    currentbiketype = "Error";
+                  }
                   return Card(
                     elevation: 5,
                     child: ExpansionTile(
-                      initiallyExpanded:
-                          bikes.keys.elementAt(index) == widget.bikename,
+                      initiallyExpanded: currentbikename == widget.bikename,
                       onExpansionChanged: (value) {},
                       leading: IconButton(
                         onPressed: () {
@@ -60,8 +69,10 @@ class _BikeListState extends State<BikeList> {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                   builder: (BuildContext context) => ToDoList(
-                                      user: widget.user!,
-                                      bikename: bikes.keys.elementAt(index))),
+                                        user: widget.user!,
+                                        ubid: bike.id,
+                                        bikename: currentbikename,
+                                      )),
                             );
                           }
                         },
@@ -71,21 +82,28 @@ class _BikeListState extends State<BikeList> {
                         ),
                       ),
                       title: Text(
-                        bikes.keys.elementAt(index),
+                        currentbikename,
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                       subtitle: Text(
-                        bikes.values.elementAt(index),
+                        currentbiketype,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       trailing: IconButton(
                         onPressed: () async {
-                          if (bikes.length <= 1) {
+                          if (snapshot.data!.docs.length <= 1) {
                             BikeAlerts.deleteBikeError(context, 'Bike');
                             return;
                           }
-                          BikeAlerts.deleteBike(context, widget.user!,
-                              bikes.keys.elementAt(index));
+                          if (bike.id ==
+                              await DatabaseService(widget.user!.uid)
+                                  .getDefaultBike()) {
+                            if (!mounted) return;
+                            BikeAlerts.deleteBikeError(context, 'Default Bike');
+                            return;
+                          }
+                          if (!mounted) return;
+                          BikeAlerts.deleteBike(context, widget.user!, bike.id);
                         },
                         icon: Icon(
                           Icons.delete,
@@ -95,11 +113,12 @@ class _BikeListState extends State<BikeList> {
                       children: <Widget>[
                         StreamBuilder(
                             stream: DatabaseService(widget.user!.uid)
-                                .getSetups(bikes.keys.elementAt(index)),
+                                .getSetups(bike.id),
                             builder: ((context, AsyncSnapshot snapshot) {
-                              String bikename = bikes.keys.elementAt(index);
-                              BikeType biketype = BikeType.fromString(
-                                  bikes.values.elementAt(index));
+                              String bikename = currentbikename;
+                              String ubid = bike.id;
+                              BikeType biketype =
+                                  BikeType.fromString(currentbiketype);
                               if (biketype == BikeType.error) {
                                 return const Center(
                                   child: Text('Error'),
@@ -112,9 +131,7 @@ class _BikeListState extends State<BikeList> {
                               } else if (snapshot.hasError) {
                                 return const Center(child: Text('Error'));
                               } else {
-                                Map<String, dynamic>? setuplist = snapshot.data!
-                                    .data() as Map<String, dynamic>?;
-                                if (setuplist == null) {
+                                if (snapshot.data.docs.isEmpty) {
                                   return const Center(
                                     child: Text('No Setups'),
                                   );
@@ -126,8 +143,10 @@ class _BikeListState extends State<BikeList> {
                                               const BouncingScrollPhysics(),
                                           padding:
                                               const EdgeInsets.only(top: 0),
-                                          itemCount: setuplist.length,
+                                          itemCount: snapshot.data.docs.length,
                                           itemBuilder: (context, index) {
+                                            DocumentSnapshot setup =
+                                                snapshot.data.docs[index];
                                             return ListTile(
                                               leading: IconButton(
                                                 onPressed: () {
@@ -145,10 +164,10 @@ class _BikeListState extends State<BikeList> {
                                                                   false,
                                                               bikename:
                                                                   bikename,
-                                                              setupname: setuplist
-                                                                  .keys
-                                                                  .elementAt(
-                                                                      index),
+                                                              ubid: ubid,
+                                                              setupname: setup[
+                                                                  'setupname'],
+                                                              usid: setup.id,
                                                               biketype:
                                                                   biketype),
                                                     ),
@@ -162,7 +181,7 @@ class _BikeListState extends State<BikeList> {
                                                 ),
                                               ),
                                               title: Text(
-                                                setuplist.keys.elementAt(index),
+                                                setup['setupname'],
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .labelMedium,
@@ -197,11 +216,12 @@ class _BikeListState extends State<BikeList> {
                                                             secondaryAnimation) {
                                                       return MyHomePage(
                                                         bikename: bikename,
+                                                        ubid: ubid,
                                                         user: widget.user,
                                                         biketype: biketype,
-                                                        chosensetup: setuplist
-                                                            .keys
-                                                            .elementAt(index),
+                                                        chosensetup:
+                                                            setup['setupname'],
+                                                        usid: setup.id,
                                                       );
                                                     },
                                                   ),
@@ -209,17 +229,30 @@ class _BikeListState extends State<BikeList> {
                                               },
                                               trailing: IconButton(
                                                 onPressed: () async {
-                                                  if (setuplist.length <= 1) {
+                                                  if (snapshot
+                                                          .data.docs.length <=
+                                                      1) {
                                                     BikeAlerts.deleteBikeError(
                                                         context, 'Setup');
                                                     return;
                                                   }
+                                                  if (setup.id ==
+                                                      await DatabaseService(
+                                                              widget.user!.uid)
+                                                          .getDefaultSetup(
+                                                              bike.id)) {
+                                                    if (!mounted) return;
+                                                    BikeAlerts.deleteBikeError(
+                                                        context,
+                                                        'Default Setup');
+                                                    return;
+                                                  }
+                                                  if (!mounted) return;
                                                   BikeAlerts.deleteSetup(
                                                       context,
                                                       widget.user!,
-                                                      bikename,
-                                                      setuplist.keys
-                                                          .elementAt(index));
+                                                      bike.id,
+                                                      setup.id);
                                                 },
                                                 icon: Icon(
                                                   Icons.delete,
@@ -235,8 +268,8 @@ class _BikeListState extends State<BikeList> {
                             })),
                         ElevatedButton(
                           onPressed: () {
-                            BikeType biketype = BikeType.fromString(
-                                bikes.values.elementAt(index));
+                            BikeType biketype =
+                                BikeType.fromString(currentbiketype);
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (BuildContext context) => NewBike(
@@ -244,7 +277,9 @@ class _BikeListState extends State<BikeList> {
                                   newbikemode: NewBikeMode.newSetup,
                                   isdefaultbike: false,
                                   setupname: "",
-                                  bikename: bikes.keys.elementAt(index),
+                                  usid: "",
+                                  bikename: currentbikename,
+                                  ubid: bike.id,
                                   biketype: biketype,
                                 ),
                               ),

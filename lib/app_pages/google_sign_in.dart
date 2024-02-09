@@ -74,9 +74,11 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.of(context).push(MaterialPageRoute(
                               builder: (BuildContext context) => MyHomePage(
                                     user: user,
-                                    bikename: defaultBike,
+                                    bikename: 'Test',
+                                    ubid: defaultBike,
                                     biketype: biketype,
                                     chosensetup: "Default",
+                                    usid: "Default",
                                   )));
                         }
                       }
@@ -141,9 +143,11 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.of(context).push(MaterialPageRoute(
                               builder: (BuildContext context) => MyHomePage(
                                     user: user,
-                                    bikename: defaultBike,
+                                    bikename: 'Test',
+                                    ubid: defaultBike,
                                     biketype: biketype,
                                     chosensetup: "Default",
+                                    usid: "Default",
                                   )));
                         }
                       }

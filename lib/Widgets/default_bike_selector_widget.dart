@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/database_service/database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -22,9 +23,7 @@ class DefaultBikeSelector extends StatelessWidget {
           } else if (snapshot.hasError) {
             return const Center(child: Text('Error'));
           } else {
-            Map<String, dynamic>? bikes =
-                snapshot.data!.data() as Map<String, dynamic>?;
-            if (bikes == null) {
+            if (snapshot.data.docs.isEmpty) {
               return const Center(
                 child: Text('No Bikes'),
               );
@@ -35,25 +34,27 @@ class DefaultBikeSelector extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListView.builder(
-                      itemCount: bikes.length,
+                      itemCount: snapshot.data.docs.length,
                       shrinkWrap: true,
                       itemBuilder: (context, index) {
+                        DocumentSnapshot bike= snapshot.data.docs[index];
                         return Card(
                             color: Theme.of(context).scaffoldBackgroundColor,
                             child: ListTile(
                                 title: Text(
-                                  bikes.keys.elementAt(index),
+                                  bike['bikename'],
                                   style:
                                       Theme.of(context).textTheme.labelMedium,
                                 ),
                                 onTap: () {
                                   DatabaseService(user.uid).setDefaultBike(
-                                      bikes.keys.elementAt(index));
+                                      bike.id);
                                   Navigator.of(context).pop();
                                 },
                                 trailing: IconButton(
                                   onPressed: () {
-                                    BikeAlerts.renameBike(context, bikes.keys.elementAt(index), bikes.values.elementAt(index));
+                                    BikeAlerts.renameBike(
+                                        context, bike.id, bike['bikename']);
                                   },
                                   icon: Icon(Icons.edit,
                                       color: Theme.of(context)
