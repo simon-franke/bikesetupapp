@@ -267,20 +267,7 @@ class _BikeListState extends State<BikeList> {
                           onPressed: () {
                             BikeType biketype =
                                 BikeType.fromString(currentbiketype);
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (BuildContext context) => NewBike(
-                                  user: widget.user!,
-                                  newbikemode: NewBikeMode.newSetup,
-                                  isdefaultbike: false,
-                                  setupname: "",
-                                  usid: "",
-                                  bikename: currentbikename,
-                                  ubid: bike.id,
-                                  biketype: biketype,
-                                ),
-                              ),
-                            );
+                                BikeAlerts.copyFromOtherSetup(context, currentbikename, widget.user!, bike.id, biketype);
                           },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context)

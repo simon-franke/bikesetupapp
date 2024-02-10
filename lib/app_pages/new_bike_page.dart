@@ -79,7 +79,7 @@ class _NewBikeState extends State<NewBike> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
-
+    bool isbuttonactive = true;
     return FutureBuilder<void>(
       future: initData,
       builder: (context, snapshot) {
@@ -486,6 +486,9 @@ class _NewBikeState extends State<NewBike> {
                                         backgroundColor:
                                             Theme.of(context).primaryColor),
                                     onPressed: () async {
+                                      if (!isbuttonactive) {
+                                        return;
+                                      }
                                       if (userinputname == '') {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
@@ -494,8 +497,13 @@ class _NewBikeState extends State<NewBike> {
                                                 'Please enter a bike name'),
                                           ),
                                         );
+
+                                        setState(() {
+                                          isbuttonactive = true;
+                                        });
                                         return;
                                       } else {
+                                        isbuttonactive = false;
                                         String bikename;
                                         String setupname;
                                         String ubid;
@@ -514,7 +522,7 @@ class _NewBikeState extends State<NewBike> {
                                           usid = await DatabaseService(
                                                   widget.user.uid)
                                               .getDefaultSetup(ubid);
-                                          if (!mounted) return;
+                                          
                                         } else if (widget.newbikemode ==
                                             NewBikeMode.newSetup) {
                                           setupname = userinputname;
@@ -539,24 +547,27 @@ class _NewBikeState extends State<NewBike> {
                                                   userinputname,
                                                   setupinformation);
                                         }
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MyHomePage(
-                                                        user: widget.user,
-                                                        biketype:
-                                                            widget.biketype,
-                                                        bikename: bikename,
-                                                        ubid: ubid,
-                                                        setupname: setupname,
-                                                        usid: usid)));
+                                        if (context.mounted) {
+                                          Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MyHomePage(
+                                                          user: widget.user,
+                                                          biketype: widget.biketype,
+                                                          bikename: bikename,
+                                                          ubid: ubid,
+                                                          setupname: setupname,
+                                                          usid: usid)));
                                       }
+                                        }
                                     },
-                                    child: Text(
+                                    child: isbuttonactive? Text(
                                       'Save',
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleLarge,
+                                    ): CircularProgressIndicator(
+                                      color: Theme.of(context).textTheme.labelMedium!.color,
                                     ),
                                   ),
                                 ))

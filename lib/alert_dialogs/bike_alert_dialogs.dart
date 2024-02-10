@@ -1,5 +1,8 @@
+import 'package:bikesetupapp/app_pages/new_bike_page.dart';
 import 'package:bikesetupapp/bike_enums/biketype.dart';
+import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
 import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/widgets/copy_from_other_setup_widget.dart';
 import 'package:bikesetupapp/widgets/default_bike_selector_widget.dart';
 import 'package:bikesetupapp/widgets/setup_information_alert_content.dart';
 import 'package:flutter/material.dart';
@@ -114,6 +117,7 @@ class BikeAlerts {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           content: TextField(
+            autofocus: true,
             cursorColor: Theme.of(context).textTheme.labelMedium!.color,
             controller: controller,
             style: Theme.of(context).textTheme.titleMedium,
@@ -141,7 +145,7 @@ class BikeAlerts {
                     Theme.of(context).floatingActionButtonTheme.backgroundColor,
               ),
               child:
-                  Text('Rename', style: Theme.of(context).textTheme.labelLarge),
+                  Text('Edit', style: Theme.of(context).textTheme.labelLarge),
               onPressed: () {
                 Navigator.of(context).pop();
                 DatabaseService(FirebaseAuth.instance.currentUser!.uid)
@@ -229,7 +233,7 @@ class BikeAlerts {
       BikeType biketype) async {
     return showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (context) {
           return AlertDialog(
             backgroundColor: Theme.of(context).cardTheme.color,
             title: Text(
@@ -252,6 +256,62 @@ class BikeAlerts {
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Ok',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ))
+            ],
+          );
+        });
+  }
+
+  static Future<void> copyFromOtherSetup(BuildContext context, String bikename,
+      User user, String ubid, BikeType biketype) async {
+    Size size = MediaQuery.of(context).size;
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Theme.of(context).cardTheme.color,
+            title: Text(
+              'Copy from other setup',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            content: CopyFromOtherSetup(user: user, size: size, ubid: ubid),
+            actionsAlignment: MainAxisAlignment.spaceAround,
+            actions: [
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context)
+                        .floatingActionButtonTheme
+                        .backgroundColor,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  )),
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context)
+                        .floatingActionButtonTheme
+                        .backgroundColor,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => NewBike(
+                          user: user,
+                          newbikemode: NewBikeMode.newSetup,
+                          isdefaultbike: false,
+                          bikename: bikename,
+                          ubid: ubid,
+                          setupname: "",
+                          usid: "",
+                          biketype: biketype),
+                    ));
                   },
                   child: Text(
                     'Ok',
