@@ -1,4 +1,5 @@
 import 'package:bikesetupapp/alert_dialogs/settings_alert_dialogs.dart';
+import 'package:bikesetupapp/app_pages/google_sign_in.dart';
 import 'package:bikesetupapp/app_pages/nav_drawer.dart';
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/widgets/homepage_list_view.dart';
@@ -43,6 +44,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.user == null || widget.ubid == "" || widget.usid == "") {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const LoginPage()));
+    }
+
     final Size size = MediaQuery.of(context).size;
     final double boxHeight = size.height / 3.5;
     const double offset = 40;
@@ -67,8 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               IconButton(
                   onPressed: () {
-                    if (widget.user != null) {
-                      BikeAlerts.showSetupInformation(
+                    BikeAlerts.showSetupInformation(
                           context,
                           size,
                           widget.user!.uid,
@@ -76,7 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           widget.usid,
                           widget.setupname,
                           widget.biketype);
-                    }
                   },
                   icon: const Icon(Icons.info_outline_rounded)),
             ],
@@ -87,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SizedBox(height: boxHeight - offset),
             Expanded(
                 child: HomePageListView(
-                    user: widget.user,
+                    user: widget.user!,
                     bikename: widget.bikename,
                     ubid: widget.ubid,
                     category: chosenCategory.category,
@@ -114,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Image.asset(bikeImage),
               ),
               Bubble(
-                user: widget.user,
+                user: widget.user!,
                 left: size.width / 40,
                 bottom: size.height / 6.66,
                 bikename: widget.ubid,
@@ -134,7 +138,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 show: true,
               ),
               Bubble(
-                user: widget.user,
+                user: widget.user!,
                 left: size.width / 1.20,
                 bottom: size.height / 6.66,
                 bikename: widget.ubid,
@@ -154,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 show: true,
               ),
               Bubble(
-                  user: widget.user,
+                  user: widget.user!,
                   left: size.width / 2.2,
                   bottom: size.height / 8,
                   bikename: widget.ubid,
@@ -179,7 +183,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   },
                   show: widget.biketype == BikeType.fullsuspension),
               Bubble(
-                user: widget.user,
+                user: widget.user!,
                 left: size.width / 2.65,
                 bottom: size.height / 5.33,
                 bikename: widget.ubid,
@@ -195,7 +199,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 show: true,
               ),
               Bubble(
-                  user: widget.user,
+                  user: widget.user!,
                   left: size.width / 1.5,
                   bottom: size.height / 5.33,
                   bikename: widget.ubid,

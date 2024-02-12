@@ -89,10 +89,8 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                       backgroundColor:
                                           Theme.of(context).primaryColor),
                                   onPressed: () {
-                                    int currentPageIndex =
-                                        pageController.page?.round() ?? 0;
                                     BikeType biketype =
-                                        BikeType.values[currentPageIndex];
+                                        BikeType.values[pageController.page?.round() ?? 0];
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
                                         transitionDuration:

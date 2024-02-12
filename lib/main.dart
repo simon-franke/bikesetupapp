@@ -20,9 +20,9 @@ void main() async {
   );
 
   bool isSignedIn = false;
-  String defaultBikebuid = "";
-  String defaultBike = "";
-  String defaultSetupusid = "";
+  String defaultBikebUbid = "";
+  String defaultBikeName = "";
+  String defaultSetupUsid = "";
   String defaultSetup = "";
   BikeType biketype = BikeType.error;
 
@@ -30,19 +30,19 @@ void main() async {
 
   if (user != null) {
     isSignedIn = true;
-    defaultBikebuid = await DatabaseService(user.uid).getDefaultBike();
-    biketype = BikeType.fromString(
-        await DatabaseService(user.uid).getBikeType(defaultBikebuid));
-    defaultBike =
-        await DatabaseService(user.uid).getBikeNameFromID(defaultBikebuid);
-    defaultSetupusid =
-        await DatabaseService(user.uid).getDefaultSetup(defaultBikebuid);
+    defaultBikebUbid = await DatabaseService(user.uid).getDefaultBike();
+    defaultBikeName =
+        await DatabaseService(user.uid).getBikeNameFromID(defaultBikebUbid);
+    defaultSetupUsid =
+        await DatabaseService(user.uid).getDefaultSetup(defaultBikebUbid);
     defaultSetup = await DatabaseService(user.uid)
-        .getSetupNameFromID(defaultBikebuid, defaultSetupusid);
+        .getSetupNameFromID(defaultBikebUbid, defaultSetupUsid);
+    biketype = BikeType.fromString(
+        await DatabaseService(user.uid).getBikeType(defaultBikebUbid));
 
-    if (defaultBikebuid == "" ||
+    if (defaultBikebUbid == "" ||
         biketype == BikeType.error ||
-        defaultBike == "") {
+        defaultBikeName == "") {
       isSignedIn = false;
     }
   }
@@ -56,9 +56,9 @@ void main() async {
       child: MyApp(
         isSignedIn: isSignedIn,
         user: FirebaseAuth.instance.currentUser,
-        defaultBikebuid: defaultBikebuid,
-        defaultBike: defaultBike,
-        defaultSetupusid: defaultSetupusid,
+        defaultBikebuid: defaultBikebUbid,
+        defaultBike: defaultBikeName,
+        defaultSetupusid: defaultSetupUsid,
         defaultSetup: defaultSetup,
         biketype: biketype,
       )));

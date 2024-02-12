@@ -33,7 +33,6 @@ class _NavDrawerState extends State<NavDrawer> {
         child: Drawer(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           child: Column(
-            //padding: EdgeInsets.zero,
             children: [
               SizedBox(
                   width: size.width,
@@ -43,7 +42,7 @@ class _NavDrawerState extends State<NavDrawer> {
                           BoxDecoration(color: Theme.of(context).primaryColor),
                       child: Center(
                         child: ListTile(
-                          leading: widget.user != null
+                          leading: widget.user != null && widget.user!.photoURL != null
                               ? Padding(
                                   padding: const EdgeInsets.all(5),
                                   child: CircleAvatar(
@@ -62,16 +61,12 @@ class _NavDrawerState extends State<NavDrawer> {
                                 ),
                           title: Text('Bike Setup',
                               style: Theme.of(context).textTheme.titleLarge),
-                          subtitle: widget.user != null
+                          subtitle: widget.user != null && widget.user!.email != null
                               ? Text(
                                   '${widget.user?.email}',
                                   style: Theme.of(context).textTheme.titleSmall,
                                 )
-                              : Text(
-                                  'No User logged in',
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium,
-                                ),
+                              : null
                         ),
                       ))),
               Expanded(

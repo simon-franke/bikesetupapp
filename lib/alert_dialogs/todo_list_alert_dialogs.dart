@@ -115,10 +115,7 @@ class TodoAlerts {
                     DatabaseService(user.uid).setTodo(
                       bikename, taskname, taskdescription, partsneeded);
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Error creating todo',
-                                style:
-                                    Theme.of(context).textTheme.titleMedium!)));
+                    generalError(context, 'Error creating todo');
                   }
                   
                 },
@@ -155,10 +152,7 @@ class TodoAlerts {
                       try {
                         DatabaseService(user.uid).deleteTodo(bikename, docId);
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Error deleting todo',
-                                style:
-                                    Theme.of(context).textTheme.titleMedium!)));
+                        generalError(context, 'Error deleting todo');
                       }
                     },
                     icon: const Icon(Icons.delete))
@@ -259,14 +253,21 @@ class TodoAlerts {
                     DatabaseService(user.uid).editTodo(bikename, docId,
                         taskname, taskdescription, partsneeded, isdone);
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Error editing todo',
-                            style: Theme.of(context).textTheme.titleMedium!)));
+                    generalError(context, 'Error editing todo');
                   }
                 },
               ),
             ],
           );
         });
+  }
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> generalError(
+      BuildContext context, String message) {
+    return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        message,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+    ));
   }
 }

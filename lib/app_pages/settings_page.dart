@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/alert_dialogs/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
 import 'package:bikesetupapp/app_services/app_state_notifier.dart';
@@ -70,7 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           Card(
             child: ListTile(
-              leading: user != null
+              leading: user != null && user!.photoURL != null
                   ? Padding(
                       padding: const EdgeInsets.all(5),
                       child: CircleAvatar(
@@ -85,37 +86,41 @@ class _SettingsPageState extends State<SettingsPage> {
                             const AssetImage('assets/incognito.png'),
                       ),
                     ),
-              title: user != null
+              title: user != null && user!.displayName != null
                   ? Text(
                       '${user?.displayName}',
                       style: Theme.of(context).textTheme.labelLarge,
                     )
                   : Text(
-                      'No User',
+                      user != null ? 'Anonymus' : 'No User',
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
-              subtitle: user != null
+              subtitle: user != null && user!.email != null
                   ? Text(
                       '${user?.email}',
                       style: Theme.of(context).textTheme.labelSmall,
                     )
-                  : Text(
-                      'No User logged in',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+                  : null,
               trailing: user != null
                   ? IconButton(
                       icon: Icon(
                         Icons.logout,
                         color: Theme.of(context).iconTheme.color,
                       ),
-                      onPressed: () {
+                      onPressed: () async {
+                        if (user != null && user!.isAnonymous) {
+                          bool? wantsToSignOut =
+                              await AuthAlerts.signOutAnonymus(
+                                  context, user!);
+                          if (wantsToSignOut == null || !wantsToSignOut) {
+                            return;
+                          }
+                        }
                         AuthService().signOut();
-                        setState(() {
-                          user = null;
-                        });
-                      },
-                    )
+                          setState(() {
+                            user = null;
+                          });
+                      })
                   : IconButton(
                       icon: Icon(
                         Icons.login,

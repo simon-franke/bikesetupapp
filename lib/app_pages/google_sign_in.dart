@@ -1,8 +1,5 @@
-import 'package:bikesetupapp/app_pages/home_page.dart';
-import 'package:bikesetupapp/app_pages/bike_selector_page.dart';
-import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/alert_dialogs/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/database_service/auth_service.dart';
-import 'package:bikesetupapp/bike_enums/biketype.dart';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,45 +40,19 @@ class _LoginPageState extends State<LoginPage> {
                       backgroundColor: Colors.white,
                     ),
                     onPressed: (() async {
-                      UserCredential userCredential =
-                          await AuthService().signInWithGoogle();
-
-                      User? user = FirebaseAuth.instance.currentUser;
-
-                      if (user != null &&
-                          userCredential.additionalUserInfo != null &&
-                          userCredential.additionalUserInfo!.isNewUser) {
+                      final UserCredential userCredential;
+                      try {
+                        userCredential = await AuthService().signInWithGoogle();
+                      } catch (e) {
                         if (!mounted) return;
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (BuildContext context) => BikeTypeSelector(
-                                  user: user,
-                                )));
-                      } else if (user != null) {
-                        String defaultBike =
-                            await DatabaseService(user.uid).getDefaultBike();
-                        BikeType biketype = BikeType.fromString(
-                            await DatabaseService(user.uid)
-                                .getBikeType(defaultBike));
-                        if (defaultBike == "") {
-                          if (!mounted) return;
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (BuildContext context) =>
-                                  BikeTypeSelector(
-                                    user: user,
-                                  )));
-                        } else {
-                          if (!mounted) return;
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (BuildContext context) => MyHomePage(
-                                    user: user,
-                                    bikename: 'Test',
-                                    ubid: defaultBike,
-                                    biketype: biketype,
-                                    setupname: "Default",
-                                    usid: "Default",
-                                  )));
-                        }
+                        AuthAlerts.generalError(context, 'Error: $e');
+                        return;
                       }
+                      if (!mounted) {
+                        return;
+                      }
+                      AuthAlerts.handleAuthentication(
+                          userCredential, context);
                     }),
                     child: Padding(
                       padding: const EdgeInsets.all(0),
@@ -110,47 +81,19 @@ class _LoginPageState extends State<LoginPage> {
                       backgroundColor: Colors.white,
                     ),
                     onPressed: (() async {
-                      final userCredential =
-                          await FirebaseAuth.instance.signInAnonymously();
-
-                      User? user = FirebaseAuth.instance.currentUser;
-
-                      if (user != null &&
-                          userCredential.additionalUserInfo != null &&
-                          userCredential.additionalUserInfo!.isNewUser) {
+                      final UserCredential userCredential;
+                      try {
+                        userCredential = await FirebaseAuth.instance.signInAnonymously();
+                      } catch (e) {
                         if (!mounted) return;
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (BuildContext context) => BikeTypeSelector(
-                                  user: user,
-                                )));
-                      } else if (user != null) {
-                        String defaultBike =
-                            await DatabaseService(user.uid).getDefaultBike();
-
-                        BikeType biketype = BikeType.fromString(
-                            await DatabaseService(user.uid)
-                                .getBikeType(defaultBike));
-
-                        if (defaultBike == "") {
-                          if (!mounted) return;
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (BuildContext context) =>
-                                  BikeTypeSelector(
-                                    user: user,
-                                  )));
-                        } else {
-                          if (!mounted) return;
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (BuildContext context) => MyHomePage(
-                                    user: user,
-                                    bikename: 'Test',
-                                    ubid: defaultBike,
-                                    biketype: biketype,
-                                    setupname: "Default",
-                                    usid: "Default",
-                                  )));
-                        }
+                        AuthAlerts.generalError(context, 'Error: $e');
+                        return;
                       }
+                      if (!mounted) {
+                        return;
+                      }
+                      AuthAlerts.handleAuthentication(
+                          userCredential, context);
                     }),
                     child: Padding(
                       padding: const EdgeInsets.all(0),

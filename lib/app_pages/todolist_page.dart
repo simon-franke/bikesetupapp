@@ -96,13 +96,7 @@ class _ToDoListState extends State<ToDoList> {
                                             .updateTodoList(
                                                 widget.ubid, data.id, value!);
                                         } catch (e) {
-                                          ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Error updating todo',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleMedium!)));
+                                          TodoAlerts.generalError(context, 'Error updating todo');
                                         }
                                         
                                       });
@@ -164,13 +158,7 @@ class _ToDoListState extends State<ToDoList> {
                                             .updateTodoList(
                                                 widget.ubid, data.id, value!);
                                       } catch (e) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Error updating todo',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleMedium!)));
+                                        TodoAlerts.generalError(context, 'Error updating todo');
                                       }
                                     });
                                   },

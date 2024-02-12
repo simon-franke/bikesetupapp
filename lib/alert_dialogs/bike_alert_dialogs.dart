@@ -1,14 +1,12 @@
-import 'package:bikesetupapp/app_pages/new_bike_page.dart';
 import 'package:bikesetupapp/bike_enums/biketype.dart';
-import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
 import 'package:bikesetupapp/database_service/database.dart';
-import 'package:bikesetupapp/widgets/copy_from_other_setup_widget.dart';
 import 'package:bikesetupapp/widgets/default_bike_selector_widget.dart';
 import 'package:bikesetupapp/widgets/setup_information_alert_content.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class BikeAlerts {
+
   static Future<void> deleteBike(
       BuildContext context, User user, String ubid) async {
     return showDialog<void>(
@@ -50,12 +48,7 @@ class BikeAlerts {
                 try {
                   DatabaseService(user.uid).deleteBike(ubid);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                      'Error deleting bike',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ));
+                  generalError(context, 'Error deleting bike');
                 }
               },
             ),
@@ -106,12 +99,7 @@ class BikeAlerts {
                 try {
                   DatabaseService(user.uid).deleteSetup(ubid, usid);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                      'Error deleting setup',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ));
+                  generalError(context, 'Error deleting setup');
                 }
               },
             ),
@@ -170,44 +158,10 @@ class BikeAlerts {
                   DatabaseService(FirebaseAuth.instance.currentUser!.uid)
                       .renameBike(ubid, controller.text);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Error renaming bike',
-                          style: Theme.of(context).textTheme.titleMedium!)));
+                  generalError(context, 'Error renaming bike');
                 }
               },
             ),
-          ],
-        );
-      },
-    );
-  }
-
-  static Future<void> deleteBikeError(BuildContext context, String type) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text('Deleting $type',
-              style: Theme.of(context).textTheme.titleLarge),
-          content: Text(
-            'You must have at least one $type',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child:
-                    Text('Ok', style: Theme.of(context).textTheme.labelLarge)),
           ],
         );
       },
@@ -290,58 +244,45 @@ class BikeAlerts {
         });
   }
 
-  static Future<void> copyFromOtherSetup(BuildContext context, String bikename,
-      User user, String ubid, BikeType biketype) async {
-    Size size = MediaQuery.of(context).size;
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: Theme.of(context).cardTheme.color,
-            title: Text(
-              'Copy from other setup',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            content: CopyFromOtherSetup(user: user, size: size, ubid: ubid),
-            actionsAlignment: MainAxisAlignment.spaceAround,
-            actions: [
-              ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .floatingActionButtonTheme
-                        .backgroundColor,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    'Cancel',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  )),
-              ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .floatingActionButtonTheme
-                        .backgroundColor,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => NewBike(
-                          user: user,
-                          newbikemode: NewBikeMode.newSetup,
-                          bikename: bikename,
-                          ubid: ubid,
-                          setupname: "",
-                          usid: "",
-                          biketype: biketype),
-                    ));
-                  },
-                  child: Text(
-                    'Ok',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ))
-            ],
-          );
-        });
+  static Future<void> deleteError(BuildContext context, String type) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardTheme.color,
+          title: Text('Deleting $type',
+              style: Theme.of(context).textTheme.titleLarge),
+          content: Text(
+            'You must have at least one $type',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          actionsAlignment: MainAxisAlignment.spaceAround,
+          actions: <Widget>[
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context)
+                      .floatingActionButtonTheme
+                      .backgroundColor,
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child:
+                    Text('Ok', style: Theme.of(context).textTheme.labelLarge)),
+          ],
+        );
+      },
+    );
+  }
+
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> generalError(
+      BuildContext context, String message) {
+    return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        message,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+    ));
   }
 }

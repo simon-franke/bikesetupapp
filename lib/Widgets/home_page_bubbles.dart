@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
 class Bubble extends StatefulWidget {
-  final User? user;
+  final User user;
   final double left;
   final double bottom;
   final String bikename;
@@ -66,66 +66,64 @@ class _BubbleState extends State<Bubble> {
               width: 50,
               child: Center(
                 child: StreamBuilder(
-                    stream: DatabaseService('${widget.user?.uid}')
-                        .getDocumentElement(widget.bikename,
-                            widget.category.category, widget.setup),
+                    stream: DatabaseService(widget.user.uid).getDocumentElement(
+                        widget.bikename,
+                        widget.category.category,
+                        widget.setup),
                     builder: (BuildContext context, AsyncSnapshot snapshot) {
                       if (ConnectionState.waiting == snapshot.connectionState) {
                         return PulsatingCircle(
                             color: Theme.of(context).cardColor, size: 50);
-                      } else if (snapshot.hasError) {
-                        return const Center(child: Text('Error'));
-                      } else if (snapshot.hasData &&
-                          snapshot.data.toString() != "") {
-                        if (widget.category == Category.generalsettings) {
-                          return GestureDetector(
-                              onLongPress: () {
-                                HapticFeedback.mediumImpact();
-                                widget.onValueChange("");
-                              },
-                              child: const Icon(
-                                Icons.settings,
-                                color: Colors.white,
-                                size: 30,
-                              ));
-                        }
-                        try {
-                          final element = snapshot.data?['Pressure'];
-
-                          if (element != null &&
-                              element is String &&
-                              element != "") {
-                            return GestureDetector(
-                              onLongPress: () {
-                                HapticFeedback.mediumImpact();
-                                widget.onValueChange(element);
-                              },
-                              child: Text(
-                                element.toString(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            );
-                          } else {
-                            return const Icon(
-                              Icons.error,
-                              color: Colors.white,
-                              size: 30,
-                            );
-                          }
-                        } catch (e) {
-                          return const Icon(
-                            Icons.error,
-                            color: Colors.white,
-                            size: 30,
-                          );
-                        }
-                      } else {
+                      }
+                      if (snapshot.hasError ||
+                          snapshot.data == null ||
+                          !snapshot.hasData ||
+                          snapshot.data.toString() == "") {
                         return const Icon(
                           Icons.error,
                           color: Colors.white,
                           size: 30,
                         );
                       }
+                      if (widget.category == Category.generalsettings) {
+                        return GestureDetector(
+                            onLongPress: () {
+                              HapticFeedback.mediumImpact();
+                              widget.onValueChange("");
+                            },
+                            child: const Icon(
+                              Icons.settings,
+                              color: Colors.white,
+                              size: 30,
+                            ));
+                      }
+                      final String element;
+                      try {
+                        element = snapshot.data?['Pressure'];
+                      } catch (e) {
+                        return const Icon(
+                          Icons.error,
+                          color: Colors.white,
+                          size: 30,
+                        );
+                      }
+                      if (element == "") {
+                        return const Icon(
+                          Icons.error,
+                          color: Colors.white,
+                          size: 30,
+                        );
+                      }
+                      return GestureDetector(
+                        onLongPress: () {
+                          HapticFeedback.mediumImpact();
+                          widget.onValueChange(element);
+                        },
+                        child: Text(
+                          element.toString(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      );
                     }),
               )),
         ),

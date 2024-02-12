@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SettingsAlerts {
+
   static Future<void> newKey(BuildContext context, User user, String bikename,
       String category, String setup) async {
     String key = "";
@@ -63,6 +64,7 @@ class SettingsAlerts {
               ),
               onPressed: () {
                 if (key == "") {
+                  generalError(context, 'Please enter a name!');
                   return;
                 } else {
                   Navigator.of(context).pop();
@@ -136,9 +138,7 @@ class SettingsAlerts {
                   DatabaseService(user.uid)
                     .setSetting(key, value, bikename, category, setup);
                 } catch(e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Error creating setting',
-                          style: Theme.of(context).textTheme.titleMedium!)));
+                  generalError(context, 'Error creating setting');
                 }
                 
               },
@@ -211,12 +211,7 @@ class SettingsAlerts {
               onPressed: () {
                 if (key == "Pressure" &&
                     value.trim().replaceAll(',', '').length > 3) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Pressure must be 3 digits or less',
-                          style: Theme.of(context).textTheme.titleMedium!),
-                    ),
-                  );
+                  generalError(context, 'Pressure must be 3 digits or less');
                   return;
                 } else {
                   Navigator.of(context).pop();
@@ -224,11 +219,8 @@ class SettingsAlerts {
                     DatabaseService(user.uid).editSetting(
                       key.trim(), value.trim(), bikename, category, setup);
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Error creating setting',
-                          style: Theme.of(context).textTheme.titleMedium!)));
+                    generalError(context, 'Error creating setting');
                   }
-                  
                 }
               },
             ),
@@ -282,12 +274,7 @@ class SettingsAlerts {
                   DatabaseService(user.uid)
                     .deleteSetting(key, bikename, category, setup);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error deleting category',
-                      style: Theme.of(context).textTheme.titleMedium),
-                    ),
-                  );
+                  generalError(context, 'Error deleting category');
                 }
                 
               },
@@ -296,5 +283,15 @@ class SettingsAlerts {
         );
       },
     );
+  }
+
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> generalError(
+      BuildContext context, String message) {
+    return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        message,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+    ));
   }
 }
