@@ -69,9 +69,12 @@ flutter:
   assets:
      - assets/google_icon.png
      - assets/incognito.png
+     - assets/DH.png
      - assets/Fullsuspension.png
      - assets/Hardtail.png
+     - assets/Singlespeed.png
      - assets/Road.png
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

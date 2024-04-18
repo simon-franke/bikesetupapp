@@ -41,7 +41,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     chosenCategory = Category.reartire;
   }
-
   @override
   Widget build(BuildContext context) {
     if (widget.user == null || widget.ubid.isEmpty || widget.usid.isEmpty) {
@@ -181,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         chosenCategory.category,
                         widget.usid);
                   },
-                  show: widget.biketype == BikeType.fullsuspension),
+                  show: widget.biketype.hasShock),
               Bubble(
                 user: widget.user!,
                 left: size.width / 2.65,
@@ -222,7 +221,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         chosenCategory.category,
                         widget.usid);
                   },
-                  show: widget.biketype != BikeType.road),
+                  show: widget.biketype.hasFork),
             ]),
           ),
         ],

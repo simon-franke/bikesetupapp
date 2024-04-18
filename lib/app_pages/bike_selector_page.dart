@@ -47,8 +47,10 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                           HapticFeedback.mediumImpact();
                         },
                         children: const <Widget>[
+                          BikeSelectorWidget(bikeType: BikeType.downhill),
                           BikeSelectorWidget(bikeType: BikeType.fullsuspension),
                           BikeSelectorWidget(bikeType: BikeType.hardtail),
+                          BikeSelectorWidget(bikeType: BikeType.singlespeed),
                           BikeSelectorWidget(bikeType: BikeType.road),
                         ],
                       ),
