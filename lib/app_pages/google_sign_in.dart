@@ -44,13 +44,11 @@ class _LoginPageState extends State<LoginPage> {
                       try {
                         userCredential = await AuthService().signInWithGoogle();
                       } catch (e) {
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         AuthAlerts.generalError(context, 'Error: $e');
                         return;
                       }
-                      if (!mounted) {
-                        return;
-                      }
+                      if (!context.mounted) return;
                       AuthAlerts.handleAuthentication(userCredential, context);
                     }),
                     child: Padding(
@@ -85,13 +83,11 @@ class _LoginPageState extends State<LoginPage> {
                         userCredential =
                             await FirebaseAuth.instance.signInAnonymously();
                       } catch (e) {
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         AuthAlerts.generalError(context, 'Error: $e');
                         return;
                       }
-                      if (!mounted) {
-                        return;
-                      }
+                      if (!context.mounted) return;
                       AuthAlerts.handleAuthentication(userCredential, context);
                     }),
                     child: Padding(

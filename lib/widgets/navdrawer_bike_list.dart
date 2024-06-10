@@ -103,11 +103,11 @@ class _BikeListState extends State<BikeList> {
                     if (bike.id ==
                         await DatabaseService(widget.user!.uid)
                             .getDefaultBike()) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       BikeAlerts.deleteError(context, 'Default Bike');
                       return;
                     }
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     BikeAlerts.deleteBike(context, widget.user!, bike.id);
                   },
                   icon: Icon(
@@ -145,116 +145,113 @@ class _BikeListState extends State<BikeList> {
                         }
                         return SizedBox(
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 20.0),
-                              child: ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const BouncingScrollPhysics(),
-                                  padding: const EdgeInsets.only(top: 0),
-                                  itemCount: snapshot.data.docs.length,
-                                  itemBuilder: (context, index) {
-                                    DocumentSnapshot setup =
-                                        snapshot.data.docs[index];
-                                    return ListTile(
-                                      leading: IconButton(
-                                        onPressed: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (BuildContext context) =>
-                                                  NewBike(
-                                                      user: widget.user!,
-                                                      newbikemode:
-                                                          NewBikeMode.editSetup,
-                                                      bikename: bikename,
-                                                      ubid: ubid,
-                                                      setupname:
-                                                          setup['setupname'],
-                                                      usid: setup.id,
-                                                      biketype: biketype),
-                                            ),
-                                          );
-                                        },
-                                        icon: Icon(
-                                          Icons.edit,
-                                          color:
-                                              Theme.of(context).iconTheme.color,
+                          padding: const EdgeInsets.only(left: 20.0),
+                          child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const BouncingScrollPhysics(),
+                              padding: const EdgeInsets.only(top: 0),
+                              itemCount: snapshot.data.docs.length,
+                              itemBuilder: (context, index) {
+                                DocumentSnapshot setup =
+                                    snapshot.data.docs[index];
+                                return ListTile(
+                                  leading: IconButton(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (BuildContext context) =>
+                                              NewBike(
+                                                  user: widget.user!,
+                                                  newbikemode:
+                                                      NewBikeMode.editSetup,
+                                                  bikename: bikename,
+                                                  ubid: ubid,
+                                                  setupname: setup['setupname'],
+                                                  usid: setup.id,
+                                                  biketype: biketype),
                                         ),
-                                      ),
-                                      title: Text(
-                                        setup['setupname'],
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium,
-                                      ),
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          PageRouteBuilder(
-                                            transitionDuration:
-                                                const Duration(milliseconds: 200),
-                                            transitionsBuilder:
-                                                (BuildContext context,
-                                                    Animation<double> animation,
-                                                    Animation<double>
-                                                        secondaryAnimation,
-                                                    Widget child) {
-                                              return SlideTransition(
-                                                position: Tween<Offset>(
-                                                  begin: const Offset(1.0, 0.0),
-                                                  end: Offset.zero,
-                                                ).animate(animation),
-                                                child: child,
-                                              );
-                                            },
-                                            pageBuilder: (BuildContext context,
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.edit,
+                                      color: Theme.of(context).iconTheme.color,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    setup['setupname'],
+                                    style:
+                                        Theme.of(context).textTheme.labelMedium,
+                                  ),
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        transitionDuration:
+                                            const Duration(milliseconds: 200),
+                                        transitionsBuilder:
+                                            (BuildContext context,
                                                 Animation<double> animation,
                                                 Animation<double>
-                                                    secondaryAnimation) {
-                                              return MyHomePage(
-                                                bikename: bikename,
-                                                ubid: ubid,
-                                                user: widget.user,
-                                                biketype: biketype,
-                                                setupname: setup['setupname'],
-                                                usid: setup.id,
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      },
-                                      trailing: IconButton(
-                                        onPressed: () async {
-                                          if (snapshot.data.docs.length <= 1) {
-                                            BikeAlerts.deleteError(
-                                                context, 'Setup');
-                                            return;
-                                          }
-                                          if (setup.id ==
-                                              await DatabaseService(
-                                                      widget.user!.uid)
-                                                  .getDefaultSetup(bike.id)) {
-                                            if (!mounted) return;
-                                            BikeAlerts.deleteError(
-                                                context, 'Default Setup');
-                                            return;
-                                          }
-                                          if (!mounted) return;
-                                          BikeAlerts.deleteSetup(context,
-                                              widget.user!, bike.id, setup.id);
+                                                    secondaryAnimation,
+                                                Widget child) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(
+                                              begin: const Offset(1.0, 0.0),
+                                              end: Offset.zero,
+                                            ).animate(animation),
+                                            child: child,
+                                          );
                                         },
-                                        icon: Icon(
-                                          Icons.delete,
-                                          color:
-                                              Theme.of(context).iconTheme.color,
-                                        ),
+                                        pageBuilder: (BuildContext context,
+                                            Animation<double> animation,
+                                            Animation<double>
+                                                secondaryAnimation) {
+                                          return MyHomePage(
+                                            bikename: bikename,
+                                            ubid: ubid,
+                                            user: widget.user,
+                                            biketype: biketype,
+                                            setupname: setup['setupname'],
+                                            usid: setup.id,
+                                          );
+                                        },
                                       ),
                                     );
-                                  }),
-                            ));
+                                  },
+                                  trailing: IconButton(
+                                    onPressed: () async {
+                                      if (snapshot.data.docs.length <= 1) {
+                                        BikeAlerts.deleteError(
+                                            context, 'Setup');
+                                        return;
+                                      }
+                                      if (setup.id ==
+                                          await DatabaseService(
+                                                  widget.user!.uid)
+                                              .getDefaultSetup(bike.id)) {
+                                        if (!context.mounted) return;
+                                        BikeAlerts.deleteError(
+                                            context, 'Default Setup');
+                                        return;
+                                      }
+                                      if (!context.mounted) return;
+                                      BikeAlerts.deleteSetup(context,
+                                          widget.user!, bike.id, setup.id);
+                                    },
+                                    icon: Icon(
+                                      Icons.delete,
+                                      color: Theme.of(context).iconTheme.color,
+                                    ),
+                                  ),
+                                );
+                              }),
+                        ));
                       })),
                   ElevatedButton(
                     onPressed: () {
                       BikeType biketype = BikeType.fromString(currentbiketype);
                       if (biketype == BikeType.error) {
-                        BikeAlerts.generalError(context, 'Something went wrong!');
+                        BikeAlerts.generalError(
+                            context, 'Something went wrong!');
                         return;
                       }
                       Navigator.of(context).push(
