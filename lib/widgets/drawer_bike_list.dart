@@ -66,206 +66,356 @@ class _BikeListState extends State<BikeList> {
               currentBikeName = "";
               currentBikeType = "Error";
             }
-            return Card(
-              elevation: 5,
-              child: ExpansionTile(
-                initiallyExpanded: currentBikeName == widget.bikeName,
-                onExpansionChanged: (value) {},
-                tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-                minTileHeight: 48,
-                leading: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      AppRoutes.fadeSlide(ToDoList(
-                        user: widget.user!,
-                        uBikeID: bike.id,
-                        bikeName: currentBikeName,
-                      )),
-                    );
-                  },
-                  icon: Icon(
-                    Icons.edit_calendar_outlined,
-                    color: Theme.of(context).iconTheme.color,
-                    size: 20,
+            return Dismissible(
+              key: Key(bike.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red.shade700,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                child: const Icon(Icons.delete_outline, color: Colors.white),
+              ),
+              confirmDismiss: (direction) async {
+                if (snapshot.data!.docs.length <= 1) {
+                  BikeAlerts.deleteError(context, 'Bike');
+                  return false;
+                }
+                final defaultBikeId =
+                    await DatabaseService(widget.user!.uid).getDefaultBike();
+                if (!context.mounted) return false;
+                if (bike.id == defaultBikeId) {
+                  BikeAlerts.deleteError(context, 'Default Bike');
+                  return false;
+                }
+                if (!context.mounted) return false;
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: Theme.of(ctx).cardTheme.color,
+                    title: Text('Deleting Bike',
+                        style: Theme.of(ctx).textTheme.titleLarge),
+                    content: Text(
+                        'Are you sure you want to delete this Bike?',
+                        style: Theme.of(ctx).textTheme.titleMedium),
+                    actionsAlignment: MainAxisAlignment.spaceAround,
+                    actions: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(ctx)
+                                .floatingActionButtonTheme
+                                .backgroundColor),
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text('Cancel',
+                            style: Theme.of(ctx).textTheme.labelLarge),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(ctx)
+                                .floatingActionButtonTheme
+                                .backgroundColor),
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text('Delete',
+                            style: Theme.of(ctx).textTheme.labelLarge),
+                      ),
+                    ],
                   ),
-                ),
-                title: Text(
-                  currentBikeName,
-                  style: Theme.of(context).textTheme.labelLarge,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-                subtitle: Text(
-                  currentBikeType,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-                trailing: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  onPressed: () async {
-                    if (snapshot.data!.docs.length <= 1) {
-                      BikeAlerts.deleteError(context, 'Bike');
-                      return;
-                    }
-                    if (bike.id ==
-                        await DatabaseService(widget.user!.uid)
-                            .getDefaultBike()) {
-                      if (!context.mounted) return;
-                      BikeAlerts.deleteError(context, 'Default Bike');
-                      return;
-                    }
-                    if (!context.mounted) return;
-                    BikeAlerts.deleteBike(context, widget.user!, bike.id);
-                  },
-                  icon: Icon(
-                    Icons.delete,
-                    color: Theme.of(context).iconTheme.color,
-                    size: 20,
-                  ),
-                ),
-                children: <Widget>[
-                  StreamBuilder(
-                      stream:
-                          DatabaseService(widget.user!.uid).getSetups(bike.id),
-                      builder: ((context, AsyncSnapshot snapshot) {
-                        String bikeName = currentBikeName;
-                        String uBikeID = bike.id;
-                        BikeType bikeType =
-                            BikeType.fromString(currentBikeType);
-                        if (bikeType == BikeType.error) {
-                          return const Center(
-                            child: Text('Something went wrong!'),
-                          );
-                        }
-                        if (ConnectionState.waiting ==
-                            snapshot.connectionState) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        if (snapshot.hasError) {
-                          return const Center(
-                              child: Text('Something went wrong!'));
-                        }
-                        if (snapshot.data.docs.isEmpty) {
-                          return const Center(
-                            child: Text('No Setups'),
-                          );
-                        }
-                        return SizedBox(
-                            child: Padding(
-                          padding: const EdgeInsets.only(left: 20.0),
-                          child: ListView.builder(
-                              shrinkWrap: true,
-                              physics: const BouncingScrollPhysics(),
-                              padding: const EdgeInsets.only(top: 0),
-                              itemCount: snapshot.data.docs.length,
-                              itemBuilder: (context, index) {
-                                DocumentSnapshot setup =
-                                    snapshot.data.docs[index];
-                                return ListTile(
-                                  leading: IconButton(
-                                    onPressed: () {
-                                      Navigator.of(context).push(
-                                        AppRoutes.fadeSlide(NewBike(
-                                          user: widget.user!,
-                                          newBikeMode: NewBikeMode.editSetup,
-                                          bikeName: bikeName,
-                                          uBikeID: uBikeID,
-                                          setupName: setup['setup_name'],
-                                          uSetupID: setup.id,
-                                          bikeType: bikeType,
-                                        )),
-                                      );
-                                    },
-                                    icon: Icon(
-                                      Icons.edit,
-                                      color: Theme.of(context).iconTheme.color,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    setup['setup_name'],
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      AppRoutes.fadeSlide(MyHomePage(
-                                        bikeName: bikeName,
-                                        uBikeID: uBikeID,
-                                        user: widget.user,
-                                        bikeType: bikeType,
-                                        setupName: setup['setup_name'],
-                                        uSetupID: setup.id,
-                                      )),
-                                    );
-                                  },
-                                  trailing: IconButton(
-                                    onPressed: () async {
-                                      if (snapshot.data.docs.length <= 1) {
-                                        BikeAlerts.deleteError(
-                                            context, 'Setup');
-                                        return;
-                                      }
-                                      if (setup.id ==
-                                          await DatabaseService(
-                                                  widget.user!.uid)
-                                              .getDefaultSetup(bike.id)) {
-                                        if (!context.mounted) return;
-                                        BikeAlerts.deleteError(
-                                            context, 'Default Setup');
-                                        return;
-                                      }
-                                      if (!context.mounted) return;
-                                      BikeAlerts.deleteSetup(context,
-                                          widget.user!, bike.id, setup.id);
-                                    },
-                                    icon: Icon(
-                                      Icons.delete,
-                                      color: Theme.of(context).iconTheme.color,
-                                    ),
-                                  ),
-                                );
-                              }),
-                        ));
-                      })),
-                  ElevatedButton(
+                );
+                if (confirmed == true && context.mounted) {
+                  try {
+                    DatabaseService(widget.user!.uid).deleteBike(bike.id);
+                  } catch (e) {
+                    BikeAlerts.generalError(context, 'Error deleting bike');
+                  }
+                }
+                return confirmed ?? false;
+              },
+              child: Card(
+                elevation: 5,
+                child: ExpansionTile(
+                  initiallyExpanded: currentBikeName == widget.bikeName,
+                  onExpansionChanged: (value) {},
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                  minTileHeight: 48,
+                  leading: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () {
-                      BikeType bikeType = BikeType.fromString(currentBikeType);
-                      if (bikeType == BikeType.error) {
-                        BikeAlerts.generalError(
-                            context, 'Something went wrong!');
-                        return;
-                      }
                       Navigator.of(context).push(
-                        AppRoutes.fadeSlide(NewBike(
+                        AppRoutes.fadeSlide(ToDoList(
                           user: widget.user!,
-                          newBikeMode: NewBikeMode.newSetup,
-                          bikeName: currentBikeName,
                           uBikeID: bike.id,
-                          setupName: '',
-                          uSetupID: '',
-                          bikeType: bikeType,
+                          bikeName: currentBikeName,
                         )),
                       );
                     },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context)
-                            .floatingActionButtonTheme
-                            .backgroundColor),
-                    child: Text(
-                      'New Setup',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    icon: Icon(
+                      Icons.assignment_outlined,
+                      color: Theme.of(context).iconTheme.color,
+                      size: 20,
                     ),
-                  )
+                  ),
+                  title: Text(
+                    currentBikeName,
+                    style: Theme.of(context).textTheme.labelLarge,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  subtitle: Text(
+                    currentBikeType,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  children: <Widget>[
+                    StreamBuilder(
+                        stream: DatabaseService(widget.user!.uid)
+                            .getSetups(bike.id),
+                        builder: ((context, AsyncSnapshot setupSnapshot) {
+                          String bikeName = currentBikeName;
+                          String uBikeID = bike.id;
+                          BikeType bikeType =
+                              BikeType.fromString(currentBikeType);
+                          if (bikeType == BikeType.error) {
+                            return const Center(
+                              child: Text('Something went wrong!'),
+                            );
+                          }
+                          if (ConnectionState.waiting ==
+                              setupSnapshot.connectionState) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                          if (setupSnapshot.hasError) {
+                            return const Center(
+                                child: Text('Something went wrong!'));
+                          }
+                          if (setupSnapshot.data.docs.isEmpty) {
+                            return const Center(child: Text('No Setups'));
+                          }
+                          return Container(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics:
+                                      const NeverScrollableScrollPhysics(),
+                                  padding: EdgeInsets.zero,
+                                  itemCount: setupSnapshot.data.docs.length,
+                                  itemBuilder: (context, index) {
+                                    DocumentSnapshot setup =
+                                        setupSnapshot.data.docs[index];
+                                    return Dismissible(
+                                      key: Key(setup.id),
+                                      direction: DismissDirection.endToStart,
+                                      background: Container(
+                                        color: Colors.red.shade700,
+                                        alignment: Alignment.centerRight,
+                                        padding:
+                                            const EdgeInsets.only(right: 20),
+                                        child: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.white),
+                                      ),
+                                      confirmDismiss: (direction) async {
+                                        if (setupSnapshot.data.docs.length <=
+                                            1) {
+                                          BikeAlerts.deleteError(
+                                              context, 'Setup');
+                                          return false;
+                                        }
+                                        final defaultSetupId =
+                                            await DatabaseService(
+                                                    widget.user!.uid)
+                                                .getDefaultSetup(bike.id);
+                                        if (!context.mounted) return false;
+                                        if (setup.id == defaultSetupId) {
+                                          BikeAlerts.deleteError(
+                                              context, 'Default Setup');
+                                          return false;
+                                        }
+                                        if (!context.mounted) return false;
+                                        final confirmed =
+                                            await showDialog<bool>(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (ctx) => AlertDialog(
+                                            backgroundColor:
+                                                Theme.of(ctx).cardTheme.color,
+                                            title: Text('Deleting Setup',
+                                                style: Theme.of(ctx)
+                                                    .textTheme
+                                                    .titleLarge),
+                                            content: Text(
+                                                'Are you sure you want to delete this Setup?',
+                                                style: Theme.of(ctx)
+                                                    .textTheme
+                                                    .titleMedium),
+                                            actionsAlignment:
+                                                MainAxisAlignment.spaceAround,
+                                            actions: [
+                                              ElevatedButton(
+                                                style:
+                                                    ElevatedButton.styleFrom(
+                                                        backgroundColor: Theme
+                                                                .of(ctx)
+                                                            .floatingActionButtonTheme
+                                                            .backgroundColor),
+                                                onPressed: () =>
+                                                    Navigator.of(ctx)
+                                                        .pop(false),
+                                                child: Text('Cancel',
+                                                    style: Theme.of(ctx)
+                                                        .textTheme
+                                                        .labelLarge),
+                                              ),
+                                              ElevatedButton(
+                                                style:
+                                                    ElevatedButton.styleFrom(
+                                                        backgroundColor: Theme
+                                                                .of(ctx)
+                                                            .floatingActionButtonTheme
+                                                            .backgroundColor),
+                                                onPressed: () =>
+                                                    Navigator.of(ctx).pop(true),
+                                                child: Text('Delete',
+                                                    style: Theme.of(ctx)
+                                                        .textTheme
+                                                        .labelLarge),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirmed == true &&
+                                            context.mounted) {
+                                          try {
+                                            DatabaseService(widget.user!.uid)
+                                                .deleteSetup(
+                                                    uBikeID, setup.id);
+                                          } catch (e) {
+                                            BikeAlerts.generalError(context,
+                                                'Error deleting setup');
+                                          }
+                                        }
+                                        return confirmed ?? false;
+                                      },
+                                      child: ListTile(
+                                        dense: true,
+                                        contentPadding: const EdgeInsets.only(
+                                            left: 32, right: 8),
+                                        leading: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                              minWidth: 28, minHeight: 28),
+                                          onPressed: () {
+                                            Navigator.of(context).push(
+                                              AppRoutes.fadeSlide(NewBike(
+                                                user: widget.user!,
+                                                newBikeMode:
+                                                    NewBikeMode.editSetup,
+                                                bikeName: bikeName,
+                                                uBikeID: uBikeID,
+                                                setupName:
+                                                    setup['setup_name'],
+                                                uSetupID: setup.id,
+                                                bikeType: bikeType,
+                                              )),
+                                            );
+                                          },
+                                          icon: Icon(
+                                            Icons.edit_outlined,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color,
+                                            size: 16,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          setup['setup_name'],
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).push(
+                                            AppRoutes.fadeSlide(MyHomePage(
+                                              bikeName: bikeName,
+                                              uBikeID: uBikeID,
+                                              user: widget.user,
+                                              bikeType: bikeType,
+                                              setupName: setup['setup_name'],
+                                              uSetupID: setup.id,
+                                            )),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                                // New Setup row
+                                InkWell(
+                                  onTap: () {
+                                    BikeType bt =
+                                        BikeType.fromString(currentBikeType);
+                                    if (bt == BikeType.error) {
+                                      BikeAlerts.generalError(
+                                          context, 'Something went wrong!');
+                                      return;
+                                    }
+                                    Navigator.of(context).push(
+                                      AppRoutes.fadeSlide(NewBike(
+                                        user: widget.user!,
+                                        newBikeMode: NewBikeMode.newSetup,
+                                        bikeName: currentBikeName,
+                                        uBikeID: bike.id,
+                                        setupName: '',
+                                        uSetupID: '',
+                                        bikeType: bt,
+                                      )),
+                                    );
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 32, vertical: 10),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.add,
+                                          size: 16,
+                                          color: Theme.of(context)
+                                              .floatingActionButtonTheme
+                                              .backgroundColor,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'New Setup',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .floatingActionButtonTheme
+                                                    .backgroundColor,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        })),
                 ],
               ),
-            );
+            ),
+          );
           },
         );
       }),

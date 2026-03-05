@@ -29,91 +29,116 @@ class SidebarContent extends StatelessWidget {
 
     return Column(
       children: [
+        // Header
         Container(
           height: size.height * 0.20,
           color: Theme.of(context).primaryColor,
-          child: Center(
-            child: ListTile(
-              leading: user != null && user!.photoURL != null
-                  ? Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: CircleAvatar(
-                        backgroundImage: NetworkImage('${user?.photoURL}'),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: CircleAvatar(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: SafeArea(
+            bottom: false,
+            child: Row(
+              children: [
+                user != null && user!.photoURL != null
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(user!.photoURL!),
+                        radius: 24,
+                      )
+                    : CircleAvatar(
                         backgroundColor: Theme.of(context).primaryColor,
                         backgroundImage:
                             const AssetImage('assets/incognito.png'),
+                        radius: 24,
                       ),
-                    ),
-              title: Text('Bike Setup',
-                  style: Theme.of(context).textTheme.titleLarge),
-              subtitle: user != null && user!.email != null
-                  ? Text(
-                      '${user?.email}',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    )
-                  : null,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bike Setup',
+                        style: Theme.of(context).textTheme.titleLarge,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      if (user?.email != null)
+                        Text(
+                          user!.email!,
+                          style: Theme.of(context).textTheme.titleSmall,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+        // Bike list
         Expanded(
           child: BikeList(
             user: user,
             bikeName: bikeName,
           ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(5),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(AppRoutes.fadeSlide(SettingsPage(
-                    bikeName: bikeName,
-                    bikeType: bikeType,
-                    chosenSetup: chosenSetup,
-                  )));
-                },
-                style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .floatingActionButtonTheme
-                        .backgroundColor),
-                child: Text(
-                  'Settings',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
+        // Fixed footer
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.06),
+            border: Border(
+              top: BorderSide(color: Colors.black.withValues(alpha: 0.12), width: 0.5),
             ),
-            Padding(
-              padding: const EdgeInsets.all(5),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (user != null) {
-                    if (isInDrawer) Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                        AppRoutes.fadeSlide(BikeTypeSelector(user: user!)));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No User logged in')));
-                  }
-                },
-                style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .floatingActionButtonTheme
-                        .backgroundColor),
-                child: Text(
-                  'New Bike',
-                  style: Theme.of(context).textTheme.titleLarge,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    Icons.settings_outlined,
+                    size: 20,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
+                  title: Text(
+                    'Settings',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  onTap: () {
+                    Navigator.of(context).push(AppRoutes.fadeSlide(SettingsPage(
+                      bikeName: bikeName,
+                      bikeType: bikeType,
+                      chosenSetup: chosenSetup,
+                    )));
+                  },
                 ),
-              ),
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    Icons.add_circle_outline,
+                    size: 20,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
+                  title: Text(
+                    'New Bike',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  onTap: () {
+                    if (user != null) {
+                      if (isInDrawer) Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                          AppRoutes.fadeSlide(BikeTypeSelector(user: user!)));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No User logged in')));
+                    }
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );

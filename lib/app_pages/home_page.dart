@@ -132,10 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Center(
               child: Opacity(
                 opacity: 0.22,
-                child: Hero(
-                  tag: 'bike-image-${widget.bikeType.path}',
-                  child: Image.asset(widget.bikeType.path),
-                ),
+                child: Image.asset(widget.bikeType.path),
               ),
             ),
             SchematicBubble(
