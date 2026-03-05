@@ -25,7 +25,16 @@ jobs:
           channel: stable
 
       - name: Inject Firebase options
-        run: echo "$FIREBASE_OPTIONS" | base64 --decode > lib/firebase_options.dart
+        run: |
+          if [ -z "$FIREBASE_OPTIONS" ]; then
+            echo "ERROR: FIREBASE_OPTIONS secret is not set"
+            exit 1
+          fi
+          echo "$FIREBASE_OPTIONS" | base64 --decode > lib/firebase_options.dart
+          if [ ! -s lib/firebase_options.dart ]; then
+            echo "ERROR: firebase_options.dart is empty after decode"
+            exit 1
+          fi
         env:
           FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
 
