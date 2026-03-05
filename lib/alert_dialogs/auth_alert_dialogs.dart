@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/app_pages/bike_selector_page.dart';
 import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/database_service/auth_service.dart';
 import 'package:bikesetupapp/database_service/database.dart';
@@ -16,10 +17,8 @@ class AuthAlerts {
         userCredential.additionalUserInfo != null &&
         userCredential.additionalUserInfo!.isNewUser) {
       if (!context.mounted) return;
-      Navigator.of(context).push(MaterialPageRoute(
-          builder: (BuildContext context) => BikeTypeSelector(
-                user: user,
-              )));
+      Navigator.of(context)
+          .push(AppRoutes.fadeSlide(BikeTypeSelector(user: user)));
       return;
     }
     if (user == null) {
@@ -38,10 +37,8 @@ class AuthAlerts {
         defaultSetupID.isEmpty ||
         bikeType == BikeType.error) {
       if (!context.mounted) return;
-      Navigator.of(context).push(MaterialPageRoute(
-          builder: (BuildContext context) => BikeTypeSelector(
-                user: user,
-              )));
+      Navigator.of(context)
+          .push(AppRoutes.fadeSlide(BikeTypeSelector(user: user)));
       return;
     }
     String defaultBikeName =
@@ -49,15 +46,14 @@ class AuthAlerts {
     String defaultSetup = await DatabaseService(user.uid)
         .getSetupNameFromID(defaultBikeID, defaultSetupID);
     if (!context.mounted) return;
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (BuildContext context) => MyHomePage(
-              user: user,
-              bikeName: defaultBikeName,
-              uBikeID: defaultBikeID,
-              bikeType: bikeType,
-              setupName: defaultSetup,
-              uSetupID: defaultSetupID,
-            )));
+    Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
+          user: user,
+          bikeName: defaultBikeName,
+          uBikeID: defaultBikeID,
+          bikeType: bikeType,
+          setupName: defaultSetup,
+          uSetupID: defaultSetupID,
+        )));
   }
 
   static Future<bool?> signOutAnonymous(BuildContext context, User user) async {

@@ -2,6 +2,7 @@ import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/app_pages/home_page.dart';
 import 'package:bikesetupapp/app_pages/new_bike_page.dart';
 import 'package:bikesetupapp/app_pages/todolist_page.dart';
+import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
@@ -73,12 +74,11 @@ class _BikeListState extends State<BikeList> {
                 leading: IconButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (BuildContext context) => ToDoList(
-                                user: widget.user!,
-                                uBikeID: bike.id,
-                                bikeName: currentBikeName,
-                              )),
+                      AppRoutes.fadeSlide(ToDoList(
+                        user: widget.user!,
+                        uBikeID: bike.id,
+                        bikeName: currentBikeName,
+                      )),
                     );
                   },
                   icon: Icon(
@@ -158,18 +158,15 @@ class _BikeListState extends State<BikeList> {
                                   leading: IconButton(
                                     onPressed: () {
                                       Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (BuildContext context) =>
-                                              NewBike(
-                                                  user: widget.user!,
-                                                  newBikeMode:
-                                                      NewBikeMode.editSetup,
-                                                  bikeName: bikeName,
-                                                  uBikeID: uBikeID,
-                                                  setupName: setup['setup_name'],
-                                                  uSetupID: setup.id,
-                                                  bikeType: bikeType),
-                                        ),
+                                        AppRoutes.fadeSlide(NewBike(
+                                          user: widget.user!,
+                                          newBikeMode: NewBikeMode.editSetup,
+                                          bikeName: bikeName,
+                                          uBikeID: uBikeID,
+                                          setupName: setup['setup_name'],
+                                          uSetupID: setup.id,
+                                          bikeType: bikeType,
+                                        )),
                                       );
                                     },
                                     icon: Icon(
@@ -184,37 +181,14 @@ class _BikeListState extends State<BikeList> {
                                   ),
                                   onTap: () {
                                     Navigator.of(context).push(
-                                      PageRouteBuilder(
-                                        transitionDuration:
-                                            const Duration(milliseconds: 200),
-                                        transitionsBuilder:
-                                            (BuildContext context,
-                                                Animation<double> animation,
-                                                Animation<double>
-                                                    secondaryAnimation,
-                                                Widget child) {
-                                          return SlideTransition(
-                                            position: Tween<Offset>(
-                                              begin: const Offset(1.0, 0.0),
-                                              end: Offset.zero,
-                                            ).animate(animation),
-                                            child: child,
-                                          );
-                                        },
-                                        pageBuilder: (BuildContext context,
-                                            Animation<double> animation,
-                                            Animation<double>
-                                                secondaryAnimation) {
-                                          return MyHomePage(
-                                            bikeName: bikeName,
-                                            uBikeID: uBikeID,
-                                            user: widget.user,
-                                            bikeType: bikeType,
-                                            setupName: setup['setup_name'],
-                                            uSetupID: setup.id,
-                                          );
-                                        },
-                                      ),
+                                      AppRoutes.fadeSlide(MyHomePage(
+                                        bikeName: bikeName,
+                                        uBikeID: uBikeID,
+                                        user: widget.user,
+                                        bikeType: bikeType,
+                                        setupName: setup['setup_name'],
+                                        uSetupID: setup.id,
+                                      )),
                                     );
                                   },
                                   trailing: IconButton(
@@ -255,16 +229,15 @@ class _BikeListState extends State<BikeList> {
                         return;
                       }
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => NewBike(
-                              user: widget.user!,
-                              newBikeMode: NewBikeMode.newSetup,
-                              bikeName: currentBikeName,
-                              uBikeID: bike.id,
-                              setupName: '',
-                              uSetupID: '',
-                              bikeType: bikeType),
-                        ),
+                        AppRoutes.fadeSlide(NewBike(
+                          user: widget.user!,
+                          newBikeMode: NewBikeMode.newSetup,
+                          bikeName: currentBikeName,
+                          uBikeID: bike.id,
+                          setupName: '',
+                          uSetupID: '',
+                          bikeType: bikeType,
+                        )),
                       );
                     },
                     style: ElevatedButton.styleFrom(

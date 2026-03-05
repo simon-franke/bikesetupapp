@@ -10,7 +10,7 @@ class BikeSelectorWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Container(
-          height: 200,
+          height: MediaQuery.of(context).size.height * 0.22,
           decoration: BoxDecoration(
             color: Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(35),
@@ -22,9 +22,12 @@ class BikeSelectorWidget extends StatelessWidget {
                   offset: const Offset(0, 3))
             ],
           ),
-          child: Image.asset(
-            bikeType.path,
-            fit: BoxFit.contain,
+          child: Hero(
+            tag: 'bike-image-${bikeType.path}',
+            child: Image.asset(
+              bikeType.path,
+              fit: BoxFit.contain,
+            ),
           )),
     );
   }

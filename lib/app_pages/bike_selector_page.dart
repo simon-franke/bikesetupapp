@@ -1,4 +1,5 @@
 import 'package:bikesetupapp/app_pages/new_bike_page.dart';
+import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/widgets/bike_selector_widget.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
@@ -6,6 +7,7 @@ import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+
 
 class BikeTypeSelector extends StatefulWidget {
   final User user;
@@ -95,38 +97,15 @@ class _BikeTypeSelectorState extends State<BikeTypeSelector> {
                                     BikeType bikeType =
                                         BikeType.values[pageController.page?.round() ?? 0];
                                     Navigator.of(context).push(
-                                      PageRouteBuilder(
-                                        transitionDuration:
-                                            const Duration(milliseconds: 200),
-                                        transitionsBuilder:
-                                            (BuildContext context,
-                                                Animation<double> animation,
-                                                Animation<double>
-                                                    secondaryAnimation,
-                                                Widget child) {
-                                          return SlideTransition(
-                                            position: Tween<Offset>(
-                                              begin: const Offset(1.0, 0.0),
-                                              end: Offset.zero,
-                                            ).animate(animation),
-                                            child: child,
-                                          );
-                                        },
-                                        pageBuilder: (BuildContext context,
-                                            Animation<double> animation,
-                                            Animation<double>
-                                                secondaryAnimation) {
-                                          return NewBike(
-                                            user: widget.user,
-                                            newBikeMode: NewBikeMode.newBike,
-                                            bikeName: "",
-                                            uBikeID: "",
-                                            setupName: 'Default',
-                                            uSetupID: "",
-                                            bikeType: bikeType,
-                                          );
-                                        },
-                                      ),
+                                      AppRoutes.fadeSlide(NewBike(
+                                        user: widget.user,
+                                        newBikeMode: NewBikeMode.newBike,
+                                        bikeName: "",
+                                        uBikeID: "",
+                                        setupName: 'Default',
+                                        uSetupID: "",
+                                        bikeType: bikeType,
+                                      )),
                                     );
                                   },
                                   child: Text(

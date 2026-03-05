@@ -1,4 +1,5 @@
 import 'package:bikesetupapp/app_pages/home_page.dart';
+import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
@@ -228,8 +229,9 @@ class _NewBikeState extends State<NewBike> {
                                 'Front Travel',
                                 style: Theme.of(context).textTheme.labelMedium,
                               ),
-                              trailing: SizedBox(
-                                width: 150.0,
+                              trailing: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                    maxWidth: size.width * 0.38),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: <Widget>[
@@ -285,8 +287,9 @@ class _NewBikeState extends State<NewBike> {
                                 'Rear Travel',
                                 style: Theme.of(context).textTheme.labelMedium,
                               ),
-                              trailing: SizedBox(
-                                width: 150.0,
+                              trailing: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                    maxWidth: size.width * 0.38),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: <Widget>[
@@ -340,8 +343,9 @@ class _NewBikeState extends State<NewBike> {
                               'Rear Wheel Size',
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            trailing: SizedBox(
-                              width: 120.0,
+                            trailing: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  maxWidth: size.width * 0.30),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: <Widget>[
@@ -391,8 +395,9 @@ class _NewBikeState extends State<NewBike> {
                               'Front Wheel Size',
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            trailing: SizedBox(
-                              width: 120.0,
+                            trailing: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  maxWidth: size.width * 0.30),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: <Widget>[
@@ -530,14 +535,13 @@ class _NewBikeState extends State<NewBike> {
                                     }
                                     if (context.mounted) {
                                       Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (context) => MyHomePage(
-                                                  user: widget.user,
-                                                  bikeType: widget.bikeType,
-                                                  bikeName: bikeName,
-                                                  uBikeID: uBikeID,
-                                                  setupName: setupName,
-                                                  uSetupID: uSetupID)));
+                                          AppRoutes.fadeSlide(MyHomePage(
+                                              user: widget.user,
+                                              bikeType: widget.bikeType,
+                                              bikeName: bikeName,
+                                              uBikeID: uBikeID,
+                                              setupName: setupName,
+                                              uSetupID: uSetupID)));
                                     }
                                   },
                                   child: isButtonActive
