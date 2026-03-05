@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
-  signInWithGoogle() async {
+  Future<UserCredential> signInWithGoogle() async {
     if (kIsWeb) {
       return await FirebaseAuth.instance
           .signInWithPopup(GoogleAuthProvider());
@@ -26,7 +26,7 @@ class AuthService {
   }
 
   //Sign Out
-  signOut() {
+  void signOut() {
     FirebaseAuth.instance.signOut();
   }
 }
