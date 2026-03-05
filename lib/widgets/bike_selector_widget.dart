@@ -16,7 +16,7 @@ class BikeSelectorWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(35),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   spreadRadius: 5,
                   blurRadius: 7,
                   offset: const Offset(0, 3))

@@ -50,7 +50,7 @@ class _PulsatingCircleState extends State<PulsatingCircle>
             height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: widget.color.withOpacity(0.3),
+              color: widget.color.withValues(alpha: 0.3),
             ),
           ),
         );

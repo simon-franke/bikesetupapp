@@ -6,10 +6,10 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     primaryColor: const Color(0xFF4D7EA8),
     scaffoldBackgroundColor: const Color(0xFFE7EEEB),
-    cardTheme: const CardTheme(color: Color(0xFF8EAFB6)),
+    cardTheme: const CardThemeData(color: Color(0xFF8EAFB6)),
     appBarTheme: const AppBarTheme(
         elevation: 0,
-        color: Color(0xFF4D7EA8),
+        backgroundColor: Color(0xFF4D7EA8),
         iconTheme: IconThemeData(color: Colors.white)),
     cardColor: const Color(0xFF3A546D), //Positioned Circles
     iconTheme: IconThemeData(color: Colors.grey[800]),
@@ -33,10 +33,10 @@ class AppTheme {
   static final ThemeData darkTheme = ThemeData(
       primaryColor: const Color(0xFF4D7EA8),
       scaffoldBackgroundColor: const Color(0xFF272932),
-      cardTheme: const CardTheme(color: Color(0xFF3A546D)),
+      cardTheme: const CardThemeData(color: Color(0xFF3A546D)),
       appBarTheme: const AppBarTheme(
           elevation: 0,
-          color: Color(0xFF4D7EA8),
+          backgroundColor: Color(0xFF4D7EA8),
           iconTheme: IconThemeData(color: Colors.white)),
       cardColor: const Color(0xFF8EAFB6), //Positioned Circles
       iconTheme: const IconThemeData(color: Colors.white),

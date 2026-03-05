@@ -84,7 +84,7 @@ class SettingsAlerts {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Theme.of(context).cardTheme.color,
