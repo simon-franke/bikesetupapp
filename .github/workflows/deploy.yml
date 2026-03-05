@@ -30,7 +30,7 @@ jobs:
             echo "ERROR: FIREBASE_OPTIONS secret is not set"
             exit 1
           fi
-          echo "$FIREBASE_OPTIONS" | base64 --decode > lib/firebase_options.dart
+          echo "$FIREBASE_OPTIONS" | tr -d '\n\r ' | base64 --decode > lib/firebase_options.dart
           if [ ! -s lib/firebase_options.dart ]; then
             echo "ERROR: firebase_options.dart is empty after decode"
             exit 1
