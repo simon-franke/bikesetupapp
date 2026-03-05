@@ -25,7 +25,7 @@ jobs:
           channel: stable
 
       - name: Inject Firebase options
-        run: echo "$FIREBASE_OPTIONS" > lib/firebase_options.dart
+        run: echo "$FIREBASE_OPTIONS" | base64 --decode > lib/firebase_options.dart
         env:
           FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
 
