@@ -1,9 +1,10 @@
-import 'package:bikesetupapp/app_pages/bike_selector_page.dart';
 import 'package:bikesetupapp/app_pages/home_page.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
+import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
 import 'package:bikesetupapp/database_service/auth_service.dart';
 import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/widgets/new_bike_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -17,8 +18,7 @@ class AuthAlerts {
         userCredential.additionalUserInfo != null &&
         userCredential.additionalUserInfo!.isNewUser) {
       if (!context.mounted) return;
-      Navigator.of(context)
-          .push(AppRoutes.fadeSlide(BikeTypeSelector(user: user)));
+      showNewBikeSheet(context, user, NewBikeMode.newBike);
       return;
     }
     if (user == null) {
@@ -37,8 +37,7 @@ class AuthAlerts {
         defaultSetupID.isEmpty ||
         bikeType == BikeType.error) {
       if (!context.mounted) return;
-      Navigator.of(context)
-          .push(AppRoutes.fadeSlide(BikeTypeSelector(user: user)));
+      showNewBikeSheet(context, user, NewBikeMode.newBike);
       return;
     }
     String defaultBikeName =

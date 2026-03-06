@@ -1,11 +1,11 @@
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/app_pages/home_page.dart';
-import 'package:bikesetupapp/app_pages/new_bike_page.dart';
 import 'package:bikesetupapp/app_pages/todolist_page.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
+import 'package:bikesetupapp/widgets/new_bike_bottom_sheet.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter/material.dart';
@@ -311,18 +311,15 @@ class _BikeListState extends State<BikeList> {
                                           constraints: const BoxConstraints(
                                               minWidth: 28, minHeight: 28),
                                           onPressed: () {
-                                            Navigator.of(context).push(
-                                              AppRoutes.fadeSlide(NewBike(
-                                                user: widget.user!,
-                                                newBikeMode:
-                                                    NewBikeMode.editSetup,
-                                                bikeName: bikeName,
-                                                uBikeID: uBikeID,
-                                                setupName:
-                                                    setup['setup_name'],
-                                                uSetupID: setup.id,
-                                                bikeType: bikeType,
-                                              )),
+                                            showNewBikeSheet(
+                                              context,
+                                              widget.user!,
+                                              NewBikeMode.editSetup,
+                                              bikeType: bikeType,
+                                              uBikeID: uBikeID,
+                                              bikeName: bikeName,
+                                              uSetupID: setup.id,
+                                              setupName: setup['setup_name'],
                                             );
                                           },
                                           icon: Icon(
@@ -367,16 +364,13 @@ class _BikeListState extends State<BikeList> {
                                           context, 'Something went wrong!');
                                       return;
                                     }
-                                    Navigator.of(context).push(
-                                      AppRoutes.fadeSlide(NewBike(
-                                        user: widget.user!,
-                                        newBikeMode: NewBikeMode.newSetup,
-                                        bikeName: currentBikeName,
-                                        uBikeID: bike.id,
-                                        setupName: '',
-                                        uSetupID: '',
-                                        bikeType: bt,
-                                      )),
+                                    showNewBikeSheet(
+                                      context,
+                                      widget.user!,
+                                      NewBikeMode.newSetup,
+                                      bikeType: bt,
+                                      uBikeID: bike.id,
+                                      bikeName: currentBikeName,
                                     );
                                   },
                                   child: Padding(

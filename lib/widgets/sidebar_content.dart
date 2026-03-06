@@ -1,7 +1,8 @@
-import 'package:bikesetupapp/app_pages/bike_selector_page.dart';
 import 'package:bikesetupapp/app_pages/settings_page.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
+import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
 import 'package:bikesetupapp/widgets/drawer_bike_list.dart';
+import 'package:bikesetupapp/widgets/new_bike_bottom_sheet.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 
 import 'package:flutter/material.dart';
@@ -128,8 +129,8 @@ class SidebarContent extends StatelessWidget {
                   onTap: () {
                     if (user != null) {
                       if (isInDrawer) Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                          AppRoutes.fadeSlide(BikeTypeSelector(user: user!)));
+                      showNewBikeSheet(
+                          context, user!, NewBikeMode.newBike);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('No User logged in')));
