@@ -68,15 +68,15 @@ class _MyHomePageState extends State<MyHomePage> {
     final double imgLeft = (contentWidth - imgRenderW) / 2;
 
     // Anchor positions — on the bike parts.
-    final double rtAnchorL = imgLeft + imgRenderW / 40;
+    final double rtAnchorL = imgLeft + imgRenderW / 20;
     final double rtAnchorB = boxHeight * 0.525;
-    final double ftAnchorL = imgLeft + imgRenderW / 1.20;
+    final double ftAnchorL = imgLeft + imgRenderW / 1.10;
     final double ftAnchorB = boxHeight * 0.525;
     final double shAnchorL = imgLeft + imgRenderW / 2.2;
     final double shAnchorB = boxHeight * 0.437;
     final double gsAnchorL = imgLeft + imgRenderW / 2.65;
     final double gsAnchorB = boxHeight * 0.657;
-    final double fkAnchorL = imgLeft + imgRenderW / 1.5;
+    final double fkAnchorL = imgLeft + imgRenderW / 1.45;
     final double fkAnchorB = boxHeight * 0.657;
 
     // Bubble card positions — floated into clear space near each part.

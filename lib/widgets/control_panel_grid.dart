@@ -212,7 +212,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
             final key = allKeys[index];
             final card = _CardDef.fromKey(key);
             final value = settings[key]?.toString() ?? '--';
-            final isDefault = key == 'Pressure';
+            final isDefault = isRequiredField(widget.category, key);
             return _ControlCard(
               config: card,
               value: value,

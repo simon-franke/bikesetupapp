@@ -1,6 +1,7 @@
 import 'package:bikesetupapp/widgets/progress_indicator.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/widgets/field_meta.dart';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -282,7 +283,21 @@ class _SchematicBubbleState extends State<SchematicBubble>
                         } else {
                           String element = '';
                           try {
-                            element = snapshot.data?['Pressure'] ?? '';
+                            final rawMap = snapshot.data.data();
+                            if (rawMap is Map) {
+                              final data = rawMap.cast<String, dynamic>();
+                              final priorityKeys = kDefaultFieldKeys[widget.category.category] ?? [];
+                              for (final k in priorityKeys) {
+                                final v = data[k]?.toString() ?? '';
+                                if (v.isNotEmpty) { element = v; break; }
+                              }
+                              if (element.isEmpty) {
+                                for (final v in data.values) {
+                                  final s = v?.toString() ?? '';
+                                  if (s.isNotEmpty) { element = s; break; }
+                                }
+                              }
+                            }
                           } catch (_) {}
 
                           if (element.isEmpty) {
