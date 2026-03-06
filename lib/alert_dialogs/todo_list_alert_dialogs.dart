@@ -45,12 +45,11 @@ class TodoAlerts {
                     color: Theme.of(context).scaffoldBackgroundColor,
                     child: Padding(
                       padding: const EdgeInsets.all(10),
-                      child: TextField(
+                      child: TextFormField(
                         cursorColor:
                             Theme.of(context).textTheme.labelMedium!.color,
                         autofocus: false,
-                        controller:
-                            TextEditingController(text: taskDescription),
+                        initialValue: taskDescription,
                         minLines: 1,
                         maxLines: 4,
                         decoration: InputDecoration.collapsed(
@@ -117,7 +116,7 @@ class TodoAlerts {
                   } catch (e) {
                     generalError(context, 'Error creating todo');
                   }
-                  
+
                 },
               ),
             ],
@@ -185,12 +184,11 @@ class TodoAlerts {
                     color: Theme.of(context).scaffoldBackgroundColor,
                     child: Padding(
                       padding: const EdgeInsets.all(10),
-                      child: TextField(
+                      child: TextFormField(
                         cursorColor:
                             Theme.of(context).textTheme.labelMedium!.color,
                         autofocus: false,
-                        controller:
-                            TextEditingController(text: taskDescription),
+                        initialValue: taskDescription,
                         minLines: 1,
                         maxLines: 4,
                         decoration: InputDecoration.collapsed(

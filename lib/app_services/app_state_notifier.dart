@@ -6,7 +6,7 @@ class AppStateNotifier extends ChangeNotifier {
 
   AppStateNotifier(this.isDarkModeOn);
 
-  void updateTheme(bool isDarkModeOn) async {
+  Future<void> updateTheme(bool isDarkModeOn) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('isDarkModeOn', isDarkModeOn);
     this.isDarkModeOn = isDarkModeOn;

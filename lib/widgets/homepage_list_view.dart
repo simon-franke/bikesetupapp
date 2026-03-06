@@ -86,11 +86,13 @@ class _HomePageListViewState extends State<HomePageListView>
               child:
                   Text('Error', style: Theme.of(context).textTheme.labelLarge));
         }
+        final entries = settings.entries.toList();
         return ListView.builder(
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.only(top: widget.topPadding + 5),
-          itemCount: settings.length,
+          itemCount: entries.length,
           itemBuilder: (context, index) {
+            final entry = entries[index];
             final interval = Interval(
               (index * 40.0).clamp(0, 280) / 400,
               ((index * 40.0).clamp(0, 280) + 300) / 400,
@@ -117,24 +119,23 @@ class _HomePageListViewState extends State<HomePageListView>
                       SettingsAlerts.editValue(
                           context,
                           widget.user,
-                          settings.keys.elementAt(index),
-                          settings.values.elementAt(index),
+                          entry.key,
+                          entry.value,
                           widget.uBikeID,
                           widget.category,
                           widget.uSetupID);
                     },
                     leading: Icon(
-                      kFieldMeta[settings.keys.elementAt(index)]?.icon ??
-                          kDefaultFieldMeta.icon,
+                      kFieldMeta[entry.key]?.icon ?? kDefaultFieldMeta.icon,
                       size: 20,
                       color: Theme.of(context).iconTheme.color,
                     ),
                     title: Text(
-                      settings.keys.elementAt(index),
+                      entry.key,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                     subtitle: Text(
-                      settings.values.elementAt(index),
+                      entry.value.toString(),
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                     trailing: Row(
@@ -145,8 +146,8 @@ class _HomePageListViewState extends State<HomePageListView>
                             SettingsAlerts.editValue(
                                 context,
                                 widget.user,
-                                settings.keys.elementAt(index),
-                                settings.values.elementAt(index),
+                                entry.key,
+                                entry.value,
                                 widget.uBikeID,
                                 widget.category,
                                 widget.uSetupID);
@@ -157,16 +158,14 @@ class _HomePageListViewState extends State<HomePageListView>
                           ),
                         ),
                         Visibility(
-                          visible: !isDefaultField(
-                              widget.category,
-                              settings.keys.elementAt(index)),
+                          visible: !isDefaultField(widget.category, entry.key),
                           child: IconButton(
                             tooltip: 'Delete Setting',
                             onPressed: () {
                               SettingsAlerts.deleteCategory(
                                   context,
                                   widget.user,
-                                  settings.keys.elementAt(index),
+                                  entry.key,
                                   widget.uBikeID,
                                   widget.category,
                                   widget.uSetupID);

@@ -46,6 +46,13 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     chosenCategory = Category.rearTire;
+    if (widget.user == null ||
+        widget.uBikeID.isEmpty ||
+        widget.uSetupID.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).push(AppRoutes.fadeSlide(const LoginPage()));
+      });
+    }
   }
 
   bool _isGridCategory(Category category) =>
@@ -262,13 +269,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.user == null ||
-        widget.uBikeID.isEmpty ||
-        widget.uSetupID.isEmpty) {
-      Navigator.of(context)
-          .push(AppRoutes.fadeSlide(const LoginPage()));
-    }
-
     final Size size = MediaQuery.of(context).size;
     final bool wide = ResponsiveLayout.isWide(context);
     final double cWidth = ResponsiveLayout.contentWidth(context);

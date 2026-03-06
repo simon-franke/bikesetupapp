@@ -38,14 +38,14 @@ void main() async {
     bikeType = BikeType.fromString(
         await DatabaseService(user.uid).getBikeType(defaultBikeID));
 
-    if (defaultSetupID.isNotEmpty &&
+    if (defaultBikeID.isNotEmpty &&
+        defaultSetupID.isNotEmpty &&
         defaultSetupName.isNotEmpty &&
         bikeType != BikeType.error) {
       isSignedIn = true;
     }
   }
 
-  WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
   runApp(ChangeNotifierProvider<AppStateNotifier>(

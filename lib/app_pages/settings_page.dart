@@ -1,6 +1,7 @@
 import 'package:bikesetupapp/alert_dialogs/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
+import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/app_services/app_state_notifier.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 
@@ -40,8 +41,8 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: IconButton(
             onPressed: () {
               if (user == null) {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (BuildContext context) => const LoginPage()));
+                Navigator.of(context)
+                    .push(AppRoutes.fadeSlide(const LoginPage()));
               } else {
                 Navigator.of(context).pop();
               }
@@ -126,9 +127,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         color: Theme.of(context).iconTheme.color,
                       ),
                       onPressed: () async {
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (BuildContext context) =>
-                                const LoginPage()));
+                        Navigator.of(context)
+                            .push(AppRoutes.fadeSlide(const LoginPage()));
                       },
                     ),
             ),

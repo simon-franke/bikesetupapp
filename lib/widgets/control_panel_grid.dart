@@ -153,14 +153,42 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                   if (!isDefault) ...[
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        DatabaseService(widget.user.uid).deleteSetting(
-                          card.key,
-                          widget.uBikeID,
-                          widget.category,
-                          widget.uSetupID,
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: ctx,
+                          builder: (dlgCtx) => AlertDialog(
+                            title: const Text('Delete Field'),
+                            content: Text(
+                                'Delete "${card.key}"? This cannot be undone.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(dlgCtx).pop(false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(dlgCtx).pop(true),
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                      color: Theme.of(dlgCtx)
+                                          .colorScheme
+                                          .error),
+                                ),
+                              ),
+                            ],
+                          ),
                         );
+                        if (confirmed == true) {
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                          DatabaseService(widget.user.uid).deleteSetting(
+                            card.key,
+                            widget.uBikeID,
+                            widget.category,
+                            widget.uSetupID,
+                          );
+                        }
                       },
                       child: Text(
                         'Delete',

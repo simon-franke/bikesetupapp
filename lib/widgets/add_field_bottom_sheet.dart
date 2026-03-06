@@ -159,14 +159,14 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                       width: 2,
-                      color: Theme.of(context).textTheme.labelMedium!.color!,
+                      color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                       width: 2,
-                      color: Theme.of(context).textTheme.labelMedium!.color!,
+                      color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -192,14 +192,14 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
                     width: 2,
-                    color: Theme.of(context).textTheme.labelMedium!.color!,
+                    color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
                     width: 2,
-                    color: Theme.of(context).textTheme.labelMedium!.color!,
+                    color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),

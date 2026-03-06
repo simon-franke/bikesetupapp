@@ -35,7 +35,8 @@ class _BikeListState extends State<BikeList> {
           return Center(
               child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).floatingActionButtonTheme.backgroundColor!),
+                Theme.of(context).floatingActionButtonTheme.backgroundColor ??
+                    Theme.of(context).colorScheme.primary),
           ));
         }
         if (snapshot.hasError) {

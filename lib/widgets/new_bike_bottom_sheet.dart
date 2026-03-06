@@ -102,15 +102,15 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
         .getSetupInformationAsMap(widget.uBikeID, widget.uSetupID);
     setState(() {
       _frontTravelController.text =
-          data['front_travel']!.toString().replaceAll('mm', '');
+          (data['front_travel'] ?? '').toString().replaceAll('mm', '');
       _rearTravelController.text =
-          data['rear_travel']!.toString().replaceAll('mm', '');
+          (data['rear_travel'] ?? '').toString().replaceAll('mm', '');
       _frontWheelSizeController.text =
-          data['front_wheel_size']!.toString().replaceAll('"', '');
+          (data['front_wheel_size'] ?? '').toString().replaceAll('"', '');
       _rearWheelSizeController.text =
-          data['rear_wheel_size']!.toString().replaceAll('"', '');
-      _forkType = data['fork']!.toString();
-      _shockType = data['shock']!.toString();
+          (data['rear_wheel_size'] ?? '').toString().replaceAll('"', '');
+      _forkType = (data['fork'] ?? _forkType).toString();
+      _shockType = (data['shock'] ?? _shockType).toString();
     });
   }
 
@@ -176,6 +176,11 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
             .createBike(name, setupInformation, bikeType.bikeType);
       } catch (e) {
         setState(() => _isSaving = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to create bike. Please try again.')),
+          );
+        }
         return;
       }
       uSetupID =
@@ -189,7 +194,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
       bikeName = widget.bikeName;
       uBikeID = widget.uBikeID;
       uSetupID = const Uuid().v4();
-      DatabaseService(widget.user.uid)
+      await DatabaseService(widget.user.uid)
           .createSetup(uBikeID, uSetupID, name, setupInformation);
     } else {
       // editSetup
@@ -197,7 +202,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
       bikeName = widget.bikeName;
       uBikeID = widget.uBikeID;
       uSetupID = widget.uSetupID;
-      DatabaseService(widget.user.uid)
+      await DatabaseService(widget.user.uid)
           .createSetup(uBikeID, uSetupID, name, setupInformation);
     }
 

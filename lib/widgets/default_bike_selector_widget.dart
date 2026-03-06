@@ -23,7 +23,7 @@ class DefaultBikeSelector extends StatelessWidget {
           } else if (snapshot.hasError) {
             return const Center(child: Text('Error'));
           } else {
-            if (snapshot.data.docs.isEmpty) {
+            if (snapshot.data?.docs.isEmpty ?? true) {
               return const Center(
                 child: Text('No Bikes'),
               );
@@ -34,10 +34,10 @@ class DefaultBikeSelector extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListView.builder(
-                      itemCount: snapshot.data.docs.length,
+                      itemCount: snapshot.data?.docs.length ?? 0,
                       shrinkWrap: true,
                       itemBuilder: (context, index) {
-                        DocumentSnapshot bike = snapshot.data.docs[index];
+                        DocumentSnapshot bike = snapshot.data!.docs[index];
                         return Card(
                             color: Theme.of(context).scaffoldBackgroundColor,
                             child: ListTile(
@@ -59,8 +59,8 @@ class DefaultBikeSelector extends StatelessWidget {
                                   icon: Icon(Icons.edit,
                                       color: Theme.of(context)
                                           .textTheme
-                                          .titleLarge!
-                                          .color),
+                                          .titleLarge
+                                          ?.color),
                                 )));
                       },
                     )

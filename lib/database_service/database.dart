@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 import 'package:bikesetupapp/database_service/firestore_keys.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:uuid/uuid.dart';
 
 class DatabaseService {
@@ -347,6 +348,8 @@ class DatabaseService {
   ///
   /// Returns: A [Future] that completes when the bike is successfully deleted.
   Future deleteBike(String uBikeID) async {
+    final wasDefault = (await getDefaultBike()) == uBikeID;
+
     var setups = await userBikeSetup
         .doc(userID)
         .collection(FirestoreKeys.bikes)
@@ -354,10 +357,22 @@ class DatabaseService {
         .collection(FirestoreKeys.setupList)
         .get();
     for (var doc in setups.docs) {
-      await deleteSetup(uBikeID, doc.id);
+      await _deleteSetupData(uBikeID, doc.id);
     }
 
     await userBikeSetup.doc(userID).collection(FirestoreKeys.bikes).doc(uBikeID).delete();
+
+    if (wasDefault) {
+      final remaining =
+          await userBikeSetup.doc(userID).collection(FirestoreKeys.bikes).get();
+      if (remaining.docs.isNotEmpty) {
+        await setDefaultBike(remaining.docs.first.id);
+      } else {
+        await userBikeSetup
+            .doc(userID)
+            .update({FirestoreKeys.defaultBike: FieldValue.delete()});
+      }
+    }
   }
 
   /// Deletes a bike setup from the database.
@@ -371,6 +386,26 @@ class DatabaseService {
   ///
   /// Returns: A [Future] that completes when the setup is successfully deleted.
   Future deleteSetup(String uBikeID, String uSetupID) async {
+    // If deleting the default setup, auto-reassign to another setup
+    final currentDefault = await getDefaultSetup(uBikeID);
+    if (currentDefault == uSetupID) {
+      final setupList = await userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .collection(FirestoreKeys.setupList)
+          .get();
+      final others =
+          setupList.docs.where((d) => d.id != uSetupID).toList();
+      if (others.isNotEmpty) {
+        await setDefaultSetup(uBikeID, others.first.id);
+      }
+    }
+
+    await _deleteSetupData(uBikeID, uSetupID);
+  }
+
+  Future _deleteSetupData(String uBikeID, String uSetupID) async {
     var setups = await userBikeSetup
         .doc(userID)
         .collection(FirestoreKeys.bikes)
@@ -498,6 +533,7 @@ class DatabaseService {
       }
       value = snapshot[FirestoreKeys.defaultBike];
     } catch (e) {
+      debugPrint('getDefaultBike error: $e');
       return "";
     }
     if (value == null) {
@@ -523,6 +559,7 @@ class DatabaseService {
       }
       value = snapshot[FirestoreKeys.defaultSetup];
     } catch (e) {
+      debugPrint('getDefaultSetup error: $e');
       return "";
     }
     return value.toString();
@@ -546,6 +583,7 @@ class DatabaseService {
       }
       value = snapshot[FirestoreKeys.bikeName];
     } catch (e) {
+      debugPrint('getBikeNameFromID error: $e');
       return "";
     }
 
@@ -579,6 +617,7 @@ class DatabaseService {
       }
       value = snapshot[FirestoreKeys.setupName];
     } catch (e) {
+      debugPrint('getSetupNameFromID error: $e');
       return "";
     }
     if (value == null) {
@@ -605,6 +644,7 @@ class DatabaseService {
       }
       value = snapshot[FirestoreKeys.bikeType];
     } catch (e) {
+      debugPrint('getBikeType error: $e');
       return "";
     }
     if (value == null) {
@@ -644,6 +684,6 @@ class DatabaseService {
     if (!snapshot.exists) {
       return {};
     }
-    return snapshot.data() as Map<String, dynamic>;
+    return snapshot.data() as Map<String, dynamic>? ?? {};
   }
 }
