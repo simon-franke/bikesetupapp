@@ -5,6 +5,14 @@ class AppTheme {
 
   static final ThemeData lightTheme = ThemeData(
     primaryColor: const Color(0xFF4D7EA8),
+    colorScheme: ColorScheme.light(
+      primary: const Color(0xFF4D7EA8),
+      secondary: const Color(0xFF4D7EA8),
+    ),
+    expansionTileTheme: const ExpansionTileThemeData(
+      iconColor: Colors.black,
+      collapsedIconColor: Colors.black,
+    ),
     scaffoldBackgroundColor: const Color(0xFFE7EEEB),
     cardTheme: const CardThemeData(color: Color(0xFF8EAFB6)),
     appBarTheme: const AppBarTheme(
@@ -32,6 +40,14 @@ class AppTheme {
 
   static final ThemeData darkTheme = ThemeData(
       primaryColor: const Color(0xFF4D7EA8),
+      colorScheme: ColorScheme.dark(
+        primary: const Color(0xFF4D7EA8),
+        secondary: const Color(0xFF4D7EA8),
+      ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        iconColor: Colors.white,
+        collapsedIconColor: Colors.white,
+      ),
       scaffoldBackgroundColor: const Color(0xFF272932),
       cardTheme: const CardThemeData(color: Color(0xFF3A546D)),
       appBarTheme: const AppBarTheme(
