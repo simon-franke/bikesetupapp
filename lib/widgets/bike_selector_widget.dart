@@ -24,9 +24,17 @@ class BikeSelectorWidget extends StatelessWidget {
           ),
           child: Hero(
             tag: 'bike-image-${bikeType.path}',
-            child: Image.asset(
-              bikeType.path,
-              fit: BoxFit.contain,
+            child: Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final image = Image.asset(bikeType.path, fit: BoxFit.contain);
+                return isDark
+                    ? ColorFiltered(
+                        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                        child: image,
+                      )
+                    : image;
+              },
             ),
           )),
     );

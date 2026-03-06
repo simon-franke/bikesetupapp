@@ -127,15 +127,15 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
   String _chipLabel(BikeType bt) {
     switch (bt) {
       case BikeType.dh:
-        return 'DH';
+        return 'Downhill';
       case BikeType.enduro:
         return 'Enduro';
       case BikeType.dirtjump:
-        return 'Dirt';
+        return 'Dirt Jump';
       case BikeType.xc:
-        return 'XC';
+        return 'Cross Country';
       case BikeType.singlespeed:
-        return 'SS';
+        return 'Singlespeed';
       case BikeType.road:
         return 'Road';
       default:
@@ -259,7 +259,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                 // Bike type image cards (newBike only)
                 if (widget.mode == NewBikeMode.newBike) ...[
                   SizedBox(
-                    height: 110,
+                    height: 120,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -282,7 +282,8 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                             onTap: () =>
                                 setState(() => _selectedBikeType = bt),
                             child: Container(
-                              width: 88,
+                              width: 96,
+                              height: 116,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
@@ -295,13 +296,25 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                                     ? fabColor.withValues(alpha: 0.1)
                                     : Colors.transparent,
                               ),
+                              child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                                  Image.asset(
-                                    bt.path,
+                                  SizedBox(
                                     height: 56,
-                                    fit: BoxFit.contain,
+                                    child: Builder(
+                                      builder: (context) {
+                                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                                        final image = Image.asset(bt.path, height: 56, fit: BoxFit.contain);
+                                        return isDark
+                                            ? ColorFiltered(
+                                                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                                                child: image,
+                                              )
+                                            : image;
+                                      },
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -309,8 +322,12 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
+                              ),
                               ),
                             ),
                           ),
