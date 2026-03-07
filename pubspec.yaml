@@ -71,6 +71,7 @@ flutter:
   assets:
      - assets/google_icon.png
      - assets/incognito.png
+     - assets/apple_icon.png
      - assets/DH.png
      - assets/Enduro.png
      - assets/Dirt.png

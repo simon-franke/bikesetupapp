@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 const String _googleIconPath = 'assets/google_icon.png';
 const String _incognitoIconPath = 'assets/incognito.png';
+const String _appleIconPath = 'assets/apple_icon.png';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -80,8 +81,7 @@ class LoginPage extends StatelessWidget {
                           _SignInButton(
                             backgroundColor: Colors.black,
                             foregroundColor: Colors.white,
-                            icon: const Icon(Icons.phone_iphone,
-                                size: 22, color: Colors.white),
+                            icon: Image.asset(_appleIconPath, height: 22, color: Colors.white, colorBlendMode: BlendMode.srcIn),
                             label: 'Sign in with Apple',
                             onPressed: () => _handleSignIn(
                               context,
