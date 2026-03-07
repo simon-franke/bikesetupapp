@@ -140,13 +140,25 @@ class SettingsAlerts {
     );
   }
 
-  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> generalError(
-      BuildContext context, String message) {
-    return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        message,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-    ));
+  static Future<void> generalError(BuildContext context, String message) {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardTheme.color,
+          title: Text('Error', style: Theme.of(context).textTheme.titleLarge),
+          content: Text(message, style: Theme.of(context).textTheme.titleMedium),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor,
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK', style: Theme.of(context).textTheme.labelLarge),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
