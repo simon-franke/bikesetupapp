@@ -30,52 +30,83 @@ class SidebarContent extends StatelessWidget {
 
     return Column(
       children: [
-        // Header
-        Container(
-          height: size.height * 0.20,
-          color: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: SafeArea(
-            bottom: false,
-            child: Row(
-              children: [
-                user != null && user!.photoURL != null
-                    ? CircleAvatar(
-                        backgroundImage: NetworkImage(user!.photoURL!),
-                        radius: 24,
-                      )
-                    : CircleAvatar(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        backgroundImage:
-                            const AssetImage('assets/incognito.png'),
-                        radius: 24,
-                      ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bike Setup',
-                        style: Theme.of(context).textTheme.titleLarge,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      if (user?.email != null)
+        // Header — colored only in drawer; plain user row in wide sidebar
+        if (isInDrawer)
+          Container(
+            height: size.height * 0.20,
+            color: Theme.of(context).primaryColor,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: SafeArea(
+              bottom: false,
+              child: Row(
+                children: [
+                  user != null && user!.photoURL != null
+                      ? CircleAvatar(
+                          backgroundImage: NetworkImage(user!.photoURL!),
+                          radius: 24,
+                        )
+                      : CircleAvatar(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          backgroundImage:
+                              const AssetImage('assets/incognito.png'),
+                          radius: 24,
+                        ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          user!.email!,
-                          style: Theme.of(context).textTheme.titleSmall,
+                          'Bike Setup',
+                          style: Theme.of(context).textTheme.titleLarge,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
-                    ],
+                        if (user?.email != null)
+                          Text(
+                            user!.email!,
+                            style: Theme.of(context).textTheme.titleSmall,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+          )
+        else
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  user != null && user!.photoURL != null
+                      ? CircleAvatar(
+                          backgroundImage: NetworkImage(user!.photoURL!),
+                          radius: 18,
+                        )
+                      : CircleAvatar(
+                          backgroundImage:
+                              const AssetImage('assets/incognito.png'),
+                          radius: 18,
+                        ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      user?.email ?? 'Anonymous',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         // Bike list
         Expanded(
           child: BikeList(
