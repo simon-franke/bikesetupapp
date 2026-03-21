@@ -1,19 +1,24 @@
 import 'package:bikesetupapp/alert_dialogs/settings_alert_dialogs.dart';
 import 'package:bikesetupapp/widgets/add_field_bottom_sheet.dart';
+import 'package:bikesetupapp/widgets/add_component_bottom_sheet.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
 import 'package:bikesetupapp/app_pages/drawer.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/app_services/responsive_layout.dart';
+import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/widgets/bike_info_bottom_sheet.dart';
 import 'package:bikesetupapp/widgets/control_panel_grid.dart';
 import 'package:bikesetupapp/widgets/home_page_bubbles.dart';
+import 'package:bikesetupapp/widgets/services_view.dart';
 import 'package:bikesetupapp/widgets/sidebar_content.dart';
+import 'package:bikesetupapp/widgets/view_toggle.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 const double borderRadius = 35;
@@ -45,6 +50,9 @@ class _MyHomePageState extends State<MyHomePage> {
   late BikeType _bikeType;
   late String _setupName;
   late String _uSetupID;
+  ActiveView _activeView = ActiveView.setup;
+  bool _showServiceAlert = false;
+  double _currentMileageKm = 0;
 
   @override
   void initState() {
@@ -62,6 +70,16 @@ class _MyHomePageState extends State<MyHomePage> {
         Navigator.of(context).push(AppRoutes.fadeSlide(const LoginPage()));
       });
     }
+    _loadMileage();
+  }
+
+  Future<void> _loadMileage() async {
+    if (widget.user == null) return;
+    final db = ServiceDatabaseService(widget.user!.uid);
+    final km = await db.getMileageForBike(_uBikeID);
+    if (mounted && km != null) {
+      setState(() => _currentMileageKm = km);
+    }
   }
 
   void _onBikeSelected(String bikeName, String uBikeID, BikeType bikeType,
@@ -74,6 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _uSetupID = uSetupID;
       chosenCategory = Category.rearTire;
     });
+    _loadMileage();
   }
 
   Widget _buildMainContent(BuildContext context, double contentWidth) {
@@ -255,26 +274,52 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              _bikeName,
-              style: Theme.of(context).textTheme.titleLarge,
+            GestureDetector(
+              onLongPress: () {
+                showBikeInfoSheet(
+                  context,
+                  widget.user!,
+                  _uBikeID,
+                  _uSetupID,
+                  _setupName,
+                  _bikeName,
+                  _bikeType,
+                  onBikeSelected: _onBikeSelected,
+                );
+              },
+              child: Text(
+                _bikeName,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
-            IconButton(
-                onPressed: () {
-                  showBikeInfoSheet(
-                    context,
-                    widget.user!,
-                    _uBikeID,
-                    _uSetupID,
-                    _setupName,
-                    _bikeName,
-                    _bikeType,
-                    onBikeSelected: _onBikeSelected,
-                  );
-                },
-                icon: const Icon(Icons.info_outline_rounded)),
+            ViewToggle(
+              activeView: _activeView,
+              showServiceAlert: _showServiceAlert,
+              onChanged: (view) {
+                HapticFeedback.lightImpact();
+                setState(() => _activeView = view);
+              },
+            ),
           ],
         ));
+  }
+
+  Widget _buildBody(BuildContext context, double contentWidth) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      child: _activeView == ActiveView.setup
+          ? _buildMainContent(context, contentWidth)
+          : ServicesView(
+              key: ValueKey('services_$_uBikeID'),
+              user: widget.user!,
+              uBikeID: _uBikeID,
+              onAlertChanged: (hasAlert) {
+                if (_showServiceAlert != hasAlert) {
+                  setState(() => _showServiceAlert = hasAlert);
+                }
+              },
+            ),
+    );
   }
 
   @override
@@ -285,13 +330,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final fab = FloatingActionButton(
       onPressed: () {
-        showAddFieldSheet(context,
+        if (_activeView == ActiveView.services) {
+          showAddComponentSheet(
+            context,
             user: widget.user!,
             uBikeID: _uBikeID,
-            category: chosenCategory.category,
-            uSetupID: _uSetupID);
+            currentMileageKm: _currentMileageKm,
+          );
+        } else {
+          showAddFieldSheet(context,
+              user: widget.user!,
+              uBikeID: _uBikeID,
+              category: chosenCategory.category,
+              uSetupID: _uSetupID);
+        }
       },
-      tooltip: 'Add Setting',
+      tooltip: _activeView == ActiveView.services ? 'Add Component' : 'Add Setting',
       child: const Icon(Icons.add),
     );
 
@@ -310,7 +364,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onBikeSelected: _onBikeSelected,
               ),
             ),
-Expanded(child: _buildMainContent(context, cWidth)),
+            Expanded(child: _buildBody(context, cWidth)),
           ],
         ),
         floatingActionButton: fab,
@@ -326,7 +380,7 @@ Expanded(child: _buildMainContent(context, cWidth)),
         onBikeSelected: _onBikeSelected,
       ),
       appBar: _buildAppBar(context),
-      body: _buildMainContent(context, size.width),
+      body: _buildBody(context, size.width),
       floatingActionButton: fab,
     );
   }

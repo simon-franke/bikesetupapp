@@ -61,6 +61,14 @@
 				<string>com.googleusercontent.apps.16764259281-n807t0nel1emrl4il8co48adrp8q9jn6</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bikesetup</string>
+			</array>
+		</dict>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

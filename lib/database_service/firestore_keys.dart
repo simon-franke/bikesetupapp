@@ -23,4 +23,31 @@ abstract class FirestoreKeys {
   static const String part = 'Part';
   static const String done = 'done';
   static const String created = 'created';
+
+  // Service tracking collections
+  static const String serviceComponents = 'ServiceComponents';
+  static const String serviceEntries = 'ServiceEntries';
+  static const String stravaBikes = 'StravaBikes';
+
+  // ServiceComponent fields
+  static const String bikeId = 'bike_id';
+  static const String componentType = 'component_type';
+  static const String componentName = 'component_name';
+  static const String serviceIntervalKm = 'service_interval_km';
+  static const String createdAt = 'created_at';
+
+  // ServiceEntry fields
+  static const String componentId = 'component_id';
+  static const String mileageAtServiceKm = 'mileage_at_service_km';
+  static const String serviceDate = 'service_date';
+  static const String serviceNote = 'service_note';
+
+  // StravaBike fields
+  static const String stravaGearId = 'strava_gear_id';
+  static const String stravaBikeName = 'strava_bike_name';
+  static const String distanceMeters = 'distance_meters';
+  static const String linkedBikeId = 'linked_bike_id';
+
+  // Mileage offset field (on bike document)
+  static const String mileageOffsetKm = 'mileage_offset_km';
 }

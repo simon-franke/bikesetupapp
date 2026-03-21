@@ -1,8 +1,12 @@
 import 'package:bikesetupapp/alert_dialogs/auth_alert_dialogs.dart';
+import 'package:bikesetupapp/app_pages/bike_matching_page.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/app_services/app_state_notifier.dart';
+import 'package:bikesetupapp/app_services/strava_token_storage.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
+import 'package:bikesetupapp/database_service/service_database.dart';
+import 'package:bikesetupapp/database_service/strava_auth_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -26,10 +30,46 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   User? user = FirebaseAuth.instance.currentUser;
+  bool _isStravaConnected = false;
+  int? _stravaAthleteId;
 
   @override
   void initState() {
     super.initState();
+    _checkStravaConnection();
+  }
+
+  Future<void> _checkStravaConnection() async {
+    final auth = await StravaTokenStorage.getAuth();
+    if (mounted) {
+      setState(() {
+        _isStravaConnected = auth != null;
+        _stravaAthleteId = auth?.athleteId;
+      });
+    }
+  }
+
+  Future<void> _connectStrava() async {
+    final auth = await StravaAuthService().authorize();
+    if (auth != null && mounted) {
+      setState(() {
+        _isStravaConnected = true;
+        _stravaAthleteId = auth.athleteId;
+      });
+    }
+  }
+
+  Future<void> _disconnectStrava() async {
+    await StravaAuthService().deauthorize();
+    if (user != null) {
+      await ServiceDatabaseService(user!.uid).deleteAllStravaBikes();
+    }
+    if (mounted) {
+      setState(() {
+        _isStravaConnected = false;
+        _stravaAthleteId = null;
+      });
+    }
   }
 
   @override
@@ -153,6 +193,89 @@ class _SettingsPageState extends State<SettingsPage> {
                             .push(AppRoutes.fadeSlide(const LoginPage()));
                       },
                     ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Strava',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  if (_isStravaConnected) ...[
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFC4C02),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.directions_bike,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Text(
+                        'Connected',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      subtitle: _stravaAthleteId != null
+                          ? Text(
+                              'Athlete ID: $_stravaAthleteId',
+                              style: Theme.of(context).textTheme.labelSmall,
+                            )
+                          : null,
+                      trailing: TextButton(
+                        onPressed: _disconnectStrava,
+                        child: const Text(
+                          'Disconnect',
+                          style: TextStyle(color: Color(0xFFE05545)),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.sync_alt, size: 20),
+                      title: Text(
+                        'Manage Strava bikes',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () {
+                        if (user != null) {
+                          Navigator.of(context).push(
+                            AppRoutes.fadeSlide(
+                                BikeMatchingPage(user: user!)),
+                          );
+                        }
+                      },
+                    ),
+                  ] else
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFC4C02),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: _connectStrava,
+                        icon: const Icon(Icons.directions_bike, size: 20),
+                        label: const Text('Connect Strava'),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
