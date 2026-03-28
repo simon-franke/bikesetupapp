@@ -148,6 +148,7 @@ class _BikeListState extends State<BikeList> {
                 elevation: 5,
                 child: ExpansionTile(
                   initiallyExpanded: currentBikeName == widget.bikeName,
+                  maintainState: true,
                   onExpansionChanged: (value) {},
                   tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                   minTileHeight: 48,
