@@ -223,7 +223,7 @@ class AppTheme {
 
     return ThemeData(
       brightness: brightness,
-      primaryColor: p.surface,
+      primaryColor: p.accent,
       scaffoldBackgroundColor: p.bg,
       canvasColor: p.bg,
       cardColor: p.surface,
