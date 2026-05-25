@@ -1,0 +1,32 @@
+flutter_launcher_icons:
+  # Default / light mode icon (all platforms)
+  image_path: "assets/app-icon-paper-1024.png"
+
+  android: "launcher_icon"
+  min_sdk_android: 21
+  # Android adaptive icon (API 26+)
+  adaptive_icon_foreground: "assets/app-icon-paper-1024.png"
+  adaptive_icon_background: "#FFFFFF"
+  # Android 13+ dark/themed adaptive icon
+  adaptive_icon_foreground_dark: "assets/app-icon-dark-1024.png"
+  adaptive_icon_background_dark: "#1A1A1A"
+
+  ios: true
+  remove_alpha_ios: true
+  # iOS 18+ dark mode icon
+  dark_image_path_ios: "assets/app-icon-dark-1024.png"
+
+  web:
+    generate: true
+    image_path: "assets/app-icon-paper-1024.png"
+    background_color: "#F4F2EC"
+    theme_color: "#F39A4E"
+
+  windows:
+    generate: true
+    image_path: "assets/app-icon-paper-1024.png"
+    icon_size: 48
+
+  macos:
+    generate: true
+    image_path: "assets/app-icon-paper-1024.png"
