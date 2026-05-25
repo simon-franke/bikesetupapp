@@ -1,81 +1,39 @@
+import 'package:bikesetupapp/alert_dialogs/dialog_helpers.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SettingsAlerts {
-
   static Future<void> editValue(BuildContext context, User user, String key,
       String value, String bikeName, String category, String setup) async {
+    final controller = TextEditingController(text: value);
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text(
-            key,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          content: TextFormField(
-            cursorColor: Theme.of(context).textTheme.labelMedium!.color,
-            autofocus: true,
-            style: Theme.of(context).textTheme.titleMedium,
-            initialValue: value,
-            decoration: InputDecoration(
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                    width: 2,
-                    color: Theme.of(context).textTheme.labelMedium!.color!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                    width: 2,
-                    color: Theme.of(context).textTheme.labelMedium!.color!),
-                borderRadius: BorderRadius.circular(12),
-              ),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: key,
+          content: DialogTextField(controller: controller, hint: 'Enter value'),
+          actions: [
+            DialogSecondaryButton(
+              label: 'Cancel',
+              onPressed: () => Navigator.of(ctx).pop(),
             ),
-            onChanged: (val) {
-              value = val;
-            },
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text(
-                  'Cancel',
-                  style: Theme.of(context).textTheme.labelLarge,
-                )),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              child: Text(
-                'Enter',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
+            DialogPrimaryButton(
+              label: 'Save',
               onPressed: () {
-                if (key == "Pressure" &&
-                    value.trim().replaceAll(',', '').length > 3) {
+                final newValue = controller.text;
+                if (key == 'Pressure' &&
+                    newValue.trim().replaceAll(',', '').length > 3) {
                   generalError(context, 'Pressure must be 3 digits or less');
                   return;
-                } else {
-                  Navigator.of(context).pop();
-                  try {
-                    DatabaseService(user.uid).editSetting(
-                      key.trim(), value.trim(), bikeName, category, setup);
-                  } catch (e) {
-                    generalError(context, 'Error creating setting');
-                  }
+                }
+                Navigator.of(ctx).pop();
+                try {
+                  DatabaseService(user.uid).editSetting(
+                      key.trim(), newValue.trim(), bikeName, category, setup);
+                } catch (_) {
+                  generalError(context, 'Error creating setting');
                 }
               },
             ),
@@ -90,50 +48,30 @@ class SettingsAlerts {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text(
-            'Delete Category',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          content: Text(
-            'Are you sure you want to delete this category?',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Cancel',
-                    style: Theme.of(context).textTheme.labelLarge)),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              child: Text(
-                'Delete',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                try {
-                  DatabaseService(user.uid)
-                    .deleteSetting(key, bikeName, category, setup);
-                } catch (e) {
-                  generalError(context, 'Error deleting category');
-                }
-                
-              },
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Delete category',
+          content: const Text('Are you sure you want to delete this category?'),
+          actions: [
+            DialogSecondaryButton(
+              label: 'Cancel',
+              onPressed: () => Navigator.of(ctx).pop(),
             ),
+            Builder(builder: (ctx2) {
+              return DialogPrimaryButton(
+                label: 'Delete',
+                color: Theme.of(ctx2).colorScheme.error,
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  try {
+                    DatabaseService(user.uid)
+                        .deleteSetting(key, bikeName, category, setup);
+                  } catch (_) {
+                    generalError(context, 'Error deleting category');
+                  }
+                },
+              );
+            }),
           ],
         );
       },
@@ -143,18 +81,14 @@ class SettingsAlerts {
   static Future<void> generalError(BuildContext context, String message) {
     return showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text('Error', style: Theme.of(context).textTheme.titleLarge),
-          content: Text(message, style: Theme.of(context).textTheme.titleMedium),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Error',
+          content: Text(message),
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK', style: Theme.of(context).textTheme.labelLarge),
+            DialogPrimaryButton(
+              label: 'OK',
+              onPressed: () => Navigator.of(ctx).pop(),
             ),
           ],
         );

@@ -1,9 +1,10 @@
 import 'package:bikesetupapp/app_pages/settings_page.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
+import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/widgets/drawer_bike_list.dart';
 import 'package:bikesetupapp/widgets/new_bike_bottom_sheet.dart';
-import 'package:bikesetupapp/bike_enums/bike_type.dart';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -26,51 +27,73 @@ class SidebarContent extends StatelessWidget {
     this.isInDrawer = false,
   });
 
+  String _initials() {
+    final u = user;
+    if (u == null) return '?';
+    final name = u.displayName?.trim() ?? '';
+    if (name.isEmpty) return u.isAnonymous ? 'AN' : '?';
+    final parts = name.split(' ').where((s) => s.isNotEmpty).toList();
+    if (parts.length == 1) {
+      return parts.first.substring(0, parts.first.length.clamp(0, 2)).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-
-    return Column(
-      children: [
-        // Header — colored only in drawer; plain user row in wide sidebar
-        if (isInDrawer)
-          Container(
-            height: size.height * 0.20,
-            color: Theme.of(context).primaryColor,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: SafeArea(
-              bottom: false,
+    final p = context.palette;
+    return Container(
+      color: p.surface,
+      child: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, isInDrawer ? 14 : 12, 16, 14),
               child: Row(
                 children: [
-                  user != null && user!.photoURL != null
-                      ? CircleAvatar(
-                          backgroundImage: NetworkImage(user!.photoURL!),
-                          radius: 24,
-                        )
-                      : CircleAvatar(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          backgroundImage:
-                              const AssetImage('assets/incognito.png'),
-                          radius: 24,
-                        ),
-                  const SizedBox(width: 12),
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [p.accent, const Color(0xFFE0522A)],
+                      ),
+                      image: (user?.photoURL != null)
+                          ? DecorationImage(image: NetworkImage(user!.photoURL!), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: (user?.photoURL == null)
+                        ? Text(
+                            _initials(),
+                            style: AppTextStyles.inter(
+                              size: 13, weight: FontWeight.w800,
+                              color: p.accentInk,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Bike Setup',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          user?.displayName ?? (user?.isAnonymous == true ? 'Anonymous' : 'Bike Setup'),
+                          style: AppTextStyles.inter(
+                            size: 13, weight: FontWeight.w700, color: p.ink,
+                          ),
                           overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
                         ),
                         if (user?.email != null)
                           Text(
                             user!.email!,
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: AppTextStyles.inter(size: 11, color: p.inkMuted),
                             overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
                       ],
                     ),
@@ -78,69 +101,57 @@ class SidebarContent extends StatelessWidget {
                 ],
               ),
             ),
-          )
-        else
-          SafeArea(
-            bottom: false,
+          ),
+          Divider(height: 1, color: p.border),
+          // ── Garage list ─────────────────────────────────────────────────────
+          Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  user != null && user!.photoURL != null
-                      ? CircleAvatar(
-                          backgroundImage: NetworkImage(user!.photoURL!),
-                          radius: 18,
-                        )
-                      : CircleAvatar(
-                          backgroundImage:
-                              const AssetImage('assets/incognito.png'),
-                          radius: 18,
-                        ),
-                  const SizedBox(width: 10),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
+                    child: _MiniSectionLabel(text: 'My garage'),
+                  ),
                   Expanded(
-                    child: Text(
-                      user?.email ?? 'Anonymous',
-                      style: Theme.of(context).textTheme.bodySmall,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                    child: BikeList(
+                      user: user,
+                      bikeName: bikeName,
+                      onBikeSelected: onBikeSelected,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        // Bike list
-        Expanded(
-          child: BikeList(
-            user: user,
-            bikeName: bikeName,
-            onBikeSelected: onBikeSelected,
-          ),
-        ),
-        // Fixed footer
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.06),
-            border: Border(
-              top: BorderSide(color: Colors.black.withValues(alpha: 0.12), width: 0.5),
-            ),
-          ),
-          child: SafeArea(
+          Divider(height: 1, color: p.border),
+          // ── Footer ─────────────────────────────────────────────────────────
+          SafeArea(
             top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    Icons.settings_outlined,
-                    size: 20,
-                    color: Theme.of(context).iconTheme.color,
-                  ),
-                  title: Text(
-                    'Settings',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+                _FooterItem(
+                  icon: Icons.add_rounded,
+                  label: 'New bike',
+                  onTap: () {
+                    if (user != null) {
+                      if (isInDrawer) Navigator.of(context).pop();
+                      showNewBikeSheet(
+                        context, user!, NewBikeMode.newBike,
+                        onBikeSelected: onBikeSelected,
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No User logged in')),
+                      );
+                    }
+                  },
+                ),
+                _FooterItem(
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
                   onTap: () {
                     Navigator.of(context).push(AppRoutes.fadeSlide(SettingsPage(
                       bikeName: bikeName,
@@ -149,34 +160,67 @@ class SidebarContent extends StatelessWidget {
                     )));
                   },
                 ),
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    Icons.add_circle_outline,
-                    size: 20,
-                    color: Theme.of(context).iconTheme.color,
-                  ),
-                  title: Text(
-                    'New Bike',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  onTap: () {
-                    if (user != null) {
-                      if (isInDrawer) Navigator.of(context).pop();
-                      showNewBikeSheet(
-                          context, user!, NewBikeMode.newBike,
-                          onBikeSelected: onBikeSelected);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('No User logged in')));
-                    }
-                  },
-                ),
+                const SizedBox(height: 4),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniSectionLabel extends StatelessWidget {
+  final String text;
+  const _MiniSectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Row(
+      children: [
+        Container(width: 10, height: 1, color: p.borderStrong),
+        const SizedBox(width: 8),
+        Text(
+          text.toUpperCase(),
+          style: AppTextStyles.eyebrow(color: p.inkDim),
         ),
+        const SizedBox(width: 8),
+        Expanded(child: Container(height: 1, color: p.border)),
       ],
+    );
+  }
+}
+
+class _FooterItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _FooterItem({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: p.inkMuted),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: AppTextStyles.inter(
+                  size: 12, weight: FontWeight.w600, color: p.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,7 +1,9 @@
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/bike_enums/component_type.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/service_component.dart';
 import 'package:bikesetupapp/models/service_entry.dart';
+import 'package:bikesetupapp/widgets/service_status.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -15,9 +17,9 @@ Future<void> showAddComponentSheet(
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).cardTheme.color,
+    backgroundColor: context.palette.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
     builder: (ctx) => _AddComponentSheet(
       user: user,
@@ -104,11 +106,10 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Padding(
       padding: EdgeInsets.only(
-        left: 32,
-        right: 32,
-        top: 28,
+        left: 22, right: 22, top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 28,
       ),
       child: SingleChildScrollView(
@@ -118,104 +119,74 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
           children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 36, height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.color
-                      ?.withValues(alpha: 0.3),
+                  color: p.borderStrong,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'ADD COMPONENT',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.5,
-                    fontSize: 11,
+            const SizedBox(height: 22),
+            Row(
+              children: [
+                Icon(Icons.build_rounded, size: 15, color: p.inkMuted),
+                const SizedBox(width: 8),
+                Text(
+                  'ADD COMPONENT',
+                  style: AppTextStyles.inter(
+                    size: 11, weight: FontWeight.w800,
+                    color: p.inkMuted, letterSpacing: 1.5,
                   ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 110,
-              child: GridView.builder(
-                scrollDirection: Axis.horizontal,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 0.5,
-                ),
-                itemCount: ComponentType.values.length,
-                itemBuilder: (context, index) {
-                  final type = ComponentType.values[index];
-                  final isSelected = _selectedType == type;
-                  return GestureDetector(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final type in ComponentType.values)
+                  _TypeChip(
+                    type: type,
+                    selected: _selectedType == type,
                     onTap: () => _onTypeSelected(type),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFFD4883A).withValues(alpha: 0.2)
-                            : Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFFD4883A)
-                              : Colors.white.withValues(alpha: 0.1),
-                          width: isSelected ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          type.label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? const Color(0xFFD4883A)
-                                : Colors.white.withValues(alpha: 0.7),
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
             if (_selectedType != null) ...[
-              _buildTextField('Component name', _nameController),
-              const SizedBox(height: 12),
-              _buildTextField('Service interval (km)', _intervalController,
-                  keyboardType: TextInputType.number),
-              const SizedBox(height: 24),
+              _TextField(
+                controller: _nameController,
+                hint: 'Component name',
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 10),
+              _TextField(
+                controller: _intervalController,
+                hint: 'Service interval (km)',
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .floatingActionButtonTheme
-                        .backgroundColor,
+                    backgroundColor: p.accent,
+                    foregroundColor: p.accentInk,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 0,
                   ),
                   onPressed: _onSave,
                   child: Text(
-                    'Add Component',
-                    style: Theme.of(context).textTheme.labelLarge,
+                    'ADD COMPONENT',
+                    style: AppTextStyles.inter(
+                      size: 13, weight: FontWeight.w800,
+                      color: p.accentInk, letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
@@ -225,33 +196,93 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
       ),
     );
   }
+}
 
-  Widget _buildTextField(String hint, TextEditingController controller,
-      {TextInputType? keyboardType}) {
+class _TypeChip extends StatelessWidget {
+  final ComponentType type;
+  final bool selected;
+  final VoidCallback onTap;
+  const _TypeChip({required this.type, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? p.accent.withValues(alpha: 0.15) : p.surface2,
+          border: Border.all(
+            color: selected ? p.accent : p.border,
+            width: selected ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              iconForComponent(type.icon),
+              size: 13,
+              color: selected ? p.accent : p.inkMuted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              type.label,
+              style: AppTextStyles.inter(
+                size: 11.5,
+                weight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? p.accent : p.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+  const _TextField({
+    required this.controller,
+    required this.hint,
+    this.keyboardType,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      style: AppTextStyles.inter(size: 13, color: p.ink),
+      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: Theme.of(context).textTheme.labelSmall,
+        hintStyle: AppTextStyles.inter(size: 13, color: p.inkDim),
+        filled: true,
+        fillColor: p.surface2,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.border),
+        ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            width: 2,
-            color: Theme.of(context).textTheme.labelMedium?.color ??
-                Theme.of(context).colorScheme.onSurface,
-          ),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            width: 2,
-            color: Theme.of(context).textTheme.labelMedium?.color ??
-                Theme.of(context).colorScheme.onSurface,
-          ),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.accent),
         ),
       ),
-      onChanged: (_) => setState(() {}),
     );
   }
 }
