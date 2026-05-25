@@ -20,21 +20,28 @@ class ServiceComponentCard extends StatelessWidget {
   static const _greenColor = Color(0xFF4A9E6E);
   static const _amberColor = Color(0xFFE8A44A);
   static const _redColor = Color(0xFFE05545);
+  static const _unknownColor = Color(0xFF6B7280); // neutral grey
+
+  /// True when there is a service entry but mileage was not recorded.
+  bool get _mileageUnknown =>
+      latestEntry != null && latestEntry!.mileageAtServiceKm == null;
 
   double get kmSinceService {
-    if (latestEntry != null) {
-      return (currentMileageKm - latestEntry!.mileageAtServiceKm)
+    if (latestEntry?.mileageAtServiceKm != null) {
+      return (currentMileageKm - latestEntry!.mileageAtServiceKm!)
           .clamp(0.0, double.infinity);
     }
     return currentMileageKm;
   }
 
   double get progress {
+    if (_mileageUnknown) return 0.0;
     if (component.serviceIntervalKm <= 0) return 0.0;
     return kmSinceService / component.serviceIntervalKm;
   }
 
   Color get statusColor {
+    if (_mileageUnknown) return _unknownColor;
     if (progress >= 0.9) return _redColor;
     if (progress >= 0.7) return _amberColor;
     return _greenColor;
@@ -43,8 +50,72 @@ class ServiceComponentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat('#,###');
+
+    // ── Unknown-mileage layout ─────────────────────────────────────────────
+    if (_mileageUnknown) {
+      final dateText = DateFormat('MMM d, yyyy').format(latestEntry!.date);
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.6) ??
+                Colors.black.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border(
+              left: BorderSide(
+                  color: _unknownColor.withValues(alpha: 0.5), width: 3),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          child: Row(
+            children: [
+              Icon(
+                _iconForComponent(component.type.icon),
+                size: 14,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  component.type.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    dateText,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  Text(
+                    'no mileage data',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── Normal km-based layout ─────────────────────────────────────────────
     final kmText = formatter.format(kmSinceService.round());
-    final intervalText = formatter.format(component.serviceIntervalKm);
+    final intervalText = 'of ${formatter.format(component.serviceIntervalKm)} km';
 
     return GestureDetector(
       onTap: onTap,
@@ -139,7 +210,7 @@ class ServiceComponentCard extends StatelessWidget {
                 else
                   const SizedBox.shrink(),
                 Text(
-                  'of $intervalText km',
+                  intervalText,
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.white.withValues(alpha: 0.4),

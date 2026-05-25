@@ -96,6 +96,21 @@ class ServiceDatabaseService {
         .delete();
   }
 
+  /// Live stream of the latest service entry for [componentId].
+  /// Emits null when no entries exist, updates immediately on add/delete.
+  Stream<ServiceEntry?> streamLatestEntryForComponent(String componentId) {
+    return userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.serviceComponents)
+        .doc(componentId)
+        .collection(FirestoreKeys.serviceEntries)
+        .orderBy(FirestoreKeys.serviceDate, descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.isEmpty ? null : ServiceEntry.fromSnapshot(snap.docs.first));
+  }
+
   Future<ServiceEntry?> getLatestEntryForComponent(String componentId) async {
     final snap = await userBikeSetup
         .doc(userID)
@@ -146,6 +161,19 @@ class ServiceDatabaseService {
         .collection(FirestoreKeys.stravaBikes)
         .doc(stravaGearId)
         .update({FirestoreKeys.linkedBikeId: FieldValue.delete()});
+  }
+
+  /// Returns the Strava gear ID (document ID in StravaBikes) that is linked
+  /// to [appBikeId], or null if none is linked.
+  Future<String?> getStravaGearIdForBike(String appBikeId) async {
+    final snap = await userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.stravaBikes)
+        .where(FirestoreKeys.linkedBikeId, isEqualTo: appBikeId)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    return snap.docs.first.id;
   }
 
   Future<double?> getMileageForBike(String appBikeId) async {

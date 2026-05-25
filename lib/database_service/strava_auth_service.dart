@@ -26,7 +26,7 @@ class StravaAuthService {
           '?client_id=$_clientId'
           '&response_type=code'
           '&redirect_uri=$_redirectUri'
-          '&scope=read,profile:read_all'
+          '&scope=read,profile:read_all,activity:read'
           '&approval_prompt=auto');
 
       final result = await FlutterWebAuth2.authenticate(

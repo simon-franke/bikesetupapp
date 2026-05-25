@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/service_component.dart';
@@ -107,32 +109,64 @@ class _ComponentListWithEntries extends StatefulWidget {
 
 class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
   final Map<String, ServiceEntry?> _latestEntries = {};
+  final Map<String, StreamSubscription<ServiceEntry?>> _subs = {};
   bool _loaded = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchLatestEntries();
+    _subscribe(widget.components);
   }
 
   @override
   void didUpdateWidget(_ComponentListWithEntries oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.components.length != widget.components.length) {
-      _fetchLatestEntries();
+    // Re-subscribe only when the set of tracked components changes.
+    final oldIds = oldWidget.components.map((c) => c.id).toSet();
+    final newIds = widget.components.map((c) => c.id).toSet();
+    if (oldIds != newIds) {
+      _cancelAll();
+      _subscribe(widget.components);
     }
   }
 
-  Future<void> _fetchLatestEntries() async {
-    for (final comp in widget.components) {
-      final entry = await widget.db.getLatestEntryForComponent(comp.id);
-      if (mounted) {
-        _latestEntries[comp.id] = entry;
-      }
+  @override
+  void dispose() {
+    _cancelAll();
+    super.dispose();
+  }
+
+  void _cancelAll() {
+    for (final sub in _subs.values) {
+      sub.cancel();
     }
-    if (mounted) {
-      setState(() => _loaded = true);
-      _checkAlert();
+    _subs.clear();
+  }
+
+  void _subscribe(List<ServiceComponent> components) {
+    if (components.isEmpty) {
+      if (mounted) setState(() => _loaded = true);
+      return;
+    }
+
+    final targetIds = components.map((c) => c.id).toSet();
+
+    for (final comp in components) {
+      final sub = widget.db
+          .streamLatestEntryForComponent(comp.id)
+          .listen((entry) {
+        if (!mounted) return;
+        setState(() {
+          _latestEntries[comp.id] = entry;
+          // Mark loaded once every component has emitted at least once.
+          if (!_loaded &&
+              targetIds.every((id) => _latestEntries.containsKey(id))) {
+            _loaded = true;
+          }
+        });
+        _checkAlert();
+      });
+      _subs[comp.id] = sub;
     }
   }
 
@@ -141,12 +175,15 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
     bool hasAlert = false;
     for (final comp in widget.components) {
       final entry = _latestEntries[comp.id];
-      final kmSince = entry != null
-          ? (widget.currentMileageKm - entry.mileageAtServiceKm)
+      // Skip components with unknown mileage — we can't assess their status.
+      if (entry != null && entry.mileageAtServiceKm == null) continue;
+      final kmSince = entry?.mileageAtServiceKm != null
+          ? (widget.currentMileageKm - entry!.mileageAtServiceKm!)
               .clamp(0.0, double.infinity)
           : widget.currentMileageKm;
-      if (comp.serviceIntervalKm > 0 &&
-          kmSince / comp.serviceIntervalKm >= 0.9) {
+      final progress =
+          comp.serviceIntervalKm > 0 ? kmSince / comp.serviceIntervalKm : 0.0;
+      if (progress >= 0.9) {
         hasAlert = true;
         break;
       }
@@ -165,19 +202,18 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
     sorted.sort((a, b) {
       final aEntry = _latestEntries[a.id];
       final bEntry = _latestEntries[b.id];
-      final aKm = aEntry != null
-          ? (widget.currentMileageKm - aEntry.mileageAtServiceKm)
-              .clamp(0.0, double.infinity)
-          : widget.currentMileageKm;
-      final bKm = bEntry != null
-          ? (widget.currentMileageKm - bEntry.mileageAtServiceKm)
-              .clamp(0.0, double.infinity)
-          : widget.currentMileageKm;
-      final aProgress =
-          a.serviceIntervalKm > 0 ? aKm / a.serviceIntervalKm : 0.0;
-      final bProgress =
-          b.serviceIntervalKm > 0 ? bKm / b.serviceIntervalKm : 0.0;
-      return bProgress.compareTo(aProgress);
+
+      double entryProgress(ServiceComponent comp, ServiceEntry? entry) {
+        // Unknown-mileage entries sort to the bottom (progress = -1).
+        if (entry != null && entry.mileageAtServiceKm == null) return -1.0;
+        final km = entry?.mileageAtServiceKm != null
+            ? (widget.currentMileageKm - entry!.mileageAtServiceKm!)
+                .clamp(0.0, double.infinity)
+            : widget.currentMileageKm;
+        return comp.serviceIntervalKm > 0 ? km / comp.serviceIntervalKm : 0.0;
+      }
+
+      return entryProgress(b, bEntry).compareTo(entryProgress(a, aEntry));
     });
 
     return ListView.builder(

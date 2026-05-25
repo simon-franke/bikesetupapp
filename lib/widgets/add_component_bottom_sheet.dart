@@ -46,19 +46,11 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
   ComponentType? _selectedType;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _intervalController = TextEditingController();
-  final TextEditingController _mileageController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _mileageController.text = widget.currentMileageKm.round().toString();
-  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _intervalController.dispose();
-    _mileageController.dispose();
     super.dispose();
   }
 
@@ -80,8 +72,7 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
     if (name.isEmpty) return;
     final interval = int.tryParse(_intervalController.text.trim()) ?? 0;
     if (interval <= 0) return;
-    final mileage =
-        double.tryParse(_mileageController.text.trim()) ?? widget.currentMileageKm;
+    final double mileage = widget.currentMileageKm;
 
     final componentId = const Uuid().v4();
     final entryId = const Uuid().v4();
@@ -207,10 +198,6 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
               _buildTextField('Component name', _nameController),
               const SizedBox(height: 12),
               _buildTextField('Service interval (km)', _intervalController,
-                  keyboardType: TextInputType.number),
-              const SizedBox(height: 12),
-              _buildTextField(
-                  'Mileage at last service (km)', _mileageController,
                   keyboardType: TextInputType.number),
               const SizedBox(height: 24),
               SizedBox(
