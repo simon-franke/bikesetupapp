@@ -1,5 +1,7 @@
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
+import 'package:bikesetupapp/widgets/setting_value_editor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -13,9 +15,9 @@ Future<void> showAddFieldSheet(
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).cardTheme.color,
+    backgroundColor: context.palette.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
     builder: (ctx) => _AddFieldSheet(
       user: user,
@@ -109,12 +111,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final suggestions = _suggestions;
     return Padding(
       padding: EdgeInsets.only(
-        left: 32,
-        right: 32,
-        top: 28,
+        left: 22, right: 22, top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 28,
       ),
       child: Column(
@@ -123,56 +124,36 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
         children: [
           Center(
             child: Container(
-              width: 40,
-              height: 4,
+              width: 36, height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.color
-                    ?.withValues(alpha: 0.3),
+                color: p.borderStrong,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            'ADD FIELD',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: 1.5,
-                  fontSize: 11,
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Icon(Icons.add_rounded, size: 15, color: p.inkMuted),
+              const SizedBox(width: 8),
+              Text(
+                'ADD FIELD',
+                style: AppTextStyles.inter(
+                  size: 11, weight: FontWeight.w800,
+                  color: p.inkMuted, letterSpacing: 1.5,
                 ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           if (_loading)
             const Center(child: CircularProgressIndicator.adaptive())
           else ...[
             if (suggestions.isNotEmpty) ...[
-              DropdownButtonFormField<String>(
-                initialValue: _nameController.text.isEmpty ? _selectedChip : null,
-                hint: Text(
-                  'Suggested fields',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                decoration: InputDecoration(
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      width: 2,
-                      color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      width: 2,
-                      color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                items: suggestions
-                    .map((k) => DropdownMenuItem(value: k, child: Text(k)))
-                    .toList(),
+              _Dropdown(
+                value: _nameController.text.isEmpty ? _selectedChip : null,
+                hint: 'Suggested fields',
+                items: suggestions,
                 onChanged: (k) {
                   if (k == null) return;
                   setState(() {
@@ -181,106 +162,63 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
-            TextField(
+            _TextField(
               controller: _nameController,
-              decoration: InputDecoration(
-                hintText: 'Custom field name',
-                hintStyle: Theme.of(context).textTheme.labelSmall,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    width: 2,
-                    color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    width: 2,
-                    color: Theme.of(context).textTheme.labelMedium?.color ?? Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
+              hint: 'Custom field name',
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 20),
             if (_resolvedKey.isNotEmpty) ...[
               Row(
                 children: [
-                  Icon(
-                    _resolvedMeta.icon,
-                    size: 18,
-                    color: Theme.of(context)
-                        .iconTheme
-                        .color
-                        ?.withValues(alpha: 0.6),
-                  ),
+                  Icon(_resolvedMeta.icon, size: 16, color: p.inkMuted),
                   const SizedBox(width: 8),
                   Text(
                     _resolvedKey.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          letterSpacing: 1.5,
-                          fontSize: 11,
-                        ),
+                    style: AppTextStyles.inter(
+                      size: 11, weight: FontWeight.w800,
+                      color: p.inkMuted, letterSpacing: 1.5,
+                    ),
                   ),
                   if (_resolvedMeta.unit.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     Text(
                       '(${_resolvedMeta.unit})',
-                      style: Theme.of(context).textTheme.labelSmall,
+                      style: AppTextStyles.inter(size: 11, color: p.inkDim),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
             ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _LocalStepButton(
-                  icon: Icons.remove_rounded,
-                  onTap: () =>
-                      setState(() => _value = (_value - 1).clamp(0, 999)),
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '$_value',
-                      style: Theme.of(context).textTheme.displayMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _resolvedMeta.unit,
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ],
-                ),
-                _LocalStepButton(
-                  icon: Icons.add_rounded,
-                  onTap: () =>
-                      setState(() => _value = (_value + 1).clamp(0, 999)),
-                ),
-              ],
+            SettingValueEditor(
+              key: ValueKey('value-editor-$_resolvedKey'),
+              initialValue: _value,
+              meta: _resolvedMeta,
+              onChanged: (v) => _value = v,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
+                  backgroundColor: p.accent,
+                  foregroundColor: p.accentInk,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
                 ),
                 onPressed: _resolvedKey.isEmpty ? null : _onAdd,
                 child: Text(
-                  'Add',
-                  style: Theme.of(context).textTheme.labelLarge,
+                  'ADD',
+                  style: AppTextStyles.inter(
+                    size: 13, weight: FontWeight.w800,
+                    color: p.accentInk, letterSpacing: 1,
+                  ),
                 ),
               ),
             ),
@@ -291,28 +229,88 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
   }
 }
 
-class _LocalStepButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _LocalStepButton({required this.icon, required this.onTap});
+class _TextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final ValueChanged<String>? onChanged;
+  const _TextField({required this.controller, required this.hint, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          color: Theme.of(context)
-              .floatingActionButtonTheme
-              .backgroundColor
-              ?.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
+    final p = context.palette;
+    return TextField(
+      controller: controller,
+      style: AppTextStyles.inter(size: 13, color: p.ink),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: AppTextStyles.inter(size: 13, color: p.inkDim),
+        filled: true,
+        fillColor: p.surface2,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.border),
         ),
-        child: Icon(icon, size: 30),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.accent),
+        ),
       ),
     );
   }
 }
+
+class _Dropdown extends StatelessWidget {
+  final String? value;
+  final String hint;
+  final List<String> items;
+  final ValueChanged<String?> onChanged;
+  const _Dropdown({
+    required this.value,
+    required this.hint,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      hint: Text(hint, style: AppTextStyles.inter(size: 13, color: p.inkDim)),
+      icon: Icon(Icons.keyboard_arrow_down_rounded, color: p.inkMuted),
+      dropdownColor: p.surface,
+      style: AppTextStyles.inter(size: 13, color: p.ink),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: p.surface2,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: p.accent),
+        ),
+      ),
+      items: items
+          .map((k) => DropdownMenuItem(
+                value: k,
+                child: Text(k, style: AppTextStyles.inter(size: 13, color: p.ink)),
+              ))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+}
+

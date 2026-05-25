@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:flutter/material.dart';
 
 enum ActiveView { setup, services }
@@ -14,52 +15,32 @@ class ViewToggle extends StatelessWidget {
     this.showServiceAlert = false,
   });
 
-  static const _activeColor = Color(0xFFD4883A);
-  static const _alertColor = Color(0xFFE05545);
-
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(10),
-      ),
       padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: p.surface2,
+        border: Border.all(color: p.border),
+        borderRadius: BorderRadius.circular(11),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ToggleIcon(
-            icon: Icons.settings,
+          _Pill(
+            label: 'Setup',
+            icon: Icons.tune_rounded,
             isActive: activeView == ActiveView.setup,
             onTap: () => onChanged(ActiveView.setup),
           ),
           const SizedBox(width: 2),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              _ToggleIcon(
-                icon: Icons.build,
-                isActive: activeView == ActiveView.services,
-                onTap: () => onChanged(ActiveView.services),
-              ),
-              if (showServiceAlert)
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: _alertColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+          _Pill(
+            label: 'Service',
+            icon: Icons.build_rounded,
+            isActive: activeView == ActiveView.services,
+            showAlert: showServiceAlert,
+            onTap: () => onChanged(ActiveView.services),
           ),
         ],
       ),
@@ -67,35 +48,65 @@ class ViewToggle extends StatelessWidget {
   }
 }
 
-class _ToggleIcon extends StatelessWidget {
+class _Pill extends StatelessWidget {
+  final String label;
   final IconData icon;
   final bool isActive;
+  final bool showAlert;
   final VoidCallback onTap;
 
-  const _ToggleIcon({
+  const _Pill({
+    required this.label,
     required this.icon,
     required this.isActive,
     required this.onTap,
+    this.showAlert = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+    final bg = isActive ? p.card : Colors.transparent;
+    final fg = isActive ? p.cardInk : p.inkMuted;
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 32,
-        height: 28,
+      child: Tooltip(
+        message: label,
+        child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: isActive ? ViewToggle._activeColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: isActive
-              ? Colors.black87
-              : Colors.white.withValues(alpha: 0.3),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon, size: 15, color: fg),
+            Positioned(
+              top: -3,
+              right: -3,
+              child: AnimatedScale(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutBack,
+                scale: showAlert ? 1.0 : 0.0,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: showAlert ? 1.0 : 0.0,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: p.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: p.bg, width: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         ),
       ),
     );

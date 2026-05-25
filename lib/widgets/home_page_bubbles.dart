@@ -1,44 +1,64 @@
-import 'package:bikesetupapp/widgets/progress_indicator.dart';
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
-
-import 'package:flutter/material.dart';
+import 'package:bikesetupapp/widgets/progress_indicator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-const double bubbleCardW = 76.0;
-const double bubbleCardH = 50.0;
+const double bubbleCardW = 70.0;
+const double bubbleCardH = 44.0;
 const double _dotRadius = 5.0;
-const Color _activeColor = Color(0xFFFF6B00);
 
 class _LeaderLinePainter extends CustomPainter {
   final Offset dotCenter;
   final Offset cardCenter;
   final bool isSelected;
+  final Color activeColor;
+  final Color inactiveColor;
 
   const _LeaderLinePainter({
     required this.dotCenter,
     required this.cardCenter,
     required this.isSelected,
+    required this.activeColor,
+    required this.inactiveColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = isSelected
-          ? _activeColor.withValues(alpha: 0.75)
-          : Colors.white.withValues(alpha: 0.45)
-      ..strokeWidth = 1.5
+      ..color = isSelected ? activeColor : inactiveColor
+      ..strokeWidth = isSelected ? 1.5 : 1.0
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(dotCenter, cardCenter, paint);
+
+    if (isSelected) {
+      canvas.drawLine(dotCenter, cardCenter, paint);
+      return;
+    }
+    const double dash = 3, gap = 2;
+    final length = (cardCenter - dotCenter).distance;
+    if (length == 0) return;
+    final ux = (cardCenter.dx - dotCenter.dx) / length;
+    final uy = (cardCenter.dy - dotCenter.dy) / length;
+    double drawn = 0;
+    while (drawn < length) {
+      final segEnd = (drawn + dash).clamp(0.0, length);
+      final start = Offset(dotCenter.dx + ux * drawn, dotCenter.dy + uy * drawn);
+      final end = Offset(dotCenter.dx + ux * segEnd, dotCenter.dy + uy * segEnd);
+      canvas.drawLine(start, end, paint);
+      drawn += dash + gap;
+    }
   }
 
   @override
   bool shouldRepaint(_LeaderLinePainter old) =>
       old.isSelected != isSelected ||
       old.dotCenter != dotCenter ||
-      old.cardCenter != cardCenter;
+      old.cardCenter != cardCenter ||
+      old.activeColor != activeColor ||
+      old.inactiveColor != inactiveColor;
 }
 
 class SchematicBubble extends StatefulWidget {
@@ -89,6 +109,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
 
   bool get _isSelected => widget.chosenCategory == widget.category;
 
+  String _unitFor(String key) => kFieldMeta[key]?.unit ?? '';
+
   @override
   void initState() {
     super.initState();
@@ -136,7 +158,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
       case Category.fork:
         return 'FORK';
       case Category.generalSettings:
-        return 'SETTINGS';
+        return 'GEOMETRY';
     }
   }
 
@@ -144,6 +166,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
   Widget build(BuildContext context) {
     if (!widget.show) return const SizedBox.shrink();
 
+    final p = context.palette;
     final bool isSelected = _isSelected;
 
     // Convert bottom-origin coordinates to top-origin for the painter.
@@ -167,6 +190,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
                   dotCenter: dotCenter,
                   cardCenter: cardCenter,
                   isSelected: isSelected,
+                  activeColor: p.accent,
+                  inactiveColor: Colors.white.withValues(alpha: 0.35),
                 ),
               ),
             ),
@@ -183,22 +208,23 @@ class _SchematicBubbleState extends State<SchematicBubble>
                 height: _dotRadius * 2,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSelected
-                      ? _activeColor
-                      : Colors.white.withValues(alpha: 0.7),
+                  color: isSelected ? p.accent : AppColors.darkInk,
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: _activeColor.withValues(alpha: 0.55),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          )
+                            color: Colors.black.withValues(alpha: 0.6),
+                            spreadRadius: 3,
+                          ),
+                          BoxShadow(
+                            color: p.accent.withValues(alpha: 0.65),
+                            blurRadius: 14,
+                          ),
                         ]
                       : [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 3,
-                          )
+                            color: Colors.black.withValues(alpha: 0.55),
+                            spreadRadius: 3,
+                          ),
                         ],
                 ),
               ),
@@ -226,26 +252,28 @@ class _SchematicBubbleState extends State<SchematicBubble>
                     widget.onValueChange(_latestValue);
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
                     width: bubbleCardW,
                     height: bubbleCardH,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected ? _activeColor : Colors.transparent,
-                        width: 2.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: isSelected ? 0.38 : 0.22),
-                          blurRadius: isSelected ? 14 : 7,
-                          spreadRadius: isSelected ? 1 : 0,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      color: isSelected ? p.accent : AppColors.darkCard,
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
+                              ),
+                            ]
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                     ),
                     child: StreamBuilder(
                       stream: DatabaseService(widget.user.uid)
@@ -253,79 +281,64 @@ class _SchematicBubbleState extends State<SchematicBubble>
                               widget.category.category, widget.setup),
                       builder: (context, AsyncSnapshot snapshot) {
                         final String label = _categoryLabel(widget.category);
+                        final Color chipInk = isSelected ? p.accentInk : AppColors.darkCardInk;
 
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return Center(
                             child: PulsatingCircle(
-                              color: Colors.grey.shade300,
-                              size: 20,
+                              color: chipInk.withValues(alpha: 0.4),
+                              size: 14,
                             ),
                           );
                         }
 
-                        Widget valueWidget;
-
-                        if (widget.category == Category.generalSettings) {
-                          valueWidget = Icon(
-                            Icons.settings,
-                            color: isSelected ? _activeColor : Colors.black54,
-                            size: 16,
-                          );
-                        } else if (snapshot.hasError ||
-                            !snapshot.hasData ||
-                            snapshot.data == null) {
-                          valueWidget = const Icon(
-                            Icons.error_outline,
-                            color: Colors.redAccent,
-                            size: 16,
-                          );
+                        final bool isGeometry =
+                            widget.category == Category.generalSettings;
+                        String element = '';
+                        String elementKey = '';
+                        int specCount = 0;
+                        bool hasError = false;
+                        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                          hasError = true;
                         } else {
-                          String element = '';
                           try {
                             final rawMap = snapshot.data.data();
                             if (rawMap is Map) {
                               final data = rawMap.cast<String, dynamic>();
-                              final priorityKeys = kDefaultFieldKeys[widget.category.category] ?? [];
-                              for (final k in priorityKeys) {
-                                final v = data[k]?.toString() ?? '';
-                                if (v.isNotEmpty) { element = v; break; }
-                              }
-                              if (element.isEmpty) {
-                                for (final v in data.values) {
-                                  final s = v?.toString() ?? '';
-                                  if (s.isNotEmpty) { element = s; break; }
+                              if (isGeometry) {
+                                for (final entry in data.entries) {
+                                  final s = entry.value?.toString() ?? '';
+                                  if (s.isNotEmpty) specCount++;
+                                }
+                              } else {
+                                final priorityKeys = kDefaultFieldKeys[widget.category.category] ?? [];
+                                for (final k in priorityKeys) {
+                                  final v = data[k]?.toString() ?? '';
+                                  if (v.isNotEmpty) { element = v; elementKey = k; break; }
+                                }
+                                if (element.isEmpty) {
+                                  for (final entry in data.entries) {
+                                    final s = entry.value?.toString() ?? '';
+                                    if (s.isNotEmpty) { element = s; elementKey = entry.key; break; }
+                                  }
                                 }
                               }
                             }
                           } catch (_) {}
+                          if (!isGeometry && element.isEmpty) hasError = true;
+                        }
 
-                          if (element.isEmpty) {
-                            valueWidget = const Icon(
-                              Icons.error_outline,
-                              color: Colors.redAccent,
-                              size: 16,
-                            );
-                          } else {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted && _latestValue != element) {
-                                setState(() => _latestValue = element);
-                              }
-                            });
-                            valueWidget = Text(
-                              element,
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            );
-                          }
+                        if (!isGeometry && !hasError && element != _latestValue) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted && _latestValue != element) {
+                              setState(() => _latestValue = element);
+                            }
+                          });
                         }
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,16 +346,50 @@ class _SchematicBubbleState extends State<SchematicBubble>
                               Text(
                                 label,
                                 style: TextStyle(
-                                  color: isSelected
-                                      ? _activeColor
-                                      : Colors.black38,
-                                  fontSize: 8,
+                                  color: chipInk.withValues(alpha: 0.65),
+                                  fontSize: 7.5,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.6,
+                                  letterSpacing: 0.8,
+                                  height: 1.2,
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              valueWidget,
+                              const SizedBox(height: 2),
+                              hasError
+                                  ? Icon(Icons.error_outline, size: 14, color: chipInk.withValues(alpha: 0.55))
+                                  : Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            isGeometry ? '$specCount' : element,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTextStyles.mono(
+                                              size: 13,
+                                              weight: FontWeight.w700,
+                                              color: chipInk,
+                                              height: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Flexible(
+                                          child: Text(
+                                            isGeometry
+                                                ? (specCount == 1 ? 'spec' : 'specs')
+                                                : _unitFor(elementKey),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: chipInk.withValues(alpha: 0.65),
+                                              fontSize: 8.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ],
                           ),
                         );

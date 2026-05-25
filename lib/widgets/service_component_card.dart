@@ -1,13 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/models/service_component.dart';
 import 'package:bikesetupapp/models/service_entry.dart';
+import 'package:bikesetupapp/widgets/service_status.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ServiceComponentCard extends StatelessWidget {
   final ServiceComponent component;
   final double currentMileageKm;
   final ServiceEntry? latestEntry;
   final VoidCallback? onTap;
+  final VoidCallback? onLog;
 
   const ServiceComponentCard({
     super.key,
@@ -15,241 +18,503 @@ class ServiceComponentCard extends StatelessWidget {
     required this.currentMileageKm,
     this.latestEntry,
     this.onTap,
+    this.onLog,
   });
-
-  static const _greenColor = Color(0xFF4A9E6E);
-  static const _amberColor = Color(0xFFE8A44A);
-  static const _redColor = Color(0xFFE05545);
-  static const _unknownColor = Color(0xFF6B7280); // neutral grey
-
-  /// True when there is a service entry but mileage was not recorded.
-  bool get _mileageUnknown =>
-      latestEntry != null && latestEntry!.mileageAtServiceKm == null;
-
-  double get kmSinceService {
-    if (latestEntry?.mileageAtServiceKm != null) {
-      return (currentMileageKm - latestEntry!.mileageAtServiceKm!)
-          .clamp(0.0, double.infinity);
-    }
-    return currentMileageKm;
-  }
-
-  double get progress {
-    if (_mileageUnknown) return 0.0;
-    if (component.serviceIntervalKm <= 0) return 0.0;
-    return kmSinceService / component.serviceIntervalKm;
-  }
-
-  Color get statusColor {
-    if (_mileageUnknown) return _unknownColor;
-    if (progress >= 0.9) return _redColor;
-    if (progress >= 0.7) return _amberColor;
-    return _greenColor;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat('#,###');
+    final s = annotateService(
+      component: component,
+      currentMileageKm: currentMileageKm,
+      latestEntry: latestEntry,
+    );
+    switch (s.status) {
+      case ServiceStatus.red:
+        return ServiceCardLarge(service: s, onTap: onTap, onLog: onLog ?? onTap);
+      case ServiceStatus.amber:
+        return ServiceCardMedium(service: s, onTap: onTap);
+      case ServiceStatus.green:
+        return ServiceCardCompact(service: s, onTap: onTap);
+      case ServiceStatus.unknown:
+        return ServiceCardUnknown(service: s, onTap: onTap);
+    }
+  }
+}
 
-    // ── Unknown-mileage layout ─────────────────────────────────────────────
-    if (_mileageUnknown) {
-      final dateText = DateFormat('MMM d, yyyy').format(latestEntry!.date);
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.6) ??
-                Colors.black.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border(
-              left: BorderSide(
-                  color: _unknownColor.withValues(alpha: 0.5), width: 3),
+class ServiceCardLarge extends StatelessWidget {
+  final AnnotatedService service;
+  final VoidCallback? onTap;
+  final VoidCallback? onLog;
+  const ServiceCardLarge({super.key, required this.service, this.onTap, this.onLog});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = p.red;
+    final formatter = NumberFormat('#,###');
+    final kmText = formatter.format(service.kmSinceService.round());
+    final intervalText = formatter.format(service.component.serviceIntervalKm);
+    final lastDays = service.lastServicedAt == null
+        ? null
+        : DateTime.now().difference(service.lastServicedAt!).inDays;
+    return _CardShell(
+      color: p.surface,
+      borderColor: color,
+      glow: color.withValues(alpha: 0.18),
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0, right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(8),
+                ),
+              ),
+              child: Text(
+                'DUE NOW',
+                style: AppTextStyles.inter(
+                  size: 8.5, weight: FontWeight.w800,
+                  color: Colors.white, letterSpacing: 1.2,
+                ),
+              ),
             ),
           ),
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-          child: Row(
-            children: [
-              Icon(
-                _iconForComponent(component.type.icon),
-                size: 14,
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  component.type.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    dateText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  Text(
-                    'no mileage data',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // ── Normal km-based layout ─────────────────────────────────────────────
-    final kmText = formatter.format(kmSinceService.round());
-    final intervalText = 'of ${formatter.format(component.serviceIntervalKm)} km';
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.6) ??
-              Colors.black.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border(
-            left: BorderSide(color: statusColor, width: 3),
-          ),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Icon(
-                        _iconForComponent(component.type.icon),
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          component.type.label,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Row(
                   children: [
-                    Text(
-                      '$kmText km',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: statusColor,
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        iconForComponent(service.component.type.icon),
+                        size: 18, color: color,
                       ),
                     ),
-                    if (progress >= 0.9) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _redColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'DUE',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: _redColor,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            service.component.type.label,
+                            style: AppTextStyles.inter(
+                              size: 14, weight: FontWeight.w700, color: p.ink,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (_hasModel(service.component))
+                            Text(
+                              service.component.name,
+                              style: AppTextStyles.inter(
+                                size: 10.5, color: p.inkMuted,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                kmText,
+                                style: AppTextStyles.mono(
+                                  size: 26, weight: FontWeight.w700,
+                                  color: color, letterSpacing: -1, height: 1,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '/ $intervalText km',
+                                style: AppTextStyles.mono(
+                                  size: 12, weight: FontWeight.w600,
+                                  color: p.inkDim,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (lastDays != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Last serviced $lastDays days ago',
+                              style: AppTextStyles.inter(
+                                size: 9.5, color: p.inkMuted,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Material(
+                      color: color,
+                      borderRadius: BorderRadius.circular(9),
+                      child: InkWell(
+                        onTap: onLog,
+                        borderRadius: BorderRadius.circular(9),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LOG',
+                                style: AppTextStyles.inter(
+                                  size: 10.5, weight: FontWeight.w800,
+                                  color: Colors.white, letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (component.name != component.type.label)
-                  Flexible(
-                    child: Text(
-                      component.name,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  )
-                else
-                  const SizedBox.shrink(),
-                Text(
-                  intervalText,
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Colors.white.withValues(alpha: 0.4),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: service.progress.clamp(0.0, 1.0),
+                    minHeight: 4,
+                    backgroundColor: Colors.white.withValues(alpha: 0.06),
+                    valueColor: AlwaysStoppedAnimation(color),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
-                minHeight: 3,
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-                valueColor: AlwaysStoppedAnimation(statusColor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ServiceCardMedium extends StatelessWidget {
+  final AnnotatedService service;
+  final VoidCallback? onTap;
+  const ServiceCardMedium({super.key, required this.service, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = service.status.color(p);
+    final formatter = NumberFormat('#,###');
+    final remaining = service.remainingKm.round();
+    final km = service.kmSinceService.round();
+    final interval = service.component.serviceIntervalKm;
+    return _CardShell(
+      color: p.surface,
+      borderColor: p.border,
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Positioned(left: 0, top: 0, bottom: 0, width: 3, child: ColoredBox(color: color)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 26, height: 26,
+                      decoration: BoxDecoration(
+                        color: p.surface2,
+                        border: Border.all(color: p.border),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Icon(
+                        iconForComponent(service.component.type.icon),
+                        size: 14, color: p.inkMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            service.component.type.label,
+                            style: AppTextStyles.inter(
+                              size: 12.5, weight: FontWeight.w600, color: p.ink,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (_hasModel(service.component))
+                            Text(
+                              service.component.name,
+                              style: AppTextStyles.inter(
+                                size: 9.5, color: p.inkDim,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              '$remaining',
+                              style: AppTextStyles.mono(
+                                size: 14, weight: FontWeight.w700, color: color,
+                              ),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              'km left',
+                              style: AppTextStyles.mono(
+                                size: 9, weight: FontWeight.w600, color: p.inkDim,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          '${formatter.format(km)} / ${formatter.format(interval)}',
+                          style: AppTextStyles.mono(
+                            size: 9, weight: FontWeight.w500, color: p.inkDim,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: service.progress.clamp(0.0, 1.0),
+                    minHeight: 3,
+                    backgroundColor: p.surface2,
+                    valueColor: AlwaysStoppedAnimation(color),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ServiceCardCompact extends StatelessWidget {
+  final AnnotatedService service;
+  final VoidCallback? onTap;
+  const ServiceCardCompact({super.key, required this.service, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = service.status.color(p);
+    final formatter = NumberFormat('#,###');
+    final kmText = formatter.format(service.kmSinceService.round());
+    final intervalText = formatter.format(service.component.serviceIntervalKm);
+    return _CardShell(
+      color: Colors.transparent,
+      borderColor: p.border,
+      borderRadius: 10,
+      marginVertical: 2,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Row(
+          children: [
+            Icon(
+              iconForComponent(service.component.type.icon),
+              size: 14, color: p.inkMuted,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                service.component.type.label,
+                style: AppTextStyles.inter(
+                  size: 12, weight: FontWeight.w600, color: p.ink,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  kmText,
+                  style: AppTextStyles.mono(
+                    size: 12, weight: FontWeight.w700, color: p.ink,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  '/ $intervalText km',
+                  style: AppTextStyles.mono(
+                    size: 10, weight: FontWeight.w500, color: p.inkDim,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 5, height: 5,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  static IconData _iconForComponent(String icon) {
-    switch (icon) {
-      case 'link':
-        return Icons.link;
-      case 'brake':
-        return Icons.pan_tool;
-      case 'tire':
-        return Icons.circle_outlined;
-      case 'fork':
-        return Icons.swap_vert;
-      case 'shock':
-        return Icons.compress;
-      case 'bearing':
-        return Icons.settings;
-      default:
-        return Icons.build;
-    }
+class ServiceCardUnknown extends StatelessWidget {
+  final AnnotatedService service;
+  final VoidCallback? onTap;
+  const ServiceCardUnknown({super.key, required this.service, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = p.inkDim;
+    final dateText = service.lastServicedAt == null
+        ? 'no service yet'
+        : DateFormat('MMM d, yyyy').format(service.lastServicedAt!);
+    return _CardShell(
+      color: p.surface.withValues(alpha: 0.6),
+      borderColor: p.border,
+      borderRadius: 10,
+      marginVertical: 2,
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Positioned(left: 0, top: 0, bottom: 0, width: 3, child: ColoredBox(color: color.withValues(alpha: 0.5))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            child: Row(
+              children: [
+                Icon(iconForComponent(service.component.type.icon), size: 14, color: p.inkDim),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    service.component.type.label,
+                    style: AppTextStyles.inter(
+                      size: 12.5, weight: FontWeight.w600, color: p.ink.withValues(alpha: 0.8),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      dateText,
+                      style: AppTextStyles.inter(size: 11, weight: FontWeight.w500, color: p.inkMuted),
+                    ),
+                    Text(
+                      'no mileage',
+                      style: AppTextStyles.inter(size: 8.5, color: p.inkDim),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
+
+class _CardShell extends StatefulWidget {
+  final Color color;
+  final Color borderColor;
+  final Color? glow;
+  final double borderRadius;
+  final double marginVertical;
+  final VoidCallback? onTap;
+  final Widget child;
+  const _CardShell({
+    required this.color,
+    required this.borderColor,
+    this.glow,
+    this.borderRadius = 14,
+    this.marginVertical = 4,
+    this.onTap,
+    required this.child,
+  });
+
+  @override
+  State<_CardShell> createState() => _CardShellState();
+}
+
+class _CardShellState extends State<_CardShell> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) {
+    if (_pressed == v) return;
+    setState(() => _pressed = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOut,
+      scale: _pressed && widget.onTap != null ? 0.97 : 1.0,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 14, vertical: widget.marginVertical),
+        decoration: BoxDecoration(
+          color: widget.color,
+          border: Border.all(color: widget.borderColor),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          boxShadow: widget.glow == null
+              ? null
+              : [BoxShadow(color: widget.glow!, blurRadius: 18, offset: const Offset(0, 6))],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => _setPressed(false),
+            onTapCancel: () => _setPressed(false),
+            onHighlightChanged: (v) => _setPressed(v),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+bool _hasModel(ServiceComponent c) =>
+    c.name.trim().isNotEmpty && c.name.trim() != c.type.label;
