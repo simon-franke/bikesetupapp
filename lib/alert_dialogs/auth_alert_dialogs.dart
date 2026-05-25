@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/alert_dialogs/dialog_helpers.dart';
 import 'package:bikesetupapp/app_pages/home_page.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
@@ -9,7 +10,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthAlerts {
-
   static void handleAuthentication(
       UserCredential userCredential, BuildContext context) async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -64,76 +64,54 @@ class AuthAlerts {
         .getSetupNameFromID(defaultBikeID, defaultSetupID);
     if (!context.mounted) return;
     Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
-          user: user,
-          bikeName: defaultBikeName,
-          uBikeID: defaultBikeID,
-          bikeType: bikeType,
-          setupName: defaultSetup,
-          uSetupID: defaultSetupID,
-        )));
+      user: user,
+      bikeName: defaultBikeName,
+      uBikeID: defaultBikeID,
+      bikeType: bikeType,
+      setupName: defaultSetup,
+      uSetupID: defaultSetupID,
+    )));
   }
 
   static Future<bool?> signOutAnonymous(BuildContext context, User user) async {
-    bool? result = await showDialog<bool>(
+    return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text(
-            'Signing Out',
-            style: Theme.of(context).textTheme.titleLarge,
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Sign out',
+          content: const Text(
+            'Are you sure you want to sign out of your anonymous account? This may result in a loss of data.',
           ),
-          content: Text(
-            'Are you sure you want to sign out of your anonymous account? \nThis may result in a loss of data.',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
-                child:
-                    Text('No', style: Theme.of(context).textTheme.labelLarge)),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              child: Text('Yes', style: Theme.of(context).textTheme.labelLarge),
+          actions: [
+            DialogSecondaryButton(
+              label: 'No',
+              onPressed: () => Navigator.of(ctx).pop(false),
+            ),
+            DialogPrimaryButton(
+              label: 'Sign out',
               onPressed: () {
                 AuthService().signOut();
-                Navigator.of(context).pop(true);
+                Navigator.of(ctx).pop(true);
               },
             ),
           ],
         );
       },
     );
-    return result;
   }
 
   static Future<void> generalError(BuildContext context, String message) {
     return showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text('Error', style: Theme.of(context).textTheme.titleLarge),
-          content: Text(message, style: Theme.of(context).textTheme.titleMedium),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Error',
+          content: Text(message),
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK', style: Theme.of(context).textTheme.labelLarge),
+            DialogPrimaryButton(
+              label: 'OK',
+              onPressed: () => Navigator.of(ctx).pop(),
             ),
           ],
         );

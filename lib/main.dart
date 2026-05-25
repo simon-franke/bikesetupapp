@@ -108,6 +108,8 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: appState.themeMode,
+            themeAnimationDuration: const Duration(milliseconds: 240),
+            themeAnimationCurve: Curves.easeOutCubic,
             home: isSignedIn
                 ? MyHomePage(
                     user: user,
