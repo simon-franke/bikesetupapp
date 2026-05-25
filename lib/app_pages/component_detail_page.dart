@@ -35,13 +35,26 @@ class ComponentDetailPage extends StatefulWidget {
 
 class _ComponentDetailPageState extends State<ComponentDetailPage> {
   late ServiceDatabaseService _db;
+  late int _intervalKm;
   static final NumberFormat _kmFormat = NumberFormat('#,###');
 
   @override
   void initState() {
     super.initState();
     _db = ServiceDatabaseService(widget.user.uid);
+    _intervalKm = widget.component.serviceIntervalKm;
   }
+
+  ServiceComponent get _component => _intervalKm == widget.component.serviceIntervalKm
+      ? widget.component
+      : ServiceComponent(
+          id: widget.component.id,
+          bikeId: widget.component.bikeId,
+          type: widget.component.type,
+          name: widget.component.name,
+          serviceIntervalKm: _intervalKm,
+          createdAt: widget.component.createdAt,
+        );
 
   void _showLogServiceSheet() {
     final noteController = TextEditingController();
@@ -318,6 +331,90 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
     return const SizedBox.shrink();
   }
 
+  Future<void> _editInterval() async {
+    final controller = TextEditingController(
+      text: _intervalKm.toString(),
+    );
+    final saved = await showDialog<int>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => WorkshopDialog(
+        title: 'Edit service interval',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'How many kilometers between services for '
+              '${widget.component.type.label.toLowerCase()}?',
+            ),
+            const SizedBox(height: 12),
+            DialogTextField(
+              controller: controller,
+              hint: 'Service interval (km)',
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          DialogSecondaryButton(
+            label: 'Cancel',
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          DialogPrimaryButton(
+            label: 'Save',
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              if (parsed == null || parsed <= 0) return;
+              Navigator.of(ctx).pop(parsed);
+            },
+          ),
+        ],
+      ),
+    );
+    if (saved != null && saved != _intervalKm) {
+      await _db.updateComponent(
+        widget.component.id,
+        serviceIntervalKm: saved,
+      );
+      if (mounted) {
+        setState(() => _intervalKm = saved);
+        HapticFeedback.lightImpact();
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteComponent() async {
+    final p = context.palette;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => WorkshopDialog(
+        title: 'Delete component?',
+        content: Text(
+          'This permanently removes ${widget.component.type.label} and all its '
+          'service history. This cannot be undone.',
+        ),
+        actions: [
+          DialogSecondaryButton(
+            label: 'Cancel',
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          DialogPrimaryButton(
+            label: 'Delete',
+            color: p.red,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _db.deleteComponent(widget.component.id);
+      HapticFeedback.mediumImpact();
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _confirmDeleteEntry(ServiceEntry entry) async {
     final p = context.palette;
     final mileageText = entry.mileageAtServiceKm != null
@@ -398,6 +495,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Scaffold(
       appBar: AppBar(
         scrolledUnderElevation: 0,
@@ -405,6 +503,60 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
           widget.component.type.label,
           style: Theme.of(context).textTheme.titleLarge,
         ),
+        actions: [
+          PopupMenuButton<String>(
+            color: p.surface,
+            tooltip: 'Component options',
+            icon: Icon(Icons.more_vert_rounded, color: p.ink),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: p.border),
+            ),
+            onSelected: (value) {
+              if (value == 'edit_interval') {
+                _editInterval();
+              } else if (value == 'delete') {
+                _confirmDeleteComponent();
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem<String>(
+                value: 'edit_interval',
+                child: Row(
+                  children: [
+                    Icon(Icons.tune_rounded, size: 16, color: p.ink),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Edit interval',
+                      style: AppTextStyles.inter(
+                        size: 13,
+                        weight: FontWeight.w600,
+                        color: p.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded, size: 16, color: p.red),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Delete component',
+                      style: AppTextStyles.inter(
+                        size: 13,
+                        weight: FontWeight.w600,
+                        color: p.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: StreamBuilder<List<ServiceEntry>>(
         stream: _db.getEntriesForComponent(widget.component.id),
@@ -413,7 +565,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
           final entries = snapshot.data ?? const <ServiceEntry>[];
           final latest = entries.isEmpty ? null : entries.first;
           final annotated = annotateService(
-            component: widget.component,
+            component: _component,
             currentMileageKm: widget.currentMileageKm,
             latestEntry: latest,
           );
@@ -423,7 +575,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 6, 14, 6),
                 child: _StatusHero(
-                  component: widget.component,
+                  component: _component,
                   service: annotated,
                   hasEntries: entries.isNotEmpty,
                 ),
