@@ -1,4 +1,6 @@
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/widgets/add_field_bottom_sheet.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +23,7 @@ class ControlPanelGrid extends StatefulWidget {
   final String category;
   final String uSetupID;
   final double topPadding;
+  final String? sectionLabel;
 
   const ControlPanelGrid({
     super.key,
@@ -29,6 +32,7 @@ class ControlPanelGrid extends StatefulWidget {
     required this.category,
     required this.uSetupID,
     this.topPadding = 0,
+    this.sectionLabel,
   });
 
   @override
@@ -39,13 +43,14 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
 
   void _showStepperSheet(
       BuildContext context, _CardDef card, String currentValue, bool isDefault) {
+    final p = context.palette;
     final int initial = int.tryParse(currentValue) ?? 0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardTheme.color,
+      backgroundColor: p.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (ctx) {
         int value = initial;
@@ -53,46 +58,41 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
           builder: (ctx, setSheetState) {
             return Padding(
               padding: EdgeInsets.only(
-                left: 32,
-                right: 32,
-                top: 28,
+                left: 22,
+                right: 22,
+                top: 12,
                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Grab handle.
                   Container(
-                    width: 40,
+                    width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Theme.of(ctx)
-                          .textTheme
-                          .labelSmall
-                          ?.color
-                          ?.withValues(alpha: 0.3),
+                      color: p.borderStrong,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 22),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(card.icon,
-                          size: 18,
-                          color: Theme.of(ctx)
-                              .iconTheme
-                              .color
-                              ?.withValues(alpha: 0.6)),
+                      Icon(card.icon, size: 15, color: p.inkMuted),
                       const SizedBox(width: 8),
                       Text(
                         card.key.toUpperCase(),
-                        style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
-                              letterSpacing: 1.5,
-                              fontSize: 11,
-                            ),
+                        style: AppTextStyles.inter(
+                          size: 11,
+                          weight: FontWeight.w800,
+                          color: p.inkMuted,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 22),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -105,12 +105,18 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                         children: [
                           Text(
                             '$value',
-                            style: Theme.of(ctx).textTheme.displayMedium,
+                            style: AppTextStyles.mono(
+                              size: 64,
+                              weight: FontWeight.w700,
+                              color: p.ink,
+                              letterSpacing: -3,
+                              height: 1,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             card.unit,
-                            style: Theme.of(ctx).textTheme.labelSmall,
+                            style: AppTextStyles.inter(size: 12, weight: FontWeight.w600, color: p.inkMuted),
                           ),
                         ],
                       ),
@@ -121,18 +127,18 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(ctx)
-                            .floatingActionButtonTheme
-                            .backgroundColor,
+                        backgroundColor: p.accent,
+                        foregroundColor: p.accentInk,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 0,
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
@@ -145,13 +151,18 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                         );
                       },
                       child: Text(
-                        'Save',
-                        style: Theme.of(ctx).textTheme.labelLarge,
+                        'SAVE',
+                        style: AppTextStyles.inter(
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: p.accentInk,
+                          letterSpacing: 1,
+                        ),
                       ),
                     ),
                   ),
                   if (!isDefault) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     TextButton(
                       onPressed: () async {
                         final confirmed = await showDialog<bool>(
@@ -171,10 +182,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                                     Navigator.of(dlgCtx).pop(true),
                                 child: Text(
                                   'Delete',
-                                  style: TextStyle(
-                                      color: Theme.of(dlgCtx)
-                                          .colorScheme
-                                          .error),
+                                  style: TextStyle(color: p.red),
                                 ),
                               ),
                             ],
@@ -191,9 +199,10 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                         }
                       },
                       child: Text(
-                        'Delete',
-                        style: TextStyle(
-                          color: Theme.of(ctx).colorScheme.error,
+                        'Delete field',
+                        style: AppTextStyles.inter(
+                          size: 12, weight: FontWeight.w700, color: p.red,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -226,30 +235,78 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
           ...extras,
         ];
 
-        return GridView.builder(
-          padding:
-              EdgeInsets.fromLTRB(12, widget.topPadding + 12, 12, 12),
+        return CustomScrollView(
           physics: const BouncingScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 180,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: allKeys.length,
-          itemBuilder: (context, index) {
-            final key = allKeys[index];
-            final card = _CardDef.fromKey(key);
-            final value = settings[key]?.toString() ?? '--';
-            final isDefault = isRequiredField(widget.category, key);
-            return _ControlCard(
-              config: card,
-              value: value,
-              onTap: () =>
-                  _showStepperSheet(context, card, value, isDefault),
-            );
-          },
+          slivers: [
+            if (widget.sectionLabel != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16, widget.topPadding + 16, 16, 4),
+                  child: _SectionLabel(widget.sectionLabel!),
+                ),
+              ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 100),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 200,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1 / 0.9,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index == allKeys.length) {
+                      return _AddFieldCard(
+                        onTap: () => showAddFieldSheet(
+                          context,
+                          user: widget.user,
+                          uBikeID: widget.uBikeID,
+                          category: widget.category,
+                          uSetupID: widget.uSetupID,
+                        ),
+                      );
+                    }
+                    final key = allKeys[index];
+                    final card = _CardDef.fromKey(key);
+                    final value = settings[key]?.toString() ?? '--';
+                    final isDefault = isRequiredField(widget.category, key);
+                    return _ControlCard(
+                      config: card,
+                      value: value,
+                      onTap: () =>
+                          _showStepperSheet(context, card, value, isDefault),
+                    );
+                  },
+                  childCount: allKeys.length + 1,
+                ),
+              ),
+            ),
+          ],
         );
       },
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Row(
+      children: [
+        Container(width: 12, height: 1, color: p.borderStrong),
+        const SizedBox(width: 8),
+        Text(
+          text.toUpperCase(),
+          style: AppTextStyles.eyebrow(color: p.inkDim),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Container(height: 1, color: p.border)),
+      ],
     );
   }
 }
@@ -267,56 +324,120 @@ class _ControlCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final p = context.palette;
+    return Material(
+      color: p.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: p.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: Text(
-                      config.key.toUpperCase(),
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            fontSize: 10,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          config.key.toUpperCase(),
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.inter(
+                            size: 9.5,
+                            weight: FontWeight.w700,
+                            color: p.inkDim,
+                            letterSpacing: 0.9,
                           ),
-                    ),
+                        ),
+                      ),
+                      Icon(config.icon, size: 14, color: p.inkDim),
+                    ],
                   ),
-                  Icon(
-                    config.icon,
-                    size: 16,
-                    color: Theme.of(context)
-                        .iconTheme
-                        .color
-                        ?.withValues(alpha: 0.5),
+                  const Spacer(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: AppTextStyles.mono(
+                          size: 32,
+                          weight: FontWeight.w700,
+                          color: p.ink,
+                          letterSpacing: -1,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        config.unit,
+                        style: AppTextStyles.inter(
+                          size: 11,
+                          weight: FontWeight.w600,
+                          color: p.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    value,
-                    style: Theme.of(context).textTheme.displaySmall,
+            ),
+            // Subtle gradient seam at the base.
+            Positioned(
+              left: 14, right: 14, bottom: 0, height: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.transparent,
+                      p.borderStrong,
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Text(
-                  config.unit,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontSize: 11,
-                      ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddFieldCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddFieldCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return GestureDetector(
+      onTap: onTap,
+      child: DottedBorder(
+        color: p.borderStrong,
+        radius: 14,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_rounded, size: 22, color: p.inkMuted),
+              const SizedBox(height: 6),
+              Text(
+                'ADD SETTING',
+                style: AppTextStyles.inter(
+                  size: 10,
+                  weight: FontWeight.w700,
+                  color: p.inkMuted,
+                  letterSpacing: 0.9,
                 ),
               ),
             ],
@@ -327,6 +448,51 @@ class _ControlCard extends StatelessWidget {
   }
 }
 
+/// Light-weight dashed-border container without pulling in an extra package.
+class DottedBorder extends StatelessWidget {
+  final Widget child;
+  final Color color;
+  final double radius;
+  const DottedBorder({super.key, required this.child, required this.color, this.radius = 14});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedRectPainter(color: color, radius: radius),
+      child: child,
+    );
+  }
+}
+
+class _DashedRectPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  const _DashedRectPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    final rect = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius));
+    final path = Path()..addRRect(rect);
+
+    const double dash = 5, gap = 4;
+    for (final m in path.computeMetrics()) {
+      double dist = 0;
+      while (dist < m.length) {
+        final next = (dist + dash).clamp(0.0, m.length);
+        canvas.drawPath(m.extractPath(dist, next), paint);
+        dist = next + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedRectPainter old) => old.color != color || old.radius != radius;
+}
+
 class _StepButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -335,19 +501,18 @@ class _StepButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: Theme.of(context)
-              .floatingActionButtonTheme
-              .backgroundColor
-              ?.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
+          color: p.surface2,
+          border: Border.all(color: p.border),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Icon(icon, size: 30),
+        child: Icon(icon, size: 24, color: p.ink),
       ),
     );
   }
