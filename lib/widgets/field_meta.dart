@@ -3,25 +3,27 @@ import 'package:flutter/material.dart';
 class FieldMeta {
   final IconData icon;
   final String unit;
-  const FieldMeta(this.icon, this.unit);
+  final int min;
+  final int max;
+  const FieldMeta(this.icon, this.unit, {this.min = 0, this.max = 100});
 }
 
 const FieldMeta kDefaultFieldMeta = FieldMeta(Icons.tune_rounded, '');
 
 const Map<String, FieldMeta> kFieldMeta = {
-  'Pressure':              FieldMeta(Icons.speed_rounded,                    'psi'),
-  'Rebound':               FieldMeta(Icons.unfold_more_rounded,              'clicks'),
-  'High Speed Rebound':    FieldMeta(Icons.unfold_more_rounded,              'clicks'),
-  'Low Speed Rebound':     FieldMeta(Icons.unfold_more_rounded,              'clicks'),
-  'Compression':           FieldMeta(Icons.unfold_less_rounded,              'clicks'),
-  'High Speed Compression':FieldMeta(Icons.unfold_less_rounded,              'clicks'),
-  'Low Speed Compression': FieldMeta(Icons.unfold_less_rounded,              'clicks'),
-  'Tokens':                FieldMeta(Icons.radio_button_unchecked_rounded,   'count'),
-  'Spring Rate':           FieldMeta(Icons.compress_rounded,                 'N/mm'),
-  'Preload':               FieldMeta(Icons.density_medium_rounded,           'mm'),
-  'Reach':                 FieldMeta(Icons.straighten_rounded,               'mm'),
-  'Stack Height':          FieldMeta(Icons.height_rounded,                   'mm'),
-  'Seat Height':           FieldMeta(Icons.airline_seat_recline_normal,      'mm'),
+  'Pressure':              FieldMeta(Icons.speed_rounded,                    'psi',    min: 15,  max: 200),
+  'Rebound':               FieldMeta(Icons.unfold_more_rounded,              'clicks', min: 0,   max: 30),
+  'High Speed Rebound':    FieldMeta(Icons.unfold_more_rounded,              'clicks', min: 0,   max: 30),
+  'Low Speed Rebound':     FieldMeta(Icons.unfold_more_rounded,              'clicks', min: 0,   max: 30),
+  'Compression':           FieldMeta(Icons.unfold_less_rounded,              'clicks', min: 0,   max: 30),
+  'High Speed Compression':FieldMeta(Icons.unfold_less_rounded,              'clicks', min: 0,   max: 30),
+  'Low Speed Compression': FieldMeta(Icons.unfold_less_rounded,              'clicks', min: 0,   max: 30),
+  'Tokens':                FieldMeta(Icons.radio_button_unchecked_rounded,   'count',  min: 0,   max: 10),
+  'Spring Rate':           FieldMeta(Icons.compress_rounded,                 'N/mm',   min: 200, max: 700),
+  'Preload':               FieldMeta(Icons.density_medium_rounded,           'mm',     min: 0,   max: 30),
+  'Reach':                 FieldMeta(Icons.straighten_rounded,               'mm',     min: 380, max: 550),
+  'Stack Height':          FieldMeta(Icons.height_rounded,                   'mm',     min: 580, max: 680),
+  'Seat Height':           FieldMeta(Icons.airline_seat_recline_normal,      'mm',     min: 600, max: 850),
 };
 
 // Single source of truth for per-category field configuration.

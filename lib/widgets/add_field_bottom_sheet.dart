@@ -1,6 +1,7 @@
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
+import 'package:bikesetupapp/widgets/setting_value_editor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -192,36 +193,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
               ),
               const SizedBox(height: 18),
             ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _StepButton(
-                  icon: Icons.remove_rounded,
-                  onTap: () => setState(() => _value = (_value - 1).clamp(0, 999)),
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '$_value',
-                      style: AppTextStyles.mono(
-                        size: 56, weight: FontWeight.w700,
-                        color: p.ink, letterSpacing: -2.5, height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _resolvedMeta.unit,
-                      style: AppTextStyles.inter(
-                        size: 12, weight: FontWeight.w600, color: p.inkMuted,
-                      ),
-                    ),
-                  ],
-                ),
-                _StepButton(
-                  icon: Icons.add_rounded,
-                  onTap: () => setState(() => _value = (_value + 1).clamp(0, 999)),
-                ),
-              ],
+            SettingValueEditor(
+              key: ValueKey('value-editor-$_resolvedKey'),
+              initialValue: _value,
+              meta: _resolvedMeta,
+              onChanged: (v) => _value = v,
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -338,25 +314,3 @@ class _Dropdown extends StatelessWidget {
   }
 }
 
-class _StepButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _StepButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 60, height: 60,
-        decoration: BoxDecoration(
-          color: p.surface2,
-          border: Border.all(color: p.border),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(icon, size: 24, color: p.ink),
-      ),
-    );
-  }
-}

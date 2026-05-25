@@ -1,6 +1,4 @@
 import 'package:bikesetupapp/alert_dialogs/bike_alert_dialogs.dart';
-import 'package:bikesetupapp/app_pages/todolist_page.dart';
-import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
@@ -30,6 +28,7 @@ class _BikeListState extends State<BikeList> {
   late Stream _bikesStream;
   final Map<String, Stream> _setupStreams = {};
   String? _expandedBikeId;
+  bool _didInitExpansion = false;
 
   @override
   void initState() {
@@ -82,8 +81,8 @@ class _BikeListState extends State<BikeList> {
           );
         }
         final docs = snapshot.data.docs;
-        // Auto-expand the active bike on first build.
-        if (_expandedBikeId == null) {
+        if (!_didInitExpansion) {
+          _didInitExpansion = true;
           for (final d in docs) {
             final b = Bike.fromSnapshot(d);
             if (b.name == widget.bikeName) {
@@ -186,7 +185,9 @@ class _BikeCard extends StatelessWidget {
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       confirmDismiss: (_) => onConfirmDeleteBike(),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: active ? p.surface2 : Colors.transparent,
           border: Border.all(color: active ? p.borderStrong : p.border),
@@ -239,28 +240,17 @@ class _BikeCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    bike.name,
-                                    style: AppTextStyles.inter(
-                                      size: 13, weight: FontWeight.w700, color: p.ink,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (active) ...[
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'ACTIVE',
-                                    style: AppTextStyles.inter(
-                                      size: 8.5, weight: FontWeight.w800,
-                                      color: p.accent, letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ],
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOut,
+                              style: AppTextStyles.inter(
+                                size: 13, weight: FontWeight.w700,
+                                color: active ? p.accent : p.ink,
+                              ),
+                              child: Text(
+                                bike.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             Text(
                               bikeType == BikeType.error ? '—' : bikeType.bikeType,
@@ -273,16 +263,11 @@ class _BikeCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Todo list quick-access.
                       IconButton(
-                        onPressed: () {
-                          Navigator.of(context).push(AppRoutes.fadeSlide(
-                            ToDoList(user: user, uBikeID: bike.id, bikeName: bike.name),
-                          ));
-                        },
+                        onPressed: () => BikeAlerts.renameBike(context, bike.id, bike.name),
                         constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                         padding: EdgeInsets.zero,
-                        icon: Icon(Icons.assignment_outlined, size: 16, color: p.inkMuted),
+                        icon: Icon(Icons.edit_outlined, size: 16, color: p.inkMuted),
                       ),
                       AnimatedRotation(
                         turns: expanded ? 0 : -0.25,
@@ -294,16 +279,29 @@ class _BikeCard extends StatelessWidget {
                 ),
               ),
             ),
-            if (expanded) ...[
-              Divider(height: 1, color: p.border),
-              _SetupsList(
-                user: user,
-                bike: bike,
-                bikeType: bikeType,
-                setupStream: setupStream,
-                onSelectSetup: onSelectSetup,
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 220),
+              sizeCurve: Curves.easeOutCubic,
+              firstCurve: Curves.easeOut,
+              secondCurve: Curves.easeIn,
+              alignment: Alignment.topCenter,
+              firstChild: Column(
+                children: [
+                  Divider(height: 1, color: p.border),
+                  _SetupsList(
+                    user: user,
+                    bike: bike,
+                    bikeType: bikeType,
+                    setupStream: setupStream,
+                    onSelectSetup: onSelectSetup,
+                  ),
+                ],
               ),
-            ],
+              secondChild: const SizedBox(width: double.infinity, height: 0),
+              crossFadeState: expanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+            ),
           ],
         ),
       ),
@@ -532,7 +530,6 @@ class _NewSetupRow extends StatelessWidget {
   }
 }
 
-/// Shared confirmation dialog using the workshop palette.
 Future<bool> _confirmDestructive(
   BuildContext context, {
   required String title,

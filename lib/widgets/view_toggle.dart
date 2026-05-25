@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 
 enum ActiveView { setup, services }
 
-/// Segmented Setup/Service toggle that lives in the top bar.
-/// `surface-2` capsule with two pills; the active pill flips to the paper-white card colour.
 class ViewToggle extends StatelessWidget {
   final ActiveView activeView;
   final ValueChanged<ActiveView> onChanged;
@@ -72,9 +70,11 @@ class _Pill extends StatelessWidget {
     final fg = isActive ? p.cardInk : p.inkMuted;
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
+      child: Tooltip(
+        message: label,
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(8),
@@ -82,37 +82,31 @@ class _Pill extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 13, color: fg),
-                const SizedBox(width: 6),
-                Text(
-                  label.toUpperCase(),
-                  style: AppTextStyles.inter(
-                    size: 11,
-                    weight: FontWeight.w700,
-                    color: fg,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ],
-            ),
-            if (showAlert)
-              Positioned(
-                top: -3,
-                right: -3,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: p.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: p.bg, width: 1.5),
+            Icon(icon, size: 15, color: fg),
+            Positioned(
+              top: -3,
+              right: -3,
+              child: AnimatedScale(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutBack,
+                scale: showAlert ? 1.0 : 0.0,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: showAlert ? 1.0 : 0.0,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: p.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: p.bg, width: 1.5),
+                    ),
                   ),
                 ),
               ),
+            ),
           ],
+        ),
         ),
       ),
     );

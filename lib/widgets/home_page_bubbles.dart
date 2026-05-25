@@ -37,7 +37,6 @@ class _LeaderLinePainter extends CustomPainter {
       canvas.drawLine(dotCenter, cardCenter, paint);
       return;
     }
-    // Dashed leader line for non-active bubbles.
     const double dash = 3, gap = 2;
     final length = (cardCenter - dotCenter).distance;
     if (length == 0) return;
@@ -109,18 +108,6 @@ class _SchematicBubbleState extends State<SchematicBubble>
   String _latestValue = '';
 
   bool get _isSelected => widget.chosenCategory == widget.category;
-
-  String get _priorityKey {
-    switch (widget.category) {
-      case Category.rearTire:
-      case Category.frontTire:
-      case Category.shock:
-      case Category.fork:
-        return 'Pressure';
-      case Category.generalSettings:
-        return 'Reach';
-    }
-  }
 
   String _unitFor(String key) => kFieldMeta[key]?.unit ?? '';
 
@@ -221,7 +208,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                 height: _dotRadius * 2,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSelected ? p.accent : p.ink,
+                  color: isSelected ? p.accent : AppColors.darkInk,
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
@@ -270,7 +257,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                     width: bubbleCardW,
                     height: bubbleCardH,
                     decoration: BoxDecoration(
-                      color: isSelected ? p.accent : p.card,
+                      color: isSelected ? p.accent : AppColors.darkCard,
                       borderRadius: BorderRadius.circular(9),
                       boxShadow: isSelected
                           ? [
@@ -278,11 +265,6 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                 color: Colors.black.withValues(alpha: 0.55),
                                 blurRadius: 18,
                                 offset: const Offset(0, 6),
-                              ),
-                              BoxShadow(
-                                color: p.accent.withValues(alpha: 0.5),
-                                blurRadius: 0,
-                                spreadRadius: 2,
                               ),
                             ]
                           : [
@@ -299,7 +281,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                               widget.category.category, widget.setup),
                       builder: (context, AsyncSnapshot snapshot) {
                         final String label = _categoryLabel(widget.category);
-                        final Color chipInk = isSelected ? p.accentInk : p.cardInk;
+                        final Color chipInk = isSelected ? p.accentInk : AppColors.darkCardInk;
 
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -311,7 +293,11 @@ class _SchematicBubbleState extends State<SchematicBubble>
                           );
                         }
 
+                        final bool isGeometry =
+                            widget.category == Category.generalSettings;
                         String element = '';
+                        String elementKey = '';
+                        int specCount = 0;
                         bool hasError = false;
                         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
                           hasError = true;
@@ -320,23 +306,30 @@ class _SchematicBubbleState extends State<SchematicBubble>
                             final rawMap = snapshot.data.data();
                             if (rawMap is Map) {
                               final data = rawMap.cast<String, dynamic>();
-                              final priorityKeys = kDefaultFieldKeys[widget.category.category] ?? [];
-                              for (final k in priorityKeys) {
-                                final v = data[k]?.toString() ?? '';
-                                if (v.isNotEmpty) { element = v; break; }
-                              }
-                              if (element.isEmpty) {
-                                for (final v in data.values) {
-                                  final s = v?.toString() ?? '';
-                                  if (s.isNotEmpty) { element = s; break; }
+                              if (isGeometry) {
+                                for (final entry in data.entries) {
+                                  final s = entry.value?.toString() ?? '';
+                                  if (s.isNotEmpty) specCount++;
+                                }
+                              } else {
+                                final priorityKeys = kDefaultFieldKeys[widget.category.category] ?? [];
+                                for (final k in priorityKeys) {
+                                  final v = data[k]?.toString() ?? '';
+                                  if (v.isNotEmpty) { element = v; elementKey = k; break; }
+                                }
+                                if (element.isEmpty) {
+                                  for (final entry in data.entries) {
+                                    final s = entry.value?.toString() ?? '';
+                                    if (s.isNotEmpty) { element = s; elementKey = entry.key; break; }
+                                  }
                                 }
                               }
                             }
                           } catch (_) {}
-                          if (element.isEmpty) hasError = true;
+                          if (!isGeometry && element.isEmpty) hasError = true;
                         }
 
-                        if (!hasError && element != _latestValue) {
+                        if (!isGeometry && !hasError && element != _latestValue) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (mounted && _latestValue != element) {
                               setState(() => _latestValue = element);
@@ -367,22 +360,32 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                       crossAxisAlignment: CrossAxisAlignment.baseline,
                                       textBaseline: TextBaseline.alphabetic,
                                       children: [
-                                        Text(
-                                          element,
-                                          style: AppTextStyles.mono(
-                                            size: 13,
-                                            weight: FontWeight.w700,
-                                            color: chipInk,
-                                            height: 1,
+                                        Flexible(
+                                          child: Text(
+                                            isGeometry ? '$specCount' : element,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTextStyles.mono(
+                                              size: 13,
+                                              weight: FontWeight.w700,
+                                              color: chipInk,
+                                              height: 1,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 2),
-                                        Text(
-                                          _unitFor(_priorityKey),
-                                          style: TextStyle(
-                                            color: chipInk.withValues(alpha: 0.65),
-                                            fontSize: 8.5,
-                                            fontWeight: FontWeight.w600,
+                                        Flexible(
+                                          child: Text(
+                                            isGeometry
+                                                ? (specCount == 1 ? 'spec' : 'specs')
+                                                : _unitFor(elementKey),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: chipInk.withValues(alpha: 0.65),
+                                              fontSize: 8.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
                                       ],

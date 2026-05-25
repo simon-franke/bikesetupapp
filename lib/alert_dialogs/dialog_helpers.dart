@@ -1,8 +1,6 @@
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:flutter/material.dart';
 
-/// Shared chrome for all workshop-palette alert dialogs.
-/// Wrap any [content] (Text, TextField, custom widget) and provide [actions].
 class WorkshopDialog extends StatelessWidget {
   final String title;
   final Widget content;
@@ -40,7 +38,6 @@ class WorkshopDialog extends StatelessWidget {
   }
 }
 
-/// Filled accent CTA used inside [WorkshopDialog].
 class DialogPrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -78,7 +75,6 @@ class DialogPrimaryButton extends StatelessWidget {
   }
 }
 
-/// Outlined / text secondary action used inside [WorkshopDialog].
 class DialogSecondaryButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -100,7 +96,6 @@ class DialogSecondaryButton extends StatelessWidget {
   }
 }
 
-/// Themed text field for dialog bodies (rename, add, etc.).
 class DialogTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;

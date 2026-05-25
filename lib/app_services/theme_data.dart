@@ -1,50 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Workshop-instrument palette — matte ink ground, paper-white cards,
-/// hot-orange accent. Mirrors the OKLCH tokens from the design system.
 class AppColors {
   AppColors._();
 
-  // ── Dark theme tokens ────────────────────────────────────────────
-  static const Color darkBg          = Color(0xFF1F2329); // oklch(0.165 0.008 245)
-  static const Color darkSurface     = Color(0xFF292D33); // oklch(0.21 0.01 245)
-  static const Color darkSurface2    = Color(0xFF343941); // oklch(0.26 0.012 245)
-  static const Color darkCard        = Color(0xFFF7F4EE); // oklch(0.97 0.004 80)
-  static const Color darkCardInk     = Color(0xFF2C3138); // oklch(0.22 0.012 245)
-  static const Color darkInk         = Color(0xFFF2F3F5); // oklch(0.96 0.005 240)
-  static const Color darkInkMuted    = Color(0xFF9DA3AC); // oklch(0.68 0.012 240)
-  static const Color darkInkDim      = Color(0xFF666C77); // oklch(0.46 0.012 240)
-  static const Color darkBorder      = Color(0xFF424751); // oklch(0.32 0.012 245)
-  static const Color darkBorderStrong= Color(0xFF595F6A); // oklch(0.42 0.012 245)
+  static const Color darkBg = Color(0xFF1F2329);
+  static const Color darkSurface = Color(0xFF292D33);
+  static const Color darkSurface2 = Color(0xFF343941);
+  static const Color darkCard = Color(0xFFF7F4EE);
+  static const Color darkCardInk = Color(0xFF2C3138);
+  static const Color darkInk = Color(0xFFF2F3F5);
+  static const Color darkInkMuted = Color(0xFF9DA3AC);
+  static const Color darkInkDim = Color(0xFF666C77);
+  static const Color darkBorder = Color(0xFF424751);
+  static const Color darkBorderStrong = Color(0xFF595F6A);
 
-  // ── Light theme tokens ───────────────────────────────────────────
-  static const Color lightBg         = Color(0xFFF4F2EC); // oklch(0.96 0.004 80)
-  static const Color lightSurface    = Color(0xFFFCFAF5); // oklch(0.99 0.004 80)
-  static const Color lightSurface2   = Color(0xFFEAE8E2); // oklch(0.93 0.005 80)
-  static const Color lightCard       = Color(0xFF22272F); // oklch(0.18 0.012 245)
-  static const Color lightCardInk    = Color(0xFFF7F4EE); // oklch(0.96 0.005 80)
-  static const Color lightInk        = Color(0xFF22272F); // oklch(0.18 0.012 245)
-  static const Color lightInkMuted   = Color(0xFF65696F); // oklch(0.45 0.012 245)
-  static const Color lightInkDim     = Color(0xFF8E9098); // oklch(0.62 0.012 245)
-  static const Color lightBorder     = Color(0xFFD9D9D6); // oklch(0.88 0.006 245)
-  static const Color lightBorderStrong = Color(0xFFB7B8B6); // oklch(0.78 0.008 245)
+  static const Color lightBg = Color(0xFFF4F2EC);
+  static const Color lightSurface = Color(0xFFFCFAF5);
+  static const Color lightSurface2 = Color(0xFFEAE8E2);
+  static const Color lightCard = Color(0xFF22272F);
+  static const Color lightCardInk = Color(0xFFF7F4EE);
+  static const Color lightInk = Color(0xFF22272F);
+  static const Color lightInkMuted = Color(0xFF65696F);
+  static const Color lightInkDim = Color(0xFF8E9098);
+  static const Color lightBorder = Color(0xFFD9D9D6);
+  static const Color lightBorderStrong = Color(0xFFB7B8B6);
 
-  // ── Shared accents ───────────────────────────────────────────────
-  static const Color accent          = Color(0xFFF39A4E); // hot orange
-  static const Color accentInk       = Color(0xFF362313);
-  static const Color green           = Color(0xFF5BB97A);
-  static const Color amber           = Color(0xFFD9A23A);
-  static const Color red             = Color(0xFFE0654C);
+  static const Color accent = Color(0xFFF39A4E);
+  static const Color accentInk = Color(0xFF362313);
+  static const Color green = Color(0xFF5BB97A);
+  static const Color amber = Color(0xFFD9A23A);
+  static const Color red = Color(0xFFE0654C);
 }
 
-/// Convenience accessor — pulls color tokens via Theme.of(context).extension.
 extension AppColorsX on BuildContext {
   AppPalette get palette => Theme.of(this).extension<AppPalette>()!;
 }
 
-/// ThemeExtension holding the full workshop-instrument palette so widgets
-/// can read tokens without branching on brightness manually.
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   final Color bg;
@@ -170,7 +162,6 @@ class AppPalette extends ThemeExtension<AppPalette> {
 class AppTextStyles {
   AppTextStyles._();
 
-  /// Mono numerics — for values on cards, bubbles, the stepper, mileage banner.
   static TextStyle mono({
     double size = 14,
     FontWeight weight = FontWeight.w700,
@@ -186,7 +177,6 @@ class AppTextStyles {
         height: height,
       );
 
-  /// Inter UI text.
   static TextStyle inter({
     double size = 14,
     FontWeight weight = FontWeight.w500,
@@ -202,7 +192,6 @@ class AppTextStyles {
         height: height,
       );
 
-  /// Tiny uppercase eyebrow label — `SHOCK SETTINGS`, `REAR TIRE`, etc.
   static TextStyle eyebrow({Color? color, double size = 10, double letterSpacing = 1.6}) =>
       GoogleFonts.inter(
         fontSize: size,

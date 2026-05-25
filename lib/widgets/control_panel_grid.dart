@@ -2,6 +2,7 @@ import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/widgets/add_field_bottom_sheet.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
+import 'package:bikesetupapp/widgets/setting_value_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -45,6 +46,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
       BuildContext context, _CardDef card, String currentValue, bool isDefault) {
     final p = context.palette;
     final int initial = int.tryParse(currentValue) ?? 0;
+    final meta = kFieldMeta[card.key] ?? kDefaultFieldMeta;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -54,163 +56,129 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
       ),
       builder: (ctx) {
         int value = initial;
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 22,
-                right: 22,
-                top: 12,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 22,
+            right: 22,
+            top: 12,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: p.borderStrong,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              const SizedBox(height: 22),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Grab handle.
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: p.borderStrong,
-                      borderRadius: BorderRadius.circular(2),
+                  Icon(card.icon, size: 15, color: p.inkMuted),
+                  const SizedBox(width: 8),
+                  Text(
+                    card.key.toUpperCase(),
+                    style: AppTextStyles.inter(
+                      size: 11,
+                      weight: FontWeight.w800,
+                      color: p.inkMuted,
+                      letterSpacing: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(card.icon, size: 15, color: p.inkMuted),
-                      const SizedBox(width: 8),
-                      Text(
-                        card.key.toUpperCase(),
-                        style: AppTextStyles.inter(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: p.inkMuted,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ],
+                ],
+              ),
+              const SizedBox(height: 22),
+              SettingValueEditor(
+                initialValue: initial,
+                meta: meta,
+                onChanged: (v) => value = v,
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: p.accent,
+                    foregroundColor: p.accentInk,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  const SizedBox(height: 22),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _StepButton(
-                        icon: Icons.remove_rounded,
-                        onTap: () => setSheetState(
-                            () => value = (value - 1).clamp(0, 999)),
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            '$value',
-                            style: AppTextStyles.mono(
-                              size: 64,
-                              weight: FontWeight.w700,
-                              color: p.ink,
-                              letterSpacing: -3,
-                              height: 1,
-                            ),
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    DatabaseService(widget.user.uid).setSetting(
+                      card.key,
+                      '$value',
+                      widget.uBikeID,
+                      widget.category,
+                      widget.uSetupID,
+                    );
+                  },
+                  child: Text(
+                    'SAVE',
+                    style: AppTextStyles.inter(
+                      size: 13,
+                      weight: FontWeight.w800,
+                      color: p.accentInk,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+              if (!isDefault) ...[
+                const SizedBox(height: 6),
+                TextButton(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: ctx,
+                      builder: (dlgCtx) => AlertDialog(
+                        title: const Text('Delete Field'),
+                        content: Text(
+                            'Delete "${card.key}"? This cannot be undone.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dlgCtx).pop(false),
+                            child: const Text('Cancel'),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            card.unit,
-                            style: AppTextStyles.inter(size: 12, weight: FontWeight.w600, color: p.inkMuted),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dlgCtx).pop(true),
+                            child: Text(
+                              'Delete',
+                              style: TextStyle(color: p.red),
+                            ),
                           ),
                         ],
                       ),
-                      _StepButton(
-                        icon: Icons.add_rounded,
-                        onTap: () => setSheetState(
-                            () => value = (value + 1).clamp(0, 999)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: p.accent,
-                        foregroundColor: p.accentInk,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        DatabaseService(widget.user.uid).setSetting(
-                          card.key,
-                          '$value',
-                          widget.uBikeID,
-                          widget.category,
-                          widget.uSetupID,
-                        );
-                      },
-                      child: Text(
-                        'SAVE',
-                        style: AppTextStyles.inter(
-                          size: 13,
-                          weight: FontWeight.w800,
-                          color: p.accentInk,
-                          letterSpacing: 1,
-                        ),
-                      ),
+                    );
+                    if (confirmed == true) {
+                      if (ctx.mounted) Navigator.of(ctx).pop();
+                      DatabaseService(widget.user.uid).deleteSetting(
+                        card.key,
+                        widget.uBikeID,
+                        widget.category,
+                        widget.uSetupID,
+                      );
+                    }
+                  },
+                  child: Text(
+                    'Delete field',
+                    style: AppTextStyles.inter(
+                      size: 12, weight: FontWeight.w700, color: p.red,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  if (!isDefault) ...[
-                    const SizedBox(height: 6),
-                    TextButton(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: ctx,
-                          builder: (dlgCtx) => AlertDialog(
-                            title: const Text('Delete Field'),
-                            content: Text(
-                                'Delete "${card.key}"? This cannot be undone.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(dlgCtx).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(dlgCtx).pop(true),
-                                child: Text(
-                                  'Delete',
-                                  style: TextStyle(color: p.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirmed == true) {
-                          if (ctx.mounted) Navigator.of(ctx).pop();
-                          DatabaseService(widget.user.uid).deleteSetting(
-                            card.key,
-                            widget.uBikeID,
-                            widget.category,
-                            widget.uSetupID,
-                          );
-                        }
-                      },
-                      child: Text(
-                        'Delete field',
-                        style: AppTextStyles.inter(
-                          size: 12, weight: FontWeight.w700, color: p.red,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
+                ),
+              ],
+            ],
+          ),
         );
       },
     );
@@ -252,18 +220,21 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                   maxCrossAxisExtent: 200,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 1 / 0.9,
+                  childAspectRatio: 1 / 0.55,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     if (index == allKeys.length) {
-                      return _AddFieldCard(
-                        onTap: () => showAddFieldSheet(
-                          context,
-                          user: widget.user,
-                          uBikeID: widget.uBikeID,
-                          category: widget.category,
-                          uSetupID: widget.uSetupID,
+                      return _AnimatedTile(
+                        key: const ValueKey('tile_add_field'),
+                        child: _AddFieldCard(
+                          onTap: () => showAddFieldSheet(
+                            context,
+                            user: widget.user,
+                            uBikeID: widget.uBikeID,
+                            category: widget.category,
+                            uSetupID: widget.uSetupID,
+                          ),
                         ),
                       );
                     }
@@ -271,14 +242,24 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                     final card = _CardDef.fromKey(key);
                     final value = settings[key]?.toString() ?? '--';
                     final isDefault = isRequiredField(widget.category, key);
-                    return _ControlCard(
-                      config: card,
-                      value: value,
-                      onTap: () =>
-                          _showStepperSheet(context, card, value, isDefault),
+                    return _AnimatedTile(
+                      key: ValueKey('tile_$key'),
+                      child: _ControlCard(
+                        config: card,
+                        value: value,
+                        onTap: () =>
+                            _showStepperSheet(context, card, value, isDefault),
+                      ),
                     );
                   },
                   childCount: allKeys.length + 1,
+                  findChildIndexCallback: (Key key) {
+                    final v = (key as ValueKey<String>).value;
+                    if (v == 'tile_add_field') return allKeys.length;
+                    final name = v.substring('tile_'.length);
+                    final idx = allKeys.indexOf(name);
+                    return idx >= 0 ? idx : null;
+                  },
                 ),
               ),
             ),
@@ -388,7 +369,6 @@ class _ControlCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Subtle gradient seam at the base.
             Positioned(
               left: 14, right: 14, bottom: 0, height: 1,
               child: DecoratedBox(
@@ -448,7 +428,49 @@ class _AddFieldCard extends StatelessWidget {
   }
 }
 
-/// Light-weight dashed-border container without pulling in an extra package.
+class _AnimatedTile extends StatefulWidget {
+  final Widget child;
+  const _AnimatedTile({super.key, required this.child});
+
+  @override
+  State<_AnimatedTile> createState() => _AnimatedTileState();
+}
+
+class _AnimatedTileState extends State<_AnimatedTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+  late final Animation<double> _opacity;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    _opacity = CurvedAnimation(parent: _c, curve: Curves.easeOut);
+    _scale = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
+    );
+    _c.forward();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: ScaleTransition(scale: _scale, child: widget.child),
+    );
+  }
+}
+
 class DottedBorder extends StatelessWidget {
   final Widget child;
   final Color color;
@@ -493,27 +515,3 @@ class _DashedRectPainter extends CustomPainter {
   bool shouldRepaint(_DashedRectPainter old) => old.color != color || old.radius != radius;
 }
 
-class _StepButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _StepButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          color: p.surface2,
-          border: Border.all(color: p.border),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(icon, size: 24, color: p.ink),
-      ),
-    );
-  }
-}
