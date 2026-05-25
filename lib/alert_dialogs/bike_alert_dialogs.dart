@@ -1,6 +1,8 @@
+import 'package:bikesetupapp/alert_dialogs/dialog_helpers.dart';
+import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/database.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class BikeAlerts {
   static Future<void> deleteBike(
@@ -8,42 +10,23 @@ class BikeAlerts {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text(
-            'Deleting Bike',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          content: Text(
-            'Are you sure you want to delete this Bike?',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Cancel',
-                    style: Theme.of(context).textTheme.labelLarge)),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              child:
-                  Text('Delete', style: Theme.of(context).textTheme.labelLarge),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Delete bike',
+          content: const Text('Are you sure you want to delete this bike?'),
+          actions: [
+            DialogSecondaryButton(
+              label: 'Cancel',
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            DialogPrimaryButton(
+              label: 'Delete',
+              color: ctx.palette.red,
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(ctx).pop();
                 try {
                   DatabaseService(user.uid).deleteBike(uBikeID);
-                } catch (e) {
+                } catch (_) {
                   generalError(context, 'Error deleting bike');
                 }
               },
@@ -59,42 +42,23 @@ class BikeAlerts {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text(
-            'Deleting Setup',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          content: Text(
-            'Are you sure you want to delete this Setup?',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Cancel',
-                    style: Theme.of(context).textTheme.labelLarge)),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              child:
-                  Text('Delete', style: Theme.of(context).textTheme.labelLarge),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Delete setup',
+          content: const Text('Are you sure you want to delete this setup?'),
+          actions: [
+            DialogSecondaryButton(
+              label: 'Cancel',
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            DialogPrimaryButton(
+              label: 'Delete',
+              color: ctx.palette.red,
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(ctx).pop();
                 try {
                   DatabaseService(user.uid).deleteSetup(uBikeID, uSetupID);
-                } catch (e) {
+                } catch (_) {
                   generalError(context, 'Error deleting setup');
                 }
               },
@@ -107,53 +71,27 @@ class BikeAlerts {
 
   static Future<void> renameBike(
       BuildContext context, String uBikeID, String bikeNameOld) async {
-    TextEditingController controller = TextEditingController(text: bikeNameOld);
+    final controller = TextEditingController(text: bikeNameOld);
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text(
-            'Rename Bike',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          content: TextField(
-            autofocus: true,
-            cursorColor: Theme.of(context).textTheme.labelMedium!.color,
-            controller: controller,
-            style: Theme.of(context).textTheme.titleMedium,
-            decoration: InputDecoration.collapsed(
-              hintText: 'Enter new name',
-              hintStyle: Theme.of(context).textTheme.titleMedium,
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Rename bike',
+          content: DialogTextField(controller: controller, hint: 'Enter new name'),
+          actions: [
+            DialogSecondaryButton(
+              label: 'Cancel',
+              onPressed: () => Navigator.of(ctx).pop(),
             ),
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Cancel',
-                    style: Theme.of(context).textTheme.labelLarge)),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              child:
-                  Text('Edit', style: Theme.of(context).textTheme.labelLarge),
+            DialogPrimaryButton(
+              label: 'Save',
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(ctx).pop();
                 try {
                   DatabaseService(FirebaseAuth.instance.currentUser!.uid)
                       .renameBike(uBikeID, controller.text);
-                } catch (e) {
+                } catch (_) {
                   generalError(context, 'Error renaming bike');
                 }
               },
@@ -168,28 +106,15 @@ class BikeAlerts {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text('Deleting $type',
-              style: Theme.of(context).textTheme.titleLarge),
-          content: Text(
-            'You must have at least one $type',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: <Widget>[
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .backgroundColor,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child:
-                    Text('Ok', style: Theme.of(context).textTheme.labelLarge)),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Cannot delete',
+          content: Text('You must have at least one $type.'),
+          actions: [
+            DialogPrimaryButton(
+              label: 'OK',
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
           ],
         );
       },
@@ -199,18 +124,14 @@ class BikeAlerts {
   static Future<void> generalError(BuildContext context, String message) {
     return showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          title: Text('Error', style: Theme.of(context).textTheme.titleLarge),
-          content: Text(message, style: Theme.of(context).textTheme.titleMedium),
+      builder: (ctx) {
+        return WorkshopDialog(
+          title: 'Error',
+          content: Text(message),
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK', style: Theme.of(context).textTheme.labelLarge),
+            DialogPrimaryButton(
+              label: 'OK',
+              onPressed: () => Navigator.of(ctx).pop(),
             ),
           ],
         );
