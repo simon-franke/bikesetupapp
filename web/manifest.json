@@ -1,11 +1,11 @@
 {
-    "name": "bikesetupapp",
-    "short_name": "bikesetupapp",
+    "name": "Bike Setup",
+    "short_name": "Bike Setup",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F4F2EC",
+    "theme_color": "#F39A4E",
+    "description": "Store and manage your bike suspension and tyre setup.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
