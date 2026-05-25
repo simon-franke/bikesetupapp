@@ -119,13 +119,17 @@ class _ServicesViewState extends State<ServicesView> {
     );
   }
 
-  void _openComponentDetail(ServiceComponent component) {
+  Future<void> _openComponentDetail(ServiceComponent component) async {
+    final db = ServiceDatabaseService(widget.user.uid);
+    final stravaGearId = await db.getStravaGearIdForBike(widget.uBikeID);
+    if (!mounted) return;
     Navigator.of(context).push(
       AppRoutes.fadeSlide(
         ComponentDetailPage(
           user: widget.user,
           component: component,
           currentMileageKm: _mileageKm,
+          stravaGearId: stravaGearId,
         ),
       ),
     );

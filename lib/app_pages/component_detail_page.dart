@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/database_service/strava_api_service.dart';
+import 'package:bikesetupapp/database_service/strava_auth_service.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/service_component.dart';
 import 'package:bikesetupapp/models/service_entry.dart';
@@ -12,11 +14,16 @@ class ComponentDetailPage extends StatefulWidget {
   final ServiceComponent component;
   final double currentMileageKm;
 
+  /// Strava gear ID linked to this bike, or null if Strava isn't connected /
+  /// the bike isn't linked. Used to estimate historical mileage.
+  final String? stravaGearId;
+
   const ComponentDetailPage({
     super.key,
     required this.user,
     required this.component,
     required this.currentMileageKm,
+    this.stravaGearId,
   });
 
   @override
@@ -33,10 +40,82 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
   }
 
   void _showLogServiceSheet() {
-    final mileageController = TextEditingController(
-        text: widget.currentMileageKm.round().toString());
     final noteController = TextEditingController();
     DateTime selectedDate = DateTime.now();
+
+    // Mileage is fetched automatically from Strava — never typed by the user.
+    // null = no Strava link or fetch failed; fetching = in progress.
+    double? fetchedMileage =
+        widget.stravaGearId != null ? widget.currentMileageKm : null;
+    bool fetchingMileage = false;
+    String? mileageError; // 'scope' | 'error' | null
+    int fetchGeneration = 0;
+
+    Future<void> fetchMileage(DateTime date, StateSetter setSheetState) async {
+      if (widget.stravaGearId == null) return;
+
+      final gen = ++fetchGeneration;
+      setSheetState(() {
+        fetchingMileage = true;
+        fetchedMileage = null;
+        mileageError = null;
+      });
+
+      // For today just use the already-synced total — no extra API call.
+      final now = DateTime.now();
+      final isToday = date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+
+      if (isToday) {
+        if (gen == fetchGeneration) {
+          setSheetState(() {
+            fetchingMileage = false;
+            fetchedMileage = widget.currentMileageKm;
+          });
+        }
+        return;
+      }
+
+      try {
+        final token = await StravaAuthService().getValidToken();
+        if (gen != fetchGeneration) return;
+        if (token == null) {
+          setSheetState(() {
+            fetchingMileage = false;
+            mileageError = 'error';
+          });
+          return;
+        }
+
+        final km = await StravaApiService().fetchMileageAtDate(
+          accessToken: token,
+          gearId: widget.stravaGearId!,
+          date: date,
+          currentTotalKm: widget.currentMileageKm,
+        );
+        if (gen != fetchGeneration) return;
+
+        if (km == null) {
+          setSheetState(() {
+            fetchingMileage = false;
+            mileageError = 'error';
+          });
+          return;
+        }
+
+        setSheetState(() {
+          fetchingMileage = false;
+          fetchedMileage = km;
+        });
+      } on StravaInsufficientScopeException {
+        if (gen != fetchGeneration) return;
+        setSheetState(() {
+          fetchingMileage = false;
+          mileageError = 'scope';
+        });
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -80,31 +159,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                     ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: mileageController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'Mileage (km)',
-                  hintStyle: Theme.of(ctx).textTheme.labelSmall,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      width: 2,
-                      color: Theme.of(ctx).textTheme.labelMedium?.color ??
-                          Theme.of(ctx).colorScheme.onSurface,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      width: 2,
-                      color: Theme.of(ctx).textTheme.labelMedium?.color ??
-                          Theme.of(ctx).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+              // ── Date picker ───────────────────────────────────────────────
               GestureDetector(
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -115,12 +170,13 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                   );
                   if (picked != null) {
                     setSheetState(() => selectedDate = picked);
+                    fetchMileage(picked, setSheetState);
                   }
                 },
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -135,7 +191,14 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                   ),
                 ),
               ),
+              // ── Strava mileage status (auto, read-only) ───────────────────
+              if (widget.stravaGearId != null) ...[
+                const SizedBox(height: 10),
+                _buildMileageStatus(
+                    ctx, fetchingMileage, fetchedMileage, mileageError),
+              ],
               const SizedBox(height: 12),
+              // ── Note ──────────────────────────────────────────────────────
               TextField(
                 controller: noteController,
                 decoration: InputDecoration(
@@ -172,25 +235,21 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    final mileage =
-                        double.tryParse(mileageController.text.trim()) ??
-                            widget.currentMileageKm;
-                    final note = noteController.text.trim();
-                    final entryId = const Uuid().v4();
-
-                    final entry = ServiceEntry(
-                      id: entryId,
-                      componentId: widget.component.id,
-                      mileageAtServiceKm: mileage,
-                      date: selectedDate.toUtc(),
-                      note: note.isNotEmpty ? note : null,
-                    );
-
-                    _db.addServiceEntry(widget.component.id, entry);
-                    HapticFeedback.lightImpact();
-                    Navigator.of(ctx).pop();
-                  },
+                  onPressed: fetchingMileage
+                      ? null
+                      : () {
+                          final note = noteController.text.trim();
+                          final entry = ServiceEntry(
+                            id: const Uuid().v4(),
+                            componentId: widget.component.id,
+                            mileageAtServiceKm: fetchedMileage,
+                            date: selectedDate.toUtc(),
+                            note: note.isNotEmpty ? note : null,
+                          );
+                          _db.addServiceEntry(widget.component.id, entry);
+                          HapticFeedback.lightImpact();
+                          Navigator.of(ctx).pop();
+                        },
                   child: Text(
                     'Log Service',
                     style: Theme.of(ctx).textTheme.labelLarge,
@@ -202,6 +261,81 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildMileageStatus(
+    BuildContext ctx,
+    bool fetchingMileage,
+    double? fetchedMileage,
+    String? mileageError,
+  ) {
+    if (fetchingMileage) {
+      return Row(
+        children: [
+          const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Fetching from Strava…',
+            style: Theme.of(ctx).textTheme.labelSmall,
+          ),
+        ],
+      );
+    }
+
+    if (mileageError == 'scope') {
+      return Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              size: 14, color: Color(0xFFE05545)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Re-connect Strava in settings to fetch mileage',
+              style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFFE05545),
+                  ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (mileageError == 'error') {
+      return Row(
+        children: [
+          const Icon(Icons.close, size: 14, color: Color(0xFFE05545)),
+          const SizedBox(width: 6),
+          Text(
+            'Could not fetch mileage from Strava',
+            style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                  color: const Color(0xFFE05545),
+                ),
+          ),
+        ],
+      );
+    }
+
+    if (fetchedMileage != null) {
+      return Row(
+        children: [
+          const Icon(Icons.route, size: 14, color: Color(0xFFD4883A)),
+          const SizedBox(width: 6),
+          Text(
+            '${fetchedMileage.round().toString()} km at service',
+            style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                  color: const Color(0xFFD4883A),
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Future<void> _confirmDeleteEntry(ServiceEntry entry) async {
@@ -336,7 +470,9 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                       ),
                       child: ListTile(
                         title: Text(
-                          '${formatter.format(entry.mileageAtServiceKm.round())} km',
+                          entry.mileageAtServiceKm != null
+                              ? '${formatter.format(entry.mileageAtServiceKm!.round())} km'
+                              : '— km',
                           style: Theme.of(context).textTheme.labelLarge,
                         ),
                         subtitle: entry.note != null && entry.note!.isNotEmpty

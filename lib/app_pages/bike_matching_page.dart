@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/app_services/strava_sync_service.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/bike.dart';
@@ -19,6 +20,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
   List<Bike> _appBikes = [];
   final Map<String, String?> _links = {};
   bool _loading = true;
+  bool _syncing = false;
 
   @override
   void initState() {
@@ -26,32 +28,37 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool syncIfEmpty = true}) async {
     final db = ServiceDatabaseService(widget.user.uid);
     final appDb = DatabaseService(widget.user.uid);
 
-    final stravaBikesStream = db.getStravaBikes();
-    final appBikesStream = appDb.getBikes();
-
-    final stravaBikes = await stravaBikesStream.first;
-    final appBikesSnap = await appBikesStream.first;
+    var stravaBikes = await db.getStravaBikes().first;
+    final appBikesSnap = await appDb.getBikes().first;
 
     final appBikes = (appBikesSnap as dynamic)
         .docs
         .map<Bike>((doc) => Bike.fromSnapshot(doc))
         .toList();
 
-    // Pre-fill existing links and auto-match by name similarity
+    // Nothing in Firestore — trigger a Strava sync and re-read.
+    if (stravaBikes.isEmpty && syncIfEmpty) {
+      if (mounted) setState(() => _syncing = true);
+      await StravaSyncService(db).sync();
+      stravaBikes = await db.getStravaBikes().first;
+      if (mounted) setState(() => _syncing = false);
+    }
+
+    // Pre-fill existing links and auto-match by name similarity.
+    final links = <String, String?>{};
     for (final strava in stravaBikes) {
       if (strava.linkedBikeId != null) {
-        _links[strava.stravaGearId] = strava.linkedBikeId;
+        links[strava.stravaGearId] = strava.linkedBikeId;
       } else {
-        // Try auto-match by name
         final stravaLower = strava.name.toLowerCase();
         for (final app in appBikes) {
           if (app.name.toLowerCase().contains(stravaLower) ||
               stravaLower.contains(app.name.toLowerCase())) {
-            _links[strava.stravaGearId] = app.id;
+            links[strava.stravaGearId] = app.id;
             break;
           }
         }
@@ -62,9 +69,20 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
       setState(() {
         _stravaBikes = stravaBikes;
         _appBikes = appBikes;
+        _links
+          ..clear()
+          ..addAll(links);
         _loading = false;
       });
     }
+  }
+
+  Future<void> _manualSync() async {
+    setState(() => _syncing = true);
+    final db = ServiceDatabaseService(widget.user.uid);
+    await StravaSyncService(db).sync();
+    await _loadData(syncIfEmpty: false);
+    if (mounted) setState(() => _syncing = false);
   }
 
   Future<void> _saveLinks() async {
@@ -90,18 +108,59 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator.adaptive())
+      body: _loading || _syncing
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator.adaptive(),
+                  const SizedBox(height: 16),
+                  Text(
+                    _syncing ? 'Syncing with Strava…' : 'Loading…',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : _stravaBikes.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Text(
-                      'No Strava bikes found.\nSync your Strava account first.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.directions_bike_outlined,
+                          size: 48,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No bikes found on your Strava account.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Make sure bikes are added under\nSettings → My Gear in the Strava app.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _manualSync,
+                          icon: const Icon(Icons.sync, size: 18),
+                          label: const Text('Retry sync'),
+                        ),
+                      ],
                     ),
                   ),
                 )

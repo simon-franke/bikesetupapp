@@ -5,6 +5,7 @@ import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/app_services/app_state_notifier.dart';
 import 'package:bikesetupapp/app_services/strava_token_storage.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
+import 'package:bikesetupapp/app_services/strava_sync_service.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/database_service/strava_auth_service.dart';
 
@@ -56,6 +57,10 @@ class _SettingsPageState extends State<SettingsPage> {
         _isStravaConnected = true;
         _stravaAthleteId = auth.athleteId;
       });
+      // Sync bikes immediately so the matching page is populated right away.
+      if (user != null) {
+        await StravaSyncService(ServiceDatabaseService(user!.uid)).sync();
+      }
     }
   }
 
