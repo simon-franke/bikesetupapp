@@ -9,6 +9,7 @@ import 'package:bikesetupapp/app_services/strava_sync_service.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/database_service/strava_auth_service.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -62,6 +63,14 @@ class _SettingsPageState extends State<SettingsPage> {
         await StravaSyncService(ServiceDatabaseService(user!.uid)).sync();
       }
     }
+  }
+
+  /// Web-only: navigates the browser tab to Strava's auth page. The Firebase
+  /// Function handles the callback and redirects back to the app. Tokens are
+  /// detected and saved by [handleStravaWebCallback] in main() on the next
+  /// page load — no UI state update is needed here.
+  Future<void> _connectStravaWeb() async {
+    await StravaAuthService().authorizeWeb();
   }
 
   Future<void> _disconnectStrava() async {
@@ -274,7 +283,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        onPressed: _connectStrava,
+                        onPressed: kIsWeb ? _connectStravaWeb : _connectStrava,
                         icon: const Icon(Icons.directions_bike, size: 20),
                         label: const Text('Connect Strava'),
                       ),

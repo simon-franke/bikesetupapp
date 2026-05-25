@@ -1,9 +1,13 @@
 import 'package:bikesetupapp/app_pages/home_page.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
+import 'package:bikesetupapp/app_services/strava_sync_service.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/app_services/app_state_notifier.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/database_service/database.dart';
+import 'package:bikesetupapp/database_service/service_database.dart';
+import 'package:bikesetupapp/strava_web_callback_stub.dart'
+    if (dart.library.html) 'package:bikesetupapp/strava_web_callback.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +23,12 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // On web: check if we landed here via the Strava OAuth redirect. If so,
+  // save the tokens from the URL and strip the param from the address bar.
+  // This must run before the auth state check below so the Settings page
+  // immediately reflects the new connection on first render.
+  final bool newStravaAuth = await handleStravaWebCallback();
 
   bool isSignedIn = false;
   String defaultBikeID = "";
@@ -45,6 +55,12 @@ void main() async {
         defaultSetupName.isNotEmpty &&
         bikeType != BikeType.error) {
       isSignedIn = true;
+    }
+
+    // If a fresh Strava connection was just made via the web OAuth flow,
+    // sync bikes immediately so the Settings page shows up-to-date data.
+    if (newStravaAuth) {
+      await StravaSyncService(ServiceDatabaseService(user.uid)).sync();
     }
   }
 

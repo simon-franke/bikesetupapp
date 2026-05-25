@@ -8,6 +8,7 @@ import 'package:bikesetupapp/models/service_component.dart';
 import 'package:bikesetupapp/widgets/mileage_banner.dart';
 import 'package:bikesetupapp/widgets/service_components_list.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 class ServicesView extends StatefulWidget {
@@ -80,6 +81,13 @@ class _ServicesViewState extends State<ServicesView> {
   }
 
   Future<void> _connectStrava() async {
+    if (kIsWeb) {
+      // On web, navigate the tab to Strava's auth page. The Firebase Function
+      // handles the callback and redirects back to the app with tokens encoded
+      // in the URL, which main() detects and saves on the next page load.
+      await StravaAuthService().authorizeWeb();
+      return;
+    }
     final auth = await StravaAuthService().authorize();
     if (auth != null && mounted) {
       setState(() => _isStravaConnected = true);
