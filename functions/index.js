@@ -6,7 +6,7 @@ const stravaClientSecret = defineSecret('STRAVA_CLIENT_SECRET');
 // Client ID is not secret — it's already bundled in the web app's .env asset.
 const STRAVA_CLIENT_ID = '214695';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
-const APP_BASE_URL = 'https://simonmoritzfranke.github.io/bikesetupapp/';
+const APP_BASE_URL = 'https://simon-franke.github.io/bikesetupapp/';
 
 /**
  * Strava OAuth callback proxy.
