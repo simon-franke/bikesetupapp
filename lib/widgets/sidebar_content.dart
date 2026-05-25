@@ -103,7 +103,6 @@ class SidebarContent extends StatelessWidget {
             ),
           ),
           Divider(height: 1, color: p.border),
-          // ── Garage list ─────────────────────────────────────────────────────
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
@@ -126,42 +125,45 @@ class SidebarContent extends StatelessWidget {
             ),
           ),
           Divider(height: 1, color: p.border),
-          // ── Footer ─────────────────────────────────────────────────────────
           SafeArea(
             top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _FooterItem(
-                  icon: Icons.add_rounded,
-                  label: 'New bike',
-                  onTap: () {
-                    if (user != null) {
-                      if (isInDrawer) Navigator.of(context).pop();
-                      showNewBikeSheet(
-                        context, user!, NewBikeMode.newBike,
-                        onBikeSelected: onBikeSelected,
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No User logged in')),
-                      );
-                    }
-                  },
-                ),
-                _FooterItem(
-                  icon: Icons.settings_rounded,
-                  label: 'Settings',
-                  onTap: () {
-                    Navigator.of(context).push(AppRoutes.fadeSlide(SettingsPage(
-                      bikeName: bikeName,
-                      bikeType: bikeType,
-                      chosenSetup: chosenSetup,
-                    )));
-                  },
-                ),
-                const SizedBox(height: 4),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _PrimaryFooterButton(
+                      icon: Icons.add_rounded,
+                      label: 'New bike',
+                      onTap: () {
+                        if (user != null) {
+                          if (isInDrawer) Navigator.of(context).pop();
+                          showNewBikeSheet(
+                            context, user!, NewBikeMode.newBike,
+                            onBikeSelected: onBikeSelected,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No User logged in')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _IconFooterButton(
+                    icon: Icons.settings_rounded,
+                    tooltip: 'Settings',
+                    onTap: () {
+                      Navigator.of(context).push(AppRoutes.fadeSlide(SettingsPage(
+                        bikeName: bikeName,
+                        bikeType: bikeType,
+                        chosenSetup: chosenSetup,
+                      )));
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -192,32 +194,75 @@ class _MiniSectionLabel extends StatelessWidget {
   }
 }
 
-class _FooterItem extends StatelessWidget {
+class _PrimaryFooterButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _FooterItem({required this.icon, required this.label, required this.onTap});
+  const _PrimaryFooterButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return Material(
-      color: Colors.transparent,
+      color: p.accent,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 16, color: p.inkMuted),
-              const SizedBox(width: 10),
+              Icon(icon, size: 18, color: p.accentInk),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: AppTextStyles.inter(
-                  size: 12, weight: FontWeight.w600, color: p.ink,
+                  size: 13, weight: FontWeight.w700, color: p.accentInk,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IconFooterButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _IconFooterButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Material(
+      color: p.surface2,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Tooltip(
+          message: tooltip,
+          child: Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: p.border),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 18, color: p.inkMuted),
           ),
         ),
       ),

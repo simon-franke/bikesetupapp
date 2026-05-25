@@ -106,16 +106,19 @@ class _SettingsPageState extends State<SettingsPage> {
         scrolledUnderElevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
-          child: _IconBtn(
-            icon: Icons.close_rounded,
-            onTap: () {
-              if (user == null) {
-                Navigator.of(context)
-                    .push(AppRoutes.fadeSlide(const LoginPage()));
-              } else {
-                Navigator.of(context).pop();
-              }
-            },
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _IconBtn(
+              icon: Icons.close_rounded,
+              onTap: () {
+                if (user == null) {
+                  Navigator.of(context)
+                      .push(AppRoutes.fadeSlide(const LoginPage()));
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
           ),
         ),
         leadingWidth: 60,
@@ -176,7 +179,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-// ── Section eyebrow label ────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String text;
   const _SectionLabel(this.text);
@@ -202,7 +204,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ── Shared card chrome ───────────────────────────────────────────────────────
 class _SettingsCard extends StatelessWidget {
   final Widget child;
   const _SettingsCard({required this.child});
@@ -223,7 +224,6 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-// ── Custom theme segmented control (Dark / System / Light) ─────────────────
 class _ThemeSegmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -302,7 +302,6 @@ class _ThemeOpt extends StatelessWidget {
   }
 }
 
-// ── Account row ─────────────────────────────────────────────────────────────
 class _AccountRow extends StatelessWidget {
   final User? user;
   final Future<void> Function() onSignOut;
@@ -411,7 +410,6 @@ class _OutlineChip extends StatelessWidget {
   }
 }
 
-// ── Strava integration card ─────────────────────────────────────────────────
 class _StravaCard extends StatelessWidget {
   final bool isConnected;
   final int? athleteId;

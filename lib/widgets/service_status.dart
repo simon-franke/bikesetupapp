@@ -1,8 +1,8 @@
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/models/service_component.dart';
+import 'package:bikesetupapp/models/service_entry.dart';
 import 'package:flutter/material.dart';
 
-/// One of the three urgency buckets a tracked component falls into.
 enum ServiceStatus { red, amber, green, unknown }
 
 extension ServiceStatusColor on ServiceStatus {
@@ -16,9 +16,6 @@ extension ServiceStatusColor on ServiceStatus {
   }
 }
 
-/// Annotated component carrying derived service state (progress, remaining km,
-/// urgency status). Built once per render and reused across the forecast strip,
-/// stats row, and card list.
 class AnnotatedService {
   final ServiceComponent component;
   final double kmSinceService;
@@ -39,8 +36,43 @@ class AnnotatedService {
   });
 }
 
-/// Map ComponentType icon strings (link/brake/tire/fork/shock/bearing) to
-/// Material icons — used by all card densities.
+AnnotatedService annotateService({
+  required ServiceComponent component,
+  required double currentMileageKm,
+  required ServiceEntry? latestEntry,
+}) {
+  final mileageUnknown =
+      latestEntry != null && latestEntry.mileageAtServiceKm == null;
+  final kmSince = (latestEntry?.mileageAtServiceKm != null)
+      ? (currentMileageKm - latestEntry!.mileageAtServiceKm!)
+          .clamp(0.0, double.infinity)
+      : currentMileageKm;
+  final progress = component.serviceIntervalKm > 0
+      ? kmSince / component.serviceIntervalKm
+      : 0.0;
+  final remaining =
+      (component.serviceIntervalKm - kmSince).clamp(0.0, double.infinity);
+  ServiceStatus status;
+  if (mileageUnknown) {
+    status = ServiceStatus.unknown;
+  } else if (progress >= 0.9) {
+    status = ServiceStatus.red;
+  } else if (progress >= 0.7) {
+    status = ServiceStatus.amber;
+  } else {
+    status = ServiceStatus.green;
+  }
+  return AnnotatedService(
+    component: component,
+    kmSinceService: kmSince,
+    remainingKm: remaining,
+    progress: progress,
+    status: status,
+    lastServicedAt: latestEntry?.date,
+    mileageUnknown: mileageUnknown,
+  );
+}
+
 IconData iconForComponent(String icon) {
   switch (icon) {
     case 'link': return Icons.link_rounded;
@@ -53,8 +85,6 @@ IconData iconForComponent(String icon) {
   }
 }
 
-/// Forecast strip — surfaces the next service inline so the user doesn't
-/// have to scan the list for the most urgent item.
 class ForecastStrip extends StatelessWidget {
   final AnnotatedService next;
   const ForecastStrip({super.key, required this.next});
@@ -144,7 +174,6 @@ class ForecastStrip extends StatelessWidget {
   }
 }
 
-/// At-a-glance counts of components in each urgency bucket.
 class ServiceStatsRow extends StatelessWidget {
   final int dueCount;
   final int soonCount;
@@ -222,7 +251,6 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-/// Divider row above each urgency group ("ACTION NEEDED · 1", etc.)
 class StatusGroupHeader extends StatelessWidget {
   final ServiceStatus status;
   final String label;

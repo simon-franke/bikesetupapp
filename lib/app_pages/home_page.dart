@@ -16,7 +16,6 @@ import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 
 import 'dart:math' as math;
-import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -99,55 +98,82 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadMileage();
   }
 
-  // ── Bike header — rounded surface card with neutral spotlight + bubbles ──
   Widget _buildBikeHeader(BuildContext context, double contentWidth, double headerHeight) {
-    final p = context.palette;
-    // Compute the bike image's actual rendered size inside the header.
     const double imgNativeW = 1080.0, imgNativeH = 664.0;
-    final double availW = contentWidth - 24; // 12px horizontal margin each side
+    const double padL = 24, padT = 40, padR = 24, padB = 28;
+    final double availW = contentWidth - 24;
     final double availH = headerHeight;
-    final double scale = math.min(availW / imgNativeW, availH / imgNativeH);
+    final double padW = availW - padL - padR;
+    final double padH = availH - padT - padB;
+    final double scale = math.min(padW / imgNativeW, padH / imgNativeH);
     final double imgRenderW = imgNativeW * scale;
-    final double imgLeft = (availW - imgRenderW) / 2;
+    final double imgRenderH = imgNativeH * scale;
+    final double imgLeft = padL + (padW - imgRenderW) / 2;
+    final double imgTop = padT + (padH - imgRenderH) / 2;
 
-    // Anchor positions — on the bike parts (origin: bottom-left of header).
-    final double rtAnchorL = imgLeft + imgRenderW / 20;
-    final double rtAnchorB = availH * 0.525;
-    final double ftAnchorL = imgLeft + imgRenderW / 1.10;
-    final double ftAnchorB = availH * 0.525;
-    final double shAnchorL = imgLeft + imgRenderW / 2.2;
-    final double shAnchorB = availH * 0.437;
-    final double gsAnchorL = imgLeft + imgRenderW / 2.65;
-    final double gsAnchorB = availH * 0.657;
-    final double fkAnchorL = imgLeft + imgRenderW / 1.45;
-    final double fkAnchorB = availH * 0.657;
+    final anchors = _kBikeAnchors[_bikeType] ?? _kBikeAnchors[BikeType.enduro]!;
+    double anchorL(_AnchorFrac f) => imgLeft + f.fx * imgRenderW;
+    double anchorB(_AnchorFrac f) => availH - (imgTop + f.fy * imgRenderH);
 
-    // Bubble card positions — floated into clear space near each part.
-    final double rtBubbleL = (rtAnchorL - 8).clamp(8.0, availW - bubbleCardW - 8);
-    final double rtBubbleB = (rtAnchorB + 18).clamp(8.0, availH - bubbleCardH - 8);
-    final double ftBubbleL = (ftAnchorL - bubbleCardW + 8).clamp(8.0, availW - bubbleCardW - 8);
-    final double ftBubbleB = (rtBubbleB);
-    final double shBubbleL = (shAnchorL - bubbleCardW / 2).clamp(8.0, availW - bubbleCardW - 8);
-    final double shBubbleB = (availH - bubbleCardH - 14);
-    final double gsBubbleL = (gsAnchorL - bubbleCardW - 10).clamp(8.0, availW - bubbleCardW - 8);
-    final double gsBubbleB = 14;
-    final double fkBubbleL = (fkAnchorL + 14).clamp(8.0, availW - bubbleCardW - 8);
-    final double fkBubbleB = shBubbleB;
+    final double rtAnchorL = anchorL(anchors.rearTire);
+    final double rtAnchorB = anchorB(anchors.rearTire);
+    final double ftAnchorL = anchorL(anchors.frontTire);
+    final double ftAnchorB = anchorB(anchors.frontTire);
+    final double shAnchorL = anchorL(anchors.shock ?? anchors.geometry);
+    final double shAnchorB = anchorB(anchors.shock ?? anchors.geometry);
+    final double gsAnchorL = anchorL(anchors.geometry);
+    final double gsAnchorB = anchorB(anchors.geometry);
+    final double fkAnchorL = anchorL(anchors.fork ?? anchors.frontTire);
+    final double fkAnchorB = anchorB(anchors.fork ?? anchors.frontTire);
 
-    final mileageText = NumberFormat('#,###').format(_currentMileageKm.round());
+    // Bubble card slot positions — corners/edges of the panel, chosen to stay
+    // off the bike silhouette. Layout depends on which parts the bike has.
+    const double sideGap = 12, topGap = 14, botGap = 14;
+    final double topRow = availH - bubbleCardH - topGap;
+    final double botRow = botGap;
+    final double midRow = (availH - bubbleCardH) / 2;
+    final double leftCol = sideGap;
+    final double rightCol = availW - bubbleCardW - sideGap;
+    final double midCol = (availW - bubbleCardW) / 2;
+
+    final double rtBubbleL, rtBubbleB;
+    final double ftBubbleL, ftBubbleB;
+    final double shBubbleL, shBubbleB;
+    final double fkBubbleL, fkBubbleB;
+    final double gsBubbleL, gsBubbleB;
+
+    if (_bikeType.hasShock) {
+      // DH, Enduro: rear/shock/fork across the top row, front on right-middle.
+      rtBubbleL = leftCol;     rtBubbleB = topRow;
+      shBubbleL = midCol;      shBubbleB = topRow;
+      fkBubbleL = rightCol;    fkBubbleB = topRow;
+      ftBubbleL = rightCol;    ftBubbleB = midRow;
+    } else if (_bikeType.hasFork) {
+      // Dirt, XC: rear left-middle, fork top-right, front right-middle.
+      rtBubbleL = leftCol;     rtBubbleB = midRow;
+      fkBubbleL = rightCol;    fkBubbleB = topRow;
+      ftBubbleL = rightCol;    ftBubbleB = midRow;
+      shBubbleL = midCol;      shBubbleB = topRow; // unused (show=false)
+    } else {
+      // Singlespeed, Road: rear left-middle, front right-middle.
+      rtBubbleL = leftCol;     rtBubbleB = midRow;
+      ftBubbleL = rightCol;    ftBubbleB = midRow;
+      shBubbleL = midCol;      shBubbleB = topRow; // unused
+      fkBubbleL = rightCol;    fkBubbleB = topRow; // unused
+    }
+    gsBubbleL = midCol;        gsBubbleB = botRow;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       height: headerHeight,
       decoration: BoxDecoration(
-        color: p.surface,
+        color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: p.border),
+        border: Border.all(color: AppColors.darkBorder),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Neutral spotlight — lifts the bike without any chroma.
           Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
@@ -182,83 +208,21 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
 
-          // Mileage chip top-left.
-          Positioned(
-            top: 12,
-            left: 12,
-            child: GestureDetector(
-              onLongPress: () {
-                showBikeInfoSheet(
-                  context,
-                  widget.user!,
-                  _uBikeID,
-                  _uSetupID,
-                  _setupName,
-                  _bikeName,
-                  _bikeType,
-                  onBikeSelected: _onBikeSelected,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: p.border),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 5, height: 5,
-                      decoration: BoxDecoration(
-                        color: p.accent,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: p.accent, blurRadius: 8),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      mileageText,
-                      style: AppTextStyles.mono(size: 11, weight: FontWeight.w700, color: AppColors.darkInk, letterSpacing: 0.5),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'KM',
-                      style: AppTextStyles.inter(size: 9, weight: FontWeight.w700, color: AppColors.darkInkDim, letterSpacing: 0.8),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Bike silhouette — paper-white inverted on dark, dark on light.
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
             child: Center(
               child: ColorFiltered(
-                colorFilter: Theme.of(context).brightness == Brightness.dark
-                    ? const ColorFilter.matrix(<double>[
-                        -1, 0, 0, 0, 255,
-                        0, -1, 0, 0, 255,
-                        0, 0, -1, 0, 255,
-                        0, 0, 0, 0.92, 0,
-                      ])
-                    : const ColorFilter.matrix(<double>[
-                        0.18, 0, 0, 0, 0,
-                        0, 0.18, 0, 0, 0,
-                        0, 0, 0.18, 0, 0,
-                        0, 0, 0, 0.85, 0,
-                      ]),
+                colorFilter: const ColorFilter.matrix(<double>[
+                  -1, 0, 0, 0, 255,
+                  0, -1, 0, 0, 255,
+                  0, 0, -1, 0, 255,
+                  0, 0, 0, 0.92, 0,
+                ]),
                 child: Image.asset(_bikeType.path, fit: BoxFit.contain),
               ),
             ),
           ),
 
-          // Schematic bubbles.
           SchematicBubble(
             user: widget.user!,
             anchorLeft: rtAnchorL,
@@ -402,12 +366,16 @@ class _MyHomePageState extends State<MyHomePage> {
       leading: Builder(
         builder: (ctx) => Padding(
           padding: const EdgeInsets.only(left: 12),
-          child: _IconBtn(
-            icon: Icons.menu_rounded,
-            onTap: () => Scaffold.of(ctx).openDrawer(),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _IconBtn(
+              icon: Icons.menu_rounded,
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+            ),
           ),
         ),
       ),
+      leadingWidth: 60,
       title: Row(
         children: [
           Expanded(
@@ -495,21 +463,30 @@ class _MyHomePageState extends State<MyHomePage> {
     final bool wide = ResponsiveLayout.isWide(context);
     final double cWidth = ResponsiveLayout.contentWidth(context);
 
-    // FAB only on the Services view — Setup uses the inline AddFieldCard.
-    final Widget? fab = _activeView == ActiveView.services
-        ? FloatingActionButton(
-            onPressed: () {
-              showAddComponentSheet(
-                context,
-                user: widget.user!,
-                uBikeID: _uBikeID,
-                currentMileageKm: _currentMileageKm,
-              );
-            },
-            tooltip: 'Add Component',
-            child: const Icon(Icons.add_rounded),
-          )
-        : null;
+    final Widget fab = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOutBack,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: animation,
+        child: FadeTransition(opacity: animation, child: child),
+      ),
+      child: _activeView == ActiveView.services
+          ? FloatingActionButton(
+              key: const ValueKey('add_component_fab'),
+              onPressed: () {
+                showAddComponentSheet(
+                  context,
+                  user: widget.user!,
+                  uBikeID: _uBikeID,
+                  currentMileageKm: _currentMileageKm,
+                );
+              },
+              tooltip: 'Add Component',
+              child: const Icon(Icons.add_rounded),
+            )
+          : const SizedBox.shrink(key: ValueKey('no_fab')),
+    );
 
     if (wide) {
       return Scaffold(
@@ -566,8 +543,68 @@ class _IconBtn extends StatelessWidget {
           border: Border.all(color: p.border),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 20, color: p.ink),
+        child: Icon(icon, size: 18, color: p.ink),
       ),
     );
   }
 }
+
+class _AnchorFrac {
+  final double fx;
+  final double fy;
+  const _AnchorFrac(this.fx, this.fy);
+}
+
+class _BikeAnchors {
+  final _AnchorFrac rearTire;
+  final _AnchorFrac frontTire;
+  final _AnchorFrac? shock;
+  final _AnchorFrac? fork;
+  final _AnchorFrac geometry;
+  const _BikeAnchors({
+    required this.rearTire,
+    required this.frontTire,
+    required this.geometry,
+    this.shock,
+    this.fork,
+  });
+}
+
+const Map<BikeType, _BikeAnchors> _kBikeAnchors = {
+  BikeType.enduro: _BikeAnchors(
+    rearTire: _AnchorFrac(0.249, 0.724),
+    frontTire: _AnchorFrac(0.748, 0.724),
+    shock: _AnchorFrac(0.453, 0.475),
+    fork: _AnchorFrac(0.724, 0.472),
+    geometry: _AnchorFrac(0.377, 0.734),
+  ),
+  BikeType.dh: _BikeAnchors(
+    rearTire: _AnchorFrac(0.251, 0.715),
+    frontTire: _AnchorFrac(0.749, 0.715),
+    shock: _AnchorFrac(0.451, 0.465),
+    fork: _AnchorFrac(0.728, 0.474),
+    geometry: _AnchorFrac(0.397, 0.728),
+  ),
+  BikeType.dirtjump: _BikeAnchors(
+    rearTire: _AnchorFrac(0.249, 0.721),
+    frontTire: _AnchorFrac(0.743, 0.723),
+    fork: _AnchorFrac(0.714, 0.454),
+    geometry: _AnchorFrac(0.439, 0.789),
+  ),
+  BikeType.xc: _BikeAnchors(
+    rearTire: _AnchorFrac(0.249, 0.721),
+    frontTire: _AnchorFrac(0.742, 0.721),
+    fork: _AnchorFrac(0.719, 0.464),
+    geometry: _AnchorFrac(0.393, 0.743),
+  ),
+  BikeType.singlespeed: _BikeAnchors(
+    rearTire: _AnchorFrac(0.257, 0.726),
+    frontTire: _AnchorFrac(0.739, 0.727),
+    geometry: _AnchorFrac(0.431, 0.749),
+  ),
+  BikeType.road: _BikeAnchors(
+    rearTire: _AnchorFrac(0.253, 0.736),
+    frontTire: _AnchorFrac(0.741, 0.736),
+    geometry: _AnchorFrac(0.447, 0.746),
+  ),
+};

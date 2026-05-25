@@ -5,9 +5,6 @@ import 'package:bikesetupapp/widgets/service_status.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Public entry point — adapter that picks the right card density based on
-/// the annotated status. Used by [ServiceComponentsList] so existing callers
-/// don't have to know which variant to render.
 class ServiceComponentCard extends StatelessWidget {
   final ServiceComponent component;
   final double currentMileageKm;
@@ -24,40 +21,13 @@ class ServiceComponentCard extends StatelessWidget {
     this.onLog,
   });
 
-  AnnotatedService _annotate() {
-    final mileageUnknown =
-        latestEntry != null && latestEntry!.mileageAtServiceKm == null;
-    final kmSince = (latestEntry?.mileageAtServiceKm != null)
-        ? (currentMileageKm - latestEntry!.mileageAtServiceKm!).clamp(0.0, double.infinity)
-        : currentMileageKm;
-    final progress =
-        component.serviceIntervalKm > 0 ? kmSince / component.serviceIntervalKm : 0.0;
-    final remaining =
-        (component.serviceIntervalKm - kmSince).clamp(0.0, double.infinity);
-    ServiceStatus status;
-    if (mileageUnknown) {
-      status = ServiceStatus.unknown;
-    } else if (progress >= 0.9) {
-      status = ServiceStatus.red;
-    } else if (progress >= 0.7) {
-      status = ServiceStatus.amber;
-    } else {
-      status = ServiceStatus.green;
-    }
-    return AnnotatedService(
-      component: component,
-      kmSinceService: kmSince,
-      remainingKm: remaining,
-      progress: progress,
-      status: status,
-      lastServicedAt: latestEntry?.date,
-      mileageUnknown: mileageUnknown,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final s = _annotate();
+    final s = annotateService(
+      component: component,
+      currentMileageKm: currentMileageKm,
+      latestEntry: latestEntry,
+    );
     switch (s.status) {
       case ServiceStatus.red:
         return ServiceCardLarge(service: s, onTap: onTap, onLog: onLog ?? onTap);
@@ -71,7 +41,6 @@ class ServiceComponentCard extends StatelessWidget {
   }
 }
 
-// ── DUE card — large, glowing, with explicit Log CTA ─────────────────────────
 class ServiceCardLarge extends StatelessWidget {
   final AnnotatedService service;
   final VoidCallback? onTap;
@@ -95,7 +64,6 @@ class ServiceCardLarge extends StatelessWidget {
       onTap: onTap,
       child: Stack(
         children: [
-          // "DUE NOW" tag top-right.
           Positioned(
             top: 0, right: 0,
             child: Container(
@@ -246,7 +214,6 @@ class ServiceCardLarge extends StatelessWidget {
   }
 }
 
-// ── "Coming up" card — medium with edge bar, model subline, km remaining ────
 class ServiceCardMedium extends StatelessWidget {
   final AnnotatedService service;
   final VoidCallback? onTap;
@@ -361,7 +328,6 @@ class ServiceCardMedium extends StatelessWidget {
   }
 }
 
-// ── Healthy card — compact single-line row ──────────────────────────────────
 class ServiceCardCompact extends StatelessWidget {
   final AnnotatedService service;
   final VoidCallback? onTap;
@@ -371,7 +337,9 @@ class ServiceCardCompact extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final color = service.status.color(p);
-    final remaining = service.remainingKm.round();
+    final formatter = NumberFormat('#,###');
+    final kmText = formatter.format(service.kmSinceService.round());
+    final intervalText = formatter.format(service.component.serviceIntervalKm);
     return _CardShell(
       color: Colors.transparent,
       borderColor: p.border,
@@ -396,11 +364,24 @@ class ServiceCardCompact extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Text(
-              '$remaining km',
-              style: AppTextStyles.mono(
-                size: 11, weight: FontWeight.w500, color: p.inkMuted,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  kmText,
+                  style: AppTextStyles.mono(
+                    size: 12, weight: FontWeight.w700, color: p.ink,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  '/ $intervalText km',
+                  style: AppTextStyles.mono(
+                    size: 10, weight: FontWeight.w500, color: p.inkDim,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 6),
             Container(
@@ -414,7 +395,6 @@ class ServiceCardCompact extends StatelessWidget {
   }
 }
 
-// ── Unknown-mileage card — visually neutral, shows date instead of km ──────
 class ServiceCardUnknown extends StatelessWidget {
   final AnnotatedService service;
   final VoidCallback? onTap;
@@ -473,8 +453,7 @@ class ServiceCardUnknown extends StatelessWidget {
   }
 }
 
-// ── Shared chrome — rounded surface card with optional inner glow ──────────
-class _CardShell extends StatelessWidget {
+class _CardShell extends StatefulWidget {
   final Color color;
   final Color borderColor;
   final Color? glow;
@@ -493,21 +472,45 @@ class _CardShell extends StatelessWidget {
   });
 
   @override
+  State<_CardShell> createState() => _CardShellState();
+}
+
+class _CardShellState extends State<_CardShell> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) {
+    if (_pressed == v) return;
+    setState(() => _pressed = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 14, vertical: marginVertical),
-      decoration: BoxDecoration(
-        color: color,
-        border: Border.all(color: borderColor),
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: glow == null
-            ? null
-            : [BoxShadow(color: glow!, blurRadius: 18, offset: const Offset(0, 6))],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(onTap: onTap, child: child),
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOut,
+      scale: _pressed && widget.onTap != null ? 0.97 : 1.0,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 14, vertical: widget.marginVertical),
+        decoration: BoxDecoration(
+          color: widget.color,
+          border: Border.all(color: widget.borderColor),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          boxShadow: widget.glow == null
+              ? null
+              : [BoxShadow(color: widget.glow!, blurRadius: 18, offset: const Offset(0, 6))],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => _setPressed(false),
+            onTapCancel: () => _setPressed(false),
+            onHighlightChanged: (v) => _setPressed(v),
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }

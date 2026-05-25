@@ -2,7 +2,6 @@ import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Strava-synced total mileage card. Sits at the top of the Services view.
 class MileageBanner extends StatelessWidget {
   final double? mileageKm;
   final DateTime? lastSyncTime;
@@ -32,10 +31,39 @@ class MileageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 240),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SizeTransition(
+          sizeFactor: animation,
+          axisAlignment: -1,
+          child: child,
+        ),
+      ),
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          ...previousChildren,
+          if (currentChild != null) currentChild,
+        ],
+      ),
+      child: isConnected
+          ? KeyedSubtree(
+              key: const ValueKey('connected'),
+              child: _buildConnected(context),
+            )
+          : _NotConnectedBanner(
+              key: const ValueKey('not_connected'),
+              onConnect: onConnect,
+            ),
+    );
+  }
+
+  Widget _buildConnected(BuildContext context) {
     final p = context.palette;
-    if (!isConnected) {
-      return _NotConnectedBanner(onConnect: onConnect);
-    }
     final formatter = NumberFormat('#,###');
     final mileageText =
         mileageKm != null ? formatter.format(mileageKm!.round()) : '--';
@@ -50,7 +78,6 @@ class MileageBanner extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Accent gradient stripe at the top.
           Positioned(
             top: 0, left: 0, right: 0, height: 28,
             child: IgnorePointer(
@@ -190,7 +217,7 @@ class _SyncButton extends StatelessWidget {
 
 class _NotConnectedBanner extends StatelessWidget {
   final VoidCallback? onConnect;
-  const _NotConnectedBanner({this.onConnect});
+  const _NotConnectedBanner({super.key, this.onConnect});
 
   @override
   Widget build(BuildContext context) {
