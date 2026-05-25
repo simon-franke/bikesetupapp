@@ -2,6 +2,53 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CI/CD
+
+The app deploys to **GitHub Pages** (`https://simon-franke.github.io/bikesetupapp/`) via
+`.github/workflows/deploy.yml` on every push to `main`. The workflow has three jobs:
+
+| Job | What it does | Required secret |
+|---|---|---|
+| `build` | `flutter build web --base-href /bikesetupapp/` | `FIREBASE_OPTIONS`, `STRAVA_CLIENT_ID` |
+| `deploy` | Publishes `build/web` to GitHub Pages | — |
+| `deploy-functions` | `firebase deploy --only functions` | `FIREBASE_TOKEN` |
+
+`FIREBASE_OPTIONS` is `lib/firebase_options.dart` base64-encoded.
+`FIREBASE_TOKEN` is generated with `firebase login:ci`.
+
+### Firebase Function
+
+`functions/index.js` — a 2nd-gen Cloud Function (`stravaCallback`) that acts as the
+Strava OAuth proxy on web. It receives the authorization code from Strava, exchanges it
+for tokens using `STRAVA_CLIENT_SECRET` (stored in Google Cloud Secret Manager, never
+in the web bundle), then redirects back to the app with the token payload base64url-encoded
+in `?strava_auth=`.
+
+To redeploy the function manually:
+```bash
+cd functions && npm install && cd ..
+firebase deploy --only functions
+```
+
+### Strava web OAuth flow
+
+On web, "Connect Strava" navigates the browser tab to Strava's auth page with the
+Firebase Function URL as the redirect URI. After the user authorizes:
+
+1. Strava → Firebase Function (`stravaCallback`)
+2. Function exchanges code → tokens (server-side)
+3. Function → redirects to `https://simon-franke.github.io/bikesetupapp/?strava_auth=<base64url>`
+4. `main()` calls `handleStravaWebCallback()` which saves the tokens and strips the URL param
+5. If a new auth was detected and the user is signed in, Strava bikes are auto-synced
+
+On mobile the existing `FlutterWebAuth2` / custom-scheme flow is unchanged.
+
+Key files:
+- `lib/strava_web_callback.dart` — web implementation (conditional import)
+- `lib/strava_web_callback_stub.dart` — mobile/desktop stub
+- `lib/database_service/strava_auth_service.dart` — `authorizeWeb()` / `buildWebAuthUrl()`
+- `functions/index.js` — Firebase Function
+
 ## Commands
 
 ```bash

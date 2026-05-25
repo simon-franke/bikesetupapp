@@ -51,6 +51,52 @@ The settings page lets users log in or out, change the theme, and set their defa
 
 Each user has their own document referenced by their user ID under the `UserBikeSetup` collection. This document contains collections for `Bikes`, `ToDoList`, and stores the user's default bike. Each bike has a `SetupList` sub-collection for setup metadata, and per-setup sub-collections keyed by category (Fork, Shock, RearTire, FrontTire, GeneralSettings) for the actual settings key-value pairs.
 
+## Deployment
+
+The app is deployed to **GitHub Pages** at `https://simon-franke.github.io/bikesetupapp/`.
+Pushing to `main` triggers the `Deploy to GitHub Pages` workflow automatically.
+
+### Required GitHub secrets
+
+Set these under **repo → Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|---|---|
+| `FIREBASE_OPTIONS` | `lib/firebase_options.dart` base64-encoded (`base64 < lib/firebase_options.dart`) |
+| `STRAVA_CLIENT_ID` | Strava API client ID (currently `214695`) |
+| `FIREBASE_TOKEN` | Firebase CI token — generate with `firebase login:ci` |
+
+### Firebase Function (Strava OAuth proxy)
+
+The `functions/` directory contains a Firebase Cloud Function (`stravaCallback`) that
+handles the server-side Strava OAuth token exchange so the client secret never appears
+in the web bundle.
+
+**One-time setup:**
+```bash
+# Enable Secret Manager API at:
+# https://console.developers.google.com/apis/api/secretmanager.googleapis.com/overview?project=bikesetupapp-bd22a
+
+# Store the Strava client secret in Google Cloud Secret Manager
+firebase secrets:set STRAVA_CLIENT_SECRET
+
+# Deploy the function
+cd functions && npm install && cd ..
+firebase deploy --only functions
+```
+
+The `deploy-functions` CI job deploys the function automatically on push once the
+`FIREBASE_TOKEN` secret is set. Until then, deploy manually with the command above.
+
+### Strava API settings
+
+In the [Strava API dashboard](https://www.strava.com/settings/api) set:
+```
+Authorization Callback Domain: us-central1-bikesetupapp-bd22a.cloudfunctions.net
+```
+
+---
+
 ## Setup (after cloning)
 
 Firebase config files are **not committed** to this repository (they contain API keys). You must generate them locally before running the app:
