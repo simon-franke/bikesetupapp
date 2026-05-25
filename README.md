@@ -63,7 +63,7 @@ Set these under **repo → Settings → Secrets and variables → Actions**:
 | Secret | Description |
 |---|---|
 | `FIREBASE_OPTIONS` | `lib/firebase_options.dart` base64-encoded (`base64 < lib/firebase_options.dart`) |
-| `STRAVA_CLIENT_ID` | Strava API client ID (currently `214695`) |
+| `STRAVA_CLIENT_ID` | Strava API client ID (found in your Strava API app settings) |
 | `FIREBASE_TOKEN` | Firebase CI token — generate with `firebase login:ci` |
 
 ### Firebase Function (Strava OAuth proxy)
@@ -74,10 +74,8 @@ in the web bundle.
 
 **One-time setup:**
 ```bash
-# Enable Secret Manager API at:
-# https://console.developers.google.com/apis/api/secretmanager.googleapis.com/overview?project=bikesetupapp-bd22a
-
-# Store the Strava client secret in Google Cloud Secret Manager
+# Enable the Secret Manager API in Google Cloud Console for your project,
+# then store the Strava client secret:
 firebase secrets:set STRAVA_CLIENT_SECRET
 
 # Deploy the function
