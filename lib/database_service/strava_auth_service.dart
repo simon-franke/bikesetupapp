@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:bikesetupapp/models/strava_auth.dart';
 import 'package:bikesetupapp/app_services/strava_token_storage.dart';
+import 'package:bikesetupapp/strava_web_callback_stub.dart'
+    if (dart.library.html) 'package:bikesetupapp/strava_web_callback.dart';
 
 class StravaAuthService {
   static const _authorizeUrl = 'https://www.strava.com/oauth/authorize';
@@ -12,6 +14,12 @@ class StravaAuthService {
   static const _deauthorizeUrl = 'https://www.strava.com/oauth/deauthorize';
   static const _redirectUri = 'bikesetup://localhost';
   static const _callbackScheme = 'bikesetup';
+
+  /// The Firebase Function URL that handles the Strava OAuth callback on web.
+  /// It exchanges the authorization code for tokens (keeping the client secret
+  /// server-side) and redirects back to the app with encoded tokens.
+  static const _webCallbackFunctionUrl =
+      'https://us-central1-bikesetupapp-bd22a.cloudfunctions.net/stravaCallback';
 
   String get _clientId => dotenv.env['STRAVA_CLIENT_ID'] ?? '';
   String get _clientSecret => dotenv.env['STRAVA_CLIENT_SECRET'] ?? '';
@@ -111,6 +119,27 @@ class StravaAuthService {
       if (auth == null) return null;
     }
     return auth.accessToken;
+  }
+
+  /// Web-only: builds the Strava authorization URL pointing to the Firebase
+  /// Function as the redirect URI, then navigates the current browser tab to
+  /// it. The function will redirect back to the app with encoded tokens.
+  ///
+  /// The page navigates away immediately — there is no return value.
+  /// Tokens are saved by [handleStravaWebCallback] on the next app startup.
+  Future<void> authorizeWeb() async {
+    openStravaAuthInTab(buildWebAuthUrl());
+  }
+
+  /// Returns the Strava OAuth authorization URL for use on web (redirect URI
+  /// points to the Firebase Function proxy instead of the custom scheme).
+  String buildWebAuthUrl() {
+    return '$_authorizeUrl'
+        '?client_id=$_clientId'
+        '&response_type=code'
+        '&redirect_uri=${Uri.encodeComponent(_webCallbackFunctionUrl)}'
+        '&scope=read,profile:read_all,activity:read'
+        '&approval_prompt=auto';
   }
 
   Future<void> deauthorize() async {
