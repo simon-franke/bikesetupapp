@@ -11,6 +11,7 @@ class ServiceComponentCard extends StatelessWidget {
   final ServiceEntry? latestEntry;
   final VoidCallback? onTap;
   final VoidCallback? onLog;
+  final VoidCallback? onDefer;
 
   const ServiceComponentCard({
     super.key,
@@ -19,6 +20,7 @@ class ServiceComponentCard extends StatelessWidget {
     this.latestEntry,
     this.onTap,
     this.onLog,
+    this.onDefer,
   });
 
   @override
@@ -30,7 +32,12 @@ class ServiceComponentCard extends StatelessWidget {
     );
     switch (s.status) {
       case ServiceStatus.red:
-        return ServiceCardLarge(service: s, onTap: onTap, onLog: onLog ?? onTap);
+        return ServiceCardLarge(
+          service: s,
+          onTap: onTap,
+          onLog: onLog ?? onTap,
+          onDefer: onDefer,
+        );
       case ServiceStatus.amber:
         return ServiceCardMedium(service: s, onTap: onTap);
       case ServiceStatus.green:
@@ -45,7 +52,14 @@ class ServiceCardLarge extends StatelessWidget {
   final AnnotatedService service;
   final VoidCallback? onTap;
   final VoidCallback? onLog;
-  const ServiceCardLarge({super.key, required this.service, this.onTap, this.onLog});
+  final VoidCallback? onDefer;
+  const ServiceCardLarge({
+    super.key,
+    required this.service,
+    this.onTap,
+    this.onLog,
+    this.onDefer,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -128,73 +142,36 @@ class ServiceCardLarge extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                kmText,
-                                style: AppTextStyles.mono(
-                                  size: 26, weight: FontWeight.w700,
-                                  color: color, letterSpacing: -1, height: 1,
-                                ),
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                '/ $intervalText km',
-                                style: AppTextStyles.mono(
-                                  size: 12, weight: FontWeight.w600,
-                                  color: p.inkDim,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (lastDays != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Last serviced $lastDays days ago',
-                              style: AppTextStyles.inter(
-                                size: 9.5, color: p.inkMuted,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ],
+                    Text(
+                      kmText,
+                      style: AppTextStyles.mono(
+                        size: 26, weight: FontWeight.w700,
+                        color: color, letterSpacing: -1, height: 1,
                       ),
                     ),
-                    Material(
-                      color: color,
-                      borderRadius: BorderRadius.circular(9),
-                      child: InkWell(
-                        onTap: onLog,
-                        borderRadius: BorderRadius.circular(9),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.check_rounded, size: 14, color: Colors.white),
-                              const SizedBox(width: 4),
-                              Text(
-                                'LOG',
-                                style: AppTextStyles.inter(
-                                  size: 10.5, weight: FontWeight.w800,
-                                  color: Colors.white, letterSpacing: 0.6,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '/ $intervalText km',
+                      style: AppTextStyles.mono(
+                        size: 12, weight: FontWeight.w600,
+                        color: p.inkDim,
                       ),
                     ),
                   ],
                 ),
+                if (lastDays != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Last serviced $lastDays days ago',
+                    style: AppTextStyles.inter(
+                      size: 9.5, color: p.inkMuted,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(99),
@@ -204,6 +181,29 @@ class ServiceCardLarge extends StatelessWidget {
                     backgroundColor: Colors.white.withValues(alpha: 0.06),
                     valueColor: AlwaysStoppedAnimation(color),
                   ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    if (onDefer != null) ...[
+                      Expanded(
+                        child: _CardOutlinedButton(
+                          label: 'STILL OK',
+                          color: color,
+                          onTap: onDefer!,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: _CardFilledButton(
+                        label: 'LOG',
+                        icon: Icons.check_rounded,
+                        color: color,
+                        onTap: onLog,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -518,3 +518,84 @@ class _CardShellState extends State<_CardShell> {
 
 bool _hasModel(ServiceComponent c) =>
     c.name.trim().isNotEmpty && c.name.trim() != c.type.label;
+
+class _CardFilledButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+  const _CardFilledButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: AppTextStyles.inter(
+                  size: 10.5, weight: FontWeight.w800,
+                  color: Colors.white, letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardOutlinedButton extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _CardOutlinedButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppTextStyles.inter(
+                size: 10.5, weight: FontWeight.w800,
+                color: color, letterSpacing: 0.6,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
