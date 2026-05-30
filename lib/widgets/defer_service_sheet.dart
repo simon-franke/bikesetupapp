@@ -2,19 +2,12 @@ import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/service_component.dart';
 import 'package:bikesetupapp/models/service_entry.dart';
-import 'package:bikesetupapp/widgets/field_meta.dart';
 import 'package:bikesetupapp/widgets/setting_value_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 const int _kDeferDefaultKm = 50;
-const FieldMeta _kDeferMeta = FieldMeta(
-  Icons.schedule_rounded,
-  'km',
-  min: 10,
-  max: 500,
-);
 
 Future<void> showDeferServiceSheet({
   required BuildContext context,
@@ -64,9 +57,13 @@ Future<void> showDeferServiceSheet({
             ),
             const SizedBox(height: 8),
             SettingValueEditor(
-              initialValue: _kDeferDefaultKm,
-              meta: _kDeferMeta,
-              onChanged: (v) => extendKm = v,
+              initialValue: _kDeferDefaultKm.toDouble(),
+              min: 10,
+              max: 500,
+              step: 1,
+              decimals: 0,
+              unitLabel: 'km',
+              onChanged: (v) => extendKm = v.round(),
             ),
             const SizedBox(height: 22),
             _DeferPrimaryButton(
