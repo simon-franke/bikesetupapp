@@ -5,6 +5,8 @@ import 'package:bikesetupapp/app_services/strava_token_storage.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/database_service/strava_auth_service.dart';
 import 'package:bikesetupapp/models/service_component.dart';
+import 'package:bikesetupapp/widgets/defer_service_sheet.dart';
+import 'package:bikesetupapp/widgets/log_service_sheet.dart';
 import 'package:bikesetupapp/widgets/mileage_banner.dart';
 import 'package:bikesetupapp/widgets/service_components_list.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -119,6 +121,8 @@ class _ServicesViewState extends State<ServicesView> {
               currentMileageKm: _mileageKm,
               onAlertChanged: widget.onAlertChanged,
               onComponentTap: (component) => _openComponentDetail(component),
+              onComponentLog: (component) => _logServiceForComponent(component),
+              onComponentDefer: (component) => _deferServiceForComponent(component),
             ),
             const SizedBox(height: 80),
           ],
@@ -140,6 +144,28 @@ class _ServicesViewState extends State<ServicesView> {
           stravaGearId: stravaGearId,
         ),
       ),
+    );
+  }
+
+  Future<void> _logServiceForComponent(ServiceComponent component) async {
+    final db = ServiceDatabaseService(widget.user.uid);
+    final stravaGearId = await db.getStravaGearIdForBike(widget.uBikeID);
+    if (!mounted) return;
+    await showLogServiceSheet(
+      context: context,
+      userID: widget.user.uid,
+      component: component,
+      currentMileageKm: _mileageKm,
+      stravaGearId: stravaGearId,
+    );
+  }
+
+  Future<void> _deferServiceForComponent(ServiceComponent component) async {
+    await showDeferServiceSheet(
+      context: context,
+      userID: widget.user.uid,
+      component: component,
+      currentMileageKm: _mileageKm,
     );
   }
 }

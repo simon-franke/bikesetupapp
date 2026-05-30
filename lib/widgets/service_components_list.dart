@@ -14,6 +14,7 @@ class ServiceComponentsList extends StatefulWidget {
   final double currentMileageKm;
   final void Function(ServiceComponent component)? onComponentTap;
   final void Function(ServiceComponent component)? onComponentLog;
+  final void Function(ServiceComponent component)? onComponentDefer;
   final void Function(bool hasAlert)? onAlertChanged;
 
   const ServiceComponentsList({
@@ -23,6 +24,7 @@ class ServiceComponentsList extends StatefulWidget {
     required this.currentMileageKm,
     this.onComponentTap,
     this.onComponentLog,
+    this.onComponentDefer,
     this.onAlertChanged,
   });
 
@@ -77,6 +79,7 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
               currentMileageKm: widget.currentMileageKm,
               onComponentTap: widget.onComponentTap,
               onComponentLog: widget.onComponentLog,
+              onComponentDefer: widget.onComponentDefer,
               onAlertChanged: widget.onAlertChanged,
             );
           }
@@ -136,6 +139,7 @@ class _ComponentListWithEntries extends StatefulWidget {
   final double currentMileageKm;
   final void Function(ServiceComponent component)? onComponentTap;
   final void Function(ServiceComponent component)? onComponentLog;
+  final void Function(ServiceComponent component)? onComponentDefer;
   final void Function(bool hasAlert)? onAlertChanged;
 
   const _ComponentListWithEntries({
@@ -145,6 +149,7 @@ class _ComponentListWithEntries extends StatefulWidget {
     required this.currentMileageKm,
     this.onComponentTap,
     this.onComponentLog,
+    this.onComponentDefer,
     this.onAlertChanged,
   });
 
@@ -250,14 +255,9 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
     final green  = annotated.where((s) => s.status == ServiceStatus.green) .toList()..sort((a, b) => a.remainingKm.compareTo(b.remainingKm));
     final unknown= annotated.where((s) => s.status == ServiceStatus.unknown).toList();
 
-    final knownSorted = [...annotated.where((s) => !s.mileageUnknown)]
-      ..sort((a, b) => a.remainingKm.compareTo(b.remainingKm));
-    final next = knownSorted.isEmpty ? null : knownSorted.first;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (next != null) ForecastStrip(next: next),
         ServiceStatsRow(
           dueCount: red.length,
           soonCount: amber.length,
@@ -275,6 +275,7 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
                 latestEntry: _latestEntries[s.component.id],
                 onTap: widget.onComponentTap == null ? null : () => widget.onComponentTap!(s.component),
                 onLog: widget.onComponentLog == null ? null : () => widget.onComponentLog!(s.component),
+                onDefer: widget.onComponentDefer == null ? null : () => widget.onComponentDefer!(s.component),
               ),
           ],
         ),
