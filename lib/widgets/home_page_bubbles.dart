@@ -3,6 +3,7 @@ import 'package:bikesetupapp/bike_enums/category.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
 import 'package:bikesetupapp/widgets/progress_indicator.dart';
+import 'package:bikesetupapp/widgets/unit_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -109,7 +110,17 @@ class _SchematicBubbleState extends State<SchematicBubble>
 
   bool get _isSelected => widget.chosenCategory == widget.category;
 
-  String _unitFor(String key) => kFieldMeta[key]?.unit ?? '';
+  ({String value, String unit}) _displayFor(String key, String rawValue) {
+    final meta = kFieldMeta[key];
+    final parsed = SettingValue.parse(
+      rawValue,
+      fallbackFamily: meta?.family,
+      fallbackUnit: meta?.defaultUnit,
+    );
+    if (parsed.isText) return (value: parsed.text ?? '', unit: '');
+    if (parsed.number == null) return (value: rawValue, unit: '');
+    return (value: parsed.displayNumber(), unit: parsed.displayUnit());
+  }
 
   @override
   void initState() {
@@ -337,6 +348,13 @@ class _SchematicBubbleState extends State<SchematicBubble>
                           });
                         }
 
+                        final display = isGeometry
+                            ? (
+                                value: '$specCount',
+                                unit: (specCount == 1 ? 'spec' : 'specs'),
+                              )
+                            : _displayFor(elementKey, element);
+
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                           child: Column(
@@ -353,7 +371,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                   height: 1.2,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 1),
                               hasError
                                   ? Icon(Icons.error_outline, size: 14, color: chipInk.withValues(alpha: 0.55))
                                   : Row(
@@ -362,7 +380,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                       children: [
                                         Flexible(
                                           child: Text(
-                                            isGeometry ? '$specCount' : element,
+                                            display.value,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTextStyles.mono(
@@ -376,9 +394,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                         const SizedBox(width: 2),
                                         Flexible(
                                           child: Text(
-                                            isGeometry
-                                                ? (specCount == 1 ? 'spec' : 'specs')
-                                                : _unitFor(elementKey),
+                                            display.unit,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(

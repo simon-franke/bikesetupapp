@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/widgets/field_meta.dart';
+import 'package:bikesetupapp/widgets/unit_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -9,14 +9,22 @@ const double _tickWidth = 12;
 const double _rulerHeight = 70;
 
 class SettingValueEditor extends StatefulWidget {
-  final int initialValue;
-  final FieldMeta meta;
-  final ValueChanged<int> onChanged;
+  final double initialValue;
+  final double min;
+  final double max;
+  final double step;
+  final int decimals;
+  final String unitLabel;
+  final ValueChanged<double> onChanged;
 
   const SettingValueEditor({
     super.key,
     required this.initialValue,
-    required this.meta,
+    required this.min,
+    required this.max,
+    required this.step,
+    required this.decimals,
+    required this.unitLabel,
     required this.onChanged,
   });
 
@@ -26,18 +34,24 @@ class SettingValueEditor extends StatefulWidget {
 
 class _SettingValueEditorState extends State<SettingValueEditor> {
   late final ScrollController _controller;
-  late int _effectiveMin;
-  late int _effectiveMax;
-  late int _currentValue;
+  late double _effectiveMin;
+  late double _effectiveMax;
+  late double _step;
+  late double _currentValue;
+
+  int _indexFor(double value) =>
+      ((value - _effectiveMin) / _step).round();
+  double _valueFor(int index) => _effectiveMin + index * _step;
 
   @override
   void initState() {
     super.initState();
-    _effectiveMin = math.min(widget.meta.min, widget.initialValue);
-    _effectiveMax = math.max(widget.meta.max, widget.initialValue);
+    _step = widget.step > 0 ? widget.step : 1.0;
+    _effectiveMin = math.min(widget.min, widget.initialValue);
+    _effectiveMax = math.max(widget.max, widget.initialValue);
     _currentValue = widget.initialValue;
     _controller = ScrollController(
-      initialScrollOffset: (widget.initialValue - _effectiveMin) * _tickWidth,
+      initialScrollOffset: _indexFor(widget.initialValue) * _tickWidth,
     );
     _controller.addListener(_onScroll);
   }
@@ -50,15 +64,18 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
   }
 
   void _onScroll() {
-    final maxOffset = (_effectiveMax - _effectiveMin) * _tickWidth;
+    final tickCount = ((_effectiveMax - _effectiveMin) / _step).round();
+    final maxOffset = tickCount * _tickWidth;
     final clamped = _controller.offset.clamp(0.0, maxOffset);
     final index = (clamped / _tickWidth).round();
-    final newValue = _effectiveMin + index;
-    if (newValue != _currentValue) {
+    final newValue = _valueFor(index);
+    if ((newValue - _currentValue).abs() >= _step / 2) {
       final wasAtBoundary =
-          _currentValue == _effectiveMin || _currentValue == _effectiveMax;
+          (_currentValue - _effectiveMin).abs() < _step / 2 ||
+              (_currentValue - _effectiveMax).abs() < _step / 2;
       final isAtBoundary =
-          newValue == _effectiveMin || newValue == _effectiveMax;
+          (newValue - _effectiveMin).abs() < _step / 2 ||
+              (newValue - _effectiveMax).abs() < _step / 2;
       if (isAtBoundary && !wasAtBoundary) {
         HapticFeedback.mediumImpact();
       } else {
@@ -72,14 +89,14 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final tickCount = _effectiveMax - _effectiveMin + 1;
+    final tickCount = ((_effectiveMax - _effectiveMin) / _step).round() + 1;
     final contentWidth = (tickCount - 1) * _tickWidth;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          '$_currentValue',
+          formatNumber(_currentValue, widget.decimals),
           style: AppTextStyles.mono(
             size: 64,
             weight: FontWeight.w700,
@@ -90,7 +107,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
         ),
         const SizedBox(height: 4),
         Text(
-          widget.meta.unit,
+          widget.unitLabel,
           style: AppTextStyles.inter(
             size: 12,
             weight: FontWeight.w600,
@@ -119,6 +136,8 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                           painter: _RulerPainter(
                             tickCount: tickCount,
                             minValue: _effectiveMin,
+                            step: _step,
+                            decimals: widget.decimals,
                             tickWidth: _tickWidth,
                             tickColor: p.borderStrong,
                             labelColor: p.inkMuted,
@@ -180,7 +199,9 @@ class _PointerPainter extends CustomPainter {
 
 class _RulerPainter extends CustomPainter {
   final int tickCount;
-  final int minValue;
+  final double minValue;
+  final double step;
+  final int decimals;
   final double tickWidth;
   final Color tickColor;
   final Color labelColor;
@@ -188,6 +209,8 @@ class _RulerPainter extends CustomPainter {
   const _RulerPainter({
     required this.tickCount,
     required this.minValue,
+    required this.step,
+    required this.decimals,
     required this.tickWidth,
     required this.tickColor,
     required this.labelColor,
@@ -198,12 +221,13 @@ class _RulerPainter extends CustomPainter {
     final paint = Paint()
       ..color = tickColor
       ..strokeWidth = 1;
-    final topY = 8.0;
+    const topY = 8.0;
     for (int i = 0; i < tickCount; i++) {
       final x = i * tickWidth;
-      final value = minValue + i;
-      final isMajor = value % 10 == 0;
-      final isMid = value % 5 == 0;
+      // Major every 10 ticks, mid every 5 ticks — independent of step so the
+      // ruler density looks consistent across units.
+      final isMajor = i % 10 == 0;
+      final isMid = i % 5 == 0;
       final tickHeight = isMajor ? 20.0 : (isMid ? 14.0 : 9.0);
       canvas.drawLine(
         Offset(x, topY),
@@ -211,9 +235,10 @@ class _RulerPainter extends CustomPainter {
         paint,
       );
       if (isMajor) {
+        final value = minValue + i * step;
         final tp = TextPainter(
           text: TextSpan(
-            text: '$value',
+            text: formatNumber(value, decimals),
             style: TextStyle(
               color: labelColor,
               fontSize: 10,
@@ -232,6 +257,8 @@ class _RulerPainter extends CustomPainter {
   bool shouldRepaint(_RulerPainter old) =>
       old.tickCount != tickCount ||
       old.minValue != minValue ||
+      old.step != step ||
+      old.decimals != decimals ||
       old.tickWidth != tickWidth ||
       old.tickColor != tickColor ||
       old.labelColor != labelColor;

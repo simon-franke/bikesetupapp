@@ -1,29 +1,125 @@
-import 'package:flutter/material.dart';
+import 'package:bikesetupapp/widgets/unit_system.dart';
 
 class FieldMeta {
-  final IconData icon;
-  final String unit;
-  final int min;
-  final int max;
-  const FieldMeta(this.icon, this.unit, {this.min = 0, this.max = 100});
+  final String iconAsset;
+  final UnitFamily family;
+  final String defaultUnitId;
+  final double min;
+  final double max;
+
+  const FieldMeta({
+    required this.iconAsset,
+    required this.family,
+    required this.defaultUnitId,
+    this.min = 0,
+    this.max = 100,
+  });
+
+  UnitDef get defaultUnit => unitDefById(family, defaultUnitId);
+  String get defaultUnitLabel => defaultUnit.label;
 }
 
-const FieldMeta kDefaultFieldMeta = FieldMeta(Icons.tune_rounded, '');
+const String _kIconBase = 'assets/icons';
+const String _kIconGeneric = '$_kIconBase/generic.svg';
+
+const FieldMeta kDefaultFieldMeta = FieldMeta(
+  iconAsset: _kIconGeneric,
+  family: UnitFamily.count,
+  defaultUnitId: 'count',
+);
 
 const Map<String, FieldMeta> kFieldMeta = {
-  'Pressure':              FieldMeta(Icons.speed_rounded,                    'psi',    min: 15,  max: 200),
-  'Rebound':               FieldMeta(Icons.unfold_more_rounded,              'clicks', min: 0,   max: 30),
-  'High Speed Rebound':    FieldMeta(Icons.unfold_more_rounded,              'clicks', min: 0,   max: 30),
-  'Low Speed Rebound':     FieldMeta(Icons.unfold_more_rounded,              'clicks', min: 0,   max: 30),
-  'Compression':           FieldMeta(Icons.unfold_less_rounded,              'clicks', min: 0,   max: 30),
-  'High Speed Compression':FieldMeta(Icons.unfold_less_rounded,              'clicks', min: 0,   max: 30),
-  'Low Speed Compression': FieldMeta(Icons.unfold_less_rounded,              'clicks', min: 0,   max: 30),
-  'Tokens':                FieldMeta(Icons.radio_button_unchecked_rounded,   'count',  min: 0,   max: 10),
-  'Spring Rate':           FieldMeta(Icons.compress_rounded,                 'N/mm',   min: 200, max: 700),
-  'Preload':               FieldMeta(Icons.density_medium_rounded,           'mm',     min: 0,   max: 30),
-  'Reach':                 FieldMeta(Icons.straighten_rounded,               'mm',     min: 380, max: 550),
-  'Stack Height':          FieldMeta(Icons.height_rounded,                   'mm',     min: 580, max: 680),
-  'Seat Height':           FieldMeta(Icons.airline_seat_recline_normal,      'mm',     min: 600, max: 850),
+  'Pressure': FieldMeta(
+    iconAsset: '$_kIconBase/pressure.svg',
+    family: UnitFamily.pressure,
+    defaultUnitId: 'psi',
+    min: 15,
+    max: 200,
+  ),
+  'Rebound': FieldMeta(
+    iconAsset: '$_kIconBase/rebound.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'clicks',
+    min: 0,
+    max: 30,
+  ),
+  'High Speed Rebound': FieldMeta(
+    iconAsset: '$_kIconBase/rebound.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'clicks',
+    min: 0,
+    max: 30,
+  ),
+  'Low Speed Rebound': FieldMeta(
+    iconAsset: '$_kIconBase/rebound.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'clicks',
+    min: 0,
+    max: 30,
+  ),
+  'Compression': FieldMeta(
+    iconAsset: '$_kIconBase/compression.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'clicks',
+    min: 0,
+    max: 30,
+  ),
+  'High Speed Compression': FieldMeta(
+    iconAsset: '$_kIconBase/compression.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'clicks',
+    min: 0,
+    max: 30,
+  ),
+  'Low Speed Compression': FieldMeta(
+    iconAsset: '$_kIconBase/compression.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'clicks',
+    min: 0,
+    max: 30,
+  ),
+  'Tokens': FieldMeta(
+    iconAsset: '$_kIconBase/tokens.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'count',
+    min: 0,
+    max: 10,
+  ),
+  'Spring Rate': FieldMeta(
+    iconAsset: '$_kIconBase/spring.svg',
+    family: UnitFamily.springRate,
+    defaultUnitId: 'N/mm',
+    min: 30,
+    max: 150,
+  ),
+  'Preload': FieldMeta(
+    iconAsset: '$_kIconBase/preload.svg',
+    family: UnitFamily.count,
+    defaultUnitId: 'turns',
+    min: 0,
+    max: 30,
+  ),
+  'Reach': FieldMeta(
+    iconAsset: '$_kIconBase/reach.svg',
+    family: UnitFamily.length,
+    defaultUnitId: 'mm',
+    min: 380,
+    max: 550,
+  ),
+  'Stack Height': FieldMeta(
+    iconAsset: '$_kIconBase/stack.svg',
+    family: UnitFamily.length,
+    defaultUnitId: 'mm',
+    min: 580,
+    max: 680,
+  ),
+  'Seat Height': FieldMeta(
+    iconAsset: '$_kIconBase/seat.svg',
+    family: UnitFamily.length,
+    defaultUnitId: 'mm',
+    min: 600,
+    max: 850,
+  ),
 };
 
 // Single source of truth for per-category field configuration.

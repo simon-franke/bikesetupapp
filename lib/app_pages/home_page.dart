@@ -1,4 +1,3 @@
-import 'package:bikesetupapp/alert_dialogs/settings_alert_dialogs.dart';
 import 'package:bikesetupapp/widgets/add_component_bottom_sheet.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
 import 'package:bikesetupapp/app_pages/drawer.dart';
@@ -237,8 +236,16 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () => setState(() => chosenCategory = Category.rearTire),
             onValueChange: (value) {
               chosenCategory = Category.rearTire;
-              SettingsAlerts.editValue(context, widget.user!, 'Pressure',
-                  value, _uBikeID, chosenCategory.category, _uSetupID);
+              showSettingStepperSheet(
+                context,
+                user: widget.user!,
+                uBikeID: _uBikeID,
+                category: chosenCategory.category,
+                uSetupID: _uSetupID,
+                settingKey: 'Pressure',
+                currentValue: value,
+                isDefault: true,
+              );
             },
             show: true,
           ),
@@ -256,8 +263,16 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () => setState(() => chosenCategory = Category.frontTire),
             onValueChange: (value) {
               chosenCategory = Category.frontTire;
-              SettingsAlerts.editValue(context, widget.user!, 'Pressure',
-                  value, _uBikeID, chosenCategory.category, _uSetupID);
+              showSettingStepperSheet(
+                context,
+                user: widget.user!,
+                uBikeID: _uBikeID,
+                category: chosenCategory.category,
+                uSetupID: _uSetupID,
+                settingKey: 'Pressure',
+                currentValue: value,
+                isDefault: true,
+              );
             },
             show: true,
           ),
@@ -275,8 +290,16 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () => setState(() => chosenCategory = Category.shock),
             onValueChange: (value) {
               chosenCategory = Category.shock;
-              SettingsAlerts.editValue(context, widget.user!, 'Pressure',
-                  value, _uBikeID, chosenCategory.category, _uSetupID);
+              showSettingStepperSheet(
+                context,
+                user: widget.user!,
+                uBikeID: _uBikeID,
+                category: chosenCategory.category,
+                uSetupID: _uSetupID,
+                settingKey: 'Pressure',
+                currentValue: value,
+                isDefault: true,
+              );
             },
             show: _bikeType.hasShock,
           ),
@@ -309,8 +332,16 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () => setState(() => chosenCategory = Category.fork),
             onValueChange: (value) {
               chosenCategory = Category.fork;
-              SettingsAlerts.editValue(context, widget.user!, 'Pressure',
-                  value, _uBikeID, chosenCategory.category, _uSetupID);
+              showSettingStepperSheet(
+                context,
+                user: widget.user!,
+                uBikeID: _uBikeID,
+                category: chosenCategory.category,
+                uSetupID: _uSetupID,
+                settingKey: 'Pressure',
+                currentValue: value,
+                isDefault: true,
+              );
             },
             show: _bikeType.hasFork,
           ),

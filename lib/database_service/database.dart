@@ -451,6 +451,43 @@ class DatabaseService {
     });
   }
 
+  /// Stores the unit family for a custom field. Built-in fields derive their
+  /// family from kFieldMeta and don't need an entry here.
+  Future setSettingMeta(String key, String familyName, String uBikeID,
+      String category, String uSetupID) {
+    return userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.bikes)
+        .doc(uBikeID)
+        .collection(uSetupID)
+        .doc('${category}_meta')
+        .set({key: familyName}, SetOptions(merge: true));
+  }
+
+  Future deleteSettingMeta(String key, String uBikeID, String category,
+      String uSetupID) async {
+    final ref = userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.bikes)
+        .doc(uBikeID)
+        .collection(uSetupID)
+        .doc('${category}_meta');
+    final snap = await ref.get();
+    if (snap.exists) {
+      await ref.update({key: FieldValue.delete()});
+    }
+  }
+
+  Stream getSettingsMeta(String uBikeID, String category, String uSetupID) {
+    return userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.bikes)
+        .doc(uBikeID)
+        .collection(uSetupID)
+        .doc('${category}_meta')
+        .snapshots();
+  }
+
   //Get functions (snapshots)
 
   /// Retrieves the settings for a specific bike, category, and setup ID.
