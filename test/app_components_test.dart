@@ -1,5 +1,5 @@
-import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/widgets/app_components.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

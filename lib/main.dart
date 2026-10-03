@@ -1,19 +1,16 @@
-import 'package:bikesetupapp/app_pages/home_page.dart';
-import 'package:bikesetupapp/app_pages/google_sign_in.dart';
-import 'package:bikesetupapp/app_services/strava_sync_service.dart';
-import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/app_services/app_state_notifier.dart';
-import 'package:bikesetupapp/bike_enums/bike_type.dart';
-import 'package:bikesetupapp/database_service/database.dart';
-import 'package:bikesetupapp/database_service/service_database.dart';
-import 'package:bikesetupapp/strava_web_callback_stub.dart'
-    if (dart.library.js_interop) 'package:bikesetupapp/strava_web_callback.dart';
+import 'package:bikesetupapp/app/app_dependencies.dart';
+import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
+import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
+import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
+import 'package:bikesetupapp/features/strava/platform/strava_web_callback_stub.dart'
+    if (dart.library.js_interop) 'package:bikesetupapp/features/strava/platform/strava_web_callback.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 
@@ -30,54 +27,32 @@ void main() async {
   // immediately reflects the new connection on first render.
   final bool newStravaAuth = await handleStravaWebCallback();
 
-  bool isSignedIn = false;
-  String defaultBikeID = "";
-  String defaultBikeName = "";
-  String defaultSetupID = "";
-  String defaultSetupName = "";
-  BikeType bikeType = BikeType.error;
-
-  User? user = FirebaseAuth.instance.currentUser;
-
-  if (user != null) {
-    defaultBikeID = await DatabaseService(user.uid).getDefaultBike();
-    defaultBikeName =
-        await DatabaseService(user.uid).getBikeNameFromID(defaultBikeID);
-    defaultSetupID =
-        await DatabaseService(user.uid).getDefaultSetup(defaultBikeID);
-    defaultSetupName = await DatabaseService(user.uid)
-        .getSetupNameFromID(defaultBikeID, defaultSetupID);
-    bikeType = BikeType.fromString(
-        await DatabaseService(user.uid).getBikeType(defaultBikeID));
-
-    if (defaultBikeID.isNotEmpty &&
-        defaultSetupID.isNotEmpty &&
-        defaultSetupName.isNotEmpty &&
-        bikeType != BikeType.error) {
-      isSignedIn = true;
-    }
-
-    // If a fresh Strava connection was just made via the web OAuth flow,
-    // sync bikes immediately so the Settings page shows up-to-date data.
-    if (newStravaAuth) {
-      await StravaSyncService(ServiceDatabaseService(user.uid)).sync();
-    }
+  final dependencies = AppDependencies.instance;
+  final user = dependencies.auth.currentUser;
+  final selection = user == null
+      ? null
+      : await dependencies.forUser(user.uid).startup.loadSelection();
+  if (newStravaAuth && user != null) {
+    await dependencies.forUser(user.uid).strava.sync();
   }
 
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final savedTheme = await dependencies.themePreferences.readTheme();
 
-  runApp(ChangeNotifierProvider<AppStateNotifier>(
-      create: (context) =>
-          AppStateNotifier(AppStateNotifier.fromPrefs(prefs)),
-      child: MyApp(
-        isSignedIn: isSignedIn,
-        user: FirebaseAuth.instance.currentUser,
-        defaultBikeID: defaultBikeID,
-        defaultBike: defaultBikeName,
-        defaultSetupID: defaultSetupID,
-        defaultSetup: defaultSetupName,
-        bikeType: bikeType,
-      )));
+  runApp(Provider<AppDependencies>.value(
+      value: AppDependencies.instance,
+      child: ChangeNotifierProvider<AppStateNotifier>(
+          create: (context) => AppStateNotifier(
+              AppStateNotifier.fromSaved(savedTheme),
+              preferences: dependencies.themePreferences),
+          child: MyApp(
+            isSignedIn: selection != null,
+            user: AppDependencies.instance.auth.currentUser,
+            defaultBikeID: selection?.bikeId ?? '',
+            defaultBike: selection?.bikeName ?? '',
+            defaultSetupID: selection?.setupId ?? '',
+            defaultSetup: selection?.setupName ?? '',
+            bikeType: selection?.bikeType ?? BikeType.error,
+          ))));
 }
 
 class MyApp extends StatelessWidget {
