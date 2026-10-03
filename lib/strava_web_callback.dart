@@ -6,11 +6,10 @@
 // strava_web_callback_stub.dart is used on all non-web platforms.
 
 import 'dart:convert';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 
 import 'package:bikesetupapp/app_services/strava_token_storage.dart';
 import 'package:bikesetupapp/models/strava_auth.dart';
+import 'package:web/web.dart' as web;
 
 /// Checks whether the current URL contains a `strava_auth` query parameter
 /// written by the Firebase Function redirect.
@@ -18,7 +17,7 @@ import 'package:bikesetupapp/models/strava_auth.dart';
 /// Returns `true` if tokens were successfully saved (new auth).
 /// Returns `false` if there was no callback, or if it was an error.
 Future<bool> handleStravaWebCallback() async {
-  final uri = Uri.parse(html.window.location.href);
+  final uri = Uri.parse(web.window.location.href);
   final encoded = uri.queryParameters['strava_auth'];
 
   // Nothing to handle on a normal app load.
@@ -59,12 +58,12 @@ Future<bool> handleStravaWebCallback() async {
 /// popup blockers. The Firebase Function will redirect back to the app after
 /// the token exchange.
 void openStravaAuthInTab(String url) {
-  html.window.location.href = url;
+  web.window.location.href = url;
 }
 
 void _stripStravaAuthParam(Uri uri) {
   final params = Map<String, String>.from(uri.queryParameters)
     ..remove('strava_auth');
   final cleaned = uri.replace(queryParameters: params.isEmpty ? null : params);
-  html.window.history.replaceState(null, '', cleaned.toString());
+  web.window.history.replaceState(null, '', cleaned.toString());
 }

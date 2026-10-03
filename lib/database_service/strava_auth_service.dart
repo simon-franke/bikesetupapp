@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:bikesetupapp/models/strava_auth.dart';
 import 'package:bikesetupapp/app_services/strava_token_storage.dart';
 import 'package:bikesetupapp/strava_web_callback_stub.dart'
-    if (dart.library.html) 'package:bikesetupapp/strava_web_callback.dart';
+    if (dart.library.js_interop) 'package:bikesetupapp/strava_web_callback.dart';
 
 class StravaAuthService {
   static const _authorizeUrl = 'https://www.strava.com/oauth/authorize';

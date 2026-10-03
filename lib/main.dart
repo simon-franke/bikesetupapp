@@ -7,7 +7,7 @@ import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/strava_web_callback_stub.dart'
-    if (dart.library.html) 'package:bikesetupapp/strava_web_callback.dart';
+    if (dart.library.js_interop) 'package:bikesetupapp/strava_web_callback.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
