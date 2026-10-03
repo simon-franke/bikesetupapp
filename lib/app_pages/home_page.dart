@@ -1,15 +1,14 @@
 import 'package:bikesetupapp/widgets/add_component_bottom_sheet.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
-import 'package:bikesetupapp/app_pages/drawer.dart';
+import 'package:bikesetupapp/app_pages/settings_page.dart';
 import 'package:bikesetupapp/app_services/app_routes.dart';
 import 'package:bikesetupapp/app_services/responsive_layout.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
-import 'package:bikesetupapp/widgets/bike_info_bottom_sheet.dart';
+import 'package:bikesetupapp/widgets/bike_chooser_sheet.dart';
 import 'package:bikesetupapp/widgets/control_panel_grid.dart';
 import 'package:bikesetupapp/widgets/home_page_bubbles.dart';
 import 'package:bikesetupapp/widgets/services_view.dart';
-import 'package:bikesetupapp/widgets/sidebar_content.dart';
 import 'package:bikesetupapp/widgets/view_toggle.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
@@ -49,7 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late String _uSetupID;
   ActiveView _activeView = ActiveView.setup;
   bool _showServiceAlert = false;
-  double _currentMileageKm = 0;
+  double? _currentMileageKm;
 
   @override
   void initState() {
@@ -60,9 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _setupName = widget.setupName;
     _uSetupID = widget.uSetupID;
     chosenCategory = _initialCategoryFor(_bikeType);
-    if (widget.user == null ||
-        _uBikeID.isEmpty ||
-        _uSetupID.isEmpty) {
+    if (widget.user == null || _uBikeID.isEmpty || _uSetupID.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).push(AppRoutes.fadeSlide(const LoginPage()));
       });
@@ -77,9 +74,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _loadMileage() async {
     if (widget.user == null) return;
+    final bikeID = _uBikeID;
     final db = ServiceDatabaseService(widget.user!.uid);
-    final km = await db.getMileageForBike(_uBikeID);
-    if (mounted && km != null) {
+    final km = await db.getMileageForBike(bikeID);
+    if (mounted && bikeID == _uBikeID) {
       setState(() => _currentMileageKm = km);
     }
   }
@@ -97,10 +95,15 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadMileage();
   }
 
-  Widget _buildBikeHeader(BuildContext context, double contentWidth, double headerHeight) {
+  Widget _buildBikeHeader(
+      BuildContext context, double contentWidth, double headerHeight) {
+    final wide = ResponsiveLayout.isWide(context);
+    final p = context.palette;
     const double imgNativeW = 1080.0, imgNativeH = 664.0;
-    const double padL = 24, padT = 40, padR = 24, padB = 28;
-    final double availW = contentWidth - 24;
+    final double padL = wide ? 12 : 24, padR = wide ? 12 : 24;
+    final double padT = wide ? 24 : 40, padB = wide ? 24 : 28;
+    final double availW =
+        contentWidth - (ResponsiveLayout.isWide(context) ? 0 : 24);
     final double availH = headerHeight;
     final double padW = availW - padL - padR;
     final double padH = availH - padT - padB;
@@ -127,9 +130,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Bubble card slot positions — corners/edges of the panel, chosen to stay
     // off the bike silhouette. Layout depends on which parts the bike has.
-    const double sideGap = 12, topGap = 14, botGap = 14;
-    final double topRow = availH - bubbleCardH - topGap;
-    final double botRow = botGap;
+    final cardSize = schematicCardSize(context);
+    final bubbleCardW = cardSize.width;
+    final bubbleCardH = cardSize.height;
+    const double sideGap = 16, topGap = 16, botGap = 16;
+    final double topRow = wide
+        ? (availH - imgTop - bubbleCardH / 2)
+            .clamp(botGap, availH - bubbleCardH - topGap)
+        : availH - bubbleCardH - topGap;
+    final double botRow = wide
+        ? (availH - imgTop - imgRenderH - bubbleCardH / 2)
+            .clamp(botGap, availH - bubbleCardH - topGap)
+        : botGap;
     final double midRow = (availH - bubbleCardH) / 2;
     final double leftCol = sideGap;
     final double rightCol = availW - bubbleCardW - sideGap;
@@ -143,85 +155,59 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (_bikeType.hasShock) {
       // DH, Enduro: rear/shock/fork across the top row, front on right-middle.
-      rtBubbleL = leftCol;     rtBubbleB = topRow;
-      shBubbleL = midCol;      shBubbleB = topRow;
-      fkBubbleL = rightCol;    fkBubbleB = topRow;
-      ftBubbleL = rightCol;    ftBubbleB = midRow;
+      rtBubbleL = leftCol;
+      rtBubbleB = topRow;
+      shBubbleL = availW < bubbleCardW * 3 + 48 ? leftCol : midCol;
+      shBubbleB = availW < bubbleCardW * 3 + 48 ? midRow : topRow;
+      fkBubbleL = rightCol;
+      fkBubbleB = topRow;
+      ftBubbleL = rightCol;
+      ftBubbleB = midRow;
     } else if (_bikeType.hasFork) {
       // Dirt, XC: rear left-middle, fork top-right, front right-middle.
-      rtBubbleL = leftCol;     rtBubbleB = midRow;
-      fkBubbleL = rightCol;    fkBubbleB = topRow;
-      ftBubbleL = rightCol;    ftBubbleB = midRow;
-      shBubbleL = midCol;      shBubbleB = topRow; // unused (show=false)
+      rtBubbleL = leftCol;
+      rtBubbleB = midRow;
+      fkBubbleL = rightCol;
+      fkBubbleB = topRow;
+      ftBubbleL = rightCol;
+      ftBubbleB = midRow;
+      shBubbleL = midCol;
+      shBubbleB = topRow; // unused (show=false)
     } else {
       // Singlespeed, Road: rear left-middle, front right-middle.
-      rtBubbleL = leftCol;     rtBubbleB = midRow;
-      ftBubbleL = rightCol;    ftBubbleB = midRow;
-      shBubbleL = midCol;      shBubbleB = topRow; // unused
-      fkBubbleL = rightCol;    fkBubbleB = topRow; // unused
+      rtBubbleL = leftCol;
+      rtBubbleB = midRow;
+      ftBubbleL = rightCol;
+      ftBubbleB = midRow;
+      shBubbleL = midCol;
+      shBubbleB = topRow; // unused
+      fkBubbleL = rightCol;
+      fkBubbleB = topRow; // unused
     }
-    gsBubbleL = midCol;        gsBubbleB = botRow;
+    gsBubbleL = midCol;
+    gsBubbleB = botRow;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
+      margin: EdgeInsets.symmetric(
+          horizontal: ResponsiveLayout.isWide(context) ? 0 : 12),
       height: headerHeight,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.darkBorder),
+        borderRadius: BorderRadius.circular(14),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, 0.1),
-                    radius: 0.95,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.06),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.75],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: RadialGradient(
-                    radius: 1.05,
-                    colors: [
-                      Color(0x00000000),
-                      Color(0x38000000),
-                    ],
-                    stops: [0.35, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
+            padding: EdgeInsets.fromLTRB(padL, padT, padR, padB),
             child: Center(
-              child: ColorFiltered(
-                colorFilter: const ColorFilter.matrix(<double>[
-                  -1, 0, 0, 0, 255,
-                  0, -1, 0, 0, 255,
-                  0, 0, -1, 0, 255,
-                  0, 0, 0, 0.92, 0,
-                ]),
-                child: Image.asset(_bikeType.path, fit: BoxFit.contain),
+              child: Image.asset(
+                _bikeType.path,
+                fit: BoxFit.contain,
+                color: p.inkMuted,
+                colorBlendMode: BlendMode.srcIn,
               ),
             ),
           ),
-
           SchematicBubble(
             user: widget.user!,
             anchorLeft: rtAnchorL,
@@ -260,7 +246,8 @@ class _MyHomePageState extends State<MyHomePage> {
             category: Category.frontTire,
             chosenCategory: chosenCategory,
             setup: _uSetupID,
-            onPressed: () => setState(() => chosenCategory = Category.frontTire),
+            onPressed: () =>
+                setState(() => chosenCategory = Category.frontTire),
             onValueChange: (value) {
               chosenCategory = Category.frontTire;
               showSettingStepperSheet(
@@ -314,7 +301,8 @@ class _MyHomePageState extends State<MyHomePage> {
             category: Category.generalSettings,
             chosenCategory: chosenCategory,
             setup: _uSetupID,
-            onPressed: () => setState(() => chosenCategory = Category.generalSettings),
+            onPressed: () =>
+                setState(() => chosenCategory = Category.generalSettings),
             onValueChange: (value) {},
             show: true,
           ),
@@ -351,119 +339,151 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildSetupView(BuildContext context, double contentWidth) {
-    final Size size = MediaQuery.of(context).size;
-    final bool wide = ResponsiveLayout.isWide(context);
-    final double headerHeight = wide
-        ? (size.height * 0.48).clamp(240.0, 360.0)
-        : (size.height / 3.2).clamp(220.0, 320.0);
-
-    return Column(
-      children: [
-        const SizedBox(height: 4),
-        _buildBikeHeader(context, contentWidth, headerHeight),
-        const SizedBox(height: 4),
-        Expanded(
-          child: ControlPanelGrid(
-            user: widget.user!,
-            uBikeID: _uBikeID,
-            category: chosenCategory.category,
-            uSetupID: _uSetupID,
-            topPadding: 0,
-            sectionLabel: _sectionLabelFor(chosenCategory),
-          ),
-        ),
-      ],
+    return SetupWorkspace(
+      diagramBuilder: (width, height) =>
+          _buildBikeHeader(context, width, height),
+      settings: ControlPanelGrid(
+        user: widget.user!,
+        uBikeID: _uBikeID,
+        category: chosenCategory.category,
+        uSetupID: _uSetupID,
+        topPadding: 0,
+        sectionLabel: _sectionLabelFor(chosenCategory),
+      ),
     );
   }
 
   String _sectionLabelFor(Category cat) {
     switch (cat) {
-      case Category.rearTire: return 'Rear tire settings';
-      case Category.frontTire: return 'Front tire settings';
-      case Category.shock: return 'Shock settings';
-      case Category.fork: return 'Fork settings';
-      case Category.generalSettings: return 'Geometry settings';
+      case Category.rearTire:
+        return 'Rear tire settings';
+      case Category.frontTire:
+        return 'Front tire settings';
+      case Category.shock:
+        return 'Shock settings';
+      case Category.fork:
+        return 'Fork settings';
+      case Category.generalSettings:
+        return 'Geometry settings';
     }
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final p = context.palette;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final wide = ResponsiveLayout.isWide(context) && textScaler.scale(14) < 23;
+    final toggle = ViewToggle(
+      activeView: _activeView,
+      showServiceAlert: _showServiceAlert,
+      onChanged: (view) {
+        HapticFeedback.lightImpact();
+        setState(() => _activeView = view);
+      },
+    );
+    final settingsButton = IconButton(
+      tooltip: 'Settings',
+      onPressed: () => Navigator.of(context).push(
+        AppRoutes.fadeSlide(SettingsPage(
+          bikeName: _bikeName,
+          bikeType: _bikeType,
+          chosenSetup: _setupName,
+        )),
+      ),
+      icon: Icon(Icons.settings_outlined, size: 23, color: p.inkMuted),
+    );
     return AppBar(
       backgroundColor: p.bg,
       elevation: 0,
       scrolledUnderElevation: 0,
-      toolbarHeight: 64,
-      titleSpacing: 4,
-      leading: Builder(
-        builder: (ctx) => Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: _IconBtn(
-              icon: Icons.menu_rounded,
-              onTap: () => Scaffold.of(ctx).openDrawer(),
-            ),
-          ),
-        ),
-      ),
-      leadingWidth: 60,
-      title: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onLongPress: () {
-                showBikeInfoSheet(
-                  context,
-                  widget.user!,
-                  _uBikeID,
-                  _uSetupID,
-                  _setupName,
-                  _bikeName,
-                  _bikeType,
-                  onBikeSelected: _onBikeSelected,
-                );
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${_bikeType.bikeType.toUpperCase()} · ${_setupName.toUpperCase()}',
-                    style: AppTextStyles.inter(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      color: p.inkDim,
-                      letterSpacing: 1.4,
+      toolbarHeight: math.max(64, textScaler.scale(20) * 2.5 + 10),
+      titleSpacing: wide ? 0 : 18,
+      title: AppContentFrame(
+          maxWidth: wide ? double.infinity : kContentMaxWidth,
+          padding: EdgeInsets.symmetric(horizontal: wide ? 24 : 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label: 'Choose bike and setup',
+                  child: InkWell(
+                    onTap: _showBikeSelector,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_bikeType.bikeType} · $_setupName',
+                          style: AppTextStyles.inter(
+                            size: 12,
+                            weight: FontWeight.w500,
+                            color: p.inkMuted,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _bikeName,
+                                style: AppTextStyles.inter(
+                                  size: 20,
+                                  weight: FontWeight.w700,
+                                  color: p.ink,
+                                  letterSpacing: -0.3,
+                                  height: 1.1,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.expand_more,
+                                size: 20, color: p.inkMuted),
+                          ],
+                        ),
+                      ],
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    _bikeName,
-                    style: AppTextStyles.inter(
-                      size: 20,
-                      weight: FontWeight.w700,
-                      color: p.ink,
-                      letterSpacing: -0.3,
-                      height: 1.1,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (wide) ...[
+                SizedBox(width: 280, child: toggle),
+              ],
+              if (wide)
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: settingsButton,
                   ),
-                ],
+                )
+              else
+                settingsButton,
+            ],
+          )),
+      bottom: wide
+          ? null
+          : PreferredSize(
+              preferredSize: Size.fromHeight(
+                  math.max(44, textScaler.scale(14) * 2.8) + 18),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                child: toggle,
               ),
             ),
-          ),
-          ViewToggle(
-            activeView: _activeView,
-            showServiceAlert: _showServiceAlert,
-            onChanged: (view) {
-              HapticFeedback.lightImpact();
-              setState(() => _activeView = view);
-            },
-          ),
-          const SizedBox(width: 14),
-        ],
-      ),
       automaticallyImplyLeading: false,
+    );
+  }
+
+  void _showBikeSelector() {
+    final user = widget.user;
+    if (user == null) return;
+    showBikeChooserSheet(
+      context: context,
+      user: user,
+      selectedBikeId: _uBikeID,
+      selectedSetupId: _uSetupID,
+      onBikeSelected: _onBikeSelected,
     );
   }
 
@@ -479,6 +499,7 @@ class _MyHomePageState extends State<MyHomePage> {
               key: ValueKey('services_$_uBikeID'),
               user: widget.user!,
               uBikeID: _uBikeID,
+              onAddComponent: _addComponent,
               onAlertChanged: (hasAlert) {
                 if (_showServiceAlert != hasAlert) {
                   setState(() => _showServiceAlert = hasAlert);
@@ -488,94 +509,45 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-    final bool wide = ResponsiveLayout.isWide(context);
-    final double cWidth = ResponsiveLayout.contentWidth(context);
-
-    final Widget fab = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      switchInCurve: Curves.easeOutBack,
-      switchOutCurve: Curves.easeIn,
-      transitionBuilder: (child, animation) => ScaleTransition(
-        scale: animation,
-        child: FadeTransition(opacity: animation, child: child),
-      ),
-      child: _activeView == ActiveView.services
-          ? FloatingActionButton(
-              key: const ValueKey('add_component_fab'),
-              onPressed: () {
-                showAddComponentSheet(
-                  context,
-                  user: widget.user!,
-                  uBikeID: _uBikeID,
-                  currentMileageKm: _currentMileageKm,
-                );
-              },
-              tooltip: 'Add Component',
-              child: const Icon(Icons.add_rounded),
-            )
-          : const SizedBox.shrink(key: ValueKey('no_fab')),
-    );
-
-    if (wide) {
-      return Scaffold(
-        appBar: _buildAppBar(context),
-        body: Row(
-          children: [
-            SizedBox(
-              width: ResponsiveLayout.sidebarWidth,
-              child: SidebarContent(
-                user: widget.user,
-                bikeName: _bikeName,
-                bikeType: _bikeType,
-                chosenSetup: _setupName,
-                onBikeSelected: _onBikeSelected,
-              ),
-            ),
-            Expanded(child: _buildBody(context, cWidth)),
-          ],
-        ),
-        floatingActionButton: fab,
-      );
+  Future<void> _addComponent() async {
+    try {
+      await _loadMileage();
+      if (!mounted) return;
+      showAddComponentSheet(context,
+          user: widget.user!,
+          uBikeID: _uBikeID,
+          currentMileageKm: _currentMileageKm);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Could not load mileage. Try again.')));
+      }
     }
-
-    return Scaffold(
-      drawer: NavDrawer(
-        user: widget.user,
-        bikeName: _bikeName,
-        bikeType: _bikeType,
-        chosenSetup: _setupName,
-        onBikeSelected: _onBikeSelected,
-      ),
-      appBar: _buildAppBar(context),
-      body: _buildBody(context, size.width),
-      floatingActionButton: fab,
-    );
   }
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: p.surface2,
-          border: Border.all(color: p.border),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 18, color: p.ink),
-      ),
+    final wide = ResponsiveLayout.isWide(context);
+    return Scaffold(
+      appBar: _buildAppBar(context),
+      body: SafeArea(
+          top: false,
+          child: AppContentFrame(
+            maxWidth: wide ? double.infinity : kContentMaxWidth,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: wide ? 24 : 0, vertical: wide ? 24 : 0),
+              child: LayoutBuilder(
+                  builder: (context, constraints) =>
+                      _buildBody(context, constraints.maxWidth)),
+            ),
+          )),
+      floatingActionButton: _activeView == ActiveView.services && !wide
+          ? FloatingActionButton.extended(
+              onPressed: _addComponent,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add component'))
+          : null,
     );
   }
 }

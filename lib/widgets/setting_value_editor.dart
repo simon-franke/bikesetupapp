@@ -16,6 +16,9 @@ class SettingValueEditor extends StatefulWidget {
   final int decimals;
   final String unitLabel;
   final ValueChanged<double> onChanged;
+  final VoidCallback? onValueTap;
+  final bool compact;
+  final Widget? valueAccessory;
 
   const SettingValueEditor({
     super.key,
@@ -26,6 +29,9 @@ class SettingValueEditor extends StatefulWidget {
     required this.decimals,
     required this.unitLabel,
     required this.onChanged,
+    this.onValueTap,
+    this.compact = false,
+    this.valueAccessory,
   });
 
   @override
@@ -39,8 +45,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
   late double _step;
   late double _currentValue;
 
-  int _indexFor(double value) =>
-      ((value - _effectiveMin) / _step).round();
+  int _indexFor(double value) => ((value - _effectiveMin) / _step).round();
   double _valueFor(int index) => _effectiveMin + index * _step;
 
   @override
@@ -70,12 +75,10 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     final index = (clamped / _tickWidth).round();
     final newValue = _valueFor(index);
     if ((newValue - _currentValue).abs() >= _step / 2) {
-      final wasAtBoundary =
-          (_currentValue - _effectiveMin).abs() < _step / 2 ||
-              (_currentValue - _effectiveMax).abs() < _step / 2;
-      final isAtBoundary =
-          (newValue - _effectiveMin).abs() < _step / 2 ||
-              (newValue - _effectiveMax).abs() < _step / 2;
+      final wasAtBoundary = (_currentValue - _effectiveMin).abs() < _step / 2 ||
+          (_currentValue - _effectiveMax).abs() < _step / 2;
+      final isAtBoundary = (newValue - _effectiveMin).abs() < _step / 2 ||
+          (newValue - _effectiveMax).abs() < _step / 2;
       if (isAtBoundary && !wasAtBoundary) {
         HapticFeedback.mediumImpact();
       } else {
@@ -95,26 +98,61 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          formatNumber(_currentValue, widget.decimals),
-          style: AppTextStyles.mono(
-            size: 64,
-            weight: FontWeight.w700,
-            color: p.ink,
-            letterSpacing: -3,
-            height: 1,
-          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Semantics(
+              button: widget.onValueTap != null,
+              label: widget.onValueTap != null ? 'Enter value' : null,
+              child: InkWell(
+                onTap: widget.onValueTap,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Flex(
+                      direction:
+                          widget.compact ? Axis.horizontal : Axis.vertical,
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: widget.compact
+                          ? CrossAxisAlignment.baseline
+                          : CrossAxisAlignment.center,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          formatNumber(_currentValue, widget.decimals),
+                          style: AppTextStyles.mono(
+                            size: widget.compact ? 40 : 64,
+                            weight: FontWeight.w700,
+                            color: p.ink,
+                            letterSpacing: widget.compact ? -1 : -3,
+                            height: 1,
+                          ),
+                        ),
+                        if (widget.valueAccessory == null)
+                          SizedBox(
+                              height: widget.compact ? 0 : 4,
+                              width: widget.compact ? 8 : 0),
+                        if (widget.valueAccessory == null)
+                          Text(
+                            widget.unitLabel,
+                            style: AppTextStyles.inter(
+                              size: 12,
+                              weight: FontWeight.w600,
+                              color: p.inkMuted,
+                            ),
+                          ),
+                      ]),
+                ),
+              ),
+            ),
+            if (widget.valueAccessory != null) widget.valueAccessory!,
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          widget.unitLabel,
-          style: AppTextStyles.inter(
-            size: 12,
-            weight: FontWeight.w600,
-            color: p.inkMuted,
-          ),
-        ),
-        const SizedBox(height: 18),
+        SizedBox(height: widget.compact ? 8 : 18),
         SizedBox(
           height: _rulerHeight,
           child: LayoutBuilder(

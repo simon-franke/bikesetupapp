@@ -26,10 +26,6 @@ class StravaAuthService {
 
   Future<StravaAuth?> authorize() async {
     try {
-      debugPrint('Strava client_id: "$_clientId"');
-      debugPrint('Strava client_secret length: ${_clientSecret.length}');
-      debugPrint('dotenv keys: ${dotenv.env.keys.toList()}');
-
       final url = Uri.parse('$_authorizeUrl'
           '?client_id=$_clientId'
           '&response_type=code'
@@ -64,7 +60,7 @@ class StravaAuthService {
           'grant_type': 'authorization_code',
         },
       );
-      debugPrint('Token exchange response: ${response.statusCode} ${response.body}');
+      debugPrint('Strava token exchange status: ${response.statusCode}');
       if (response.statusCode != 200) return null;
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
@@ -72,7 +68,8 @@ class StravaAuthService {
         accessToken: json['access_token'] as String? ?? '',
         refreshToken: json['refresh_token'] as String? ?? '',
         expiresAt: json['expires_at'] as int? ?? 0,
-        athleteId: (json['athlete'] as Map<String, dynamic>?)?['id'] as int? ?? 0,
+        athleteId:
+            (json['athlete'] as Map<String, dynamic>?)?['id'] as int? ?? 0,
       );
       await StravaTokenStorage.saveAuth(auth);
       return auth;
