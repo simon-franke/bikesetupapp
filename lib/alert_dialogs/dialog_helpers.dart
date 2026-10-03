@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,8 @@ class WorkshopDialog extends StatelessWidget {
       actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       title: Text(
         title,
-        style: AppTextStyles.inter(size: 16, weight: FontWeight.w700, color: p.ink),
+        style: AppTextStyles.inter(
+            size: 16, weight: FontWeight.w700, color: p.ink),
       ),
       content: DefaultTextStyle(
         style: AppTextStyles.inter(size: 13, color: p.inkMuted, height: 1.4),
@@ -51,48 +53,19 @@ class DialogPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    final bg = color ?? p.accent;
-    final fg = color == null ? p.accentInk : Colors.white;
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(9),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(9),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          child: Text(
-            label.toUpperCase(),
-            style: AppTextStyles.inter(
-              size: 11, weight: FontWeight.w800,
-              color: fg, letterSpacing: 0.6,
-            ),
-          ),
-        ),
-      ),
-    );
+    return AppActionButton(label: label, onPressed: onPressed, color: color);
   }
 }
 
 class DialogSecondaryButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
-  const DialogSecondaryButton({super.key, required this.label, required this.onPressed});
+  const DialogSecondaryButton(
+      {super.key, required this.label, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return TextButton(
-      onPressed: onPressed,
-      child: Text(
-        label.toUpperCase(),
-        style: AppTextStyles.inter(
-          size: 11, weight: FontWeight.w700,
-          color: p.inkMuted, letterSpacing: 0.6,
-        ),
-      ),
-    );
+    return TextButton(onPressed: onPressed, child: Text(label));
   }
 }
 
@@ -109,32 +82,10 @@ class DialogTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return TextField(
-      controller: controller,
-      autofocus: true,
-      keyboardType: keyboardType,
-      cursorColor: p.accent,
-      style: AppTextStyles.inter(size: 13, color: p.ink),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.inter(size: 13, color: p.inkDim),
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-      ),
-    );
+    return AppTextField(
+        controller: controller,
+        hint: hint,
+        keyboardType: keyboardType,
+        autofocus: true);
   }
 }

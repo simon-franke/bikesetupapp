@@ -1,3 +1,7 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
+import 'package:bikesetupapp/widgets/inline_setting_editor.dart';
+import 'package:bikesetupapp/app_services/responsive_layout.dart';
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'dart:math' as math;
 
 import 'package:bikesetupapp/app_services/theme_data.dart';
@@ -15,7 +19,8 @@ class _CardDef {
   final String iconAsset;
   final UnitFamily? fallbackFamily;
   final UnitDef? fallbackUnit;
-  const _CardDef(this.key, this.iconAsset, this.fallbackFamily, this.fallbackUnit);
+  const _CardDef(
+      this.key, this.iconAsset, this.fallbackFamily, this.fallbackUnit);
 
   factory _CardDef.fromKey(String key) {
     final meta = kFieldMeta[key];
@@ -59,7 +64,6 @@ Future<void> showSettingStepperSheet(
   required bool isDefault,
   UnitFamily? familyOverride,
 }) {
-  final p = context.palette;
   final knownMeta = kFieldMeta[settingKey];
   final rawForParse = currentValue == '--' ? '' : currentValue;
   final parsed = SettingValue.parse(
@@ -107,13 +111,8 @@ Future<void> showSettingStepperSheet(
     isFreeText = false;
   }
 
-  return showModalBottomSheet(
+  return showAdaptiveModal<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: p.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
     builder: (ctx) => _StepperSheetContent(
       user: user,
       uBikeID: uBikeID,
@@ -260,14 +259,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: p.borderStrong,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          const AppSheetHandle(),
           const SizedBox(height: 22),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -298,25 +290,8 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: p.accent,
-                foregroundColor: p.accentInk,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
               onPressed: _onSave,
-              child: Text(
-                'SAVE',
-                style: AppTextStyles.inter(
-                  size: 13,
-                  weight: FontWeight.w800,
-                  color: p.accentInk,
-                  letterSpacing: 1,
-                ),
-              ),
+              child: Text('Save'),
             ),
           ),
           if (!widget.isDefault) ...[
@@ -394,7 +369,7 @@ class _UnitChipRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected ? p.accent : p.surface2,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isSelected ? p.accent : p.border),
+              border: Border.all(color: isSelected ? p.accentText : p.border),
             ),
             child: Text(
               u.label.isEmpty ? u.id : u.label,
@@ -418,41 +393,44 @@ class _FreeTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return TextField(
-      controller: controller,
-      autofocus: true,
-      style: AppTextStyles.inter(size: 16, color: p.ink),
-      decoration: InputDecoration(
-        hintText: 'Enter value',
-        hintStyle: AppTextStyles.inter(size: 16, color: p.inkDim),
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-      ),
-    );
+    return AppTextField(
+        controller: controller, hint: 'Enter value', autofocus: true);
   }
 }
 
 class _ControlPanelGridState extends State<ControlPanelGrid> {
+  late Stream _settingsStream;
+  late Stream _metadataStream;
+
+  void _connect() {
+    final db = DatabaseService(widget.user.uid);
+    _settingsStream =
+        db.getSettings(widget.uBikeID, widget.category, widget.uSetupID);
+    _metadataStream =
+        db.getSettingsMeta(widget.uBikeID, widget.category, widget.uSetupID);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _connect();
+  }
+
+  @override
+  void didUpdateWidget(ControlPanelGrid old) {
+    super.didUpdateWidget(old);
+    if (old.user.uid != widget.user.uid ||
+        old.uBikeID != widget.uBikeID ||
+        old.uSetupID != widget.uSetupID ||
+        old.category != widget.category) {
+      _connect();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final db = DatabaseService(widget.user.uid);
     return StreamBuilder(
-      stream: db.getSettings(widget.uBikeID, widget.category, widget.uSetupID),
+      stream: _settingsStream,
       builder: (context, snapshot) {
         Map<String, dynamic> settings = {};
         if (snapshot.hasData && snapshot.data?.data() != null) {
@@ -468,8 +446,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
         ];
 
         return StreamBuilder(
-          stream: db.getSettingsMeta(
-              widget.uBikeID, widget.category, widget.uSetupID),
+          stream: _metadataStream,
           builder: (context, metaSnap) {
             final Map<String, String> metaMap = {};
             final metaRaw = metaSnap.hasData ? metaSnap.data?.data() : null;
@@ -478,7 +455,18 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                 if (v is String) metaMap[k.toString()] = v;
               });
             }
-            return _buildGrid(allKeys, settings, metaMap);
+            if (snapshot.hasError || metaSnap.hasError) {
+              return Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('Could not load settings.'),
+                TextButton(
+                    onPressed: () => setState(_connect),
+                    child: const Text('Retry')),
+              ]));
+            }
+            return _buildGrid(allKeys, settings, metaMap,
+                loading: snapshot.connectionState != ConnectionState.active ||
+                    metaSnap.connectionState != ConnectionState.active);
           },
         );
       },
@@ -488,79 +476,126 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
   Widget _buildGrid(
     List<String> allKeys,
     Map<String, dynamic> settings,
-    Map<String, String> metaMap,
-  ) {
+    Map<String, String> metaMap, {
+    bool loading = false,
+  }) {
+    final wide = ResponsiveLayout.isWide(context);
+    if (wide) {
+      final bikeId = widget.uBikeID;
+      final setupId = widget.uSetupID;
+      final category = widget.category;
+      final userId = widget.user.uid;
+      return TabletSettingsPanel(
+        scope: '$userId/$bikeId/$setupId/$category',
+        title: widget.sectionLabel ?? 'Settings',
+        loading: loading,
+        settings: {
+          for (final key in allKeys) key: settings[key]?.toString() ?? '--'
+        },
+        metadata: metaMap,
+        onAdd: () => showAddFieldSheet(context,
+            user: widget.user,
+            uBikeID: bikeId,
+            category: category,
+            uSetupID: setupId),
+        onManage: (key) => showSettingStepperSheet(context,
+            user: widget.user,
+            uBikeID: bikeId,
+            category: category,
+            uSetupID: setupId,
+            settingKey: key,
+            currentValue: settings[key]?.toString() ?? '--',
+            isDefault: isRequiredField(category, key),
+            familyOverride: unitFamilyFromName(metaMap[key] ?? '')),
+        onSave: (key, value) async {
+          try {
+            await DatabaseService(userId)
+                .setSetting(key, value, bikeId, category, setupId);
+          } catch (_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not save $key. Try again.')));
+            }
+            rethrow;
+          }
+        },
+      );
+    }
+    final delegate = SliverChildBuilderDelegate(
+      (context, index) {
+        final key = allKeys[index];
+        final card = _CardDef.fromKey(key);
+        final value = settings[key]?.toString() ?? '--';
+        final isDefault = isRequiredField(widget.category, key);
+        final familyOverride = unitFamilyFromName(metaMap[key] ?? '');
+        return _AnimatedTile(
+          key: ValueKey('tile_$key'),
+          child: _ControlCard(
+            config: card,
+            value: value,
+            onTap: () => showSettingStepperSheet(
+              context,
+              user: widget.user,
+              uBikeID: widget.uBikeID,
+              category: widget.category,
+              uSetupID: widget.uSetupID,
+              settingKey: key,
+              currentValue: value,
+              isDefault: isDefault,
+              familyOverride: familyOverride,
+            ),
+          ),
+        );
+      },
+      childCount: allKeys.length,
+      findChildIndexCallback: (Key key) {
+        final v = (key as ValueKey<String>).value;
+        final name = v.substring('tile_'.length);
+        final idx = allKeys.indexOf(name);
+        return idx >= 0 ? idx : null;
+      },
+    );
     return CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            if (widget.sectionLabel != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, widget.topPadding + 16, 16, 4),
-                  child: _SectionLabel(widget.sectionLabel!),
+      shrinkWrap: true,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, widget.topPadding + 16, 20, 4),
+            child: AppSectionToolbar(
+              title: _SectionLabel(widget.sectionLabel ?? 'Settings'),
+              action: TextButton.icon(
+                onPressed: () => showAddFieldSheet(
+                  context,
+                  user: widget.user,
+                  uBikeID: widget.uBikeID,
+                  category: widget.category,
+                  uSetupID: widget.uSetupID,
                 ),
-              ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(14, 4, 14, 100),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1 / 0.55,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index == allKeys.length) {
-                      return _AnimatedTile(
-                        key: const ValueKey('tile_add_field'),
-                        child: _AddFieldCard(
-                          onTap: () => showAddFieldSheet(
-                            context,
-                            user: widget.user,
-                            uBikeID: widget.uBikeID,
-                            category: widget.category,
-                            uSetupID: widget.uSetupID,
-                          ),
-                        ),
-                      );
-                    }
-                    final key = allKeys[index];
-                    final card = _CardDef.fromKey(key);
-                    final value = settings[key]?.toString() ?? '--';
-                    final isDefault = isRequiredField(widget.category, key);
-                    final familyOverride =
-                        unitFamilyFromName(metaMap[key] ?? '');
-                    return _AnimatedTile(
-                      key: ValueKey('tile_$key'),
-                      child: _ControlCard(
-                        config: card,
-                        value: value,
-                        onTap: () => showSettingStepperSheet(
-                          context,
-                          user: widget.user,
-                          uBikeID: widget.uBikeID,
-                          category: widget.category,
-                          uSetupID: widget.uSetupID,
-                          settingKey: key,
-                          currentValue: value,
-                          isDefault: isDefault,
-                          familyOverride: familyOverride,
-                        ),
-                      ),
-                    );
-                  },
-                  childCount: allKeys.length + 1,
-                  findChildIndexCallback: (Key key) {
-                    final v = (key as ValueKey<String>).value;
-                    if (v == 'tile_add_field') return allKeys.length;
-                    final name = v.substring('tile_'.length);
-                    final idx = allKeys.indexOf(name);
-                    return idx >= 0 ? idx : null;
-                  },
-                ),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add setting'),
               ),
             ),
+          ),
+        ),
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+              20, 4, 20, ResponsiveLayout.isWide(context) ? 20 : 100),
+          sliver: wide
+              ? SliverList(delegate: delegate)
+              : SliverGrid(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent:
+                        220 * (MediaQuery.textScalerOf(context).scale(14) / 14),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    mainAxisExtent: 112 +
+                        (MediaQuery.textScalerOf(context).scale(14) / 14 - 1) *
+                            80,
+                  ),
+                  delegate: delegate,
+                ),
+        ),
       ],
     );
   }
@@ -573,17 +608,13 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Row(
-      children: [
-        Container(width: 12, height: 1, color: p.borderStrong),
-        const SizedBox(width: 8),
-        Text(
-          text.toUpperCase(),
-          style: AppTextStyles.eyebrow(color: p.inkDim),
-        ),
-        const SizedBox(width: 8),
-        Expanded(child: Container(height: 1, color: p.border)),
-      ],
+    return Text(
+      text,
+      style: AppTextStyles.inter(
+        size: 14,
+        weight: FontWeight.w600,
+        color: p.inkMuted,
+      ),
     );
   }
 }
@@ -592,21 +623,28 @@ class _ControlCard extends StatelessWidget {
   final _CardDef config;
   final String value;
   final VoidCallback onTap;
+  final bool selected;
+  final bool forceText;
 
   const _ControlCard({
+    super.key,
     required this.config,
     required this.value,
     required this.onTap,
+    this.selected = false,
+    this.forceText = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final parsed = SettingValue.parse(
-      value == '--' ? '' : value,
-      fallbackFamily: config.fallbackFamily,
-      fallbackUnit: config.fallbackUnit,
-    );
+    final parsed = forceText
+        ? SettingValue.freeText(value)
+        : SettingValue.parse(
+            value == '--' ? '' : value,
+            fallbackFamily: config.fallbackFamily,
+            fallbackUnit: config.fallbackUnit,
+          );
     String displayValue;
     String displayUnit;
     if (value == '--' || parsed.isEmpty) {
@@ -621,128 +659,131 @@ class _ControlCard extends StatelessWidget {
     }
     final isText = parsed.isText;
 
-    return Material(
-      color: p.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: p.border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Semantics(
+        selected: selected,
+        button: true,
+        child: Material(
+          color: selected ? p.surface2 : p.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+                color: selected ? p.accentText : p.border,
+                width: selected ? 2 : 1),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Flexible(
-                        child: Text(
-                          config.key.toUpperCase(),
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.inter(
-                            size: 9.5,
-                            weight: FontWeight.w700,
-                            color: p.inkDim,
-                            letterSpacing: 0.9,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              config.key,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.inter(
+                                size: 12,
+                                weight: FontWeight.w700,
+                                color: p.inkMuted,
+                              ),
+                            ),
                           ),
-                        ),
+                          FieldIcon(
+                              asset: config.iconAsset,
+                              size: 14,
+                              color: p.inkDim),
+                        ],
                       ),
-                      FieldIcon(asset: config.iconAsset, size: 14, color: p.inkDim),
-                    ],
-                  ),
-                  const Spacer(),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          displayValue,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.mono(
-                            size: isText ? 18 : 32,
-                            weight: FontWeight.w700,
-                            color: p.ink,
-                            letterSpacing: isText ? 0 : -1,
-                            height: 1,
+                      const Spacer(),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              displayValue,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.mono(
+                                size: isText ? 18 : 32,
+                                weight: FontWeight.w700,
+                                color: p.ink,
+                                letterSpacing: isText ? 0 : -1,
+                                height: 1,
+                              ),
+                            ),
                           ),
-                        ),
+                          if (displayUnit.isNotEmpty) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              displayUnit,
+                              style: AppTextStyles.inter(
+                                size: 11,
+                                weight: FontWeight.w600,
+                                color: p.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      if (displayUnit.isNotEmpty) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          displayUnit,
-                          style: AppTextStyles.inter(
-                            size: 11,
-                            weight: FontWeight.w600,
-                            color: p.inkMuted,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: 14, right: 14, bottom: 0, height: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      Colors.transparent,
-                      p.borderStrong,
-                      Colors.transparent,
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 }
 
-class _AddFieldCard extends StatelessWidget {
+/// Tablet settings stay compact and align names and values for scanning.
+class SettingRow extends StatelessWidget {
+  final String name;
+  final String value;
+  final String unit;
+  final String iconAsset;
   final VoidCallback onTap;
-  const _AddFieldCard({required this.onTap});
+  const SettingRow(
+      {super.key,
+      required this.name,
+      required this.value,
+      required this.unit,
+      required this.iconAsset,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: DottedBorder(
-        color: p.borderStrong,
-        radius: 14,
+    return Material(
+      color: p.surface,
+      child: InkWell(
+        onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_rounded, size: 22, color: p.inkMuted),
-              const SizedBox(height: 6),
-              Text(
-                'ADD SETTING',
-                style: AppTextStyles.inter(
-                  size: 10,
-                  weight: FontWeight.w700,
-                  color: p.inkMuted,
-                  letterSpacing: 0.9,
-                ),
-              ),
-            ],
-          ),
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: p.border))),
+          child: Row(children: [
+            FieldIcon(asset: iconAsset, size: 20, color: p.inkMuted),
+            const SizedBox(width: 12),
+            Expanded(
+                child:
+                    Text(name, style: Theme.of(context).textTheme.bodyLarge)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: Text(unit.isEmpty ? value : '$value $unit',
+                    textAlign: TextAlign.right,
+                    style: AppTextStyles.mono(
+                        size: 20, weight: FontWeight.w600, color: p.ink))),
+            const SizedBox(width: 12),
+            Icon(Icons.chevron_right, size: 18, color: p.inkMuted),
+          ]),
         ),
       ),
     );
@@ -771,8 +812,8 @@ class _AnimatedTileState extends State<_AnimatedTile>
       duration: const Duration(milliseconds: 260),
     );
     _opacity = CurvedAnimation(parent: _c, curve: Curves.easeOut);
-    _scale = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
+    _scale = Tween<double>(begin: 0.98, end: 1.0).animate(
+      CurvedAnimation(parent: _c, curve: Curves.easeOut),
     );
     _c.forward();
   }
@@ -792,46 +833,134 @@ class _AnimatedTileState extends State<_AnimatedTile>
   }
 }
 
-class DottedBorder extends StatelessWidget {
-  final Widget child;
-  final Color color;
-  final double radius;
-  const DottedBorder({super.key, required this.child, required this.color, this.radius = 14});
+/// Persistent tablet inspector with the same setting tiles used on phones.
+class TabletSettingsPanel extends StatefulWidget {
+  final String scope;
+  final String title;
+  final Map<String, String> settings;
+  final Map<String, String> metadata;
+  final Future<void> Function(String key, String value) onSave;
+  final VoidCallback onAdd;
+  final ValueChanged<String>? onManage;
+  final bool loading;
+
+  const TabletSettingsPanel(
+      {super.key,
+      required this.scope,
+      required this.title,
+      required this.settings,
+      this.metadata = const {},
+      required this.onSave,
+      required this.onAdd,
+      this.onManage,
+      this.loading = false});
+
+  @override
+  State<TabletSettingsPanel> createState() => _TabletSettingsPanelState();
+}
+
+class _TabletSettingsPanelState extends State<TabletSettingsPanel> {
+  final Map<String, String> _selectedByScope = {};
+  final Map<String, SettingWriteQueue> _writesByField = {};
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DashedRectPainter(color: color, radius: radius),
-      child: child,
-    );
-  }
-}
-
-class _DashedRectPainter extends CustomPainter {
-  final Color color;
-  final double radius;
-  const _DashedRectPainter({required this.color, required this.radius});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-    final rect = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius));
-    final path = Path()..addRRect(rect);
-
-    const double dash = 5, gap = 4;
-    for (final m in path.computeMetrics()) {
-      double dist = 0;
-      while (dist < m.length) {
-        final next = (dist + dash).clamp(0.0, m.length);
-        canvas.drawPath(m.extractPath(dist, next), paint);
-        dist = next + gap;
-      }
+    if (widget.loading) {
+      return const Center(child: CircularProgressIndicator.adaptive());
     }
+    final keys = widget.settings.keys.toList();
+    var selected = _selectedByScope[widget.scope];
+    if (!keys.contains(selected)) selected = keys.isEmpty ? null : keys.first;
+    if (selected != null) _selectedByScope[widget.scope] = selected;
+    final selectedKey = selected;
+    final onSave = widget.onSave;
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    return LayoutBuilder(builder: (context, constraints) {
+      final editor = selectedKey == null
+          ? Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text('Add a setting to start adjusting this part.',
+                  style: Theme.of(context).textTheme.bodyLarge))
+          : InlineSettingEditor(
+              key: ValueKey('${widget.scope}/$selectedKey'),
+              writes: _writesByField.putIfAbsent(
+                  '${widget.scope}/$selectedKey', SettingWriteQueue.new),
+              name: selectedKey,
+              value: widget.settings[selectedKey]!,
+              familyOverride:
+                  unitFamilyFromName(widget.metadata[selectedKey] ?? ''),
+              onSave: (value) => onSave(selectedKey, value),
+              onManage: widget.onManage == null
+                  ? null
+                  : () => widget.onManage!(selectedKey),
+            );
+      final tiles = GridView.builder(
+        primary: false,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: constraints.maxWidth >= 330 * scale ? 2 : 1,
+            mainAxisExtent: 112 + (scale - 1) * 80,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12),
+        itemCount: keys.length,
+        itemBuilder: (context, index) {
+          final key = keys[index];
+          return _ControlCard(
+              key: ValueKey('tablet-tile-$key'),
+              config: _CardDef.fromKey(key),
+              value: widget.settings[key]!,
+              selected: selectedKey == key,
+              forceText: widget.metadata[key] == UnitFamily.freeText.name,
+              onTap: () =>
+                  setState(() => _selectedByScope[widget.scope] = key));
+        },
+      );
+      final content = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            editor,
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                  child: Text('Settings',
+                      style: Theme.of(context).textTheme.titleMedium)),
+              TextButton.icon(
+                  onPressed: widget.onAdd,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add setting')),
+            ]),
+            const SizedBox(height: 12),
+            tiles,
+            const SizedBox(height: 24),
+          ]);
+      // Long lists scroll below a pinned editor. Short windows and enlarged text
+      // scroll the complete inspector so no controls become unreachable.
+      if (!constraints.hasBoundedHeight ||
+          constraints.maxHeight < 680 ||
+          scale >= 1.6) {
+        return SingleChildScrollView(primary: false, child: content);
+      }
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        editor,
+        const SizedBox(height: 24),
+        Row(children: [
+          Expanded(
+              child: Text('Settings',
+                  style: Theme.of(context).textTheme.titleMedium)),
+          TextButton.icon(
+              onPressed: widget.onAdd,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add setting')),
+        ]),
+        const SizedBox(height: 12),
+        Expanded(child: SingleChildScrollView(primary: false, child: tiles)),
+      ]);
+    });
   }
-
-  @override
-  bool shouldRepaint(_DashedRectPainter old) => old.color != color || old.radius != radius;
 }

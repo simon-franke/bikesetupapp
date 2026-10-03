@@ -13,13 +13,24 @@ class StravaSyncService {
 
   static const _lastSyncKey = 'strava_last_sync';
 
+  String? lastError;
+
   Future<bool> sync() async {
+    lastError = null;
     try {
       final token = await _authService.getValidToken();
-      if (token == null) return false;
+      if (token == null) {
+        lastError =
+            'Strava connection could not be renewed. Reconnect Strava in Settings.';
+        return false;
+      }
 
       final bikes = await _apiService.fetchAthleteBikes(token);
-      if (bikes.isEmpty) return false;
+      if (bikes.isEmpty) {
+        lastError =
+            'No bikes found in Strava. Add a bike under My Gear in Strava.';
+        return false;
+      }
 
       await _db.saveStravaBikes(bikes);
 
@@ -28,7 +39,13 @@ class StravaSyncService {
           _lastSyncKey, DateTime.now().toUtc().millisecondsSinceEpoch);
 
       return true;
+    } on StravaApiException catch (e) {
+      lastError = e.message;
+      debugPrint('Strava sync error: $e');
+      return false;
     } catch (e) {
+      lastError =
+          'Could not complete Strava sync. Check your connection and try again.';
       debugPrint('Strava sync error: $e');
       return false;
     }

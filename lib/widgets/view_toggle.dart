@@ -18,44 +18,46 @@ class ViewToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: p.surface2,
-        border: Border.all(color: p.border),
-        borderRadius: BorderRadius.circular(11),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Pill(
-            label: 'Setup',
-            icon: Icons.tune_rounded,
-            isActive: activeView == ActiveView.setup,
-            onTap: () => onChanged(ActiveView.setup),
-          ),
-          const SizedBox(width: 2),
-          _Pill(
-            label: 'Service',
-            icon: Icons.build_rounded,
-            isActive: activeView == ActiveView.services,
-            showAlert: showServiceAlert,
-            onTap: () => onChanged(ActiveView.services),
-          ),
-        ],
+    return Material(
+      color: p.surface2,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Row(
+          children: [
+            Expanded(
+              child: _Tab(
+                label: 'Setup',
+                icon: Icons.tune_rounded,
+                isActive: activeView == ActiveView.setup,
+                onTap: () => onChanged(ActiveView.setup),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _Tab(
+                label: 'Service',
+                icon: Icons.build_outlined,
+                isActive: activeView == ActiveView.services,
+                showAlert: showServiceAlert,
+                onTap: () => onChanged(ActiveView.services),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _Pill extends StatelessWidget {
+class _Tab extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isActive;
   final bool showAlert;
   final VoidCallback onTap;
 
-  const _Pill({
+  const _Tab({
     required this.label,
     required this.icon,
     required this.isActive,
@@ -66,47 +68,54 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final bg = isActive ? p.card : Colors.transparent;
     final fg = isActive ? p.cardInk : p.inkMuted;
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: showAlert ? '$label, maintenance due' : label,
       onTap: onTap,
-      child: Tooltip(
-        message: label,
-        child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: bg,
+      excludeSemantics: true,
+      child: Material(
+        color: isActive ? p.card : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(icon, size: 15, color: fg),
-            Positioned(
-              top: -3,
-              right: -3,
-              child: AnimatedScale(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutBack,
-                scale: showAlert ? 1.0 : 0.0,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 180),
-                  opacity: showAlert ? 1.0 : 0.0,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: p.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: p.bg, width: 1.5),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 17, color: fg),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            fontSize: 14,
+                            fontWeight:
+                                isActive ? FontWeight.w600 : FontWeight.w500,
+                            color: fg,
+                          ),
                     ),
                   ),
-                ),
+                  if (showAlert) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: p.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-          ],
-        ),
+          ),
         ),
       ),
     );
