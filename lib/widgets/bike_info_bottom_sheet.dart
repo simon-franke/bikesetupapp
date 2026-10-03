@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
 import 'package:bikesetupapp/bike_enums/new_bike_mode.dart';
@@ -14,16 +15,11 @@ Future<void> showBikeInfoSheet(
   String setupName,
   String bikeName,
   BikeType bikeType, {
-  required void Function(String, String, BikeType, String, String) onBikeSelected,
+  required void Function(String, String, BikeType, String, String)
+      onBikeSelected,
 }) {
-  return showModalBottomSheet(
+  return showAdaptiveModal<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: context.palette.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
     builder: (_) => _BikeInfoSheetContent(
       user: user,
       uBikeID: uBikeID,
@@ -75,15 +71,7 @@ class _BikeInfoSheetContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 12),
-        Center(
-          child: Container(
-            width: 36, height: 4,
-            decoration: BoxDecoration(
-              color: p.borderStrong,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
+        const AppSheetHandle(),
         const SizedBox(height: 18),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
@@ -94,17 +82,21 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      bikeType.bikeType.toUpperCase(),
+                      bikeType.bikeType,
                       style: AppTextStyles.inter(
-                        size: 10, weight: FontWeight.w700,
-                        color: p.inkDim, letterSpacing: 1.4,
+                        size: 12,
+                        weight: FontWeight.w700,
+                        color: p.inkDim,
+                        letterSpacing: 1.4,
                       ),
                     ),
                     Text(
                       setupName,
                       style: AppTextStyles.inter(
-                        size: 20, weight: FontWeight.w700,
-                        color: p.ink, letterSpacing: -0.3,
+                        size: 20,
+                        weight: FontWeight.w700,
+                        color: p.ink,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
@@ -115,7 +107,9 @@ class _BikeInfoSheetContent extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pop();
                   showNewBikeSheet(
-                    context, user, NewBikeMode.editSetup,
+                    context,
+                    user,
+                    NewBikeMode.editSetup,
                     bikeType: bikeType,
                     uBikeID: uBikeID,
                     bikeName: bikeName,
@@ -131,7 +125,8 @@ class _BikeInfoSheetContent extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: FutureBuilder(
-            future: DatabaseService(user.uid).getSetupInformation(uBikeID, uSetupID),
+            future: DatabaseService(user.uid)
+                .getSetupInformation(uBikeID, uSetupID),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
@@ -192,16 +187,20 @@ class _InfoRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            label.toUpperCase(),
+            label,
             style: AppTextStyles.inter(
-              size: 10, weight: FontWeight.w700,
-              color: p.inkDim, letterSpacing: 1.2,
+              size: 12,
+              weight: FontWeight.w700,
+              color: p.inkDim,
+              letterSpacing: 0,
             ),
           ),
           Text(
             value,
             style: AppTextStyles.inter(
-              size: 14, weight: FontWeight.w600, color: p.ink,
+              size: 14,
+              weight: FontWeight.w600,
+              color: p.ink,
             ),
           ),
         ],

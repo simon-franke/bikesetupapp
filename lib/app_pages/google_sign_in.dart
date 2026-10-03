@@ -1,4 +1,7 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
+import 'package:bikesetupapp/app_services/responsive_layout.dart';
 import 'dart:io';
+import 'package:bikesetupapp/app_services/theme_data.dart';
 
 import 'package:bikesetupapp/alert_dialogs/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/database_service/auth_service.dart';
@@ -32,12 +35,8 @@ class LoginPage extends StatelessWidget {
   }
 
   void _showEmailSignIn(BuildContext context) {
-    showModalBottomSheet(
+    showAdaptiveModal<void>(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (_) => _EmailSignInSheet(
         onSignIn: (signInFn) => _handleSignIn(context, signInFn),
       ),
@@ -49,111 +48,131 @@ class LoginPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Header(primaryColor: theme.primaryColor),
-                const SizedBox(height: 40),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _SignInButton(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF424242),
-                          borderColor: const Color(0xFFDDDDDD),
-                          icon: Image.asset(_googleIconPath, height: 22),
-                          label: 'Sign in with Google',
-                          onPressed: () => _handleSignIn(
-                            context,
-                            () => AuthService().signInWithGoogle(),
-                          ),
-                        ),
-                        if (_showAppleSignIn) ...[
-                          const SizedBox(height: 12),
-                          _SignInButton(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            icon: Image.asset(_appleIconPath, height: 22, color: Colors.white, colorBlendMode: BlendMode.srcIn),
-                            label: 'Sign in with Apple',
-                            onPressed: () => _handleSignIn(
-                              context,
-                              () => AuthService().signInWithApple(),
+      body: SafeArea(
+          child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Center(
+                          child: AppContentFrame(
+                            maxWidth: 440,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: 24),
+                                const _Header(),
+                                const SizedBox(height: 32),
+                                SafeArea(
+                                  top: false,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        _SignInButton(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor:
+                                              const Color(0xFF424242),
+                                          borderColor: const Color(0xFFDDDDDD),
+                                          icon: Image.asset(_googleIconPath,
+                                              height: 22),
+                                          label: 'Sign in with Google',
+                                          onPressed: () => _handleSignIn(
+                                            context,
+                                            () => AuthService()
+                                                .signInWithGoogle(),
+                                          ),
+                                        ),
+                                        if (_showAppleSignIn) ...[
+                                          const SizedBox(height: 12),
+                                          _SignInButton(
+                                            backgroundColor: Colors.black,
+                                            foregroundColor: Colors.white,
+                                            icon: Image.asset(_appleIconPath,
+                                                height: 22,
+                                                color: Colors.white,
+                                                colorBlendMode:
+                                                    BlendMode.srcIn),
+                                            label: 'Sign in with Apple',
+                                            onPressed: () => _handleSignIn(
+                                              context,
+                                              () => AuthService()
+                                                  .signInWithApple(),
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 12),
+                                        _SignInButton(
+                                          backgroundColor:
+                                              theme.colorScheme.primary,
+                                          foregroundColor:
+                                              theme.colorScheme.onPrimary,
+                                          icon: Icon(Icons.email_outlined,
+                                              size: 22,
+                                              color:
+                                                  theme.colorScheme.onPrimary),
+                                          label: 'Sign in with Email',
+                                          onPressed: () =>
+                                              _showEmailSignIn(context),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _SignInButton(
+                                          backgroundColor:
+                                              const Color(0xFF3A546D),
+                                          foregroundColor: Colors.white,
+                                          icon: Image.asset(_incognitoIconPath,
+                                              height: 22,
+                                              color: Colors.white,
+                                              colorBlendMode: BlendMode.srcIn),
+                                          label: 'Continue anonymously',
+                                          onPressed: () => _handleSignIn(
+                                            context,
+                                            () => FirebaseAuth.instance
+                                                .signInAnonymously(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+                              ],
                             ),
                           ),
-                        ],
-                        const SizedBox(height: 12),
-                        _SignInButton(
-                          backgroundColor: theme.primaryColor,
-                          foregroundColor: Colors.white,
-                          icon: const Icon(Icons.email_outlined,
-                              size: 22, color: Colors.white),
-                          label: 'Sign in with Email',
-                          onPressed: () => _showEmailSignIn(context),
-                        ),
-                        const SizedBox(height: 12),
-                        _SignInButton(
-                          backgroundColor: const Color(0xFF3A546D),
-                          foregroundColor: Colors.white,
-                          icon: Image.asset(_incognitoIconPath, height: 22),
-                          label: 'Continue anonymously',
-                          onPressed: () => _handleSignIn(
-                            context,
-                            () => FirebaseAuth.instance.signInAnonymously(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
-        ),
-      ),
+                        )),
+                  ))),
     );
   }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.primaryColor});
-
-  final Color primaryColor;
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 300,
-      decoration: BoxDecoration(
-        color: primaryColor,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(35),
-          bottomRight: Radius.circular(35),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.directions_bike, size: 80, color: Colors.white),
-          const SizedBox(height: 16),
-          Text(
-            'Bike Setup',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontSize: 32),
-          ),
-        ],
-      ),
-    );
+    final theme = Theme.of(context);
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(20)),
+          child: Icon(Icons.directions_bike,
+              size: 44, color: theme.colorScheme.onPrimary)),
+      const SizedBox(height: 20),
+      Text('Bike Setup',
+          style: theme.textTheme.headlineMedium?.copyWith(
+              color: theme.colorScheme.onSurface, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 8),
+      Text('Your bikes, settings and service history.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: context.palette.inkMuted)),
+    ]);
   }
 }
 
@@ -266,18 +285,18 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
           ElevatedButton(
             onPressed: _loading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.primaryColor,
-              foregroundColor: Colors.white,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30)),
+                  borderRadius: BorderRadius.circular(10)),
             ),
             child: _loading
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2, color: theme.colorScheme.onPrimary),
                   )
                 : Text(_isSignUp ? 'Create Account' : 'Sign In',
                     style: const TextStyle(
@@ -331,31 +350,25 @@ class _SignInButton extends StatelessWidget {
         foregroundColor: foregroundColor,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(10),
           side: borderColor != null
               ? BorderSide(color: borderColor!)
               : BorderSide.none,
         ),
-        elevation: 2,
+        elevation: 0,
       ),
       onPressed: onPressed,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SizedBox(width: 28, child: Center(child: icon)),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: foregroundColor,
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        SizedBox(width: 28, child: Center(child: icon)),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: foregroundColor))),
+      ]),
     );
   }
 }

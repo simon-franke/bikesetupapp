@@ -1,4 +1,5 @@
 import 'package:bikesetupapp/app_services/theme_data.dart';
+import 'package:bikesetupapp/app_services/responsive_layout.dart';
 import 'package:bikesetupapp/bike_enums/category.dart';
 import 'package:bikesetupapp/database_service/database.dart';
 import 'package:bikesetupapp/widgets/field_meta.dart';
@@ -10,56 +11,70 @@ import 'package:flutter/services.dart';
 
 const double bubbleCardW = 70.0;
 const double bubbleCardH = 44.0;
+Size schematicCardSize(BuildContext context) {
+  final wide = ResponsiveLayout.isWide(context);
+  final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+  return Size(
+      (wide ? 112 : bubbleCardW) * scale, (wide ? 64 : bubbleCardH) * scale);
+}
+
 const double _dotRadius = 5.0;
 
 class _LeaderLinePainter extends CustomPainter {
   final Offset dotCenter;
   final Offset cardCenter;
-  final bool isSelected;
   final Color activeColor;
   final Color inactiveColor;
+  final Color background;
+  final bool selected;
 
   const _LeaderLinePainter({
     required this.dotCenter,
     required this.cardCenter,
-    required this.isSelected,
     required this.activeColor,
     required this.inactiveColor,
+    required this.background,
+    required this.selected,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    final width = selected ? 1.8 : 1.2;
     final paint = Paint()
-      ..color = isSelected ? activeColor : inactiveColor
-      ..strokeWidth = isSelected ? 1.5 : 1.0
+      ..color = selected ? activeColor : inactiveColor
+      ..strokeWidth = width
       ..style = PaintingStyle.stroke;
+    final halo = Paint()
+      ..color = background
+      ..strokeWidth = width + 2
+      ..style = PaintingStyle.stroke;
+    void line(Offset start, Offset end) {
+      canvas.drawLine(start, end, halo);
+      canvas.drawLine(start, end, paint);
+    }
 
-    if (isSelected) {
-      canvas.drawLine(dotCenter, cardCenter, paint);
+    if (selected) {
+      line(dotCenter, cardCenter);
       return;
     }
-    const double dash = 3, gap = 2;
-    final length = (cardCenter - dotCenter).distance;
+    final vector = cardCenter - dotCenter;
+    final length = vector.distance;
     if (length == 0) return;
-    final ux = (cardCenter.dx - dotCenter.dx) / length;
-    final uy = (cardCenter.dy - dotCenter.dy) / length;
-    double drawn = 0;
-    while (drawn < length) {
-      final segEnd = (drawn + dash).clamp(0.0, length);
-      final start = Offset(dotCenter.dx + ux * drawn, dotCenter.dy + uy * drawn);
-      final end = Offset(dotCenter.dx + ux * segEnd, dotCenter.dy + uy * segEnd);
-      canvas.drawLine(start, end, paint);
-      drawn += dash + gap;
+    final direction = vector / length;
+    for (double offset = 0; offset < length; offset += 8) {
+      line(dotCenter + direction * offset,
+          dotCenter + direction * (offset + 5).clamp(0, length));
     }
   }
 
   @override
   bool shouldRepaint(_LeaderLinePainter old) =>
-      old.isSelected != isSelected ||
       old.dotCenter != dotCenter ||
       old.cardCenter != cardCenter ||
       old.activeColor != activeColor ||
-      old.inactiveColor != inactiveColor;
+      old.inactiveColor != inactiveColor ||
+      old.background != background ||
+      old.selected != selected;
 }
 
 class SchematicBubble extends StatefulWidget {
@@ -133,10 +148,10 @@ class _SchematicBubbleState extends State<SchematicBubble>
       vsync: this,
       duration: const Duration(milliseconds: 180),
     );
-    _tapScale = Tween<double>(begin: 1.0, end: 0.88).animate(
+    _tapScale = Tween<double>(begin: 1.0, end: 0.97).animate(
       CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
     );
-    _selectScale = Tween<double>(begin: 1.0, end: 1.12).animate(
+    _selectScale = Tween<double>(begin: 1.0, end: 1.03).animate(
       CurvedAnimation(parent: _selectController, curve: Curves.easeOut),
     );
   }
@@ -161,15 +176,15 @@ class _SchematicBubbleState extends State<SchematicBubble>
   String _categoryLabel(Category cat) {
     switch (cat) {
       case Category.rearTire:
-        return 'REAR TIRE';
+        return 'Rear tire';
       case Category.frontTire:
-        return 'FRONT TIRE';
+        return 'Front tire';
       case Category.shock:
-        return 'SHOCK';
+        return 'Shock';
       case Category.fork:
-        return 'FORK';
+        return 'Fork';
       case Category.generalSettings:
-        return 'GEOMETRY';
+        return 'Geometry';
     }
   }
 
@@ -179,6 +194,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
 
     final p = context.palette;
     final bool isSelected = _isSelected;
+    final cardSize = schematicCardSize(context);
+    final wide = ResponsiveLayout.isWide(context);
 
     // Convert bottom-origin coordinates to top-origin for the painter.
     final Offset dotCenter = Offset(
@@ -186,61 +203,48 @@ class _SchematicBubbleState extends State<SchematicBubble>
       widget.containerHeight - widget.anchorBottom - _dotRadius,
     );
     final Offset cardCenter = Offset(
-      widget.bubbleLeft + bubbleCardW / 2,
-      widget.containerHeight - widget.bubbleBottom - bubbleCardH / 2,
+      widget.bubbleLeft + cardSize.width / 2,
+      widget.containerHeight - widget.bubbleBottom - cardSize.height / 2,
     );
 
     return Positioned.fill(
       child: Stack(
         children: [
           // Leader line spanning the full container
-          Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(
-                painter: _LeaderLinePainter(
-                  dotCenter: dotCenter,
-                  cardCenter: cardCenter,
-                  isSelected: isSelected,
-                  activeColor: p.accent,
-                  inactiveColor: Colors.white.withValues(alpha: 0.35),
+          if (wide || isSelected)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _LeaderLinePainter(
+                    dotCenter: dotCenter,
+                    cardCenter: cardCenter,
+                    activeColor: p.accentText,
+                    inactiveColor: p.inkMuted,
+                    background: p.bg,
+                    selected: isSelected,
+                  ),
                 ),
               ),
             ),
-          ),
 
           // Anchor dot on the bike part
-          Positioned(
-            left: widget.anchorLeft,
-            bottom: widget.anchorBottom,
-            child: IgnorePointer(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: _dotRadius * 2,
-                height: _dotRadius * 2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected ? p.accent : AppColors.darkInk,
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            spreadRadius: 3,
-                          ),
-                          BoxShadow(
-                            color: p.accent.withValues(alpha: 0.65),
-                            blurRadius: 14,
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.55),
-                            spreadRadius: 3,
-                          ),
-                        ],
+          if (wide || isSelected)
+            Positioned(
+              left: widget.anchorLeft,
+              bottom: widget.anchorBottom,
+              child: IgnorePointer(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: _dotRadius * 2,
+                  height: _dotRadius * 2,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? p.accentText : p.inkMuted,
+                    border: Border.all(color: p.bg, width: 1.5),
+                  ),
                 ),
               ),
             ),
-          ),
 
           // Floating schematic card
           Positioned(
@@ -265,26 +269,13 @@ class _SchematicBubbleState extends State<SchematicBubble>
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     curve: Curves.easeOut,
-                    width: bubbleCardW,
-                    height: bubbleCardH,
+                    width: cardSize.width,
+                    height: cardSize.height,
                     decoration: BoxDecoration(
-                      color: isSelected ? p.accent : AppColors.darkCard,
+                      color: isSelected ? p.accent : p.surface,
                       borderRadius: BorderRadius.circular(9),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.55),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ]
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.4),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                      border: Border.all(
+                          color: isSelected ? p.accentText : p.borderStrong),
                     ),
                     child: StreamBuilder(
                       stream: DatabaseService(widget.user.uid)
@@ -292,13 +283,13 @@ class _SchematicBubbleState extends State<SchematicBubble>
                               widget.category.category, widget.setup),
                       builder: (context, AsyncSnapshot snapshot) {
                         final String label = _categoryLabel(widget.category);
-                        final Color chipInk = isSelected ? p.accentInk : AppColors.darkCardInk;
+                        final Color chipInk = isSelected ? p.accentInk : p.ink;
 
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return Center(
                             child: PulsatingCircle(
-                              color: chipInk.withValues(alpha: 0.4),
+                              color: chipInk,
                               size: 14,
                             ),
                           );
@@ -310,7 +301,9 @@ class _SchematicBubbleState extends State<SchematicBubble>
                         String elementKey = '';
                         int specCount = 0;
                         bool hasError = false;
-                        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                        if (snapshot.hasError ||
+                            !snapshot.hasData ||
+                            snapshot.data == null) {
                           hasError = true;
                         } else {
                           try {
@@ -323,15 +316,25 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                   if (s.isNotEmpty) specCount++;
                                 }
                               } else {
-                                final priorityKeys = kDefaultFieldKeys[widget.category.category] ?? [];
+                                final priorityKeys = kDefaultFieldKeys[
+                                        widget.category.category] ??
+                                    [];
                                 for (final k in priorityKeys) {
                                   final v = data[k]?.toString() ?? '';
-                                  if (v.isNotEmpty) { element = v; elementKey = k; break; }
+                                  if (v.isNotEmpty) {
+                                    element = v;
+                                    elementKey = k;
+                                    break;
+                                  }
                                 }
                                 if (element.isEmpty) {
                                   for (final entry in data.entries) {
                                     final s = entry.value?.toString() ?? '';
-                                    if (s.isNotEmpty) { element = s; elementKey = entry.key; break; }
+                                    if (s.isNotEmpty) {
+                                      element = s;
+                                      elementKey = entry.key;
+                                      break;
+                                    }
                                   }
                                 }
                               }
@@ -340,7 +343,9 @@ class _SchematicBubbleState extends State<SchematicBubble>
                           if (!isGeometry && element.isEmpty) hasError = true;
                         }
 
-                        if (!isGeometry && !hasError && element != _latestValue) {
+                        if (!isGeometry &&
+                            !hasError &&
+                            element != _latestValue) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (mounted && _latestValue != element) {
                               setState(() => _latestValue = element);
@@ -356,7 +361,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
                             : _displayFor(elementKey, element);
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 5),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,18 +370,20 @@ class _SchematicBubbleState extends State<SchematicBubble>
                               Text(
                                 label,
                                 style: TextStyle(
-                                  color: chipInk.withValues(alpha: 0.65),
-                                  fontSize: 7.5,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.8,
+                                  color: chipInk,
+                                  fontSize: wide ? 14 : 10,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0,
                                   height: 1.2,
                                 ),
                               ),
                               const SizedBox(height: 1),
                               hasError
-                                  ? Icon(Icons.error_outline, size: 14, color: chipInk.withValues(alpha: 0.55))
+                                  ? Icon(Icons.error_outline,
+                                      size: 14, color: chipInk)
                                   : Row(
-                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.baseline,
                                       textBaseline: TextBaseline.alphabetic,
                                       children: [
                                         Flexible(
@@ -384,7 +392,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTextStyles.mono(
-                                              size: 13,
+                                              size: wide ? 20 : 13,
                                               weight: FontWeight.w700,
                                               color: chipInk,
                                               height: 1,
@@ -398,8 +406,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: chipInk.withValues(alpha: 0.65),
-                                              fontSize: 8.5,
+                                              color: chipInk,
+                                              fontSize: wide ? 12 : 8.5,
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),

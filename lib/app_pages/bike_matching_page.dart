@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'package:bikesetupapp/app_services/strava_sync_service.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/database.dart';
@@ -46,7 +47,8 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
 
     if (stravaBikes.isEmpty && syncIfEmpty) {
       if (mounted) setState(() => _syncing = true);
-      await StravaSyncService(db).sync();
+      final sync = StravaSyncService(db);
+      if (!await sync.sync()) _showSyncError(sync.lastError);
       stravaBikes = await db.getStravaBikes().first;
       if (mounted) setState(() => _syncing = false);
     }
@@ -82,9 +84,21 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
   Future<void> _manualSync() async {
     setState(() => _syncing = true);
     final db = ServiceDatabaseService(widget.user.uid);
-    await StravaSyncService(db).sync();
-    await _loadData(syncIfEmpty: false);
-    if (mounted) setState(() => _syncing = false);
+    try {
+      final sync = StravaSyncService(db);
+      if (!await sync.sync()) _showSyncError(sync.lastError);
+      await _loadData(syncIfEmpty: false);
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  void _showSyncError(String? message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message ?? 'Could not sync Strava. Try again.'),
+      duration: const Duration(seconds: 8),
+    ));
   }
 
   Future<void> _saveLinks() async {
@@ -179,7 +193,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
                 Row(
                   children: [
                     Icon(Icons.directions_bike_rounded,
-                        size: 16, color: p.accent),
+                        size: 16, color: p.accentText),
                     const SizedBox(width: 6),
                     Text(
                       'No strava bikes'.toUpperCase(),
@@ -287,7 +301,7 @@ class _BikeMatchCard extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.local_fire_department_rounded,
-                  size: 13, color: p.accent),
+                  size: 13, color: p.accentText),
               const SizedBox(width: 5),
               Text(
                 'Strava bike · mileage'.toUpperCase(),
@@ -447,22 +461,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
-      child: Row(
-        children: [
-          Container(width: 12, height: 1, color: p.borderStrong),
-          const SizedBox(width: 8),
-          Text(
-            text.toUpperCase(),
-            style: AppTextStyles.eyebrow(color: p.inkDim),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Container(height: 1, color: p.border)),
-        ],
-      ),
-    );
+    return AppSectionLabel(text);
   }
 }
 
@@ -478,38 +477,10 @@ class _OutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.surface2,
-      borderRadius: BorderRadius.circular(9),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: p.border),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 13, color: p.ink),
-              const SizedBox(width: 6),
-              Text(
-                label.toUpperCase(),
-                style: AppTextStyles.inter(
-                  size: 11,
-                  weight: FontWeight.w700,
-                  color: p.ink,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return SizedBox(
+        width: double.infinity,
+        child: AppActionButton(
+            label: label, icon: icon, onPressed: onTap, outlined: true));
   }
 }
 
@@ -525,36 +496,7 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.accent,
-      borderRadius: BorderRadius.circular(9),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 13, color: p.accentInk),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label.toUpperCase(),
-                style: AppTextStyles.inter(
-                  size: 11,
-                  weight: FontWeight.w700,
-                  color: p.accentInk,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return AppActionButton(label: label, icon: icon, onPressed: onTap);
   }
 }
 
@@ -565,19 +507,6 @@ class _IconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: p.surface2,
-          border: Border.all(color: p.border),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 18, color: p.ink),
-      ),
-    );
+    return IconButton(onPressed: onTap, icon: Icon(icon));
   }
 }

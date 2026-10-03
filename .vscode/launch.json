@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to running Flutter app",
+      "type": "dart",
+      "request": "attach",
+      "program": "lib/main.dart",
+      "deviceId": "${input:flutterDeviceId}",
+      "vmServiceUri": "${input:flutterVmServiceUri}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "flutterDeviceId",
+      "type": "promptString",
+      "description": "Device ID from flutter devices"
+    },
+    {
+      "id": "flutterVmServiceUri",
+      "type": "promptString",
+      "description": "Dart VM service URL printed by the running app"
+    }
+  ]
+}

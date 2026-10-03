@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'dart:math' as math;
 
 import 'package:bikesetupapp/app_services/theme_data.dart';
@@ -16,13 +18,8 @@ Future<void> showAddFieldSheet(
   required String category,
   required String uSetupID,
 }) {
-  return showModalBottomSheet(
+  return showAdaptiveModal<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: context.palette.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
     builder: (ctx) => _AddFieldSheet(
       user: user,
       uBikeID: uBikeID,
@@ -193,22 +190,16 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: 22, right: 22, top: 12,
+        left: 22,
+        right: 22,
+        top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 28,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(
-                color: p.borderStrong,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const AppSheetHandle(),
           const SizedBox(height: 22),
           Row(
             children: [
@@ -217,8 +208,10 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
               Text(
                 'ADD FIELD',
                 style: AppTextStyles.inter(
-                  size: 11, weight: FontWeight.w800,
-                  color: p.inkMuted, letterSpacing: 1.5,
+                  size: 11,
+                  weight: FontWeight.w800,
+                  color: p.inkMuted,
+                  letterSpacing: 1.5,
                 ),
               ),
             ],
@@ -235,8 +228,8 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                     .map((k) => DropdownMenuItem<String>(
                           value: k,
                           child: Text(k,
-                              style: AppTextStyles.inter(
-                                  size: 13, color: p.ink)),
+                              style:
+                                  AppTextStyles.inter(size: 13, color: p.ink)),
                         ))
                     .toList(),
                 onChanged: (k) {
@@ -260,8 +253,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
               Row(
                 children: [
                   FieldIcon(
-                    asset: _knownMeta?.iconAsset ??
-                        kDefaultFieldMeta.iconAsset,
+                    asset: _knownMeta?.iconAsset ?? kDefaultFieldMeta.iconAsset,
                     size: 16,
                     color: p.inkMuted,
                   ),
@@ -269,8 +261,10 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                   Text(
                     _resolvedKey.toUpperCase(),
                     style: AppTextStyles.inter(
-                      size: 11, weight: FontWeight.w800,
-                      color: p.inkMuted, letterSpacing: 1.5,
+                      size: 11,
+                      weight: FontWeight.w800,
+                      color: p.inkMuted,
+                      letterSpacing: 1.5,
                     ),
                   ),
                 ],
@@ -303,23 +297,8 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: p.accent,
-                  foregroundColor: p.accentInk,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
                 onPressed: _resolvedKey.isEmpty ? null : _onAdd,
-                child: Text(
-                  'ADD',
-                  style: AppTextStyles.inter(
-                    size: 13, weight: FontWeight.w800,
-                    color: p.accentInk, letterSpacing: 1,
-                  ),
-                ),
+                child: Text('Add field'),
               ),
             ),
           ],
@@ -381,7 +360,7 @@ class _UnitChipsRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected ? p.accent : p.surface2,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isSelected ? p.accent : p.border),
+              border: Border.all(color: isSelected ? p.accentText : p.border),
             ),
             child: Text(
               u.label.isEmpty ? u.id : u.label,
@@ -414,8 +393,8 @@ class _FamilyDropdown extends StatelessWidget {
                 value: f,
                 child: Text(
                   _kFamilyLabel[f] ?? f.name,
-                  style: AppTextStyles.inter(
-                      size: 13, color: context.palette.ink),
+                  style:
+                      AppTextStyles.inter(size: 13, color: context.palette.ink),
                 ),
               ))
           .toList(),
@@ -428,35 +407,13 @@ class _TextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final ValueChanged<String>? onChanged;
-  const _TextField({required this.controller, required this.hint, this.onChanged});
+  const _TextField(
+      {required this.controller, required this.hint, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return TextField(
-      controller: controller,
-      style: AppTextStyles.inter(size: 13, color: p.ink),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.inter(size: 13, color: p.inkDim),
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-      ),
-    );
+    return AppTextField(
+        controller: controller, hint: hint, onChanged: onChanged);
   }
 }
 
@@ -481,23 +438,7 @@ class _Dropdown<T> extends StatelessWidget {
       icon: Icon(Icons.keyboard_arrow_down_rounded, color: p.inkMuted),
       dropdownColor: p.surface,
       style: AppTextStyles.inter(size: 13, color: p.ink),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-      ),
+      decoration: InputDecoration(),
       items: items,
       onChanged: onChanged,
     );

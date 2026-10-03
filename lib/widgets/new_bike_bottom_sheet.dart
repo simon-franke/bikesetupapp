@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'package:bikesetupapp/alert_dialogs/dialog_helpers.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/bike_enums/bike_type.dart';
@@ -20,14 +22,8 @@ Future<void> showNewBikeSheet(
   required void Function(String, String, BikeType, String, String)
       onBikeSelected,
 }) {
-  return showModalBottomSheet(
+  return showAdaptiveModal<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: context.palette.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
     builder: (context) => _NewBikeSheetContent(
       user: user,
       mode: mode,
@@ -254,16 +250,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: p.borderStrong,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
+                const AppSheetHandle(),
                 const SizedBox(height: 18),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -271,12 +258,12 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.mode.appBarTitle.toUpperCase(),
+                        widget.mode.appBarTitle,
                         style: AppTextStyles.inter(
-                          size: 10,
+                          size: 12,
                           weight: FontWeight.w700,
                           color: p.inkDim,
-                          letterSpacing: 1.4,
+                          letterSpacing: 0,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -296,7 +283,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                 if (widget.mode == NewBikeMode.newBike) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: _SectionHeader('BIKE TYPE'),
+                    child: _SectionHeader('Bike type'),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -315,8 +302,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                         final selected = _selectedBikeType == bt;
                         return InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () =>
-                              setState(() => _selectedBikeType = bt),
+                          onTap: () => setState(() => _selectedBikeType = bt),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 150),
                             curve: Curves.easeOut,
@@ -325,7 +311,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: selected ? p.accent : p.border,
+                                color: selected ? p.accentText : p.border,
                                 width: selected ? 2 : 1,
                               ),
                               color: selected
@@ -351,8 +337,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                                         weight: selected
                                             ? FontWeight.w700
                                             : FontWeight.w600,
-                                        color:
-                                            selected ? p.ink : p.inkMuted,
+                                        color: selected ? p.ink : p.inkMuted,
                                         height: 1.2,
                                       ),
                                       textAlign: TextAlign.center,
@@ -375,7 +360,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const _SectionHeader('DETAILS'),
+                      const _SectionHeader('Details'),
                       const SizedBox(height: 10),
                       _FieldLabel(widget.mode == NewBikeMode.newBike
                           ? 'Bike name'
@@ -406,7 +391,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                         const SizedBox(height: 20),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: _SectionHeader('SUSPENSION'),
+                          child: _SectionHeader('Suspension'),
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -513,7 +498,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const _SectionHeader('WHEELS'),
+                      const _SectionHeader('Wheels'),
                       const SizedBox(height: 10),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,16 +577,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Text(
-      label,
-      style: AppTextStyles.inter(
-        size: 11,
-        weight: FontWeight.w800,
-        color: p.inkMuted,
-        letterSpacing: 1.5,
-      ),
-    );
+    return AppSectionLabel(label);
   }
 }
 
@@ -611,16 +587,7 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Text(
-      label.toUpperCase(),
-      style: AppTextStyles.inter(
-        size: 10,
-        weight: FontWeight.w700,
-        color: p.inkDim,
-        letterSpacing: 1.2,
-      ),
-    );
+    return AppFieldLabel(label);
   }
 }
 
@@ -647,48 +614,15 @@ class _PolishedTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      cursorColor: p.accent,
-      style: AppTextStyles.inter(size: 14, color: p.ink),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.inter(size: 14, color: p.inkDim),
+    return AppTextField(
+        controller: controller,
+        hint: hint,
         errorText: errorText,
-        errorStyle: AppTextStyles.inter(size: 11, color: p.red),
-        suffixText: suffix,
-        suffixStyle: AppTextStyles.inter(size: 13, color: p.inkMuted),
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.red, width: 1.4),
-        ),
-      ),
-    );
+        suffix: suffix,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted);
   }
 }
 
@@ -711,29 +645,12 @@ class _PolishedDropdown extends StatelessWidget {
       icon: Icon(Icons.keyboard_arrow_down_rounded, color: p.inkMuted),
       dropdownColor: p.surface,
       style: AppTextStyles.inter(size: 14, color: p.ink),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-      ),
+      decoration: InputDecoration(),
       items: items
           .map((s) => DropdownMenuItem(
                 value: s,
-                child: Text(s,
-                    style: AppTextStyles.inter(size: 14, color: p.ink)),
+                child:
+                    Text(s, style: AppTextStyles.inter(size: 14, color: p.ink)),
               ))
           .toList(),
       onChanged: onChanged,
@@ -768,17 +685,6 @@ class _SaveButton extends StatelessWidget {
     final p = context.palette;
     return ElevatedButton(
       onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: p.accent,
-        foregroundColor: p.accentInk,
-        disabledBackgroundColor: p.accent.withValues(alpha: 0.6),
-        disabledForegroundColor: p.accentInk,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
       child: isSaving
           ? SizedBox(
               width: 18,
@@ -788,15 +694,7 @@ class _SaveButton extends StatelessWidget {
                 valueColor: AlwaysStoppedAnimation<Color>(p.accentInk),
               ),
             )
-          : Text(
-              'SAVE',
-              style: AppTextStyles.inter(
-                size: 12,
-                weight: FontWeight.w800,
-                color: p.accentInk,
-                letterSpacing: 0.8,
-              ),
-            ),
+          : Text('Save'),
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/database_service/strava_api_service.dart';
@@ -38,9 +40,8 @@ Future<void> showLogServiceSheet({
     });
 
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
 
     if (isToday) {
       if (gen == fetchGeneration) {
@@ -92,13 +93,8 @@ Future<void> showLogServiceSheet({
     }
   }
 
-  return showModalBottomSheet(
+  return showAdaptiveModal<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: context.palette.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
     builder: (ctx) {
       final p = ctx.palette;
       return StatefulBuilder(
@@ -113,16 +109,7 @@ Future<void> showLogServiceSheet({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: p.borderStrong,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const AppSheetHandle(),
               const SizedBox(height: 18),
               Text(
                 'LOG SERVICE',
@@ -159,26 +146,7 @@ Future<void> showLogServiceSheet({
                 cursorColor: p.accent,
                 style: AppTextStyles.inter(size: 13, color: p.ink),
                 decoration: InputDecoration(
-                  hintText: 'Optional — e.g. new chain, cleaned only',
-                  hintStyle:
-                      AppTextStyles.inter(size: 13, color: p.inkDim),
-                  filled: true,
-                  fillColor: p.surface2,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: p.border),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: p.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: p.accent),
-                  ),
-                ),
+                    hintText: 'Optional — e.g. new chain, cleaned only'),
               ),
               const SizedBox(height: 22),
               Row(
@@ -298,16 +266,7 @@ class _SheetFieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Text(
-      label.toUpperCase(),
-      style: AppTextStyles.inter(
-        size: 9.5,
-        weight: FontWeight.w700,
-        color: p.inkDim,
-        letterSpacing: 1.4,
-      ),
-    );
+    return AppFieldLabel(label);
   }
 }
 
@@ -326,11 +285,10 @@ class _SheetDateField extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: p.border),
+            border: Border.all(color: p.borderStrong),
           ),
           child: Row(
             children: [
@@ -367,30 +325,6 @@ class _SheetPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    final bg = enabled ? p.accent : p.surface2;
-    final fg = enabled ? p.accentInk : p.inkDim;
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(11),
-      child: InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius: BorderRadius.circular(11),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Center(
-            child: Text(
-              label.toUpperCase(),
-              style: AppTextStyles.inter(
-                size: 12,
-                weight: FontWeight.w800,
-                color: fg,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return AppActionButton(label: label, onPressed: enabled ? onPressed : null);
   }
 }

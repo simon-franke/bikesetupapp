@@ -65,7 +65,8 @@ class TodoAlerts {
             descCtrl: descCtrl,
             partsCtrl: partsCtrl,
             trailing: IconButton(
-              icon: Icon(Icons.delete_outline_rounded, color: context.palette.red),
+              icon: Icon(Icons.delete_outline_rounded,
+                  color: context.palette.red),
               onPressed: () {
                 Navigator.of(ctx).pop();
                 try {
@@ -167,25 +168,7 @@ class _MultilineField extends StatelessWidget {
       maxLines: 4,
       cursorColor: p.accent,
       style: AppTextStyles.inter(size: 13, color: p.ink),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.inter(size: 13, color: p.inkDim),
-        filled: true,
-        fillColor: p.surface2,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: p.accent),
-        ),
-      ),
+      decoration: InputDecoration(hintText: hint),
     );
   }
 }

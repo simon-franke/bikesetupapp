@@ -4,7 +4,7 @@ import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/service_component.dart';
 import 'package:bikesetupapp/models/service_entry.dart';
 import 'package:bikesetupapp/widgets/log_service_sheet.dart';
-import 'package:bikesetupapp/widgets/service_status.dart';
+import 'package:bikesetupapp/widgets/service_component_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +14,7 @@ class ComponentDetailPage extends StatefulWidget {
   final User user;
   final ServiceComponent component;
   final double currentMileageKm;
+  final bool mileageAvailable;
 
   /// Strava gear ID linked to this bike, or null if Strava isn't connected /
   /// the bike isn't linked. Used to estimate historical mileage.
@@ -24,6 +25,7 @@ class ComponentDetailPage extends StatefulWidget {
     required this.user,
     required this.component,
     required this.currentMileageKm,
+    this.mileageAvailable = true,
     this.stravaGearId,
   });
 
@@ -34,6 +36,7 @@ class ComponentDetailPage extends StatefulWidget {
 class _ComponentDetailPageState extends State<ComponentDetailPage> {
   late ServiceDatabaseService _db;
   late int _intervalKm;
+  late Stream<List<ServiceEntry>> _entriesStream;
   static final NumberFormat _kmFormat = NumberFormat('#,###');
 
   @override
@@ -41,19 +44,20 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
     super.initState();
     _db = ServiceDatabaseService(widget.user.uid);
     _intervalKm = widget.component.serviceIntervalKm;
+    _entriesStream = _db.getEntriesForComponent(widget.component.id);
   }
 
-  ServiceComponent get _component => _intervalKm == widget.component.serviceIntervalKm
-      ? widget.component
-      : ServiceComponent(
-          id: widget.component.id,
-          bikeId: widget.component.bikeId,
-          type: widget.component.type,
-          name: widget.component.name,
-          serviceIntervalKm: _intervalKm,
-          createdAt: widget.component.createdAt,
-        );
-
+  ServiceComponent get _component =>
+      _intervalKm == widget.component.serviceIntervalKm
+          ? widget.component
+          : ServiceComponent(
+              id: widget.component.id,
+              bikeId: widget.component.bikeId,
+              type: widget.component.type,
+              name: widget.component.name,
+              serviceIntervalKm: _intervalKm,
+              createdAt: widget.component.createdAt,
+            );
 
   Future<void> _editInterval() async {
     final controller = TextEditingController(
@@ -177,8 +181,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
     ServiceEntry entry,
   ) async {
     final p = context.palette;
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final result = await showMenu<String>(
       context: context,
       color: p.surface,
@@ -283,293 +286,65 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
         ],
       ),
       body: StreamBuilder<List<ServiceEntry>>(
-        stream: _db.getEntriesForComponent(widget.component.id),
+        stream: _entriesStream,
         builder: (context, snapshot) {
-          final loading = snapshot.connectionState == ConnectionState.waiting;
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('Could not load service history.'),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _entriesStream =
+                        _db.getEntriesForComponent(widget.component.id);
+                  }),
+                  child: const Text('Try again'),
+                ),
+              ]),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator.adaptive());
+          }
           final entries = snapshot.data ?? const <ServiceEntry>[];
           final latest = entries.isEmpty ? null : entries.first;
-          final annotated = annotateService(
-            component: _component,
-            currentMileageKm: widget.currentMileageKm,
-            latestEntry: latest,
-          );
 
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 6, 14, 6),
-                child: _StatusHero(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: ServiceComponentCard(
                   component: _component,
-                  service: annotated,
-                  hasEntries: entries.isNotEmpty,
+                  currentMileageKm: widget.currentMileageKm,
+                  latestEntry: latest,
+                  mileageAvailable: widget.mileageAvailable,
                 ),
               ),
               _HistoryHeader(count: entries.length),
               Expanded(
-                child: loading
-                    ? const Center(child: CircularProgressIndicator.adaptive())
-                    : entries.isEmpty
-                        ? const _EmptyHistory()
-                        : _HistoryList(
-                            entries: entries,
-                            onDelete: _confirmDeleteEntry,
-                            onContextMenu: _showEntryContextMenu,
-                          ),
+                child: entries.isEmpty
+                    ? const _EmptyHistory()
+                    : _HistoryList(
+                        entries: entries,
+                        onDelete: _confirmDeleteEntry,
+                        onContextMenu: _showEntryContextMenu,
+                      ),
               ),
             ],
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showLogServiceSheet(
           context: context,
           userID: widget.user.uid,
           component: widget.component,
           currentMileageKm: widget.currentMileageKm,
-          stravaGearId: widget.stravaGearId,
+          stravaGearId: widget.mileageAvailable ? widget.stravaGearId : null,
         ),
-        child: const Icon(Icons.add_rounded),
+        icon: const Icon(Icons.check),
+        label: const Text('Log service'),
       ),
     );
-  }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Status hero
-// ──────────────────────────────────────────────────────────────────────────────
-
-class _StatusHero extends StatelessWidget {
-  final ServiceComponent component;
-  final AnnotatedService service;
-  final bool hasEntries;
-
-  const _StatusHero({
-    required this.component,
-    required this.service,
-    required this.hasEntries,
-  });
-
-  String get _badgeLabel {
-    switch (service.status) {
-      case ServiceStatus.red:
-        return 'DUE NOW';
-      case ServiceStatus.amber:
-        return 'SOON';
-      case ServiceStatus.green:
-        return 'HEALTHY';
-      case ServiceStatus.unknown:
-        return 'NO DATA';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final color = service.status.color(p);
-    final formatter = NumberFormat('#,###');
-    final kmSince = formatter.format(service.kmSinceService.round());
-    final interval = formatter.format(component.serviceIntervalKm);
-    final remaining = service.remainingKm.round();
-    final overdueBy = (service.kmSinceService - component.serviceIntervalKm)
-        .clamp(0.0, double.infinity)
-        .round();
-
-    final isRed = service.status == ServiceStatus.red;
-    final hasModel = component.name.trim().isNotEmpty &&
-        component.name.trim() != component.type.label;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surface,
-        border: Border.all(color: isRed ? color : p.border),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: isRed
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.18),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: isRed ? 1.0 : 0.18),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(8),
-                ),
-              ),
-              child: Text(
-                _badgeLabel,
-                style: AppTextStyles.inter(
-                  size: 9,
-                  weight: FontWeight.w800,
-                  color: isRed ? Colors.white : color,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        iconForComponent(component.type.icon),
-                        size: 20,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            component.type.label,
-                            style: AppTextStyles.inter(
-                              size: 15,
-                              weight: FontWeight.w700,
-                              color: p.ink,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (hasModel)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                component.name,
-                                style: AppTextStyles.inter(
-                                  size: 11.5,
-                                  color: p.inkMuted,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Service every $interval km',
-                            style: AppTextStyles.inter(
-                              size: 10.5,
-                              weight: FontWeight.w600,
-                              color: p.inkDim,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 60),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      kmSince,
-                      style: AppTextStyles.mono(
-                        size: 30,
-                        weight: FontWeight.w700,
-                        color: color,
-                        letterSpacing: -1,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '/ $interval km',
-                      style: AppTextStyles.mono(
-                        size: 13,
-                        weight: FontWeight.w600,
-                        color: p.inkDim,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _statusSubline(
-                    status: service.status,
-                    remaining: remaining,
-                    overdueBy: overdueBy,
-                    lastServicedAt: service.lastServicedAt,
-                    hasEntries: hasEntries,
-                  ),
-                  style: AppTextStyles.inter(
-                    size: 11.5,
-                    weight: FontWeight.w600,
-                    color: service.status == ServiceStatus.red
-                        ? color
-                        : p.inkMuted,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    value: service.progress.clamp(0.0, 1.0),
-                    minHeight: 5,
-                    backgroundColor: p.surface2,
-                    valueColor: AlwaysStoppedAnimation(color),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _statusSubline({
-    required ServiceStatus status,
-    required int remaining,
-    required int overdueBy,
-    required DateTime? lastServicedAt,
-    required bool hasEntries,
-  }) {
-    if (status == ServiceStatus.unknown) {
-      if (!hasEntries) return 'No service logged yet';
-      return 'Last entry had no mileage';
-    }
-    final base = remaining > 0
-        ? '${NumberFormat('#,###').format(remaining)} km remaining'
-        : overdueBy > 0
-            ? 'Overdue by ${NumberFormat('#,###').format(overdueBy)} km'
-            : 'Due now';
-    if (lastServicedAt == null) {
-      return '$base · Never serviced';
-    }
-    final days = DateTime.now().difference(lastServicedAt).inDays;
-    final agoText = days <= 0
-        ? 'today'
-        : days == 1
-            ? 'yesterday'
-            : '$days days ago';
-    return '$base · Last serviced $agoText';
   }
 }
 
@@ -589,12 +364,11 @@ class _HistoryHeader extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'SERVICE HISTORY',
+            'Service history',
             style: AppTextStyles.inter(
-              size: 10,
-              weight: FontWeight.w700,
+              size: 14,
+              weight: FontWeight.w600,
               color: p.ink,
-              letterSpacing: 1.6,
             ),
           ),
           const SizedBox(width: 8),
@@ -652,8 +426,8 @@ class _HistoryList extends StatelessWidget {
             color: p.red,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 22),
-            child: const Icon(Icons.delete_outline_rounded,
-                color: Colors.white, size: 20),
+            child: Icon(Icons.delete_outline_rounded,
+                color: AppColors.onColor(p.red), size: 20),
           ),
           child: _HistoryRow(
             entry: entry,
@@ -689,8 +463,7 @@ class _HistoryRow extends StatelessWidget {
         : '— km';
 
     String? deltaText;
-    if (entry.mileageAtServiceKm != null &&
-        prior?.mileageAtServiceKm != null) {
+    if (entry.mileageAtServiceKm != null && prior?.mileageAtServiceKm != null) {
       final delta =
           (entry.mileageAtServiceKm! - prior!.mileageAtServiceKm!).round();
       if (delta > 0) {
@@ -706,8 +479,7 @@ class _HistoryRow extends StatelessWidget {
           onContextMenu(details.globalPosition, entry),
       child: Container(
         color: p.bg,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -808,7 +580,7 @@ class _EmptyHistory extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Tap + to record the first service',
+            'Use Log service to record the first service',
             style: AppTextStyles.inter(size: 11.5, color: p.inkDim),
           ),
         ],
@@ -816,4 +588,3 @@ class _EmptyHistory extends StatelessWidget {
     );
   }
 }
-

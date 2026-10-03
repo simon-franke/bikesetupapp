@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/widgets/adaptive_modal.dart';
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'package:bikesetupapp/app_services/theme_data.dart';
 import 'package:bikesetupapp/database_service/service_database.dart';
 import 'package:bikesetupapp/models/service_component.dart';
@@ -18,13 +20,8 @@ Future<void> showDeferServiceSheet({
   final db = ServiceDatabaseService(userID);
   int extendKm = _kDeferDefaultKm;
 
-  return showModalBottomSheet(
+  return showAdaptiveModal<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: context.palette.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
     builder: (ctx) {
       final p = ctx.palette;
       return Padding(
@@ -38,16 +35,7 @@ Future<void> showDeferServiceSheet({
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: p.borderStrong,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            const AppSheetHandle(),
             const SizedBox(height: 18),
             Center(
               child: Text(
@@ -98,28 +86,8 @@ class _DeferPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.accent,
-      borderRadius: BorderRadius.circular(11),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(11),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Center(
-            child: Text(
-              label.toUpperCase(),
-              style: AppTextStyles.inter(
-                size: 12,
-                weight: FontWeight.w800,
-                color: p.accentInk,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return SizedBox(
+        width: double.infinity,
+        child: AppActionButton(label: label, onPressed: onPressed));
   }
 }

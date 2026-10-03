@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/app_services/responsive_layout.dart';
+import 'package:bikesetupapp/widgets/app_components.dart';
 import 'package:bikesetupapp/alert_dialogs/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/app_pages/bike_matching_page.dart';
 import 'package:bikesetupapp/app_pages/google_sign_in.dart';
@@ -48,9 +50,8 @@ class _SettingsPageState extends State<SettingsPage> {
     int bikeCount = 0;
     if (auth != null && user != null) {
       try {
-        final bikes = await ServiceDatabaseService(user!.uid)
-            .getStravaBikes()
-            .first;
+        final bikes =
+            await ServiceDatabaseService(user!.uid).getStravaBikes().first;
         bikeCount = bikes.length;
       } catch (_) {/* count is best-effort */}
     }
@@ -71,7 +72,14 @@ class _SettingsPageState extends State<SettingsPage> {
         _stravaAthleteId = auth.athleteId;
       });
       if (user != null) {
-        await StravaSyncService(ServiceDatabaseService(user!.uid)).sync();
+        final sync = StravaSyncService(ServiceDatabaseService(user!.uid));
+        if (!await sync.sync() && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text(sync.lastError ?? 'Could not sync Strava. Try again.'),
+            duration: const Duration(seconds: 8),
+          ));
+        }
         _checkStravaConnection();
       }
     }
@@ -104,11 +112,13 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: p.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: _IconBtn(
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: AppContentFrame(
+          maxWidth: 700,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: [
+            _IconBtn(
               icon: Icons.close_rounded,
               onTap: () {
                 if (user == null) {
@@ -119,49 +129,52 @@ class _SettingsPageState extends State<SettingsPage> {
                 }
               },
             ),
-          ),
-        ),
-        leadingWidth: 60,
-        title: Text(
-          'Settings',
-          style: AppTextStyles.inter(
-            size: 18,
-            weight: FontWeight.w700,
-            color: p.ink,
-            letterSpacing: -0.3,
-          ),
+            const SizedBox(width: 12),
+            Text('Settings',
+                style: AppTextStyles.inter(
+                  size: 18,
+                  weight: FontWeight.w700,
+                  color: p.ink,
+                  letterSpacing: -0.3,
+                )),
+          ]),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 60),
-        children: [
-          _SectionLabel('Appearance'),
-          _SettingsCard(child: _ThemeSegmented()),
-          _SectionLabel('Account'),
-          _SettingsCard(child: _AccountRow(
-            user: user,
-            onSignOut: _onSignOut,
-            onSignIn: _onSignIn,
-          )),
-          _SectionLabel('Integrations'),
-          _SettingsCard(
-            child: _StravaCard(
-              isConnected: _isStravaConnected,
-              athleteId: _stravaAthleteId,
-              bikeCount: _stravaBikeCount,
-              onConnect: kIsWeb ? _connectStravaWeb : _connectStrava,
-              onDisconnect: _disconnectStrava,
-              onManageBikes: () {
-                if (user != null) {
-                  Navigator.of(context).push(
-                    AppRoutes.fadeSlide(BikeMatchingPage(user: user!)),
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
+      body: SafeArea(
+          top: false,
+          child: AppContentFrame(
+              maxWidth: 700,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 60),
+                children: [
+                  _SectionLabel('Appearance'),
+                  _SettingsCard(child: _ThemeSegmented()),
+                  _SectionLabel('Account'),
+                  _SettingsCard(
+                      child: _AccountRow(
+                    user: user,
+                    onSignOut: _onSignOut,
+                    onSignIn: _onSignIn,
+                  )),
+                  _SectionLabel('Integrations'),
+                  _SettingsCard(
+                    child: _StravaCard(
+                      isConnected: _isStravaConnected,
+                      athleteId: _stravaAthleteId,
+                      bikeCount: _stravaBikeCount,
+                      onConnect: kIsWeb ? _connectStravaWeb : _connectStrava,
+                      onDisconnect: _disconnectStrava,
+                      onManageBikes: () {
+                        if (user != null) {
+                          Navigator.of(context).push(
+                            AppRoutes.fadeSlide(BikeMatchingPage(user: user!)),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ))),
     );
   }
 
@@ -185,22 +198,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-      child: Row(
-        children: [
-          Container(width: 12, height: 1, color: p.borderStrong),
-          const SizedBox(width: 8),
-          Text(
-            text.toUpperCase(),
-            style: AppTextStyles.eyebrow(color: p.inkDim),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Container(height: 1, color: p.border)),
-        ],
-      ),
-    );
+    return AppSectionLabel(text);
   }
 }
 
@@ -227,78 +225,20 @@ class _SettingsCard extends StatelessWidget {
 class _ThemeSegmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    final mode = Provider.of<AppStateNotifier>(context).themeMode;
-    Future<void> set(ThemeMode m) =>
-        Provider.of<AppStateNotifier>(context, listen: false).updateTheme(m);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'THEME',
-          style: AppTextStyles.inter(
-            size: 11, weight: FontWeight.w700,
-            color: p.inkDim, letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: p.surface2,
-            border: Border.all(color: p.border),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Expanded(child: _ThemeOpt(label: 'Dark', icon: Icons.dark_mode_rounded, active: mode == ThemeMode.dark, onTap: () => set(ThemeMode.dark))),
-              const SizedBox(width: 4),
-              Expanded(child: _ThemeOpt(label: 'System', icon: Icons.brightness_auto_rounded, active: mode == ThemeMode.system, onTap: () => set(ThemeMode.system))),
-              const SizedBox(width: 4),
-              Expanded(child: _ThemeOpt(label: 'Light', icon: Icons.light_mode_rounded, active: mode == ThemeMode.light, onTap: () => set(ThemeMode.light))),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ThemeOpt extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool active;
-  final VoidCallback onTap;
-  const _ThemeOpt({required this.label, required this.icon, required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final bg = active ? p.ink : Colors.transparent;
-    final fg = active ? p.bg : p.inkMuted;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 12, color: fg),
-            const SizedBox(width: 6),
-            Text(
-              label.toUpperCase(),
-              style: AppTextStyles.inter(
-                size: 11, weight: FontWeight.w700,
-                color: fg, letterSpacing: 0.4,
-              ),
-            ),
-          ],
-        ),
+    final notifier = Provider.of<AppStateNotifier>(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const AppFieldLabel('Theme'),
+      const SizedBox(height: 10),
+      SegmentedButton<ThemeMode>(
+        segments: const [
+          ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+          ButtonSegment(value: ThemeMode.system, label: Text('System')),
+          ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+        ],
+        selected: {notifier.themeMode},
+        onSelectionChanged: (modes) => notifier.updateTheme(modes.single),
       ),
-    );
+    ]);
   }
 }
 
@@ -306,14 +246,20 @@ class _AccountRow extends StatelessWidget {
   final User? user;
   final Future<void> Function() onSignOut;
   final VoidCallback onSignIn;
-  const _AccountRow({required this.user, required this.onSignOut, required this.onSignIn});
+  const _AccountRow(
+      {required this.user, required this.onSignOut, required this.onSignIn});
 
   String _initials(User u) {
     final name = u.displayName?.trim() ?? '';
     if (name.isEmpty) return u.isAnonymous ? 'AN' : '?';
     final parts = name.split(' ').where((s) => s.isNotEmpty).toList();
-    if (parts.length == 1) return parts.first.substring(0, parts.first.length.clamp(0, 2)).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+    if (parts.length == 1) {
+      return parts.first
+          .substring(0, parts.first.length.clamp(0, 2))
+          .toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 
   @override
@@ -327,16 +273,14 @@ class _AccountRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 36, height: 36,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [p.accent, const Color(0xFFE0522A)],
-            ),
+            color: p.accent,
             image: (u?.photoURL != null)
-                ? DecorationImage(image: NetworkImage(u!.photoURL!), fit: BoxFit.cover)
+                ? DecorationImage(
+                    image: NetworkImage(u!.photoURL!), fit: BoxFit.cover)
                 : null,
           ),
           alignment: Alignment.center,
@@ -344,7 +288,9 @@ class _AccountRow extends StatelessWidget {
               ? Text(
                   u == null ? '?' : _initials(u),
                   style: AppTextStyles.inter(
-                    size: 13, weight: FontWeight.w800, color: p.accentInk,
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: p.accentInk,
                   ),
                 )
               : null,
@@ -357,7 +303,8 @@ class _AccountRow extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: AppTextStyles.inter(size: 13, weight: FontWeight.w700, color: p.ink),
+                style: AppTextStyles.inter(
+                    size: 13, weight: FontWeight.w700, color: p.ink),
                 overflow: TextOverflow.ellipsis,
               ),
               if (email.isNotEmpty)
@@ -370,7 +317,7 @@ class _AccountRow extends StatelessWidget {
           ),
         ),
         _OutlineChip(
-          label: u == null ? 'SIGN IN' : 'SIGN OUT',
+          label: u == null ? 'Sign in' : 'Sign out',
           onTap: u == null ? onSignIn : () => onSignOut(),
         ),
       ],
@@ -385,28 +332,7 @@ class _OutlineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            border: Border.all(color: p.border),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.inter(
-              size: 10, weight: FontWeight.w700,
-              color: p.inkMuted, letterSpacing: 0.6,
-            ),
-          ),
-        ),
-      ),
-    );
+    return AppActionButton(label: label, onPressed: onTap, outlined: true);
   }
 }
 
@@ -435,12 +361,14 @@ class _StravaCard extends StatelessWidget {
         Row(
           children: [
             Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: p.accent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.directions_bike_rounded, size: 18, color: p.accentInk),
+              child: Icon(Icons.directions_bike_rounded,
+                  size: 18, color: p.accentInk),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -450,7 +378,9 @@ class _StravaCard extends StatelessWidget {
                   Text(
                     'Strava',
                     style: AppTextStyles.inter(
-                      size: 13, weight: FontWeight.w700, color: p.ink,
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: p.ink,
                     ),
                   ),
                   Text(
@@ -465,11 +395,11 @@ class _StravaCard extends StatelessWidget {
               ),
             ),
             Container(
-              width: 7, height: 7,
+              width: 7,
+              height: 7,
               decoration: BoxDecoration(
                 color: isConnected ? p.green : p.inkDim,
                 shape: BoxShape.circle,
-                boxShadow: isConnected ? [BoxShadow(color: p.green, blurRadius: 8)] : null,
               ),
             ),
           ],
@@ -489,7 +419,9 @@ class _StravaCard extends StatelessWidget {
               child: Text(
                 'Disconnect',
                 style: AppTextStyles.inter(
-                  size: 11, weight: FontWeight.w700, color: p.red,
+                  size: 11,
+                  weight: FontWeight.w700,
+                  color: p.red,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -497,32 +429,11 @@ class _StravaCard extends StatelessWidget {
           ),
         ] else
           SizedBox(
-            width: double.infinity,
-            child: Material(
-              color: p.accent,
-              borderRadius: BorderRadius.circular(9),
-              child: InkWell(
-                onTap: onConnect,
-                borderRadius: BorderRadius.circular(9),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.directions_bike_rounded, size: 16, color: p.accentInk),
-                      const SizedBox(width: 8),
-                      Text(
-                        'CONNECT STRAVA',
-                        style: AppTextStyles.inter(
-                          size: 12, weight: FontWeight.w800,
-                          color: p.accentInk, letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            width: ResponsiveLayout.isWide(context) ? null : double.infinity,
+            child: AppActionButton(
+                label: 'Connect Strava',
+                icon: Icons.directions_bike_rounded,
+                onPressed: onConnect),
           ),
       ],
     );
@@ -533,40 +444,15 @@ class _OutlineButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _OutlineButton({required this.icon, required this.label, required this.onTap});
+  const _OutlineButton(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.surface2,
-      borderRadius: BorderRadius.circular(9),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            border: Border.all(color: p.border),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 13, color: p.ink),
-              const SizedBox(width: 6),
-              Text(
-                label.toUpperCase(),
-                style: AppTextStyles.inter(
-                  size: 11, weight: FontWeight.w700,
-                  color: p.ink, letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return SizedBox(
+        width: ResponsiveLayout.isWide(context) ? null : double.infinity,
+        child: AppActionButton(
+            label: label, icon: icon, onPressed: onTap, outlined: true));
   }
 }
 
@@ -577,19 +463,6 @@ class _IconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: p.surface2,
-          border: Border.all(color: p.border),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 18, color: p.ink),
-      ),
-    );
+    return IconButton(onPressed: onTap, icon: Icon(icon));
   }
 }
