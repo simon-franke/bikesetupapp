@@ -1,8 +1,8 @@
-import 'package:bikesetupapp/widgets/control_panel_grid.dart';
-import 'package:bikesetupapp/widgets/field_meta.dart';
-import 'package:bikesetupapp/app_pages/google_sign_in.dart';
-import 'package:bikesetupapp/app_services/responsive_layout.dart';
-import 'package:bikesetupapp/app_services/theme_data.dart';
+import 'package:bikesetupapp/features/setups/ui/control_panel_grid.dart';
+import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
+import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
+import 'package:bikesetupapp/common/layout/responsive_layout.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

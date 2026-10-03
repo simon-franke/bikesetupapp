@@ -3,8 +3,8 @@ library;
 
 import 'dart:convert';
 
-import 'package:bikesetupapp/app_services/strava_token_storage.dart';
-import 'package:bikesetupapp/strava_web_callback.dart';
+import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.dart';
+import 'package:bikesetupapp/features/strava/platform/strava_web_callback.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:web/web.dart' as web;

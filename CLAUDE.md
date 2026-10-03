@@ -96,7 +96,6 @@ UserBikeSetup/{userID}
     bike_name, bike_type, defaultSetup
     SetupList/{uSetupID}        ← setup metadata + setup_information fields
     {uSetupID}/{category}       ← settings key-value pairs (e.g. Fork, Shock, RearTire, FrontTire, GeneralSettings)
-  ToDoList/{uBikeID}/MyList/{docID}  ← todo items
 ```
 
 `DatabaseService` (`lib/database_service/database.dart`) is the sole point of contact with Firestore — instantiated with `DatabaseService(userID)`.
@@ -106,8 +105,8 @@ UserBikeSetup/{userID}
 | Directory | Purpose |
 |---|---|
 | `lib/database_service/` | `DatabaseService` (Firestore CRUD) and `AuthService` (Google/anonymous sign-in) |
-| `lib/app_pages/` | Full-screen pages: `home_page`, `google_sign_in`, `drawer`, `settings_page`, `bike_selector_page`, `new_bike_page`, `todolist_page` |
-| `lib/alert_dialogs/` | All `showDialog` calls grouped by domain: auth, bike, settings, todo |
+| `lib/app_pages/` | Full-screen pages: `home_page`, `google_sign_in`, `drawer`, `settings_page`, `bike_selector_page`, `new_bike_page` |
+| `lib/alert_dialogs/` | All `showDialog` calls grouped by domain: auth, bike, settings |
 | `lib/widgets/` | Reusable widgets used within pages and dialogs |
 | `lib/app_services/` | `AppStateNotifier` (theme), `AppTheme` (light/dark `ThemeData`), `ResponsiveLayout`, `AppRoutes` |
 | `lib/bike_enums/` | `BikeType` (DH, Enduro, Dirt, XC, Singlespeed, Road), `Category` (RearTire, FrontTire, Shock, Fork, GeneralSettings), `NewBikeMode` |

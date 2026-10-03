@@ -1,11 +1,11 @@
-import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/bike_enums/component_type.dart';
-import 'package:bikesetupapp/models/service_component.dart';
-import 'package:bikesetupapp/models/service_entry.dart';
-import 'package:bikesetupapp/widgets/mileage_banner.dart';
-import 'package:bikesetupapp/widgets/service_component_card.dart';
-import 'package:bikesetupapp/widgets/service_components_list.dart';
-import 'package:bikesetupapp/widgets/service_status.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
+import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
+import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
+import 'package:bikesetupapp/features/strava/ui/mileage_banner.dart';
+import 'package:bikesetupapp/features/maintenance/ui/service_component_card.dart';
+import 'package:bikesetupapp/features/maintenance/ui/service_components_list.dart';
+import 'package:bikesetupapp/features/maintenance/ui/service_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

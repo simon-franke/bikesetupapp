@@ -1,5 +1,5 @@
-import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/widgets/view_toggle.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/features/workspace/ui/view_toggle.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' show SemanticsAction, Tristate;
 import 'package:flutter_test/flutter_test.dart';

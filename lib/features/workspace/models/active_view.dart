@@ -1,0 +1,1 @@
+enum ActiveView { setup, services }

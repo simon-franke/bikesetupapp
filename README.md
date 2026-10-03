@@ -30,3 +30,7 @@ flutter test
 GitHub Actions runs both checks on pull requests. CI uses placeholder configuration and does not need Firebase or Strava credentials.
 
 See [AGENTS.md](AGENTS.md) for architecture, development conventions, and deployment details.
+
+## Code structure
+
+Feature code lives in `lib/features/`, shared UI and infrastructure in `lib/common/`, and dependency wiring, startup and navigation in `lib/app/`. Features use a UI → controller → repository flow. See [the architecture guide](docs/architecture.md) for responsibilities, injection and tests.

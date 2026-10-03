@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/widgets/control_panel_grid.dart';
-import 'package:bikesetupapp/widgets/inline_setting_editor.dart';
-import 'package:bikesetupapp/widgets/setting_value_editor.dart';
-import 'package:bikesetupapp/widgets/unit_system.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/features/setups/ui/control_panel_grid.dart';
+import 'package:bikesetupapp/features/setups/ui/inline_setting_editor.dart';
+import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
+import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
