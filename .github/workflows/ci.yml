@@ -1,0 +1,49 @@
+name: Flutter CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Flutter ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [lint, tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: stable
+          cache: true
+
+      - name: Prepare test configuration
+        run: |
+          cp lib/firebase_options.dart.example lib/firebase_options.dart
+          printf 'STRAVA_CLIENT_ID=ci-placeholder\n' > .env
+
+      - name: Get dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Lint
+        if: matrix.check == 'lint'
+        run: flutter analyze --fatal-infos
+
+      - name: Tests
+        if: matrix.check == 'tests'
+        run: flutter test
