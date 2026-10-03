@@ -1,8 +1,8 @@
 import 'dart:ui' show Tristate;
 
-import 'package:bikesetupapp/app_services/theme_data.dart';
-import 'package:bikesetupapp/widgets/bike_chooser_sheet.dart';
-import 'package:bikesetupapp/widgets/setup_choice_tile.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/features/bikes/ui/bike_chooser_sheet.dart';
+import 'package:bikesetupapp/features/bikes/ui/setup_choice_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
