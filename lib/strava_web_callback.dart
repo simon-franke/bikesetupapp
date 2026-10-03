@@ -6,7 +6,6 @@
 // strava_web_callback_stub.dart is used on all non-web platforms.
 
 import 'dart:convert';
-// Keep the existing web bridge until it is migrated to package:web.
 // ignore: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:html' as html;
 
