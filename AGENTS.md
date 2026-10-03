@@ -4,6 +4,13 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## CI/CD
 
+`.github/workflows/ci.yml` runs separate **Flutter lint** and **Flutter tests**
+checks for pull requests targeting `main`, pushes to `main`, and manual runs.
+Both use Flutter 3.41.4, enforce `pubspec.lock`, and use placeholder Firebase
+options and a placeholder `.env` so checks do not need repository secrets.
+Lint runs `flutter analyze --fatal-infos`; tests run `flutter test` and the
+Strava web callback tests in Chrome.
+
 The app deploys to **GitHub Pages** (`https://simon-franke.github.io/bikesetupapp/`) via
 `.github/workflows/deploy.yml` on every push to `main`. The workflow has three jobs:
 
