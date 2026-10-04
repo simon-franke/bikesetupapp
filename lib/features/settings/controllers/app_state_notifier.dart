@@ -1,18 +1,32 @@
+import 'package:bikesetupapp/common/controllers/operation_controller.dart';
+import 'package:bikesetupapp/common/controllers/write_queue.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:flutter/material.dart';
 import '../repositories/theme_preferences_repository.dart';
 
-class AppStateNotifier extends ChangeNotifier {
-  late ThemeMode themeMode;
+class AppStateNotifier extends OperationController {
+  ThemeMode _themeMode;
+  ThemeMode get themeMode => _themeMode;
 
-  AppStateNotifier(this.themeMode, {ThemePreferencesRepository? preferences})
-      : _preferences = preferences;
+  AppStateNotifier(ThemeMode themeMode,
+      {ThemePreferencesRepository? preferences})
+      : _themeMode = themeMode,
+        _preferences = preferences;
   final ThemePreferencesRepository? _preferences;
 
-  Future<void> updateTheme(ThemeMode mode) async {
-    await _preferences?.saveTheme(mode.name);
-    themeMode = mode;
-    notifyListeners();
-  }
+  final WriteQueue _writes = WriteQueue();
+  Future<CommandResult<void>> updateTheme(ThemeMode mode) => command(() async {
+        final generation = beginRequest('theme');
+        await _writes.enqueue(() async {
+          if (isDisposed) throw const CommandAborted();
+          await _preferences?.saveTheme(mode.name);
+        });
+        if (!isCurrentRequest('theme', generation)) {
+          throw const CommandAborted();
+        }
+        _themeMode = mode;
+        emit();
+      });
 
   static ThemeMode fromSaved(String? saved) {
     if (saved == null) return ThemeMode.dark;

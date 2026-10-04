@@ -1,6 +1,6 @@
-import 'package:bikesetupapp/features/bikes/controllers/bikes_controller.dart';
+import 'package:bikesetupapp/features/bikes/repositories/bikes_repository.dart';
 import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
-import 'package:bikesetupapp/features/setups/controllers/setups_controller.dart';
+import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart';
 
 class StartupSelection {
   const StartupSelection(
@@ -19,8 +19,8 @@ class StartupSelection {
 /// Resolves a complete default selection without constructing UI or routes.
 class StartupController {
   StartupController(this._bikes, this._setups);
-  final BikesController _bikes;
-  final SetupsController _setups;
+  final BikesRepository _bikes;
+  final SetupsRepository _setups;
 
   Future<StartupSelection?> loadSelection() async {
     final bikeId = await _bikes.getDefaultBike();

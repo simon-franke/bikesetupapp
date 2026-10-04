@@ -55,7 +55,7 @@ jobs:
           path: build/web
 
   deploy:
-    needs: build
+    needs: [build, deploy-functions]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

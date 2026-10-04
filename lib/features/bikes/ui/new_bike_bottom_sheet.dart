@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/failure_message.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -105,7 +107,7 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
     final data = await AppDependencies.of(context)
         .forUser(widget.user.uid)
         .setups
-        .getSetupInformationAsMap(widget.uBikeID, widget.uSetupID);
+        .getSetupInformation(widget.uBikeID, widget.uSetupID);
     if (!mounted) return;
     setState(() {
       _frontTravelController.text =
@@ -158,78 +160,88 @@ class _NewBikeSheetContentState extends State<_NewBikeSheetContent>
   }
 
   Future<void> _save() async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() => _nameError = widget.mode == NewBikeMode.newBike
-          ? 'Please enter a bike name'
-          : 'Please enter a setup name');
-      return;
-    }
-    setState(() {
-      _nameError = null;
-      _isSaving = true;
-    });
+    if (_isSaving) return;
+    try {
+      final name = _nameController.text.trim();
+      if (name.isEmpty) {
+        setState(() => _nameError = widget.mode == NewBikeMode.newBike
+            ? 'Please enter a bike name'
+            : 'Please enter a setup name');
+        return;
+      }
+      setState(() {
+        _nameError = null;
+        _isSaving = true;
+      });
 
-    final setupInformation = {
-      'fork': _forkType,
-      'shock': _shockType,
-      'front_travel': _frontTravelController.text,
-      'rear_travel': _rearTravelController.text,
-      'front_wheel_size': _frontWheelSizeController.text,
-      'rear_wheel_size': _rearWheelSizeController.text,
-    };
+      final setupInformation = {
+        'fork': _forkType,
+        'shock': _shockType,
+        'front_travel': _frontTravelController.text,
+        'rear_travel': _rearTravelController.text,
+        'front_wheel_size': _frontWheelSizeController.text,
+        'rear_wheel_size': _rearWheelSizeController.text,
+      };
 
-    final String bikeName;
-    final String setupName;
-    final controllers = AppDependencies.of(context).forUser(widget.user.uid);
-    final String uBikeID;
-    final String uSetupID;
-    final BikeType bikeType = _activeBikeType;
+      final String bikeName;
+      final String setupName;
+      final controllers = AppDependencies.of(context).forUser(widget.user.uid);
+      final String uBikeID;
+      final String uSetupID;
+      final BikeType bikeType = _activeBikeType;
 
-    if (widget.mode == NewBikeMode.newBike) {
-      setupName = 'Default';
-      bikeName = name;
-      try {
+      if (widget.mode == NewBikeMode.newBike) {
+        setupName = 'Default';
+        bikeName = name;
         uBikeID = await controllers.bikes
-            .createBike(name, setupInformation, bikeType.bikeType);
-      } catch (e) {
-        setState(() => _isSaving = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Failed to create bike. Please try again.')),
-          );
+            .createBike(name, setupInformation, bikeType.bikeType)
+            .orThrow();
+        uSetupID = await controllers.setups.getDefaultSetup(uBikeID);
+        if (uSetupID.isEmpty) {
+          if (mounted) setState(() => _isSaving = false);
+          return;
         }
-        return;
+      } else if (widget.mode == NewBikeMode.newSetup) {
+        setupName = name;
+        bikeName = widget.bikeName;
+        uBikeID = widget.uBikeID;
+        uSetupID = const Uuid().v4();
+        await controllers.setups
+            .createSetup(uBikeID, uSetupID, name, setupInformation)
+            .orThrow();
+      } else {
+        // editSetup
+        setupName = name;
+        bikeName = widget.bikeName;
+        uBikeID = widget.uBikeID;
+        uSetupID = widget.uSetupID;
+        await AppDependencies.of(context)
+            .forUser(widget.user.uid)
+            .setups
+            .createSetup(uBikeID, uSetupID, name, setupInformation)
+            .orThrow();
       }
-      uSetupID = await controllers.setups.getDefaultSetup(uBikeID);
-      if (uSetupID.isEmpty) {
-        setState(() => _isSaving = false);
-        return;
-      }
-    } else if (widget.mode == NewBikeMode.newSetup) {
-      setupName = name;
-      bikeName = widget.bikeName;
-      uBikeID = widget.uBikeID;
-      uSetupID = const Uuid().v4();
-      await controllers.setups
-          .createSetup(uBikeID, uSetupID, name, setupInformation);
-    } else {
-      // editSetup
-      setupName = name;
-      bikeName = widget.bikeName;
-      uBikeID = widget.uBikeID;
-      uSetupID = widget.uSetupID;
-      await AppDependencies.of(context)
-          .forUser(widget.user.uid)
-          .setups
-          .createSetup(uBikeID, uSetupID, name, setupInformation);
-    }
 
-    if (mounted) {
-      final cb = widget.onBikeSelected;
-      Navigator.of(context).pop();
-      cb(bikeName, uBikeID, bikeType, setupName, uSetupID);
+      if (mounted) {
+        final cb = widget.onBikeSelected;
+        Navigator.of(context).pop();
+        cb(bikeName, uBikeID, bikeType, setupName, uSetupID);
+      }
+    } on CommandAborted {
+      // Navigation or authentication superseded this request.
+    } catch (error, stack) {
+      if (error is! AppFailure) {
+        FlutterError.reportError(
+            FlutterErrorDetails(exception: error, stack: stack));
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(error is AppFailure
+                ? failureMessage(error)
+                : 'Could not save. Try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 

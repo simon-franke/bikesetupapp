@@ -103,8 +103,13 @@ class _InlineSettingEditorState extends State<InlineSettingEditor> {
       ? _text.text.trim()
       : SettingValue.numeric(_number, _family, _unit).format();
 
-  void _persist() {
-    _save.save(_stored, widget.onSave);
+  Future<void> _persist() async {
+    try {
+      await _save.save(_stored, widget.onSave);
+    } catch (error, stack) {
+      FlutterError.reportError(
+          FlutterErrorDetails(exception: error, stack: stack));
+    }
   }
 
   double get _step => math.pow(10, -_unit.decimals).toDouble();
@@ -161,7 +166,7 @@ class _InlineSettingEditorState extends State<InlineSettingEditor> {
                       _number = convertValue(_number, _unit, unit);
                       _unit = unit;
                       _rulerVersion++;
-                      _save.dirty = true;
+                      _save.markDirty();
                     });
                     _persist();
                   }),
@@ -198,7 +203,7 @@ class _InlineSettingEditorState extends State<InlineSettingEditor> {
                 controller: _text,
                 hint: 'Enter value',
                 onChanged: (_) => setState(() {
-                      _save.dirty = true;
+                      _save.markDirty();
                     }),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _persist()),
@@ -249,7 +254,7 @@ class _InlineSettingEditorState extends State<InlineSettingEditor> {
                       }),
                   onChanged: (value) => setState(() {
                         _number = value;
-                        _save.dirty = true;
+                        _save.markDirty();
                       })),
             ),
           ],

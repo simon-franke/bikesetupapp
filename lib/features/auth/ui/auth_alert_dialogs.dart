@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthAlerts {
-  static void handleAuthentication(
+  static Future<void> handleAuthentication(
       UserCredential userCredential, BuildContext context) async {
     User? user = AppDependencies.of(context).auth.currentUser;
 

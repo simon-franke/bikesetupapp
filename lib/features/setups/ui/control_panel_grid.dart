@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import '../controllers/setting_save_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
@@ -194,18 +196,26 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     });
   }
 
-  void _onSave() {
-    Navigator.of(context).pop();
+  bool _saving = false;
+  Future<void> _onSave() async {
+    if (_saving) return;
+    setState(() => _saving = true);
     final stored = widget.isFreeText
         ? _textController.text.trim()
         : SettingValue.numeric(_value, widget.family, _unit).format();
-    AppDependencies.of(context).forUser(widget.user.uid).setups.setSetting(
-          widget.settingKey,
-          stored,
-          widget.uBikeID,
-          widget.category,
-          widget.uSetupID,
-        );
+    final saved = await presentCommand(
+        context,
+        () => AppDependencies.of(context)
+            .forUser(widget.user.uid)
+            .setups
+            .setSetting(widget.settingKey, stored, widget.uBikeID,
+                widget.category, widget.uSetupID));
+    if (!mounted) return;
+    if (saved) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _saving = false);
+    }
   }
 
   Future<void> _onDelete() async {
@@ -227,21 +237,19 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
         ],
       ),
     );
-    if (confirmed == true && mounted) {
-      Navigator.of(context).pop();
+    if (confirmed == true && mounted && !_saving) {
+      setState(() => _saving = true);
       final db = AppDependencies.of(context).forUser(widget.user.uid);
-      db.setups.deleteSetting(
-        widget.settingKey,
-        widget.uBikeID,
-        widget.category,
-        widget.uSetupID,
-      );
-      db.setups.deleteSettingMeta(
-        widget.settingKey,
-        widget.uBikeID,
-        widget.category,
-        widget.uSetupID,
-      );
+      final deleted = await presentCommand(
+          context,
+          () => db.setups.deleteField(widget.settingKey, widget.uBikeID,
+              widget.category, widget.uSetupID));
+      if (!mounted) return;
+      if (deleted) {
+        Navigator.of(context).pop();
+      } else {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -291,14 +299,14 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _onSave,
+              onPressed: _saving ? null : _onSave,
               child: Text('Save'),
             ),
           ),
           if (!widget.isDefault) ...[
             const SizedBox(height: 6),
             TextButton(
-              onPressed: _onDelete,
+              onPressed: _saving ? null : _onDelete,
               child: Text(
                 'Delete field',
                 style: AppTextStyles.inter(
@@ -513,7 +521,8 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
             await AppDependencies.of(context)
                 .forUser(userId)
                 .setups
-                .setSetting(key, value, bikeId, category, setupId);
+                .setSetting(key, value, bikeId, category, setupId)
+                .orThrow();
           } catch (_) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(

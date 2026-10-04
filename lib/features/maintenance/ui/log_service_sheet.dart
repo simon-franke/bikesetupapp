@@ -2,171 +2,166 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/features/strava/models/strava_exception.dart';
-import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
-import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
+import 'package:bikesetupapp/common/ui/failure_message.dart';
+import '../controllers/service_editor_controller.dart';
+import '../models/service_component.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 
 final NumberFormat _kmFormat = NumberFormat('#,###');
 
-Future<void> showLogServiceSheet({
-  required BuildContext context,
-  required String userID,
-  required ServiceComponent component,
-  required double currentMileageKm,
-  String? stravaGearId,
-}) {
-  final db = AppDependencies.of(context).forUser(userID);
-  final noteController = TextEditingController();
-  DateTime selectedDate = DateTime.now();
+Future<void> showLogServiceSheet(
+        {required BuildContext context,
+        required String userID,
+        required ServiceComponent component,
+        required double currentMileageKm,
+        String? stravaGearId}) =>
+    showAdaptiveModal<void>(
+        context: context,
+        builder: (_) => _LogServiceForm(
+            userId: userID,
+            component: component,
+            mileageKm: currentMileageKm,
+            gearId: stravaGearId));
 
-  double? fetchedMileage = stravaGearId != null ? currentMileageKm : null;
-  bool fetchingMileage = false;
-  String? mileageError; // 'scope' | 'error' | null
-  int fetchGeneration = 0;
+class _LogServiceForm extends StatefulWidget {
+  const _LogServiceForm(
+      {required this.userId,
+      required this.component,
+      required this.mileageKm,
+      this.gearId});
+  final String userId;
+  final ServiceComponent component;
+  final double mileageKm;
+  final String? gearId;
+  @override
+  State<_LogServiceForm> createState() => _LogServiceFormState();
+}
 
-  Future<void> fetchMileage(DateTime date, StateSetter setSheetState) async {
-    if (stravaGearId == null) return;
+class _LogServiceFormState extends State<_LogServiceForm> {
+  late final ServiceEditorController _controller;
+  DateTime _selectedDate = DateTime.now();
+  String _note = '';
+  @override
+  void initState() {
+    super.initState();
+    final dependencies = AppDependencies.of(context);
+    _controller = ServiceEditorController(
+        dependencies.forUser(widget.userId).maintenance,
+        dependencies.stravaConnection,
+        component: widget.component,
+        currentMileageKm: widget.mileageKm,
+        gearId: widget.gearId)
+      ..addListener(_changed);
+  }
 
-    final gen = ++fetchGeneration;
-    setSheetState(() {
-      fetchingMileage = true;
-      fetchedMileage = null;
-      mileageError = null;
-    });
+  void _changed() {
+    if (mounted) setState(() {});
+  }
 
-    final now = DateTime.now();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-    if (isToday) {
-      if (gen == fetchGeneration) {
-        setSheetState(() {
-          fetchingMileage = false;
-          fetchedMileage = currentMileageKm;
-        });
-      }
-      return;
-    }
-
+  Future<void> _pickDate() async {
+    if (_controller.saving) return;
+    final picked = await showDatePicker(
+        context: context,
+        initialDate: _selectedDate,
+        firstDate: DateTime(2000),
+        lastDate: DateTime.now());
+    if (!mounted || picked == null || _controller.saving) return;
+    setState(() => _selectedDate = picked);
     try {
-      final km =
-          await AppDependencies.of(context).stravaConnection.mileageAtDate(
-                gearId: stravaGearId,
-                date: date,
-                currentTotalKm: currentMileageKm,
-              );
-      if (gen != fetchGeneration) return;
-
-      if (km == null) {
-        setSheetState(() {
-          fetchingMileage = false;
-          mileageError = 'error';
-        });
-        return;
-      }
-
-      setSheetState(() {
-        fetchingMileage = false;
-        fetchedMileage = km;
-      });
-    } on StravaInsufficientScopeException {
-      if (gen != fetchGeneration) return;
-      setSheetState(() {
-        fetchingMileage = false;
-        mileageError = 'scope';
-      });
+      await _controller.fetchMileage(picked);
+    } catch (error, stack) {
+      FlutterError.reportError(
+          FlutterErrorDetails(exception: error, stack: stack));
     }
   }
 
-  return showAdaptiveModal<void>(
-    context: context,
-    builder: (ctx) {
-      final p = ctx.palette;
-      return StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
+  Future<void> _save() async {
+    try {
+      final result =
+          await _controller.logService(date: _selectedDate, note: _note);
+      if (!mounted || !result.isSuccess) return;
+      HapticFeedback.lightImpact();
+      Navigator.of(context).pop();
+    } catch (error, stack) {
+      FlutterError.reportError(
+          FlutterErrorDetails(exception: error, stack: stack));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final mileageError = _controller.mileageError;
+    final scopeError = mileageError is AppFailure &&
+        mileageError.code == FailureCode.insufficientActivityScope;
+    final saveError = _controller.saveError;
+    return Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
+        child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const AppSheetHandle(),
               const SizedBox(height: 18),
-              Text(
-                'LOG SERVICE',
-                style: AppTextStyles.eyebrow(color: p.inkDim),
-              ),
+              Text('LOG SERVICE',
+                  style: AppTextStyles.eyebrow(color: p.inkDim)),
               const SizedBox(height: 14),
-              _SheetFieldLabel(label: 'Date'),
+              const AppFieldLabel('Date'),
               const SizedBox(height: 6),
-              _SheetDateField(
-                date: selectedDate,
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: ctx,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) {
-                    setSheetState(() => selectedDate = picked);
-                    fetchMileage(picked, setSheetState);
-                  }
-                },
-              ),
-              if (stravaGearId != null) ...[
+              _SheetDateField(date: _selectedDate, onTap: _pickDate),
+              if (widget.gearId != null) ...[
                 const SizedBox(height: 10),
                 _buildMileageStatus(
-                    ctx, fetchingMileage, fetchedMileage, mileageError),
+                    context,
+                    _controller.fetchingMileage,
+                    _controller.mileageKm,
+                    mileageError == null
+                        ? null
+                        : scopeError
+                            ? 'scope'
+                            : 'error'),
               ],
               const SizedBox(height: 14),
-              _SheetFieldLabel(label: 'Note'),
+              const AppFieldLabel('Note'),
               const SizedBox(height: 6),
-              TextField(
-                controller: noteController,
-                cursorColor: p.accent,
-                style: AppTextStyles.inter(size: 13, color: p.ink),
-                decoration: InputDecoration(
-                    hintText: 'Optional — e.g. new chain, cleaned only'),
-              ),
+              TextFormField(
+                  initialValue: _note,
+                  onChanged: (value) => _note = value,
+                  enabled: !_controller.saving,
+                  cursorColor: p.accent,
+                  style: AppTextStyles.inter(size: 13, color: p.ink),
+                  decoration: const InputDecoration(
+                      hintText: 'Optional — e.g. new chain, cleaned only')),
+              if (saveError != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                    saveError is AppFailure &&
+                            saveError.code != FailureCode.saveFailed
+                        ? failureMessage(saveError)
+                        : 'Could not save service. Try again.',
+                    style: TextStyle(color: p.red)),
+              ],
               const SizedBox(height: 22),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SheetPrimaryButton(
-                      label: 'Log service',
-                      enabled: !fetchingMileage,
-                      onPressed: () {
-                        final note = noteController.text.trim();
-                        final entry = ServiceEntry(
-                          id: const Uuid().v4(),
-                          componentId: component.id,
-                          mileageAtServiceKm: fetchedMileage,
-                          date: selectedDate.toUtc(),
-                          note: note.isNotEmpty ? note : null,
-                        );
-                        db.maintenance.addServiceEntry(component.id, entry);
-                        HapticFeedback.lightImpact();
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
+              SizedBox(
+                  width: double.infinity,
+                  child: AppActionButton(
+                      label: _controller.saving ? 'Saving…' : 'Log service',
+                      onPressed:
+                          _controller.saving || _controller.fetchingMileage
+                              ? null
+                              : _save)),
+            ]));
+  }
 }
 
 Widget _buildMileageStatus(
@@ -249,16 +244,6 @@ Widget _buildMileageStatus(
   return const SizedBox.shrink();
 }
 
-class _SheetFieldLabel extends StatelessWidget {
-  final String label;
-  const _SheetFieldLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppFieldLabel(label);
-  }
-}
-
 class _SheetDateField extends StatelessWidget {
   final DateTime date;
   final VoidCallback onTap;
@@ -299,21 +284,5 @@ class _SheetDateField extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _SheetPrimaryButton extends StatelessWidget {
-  final String label;
-  final bool enabled;
-  final VoidCallback onPressed;
-  const _SheetPrimaryButton({
-    required this.label,
-    required this.enabled,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppActionButton(label: label, onPressed: enabled ? onPressed : null);
   }
 }
