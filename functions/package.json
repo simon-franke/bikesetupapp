@@ -1,11 +1,14 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for Firebase — Strava OAuth proxy",
-  "engines": { "node": "22" },
+  "description": "Cloud Functions for Firebase \u2014 Strava OAuth proxy",
+  "engines": {
+    "node": "22"
+  },
   "main": "index.js",
   "scripts": {
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "test": "node --test *.test.js"
   },
   "dependencies": {
     "firebase-functions": "^7.2.0"

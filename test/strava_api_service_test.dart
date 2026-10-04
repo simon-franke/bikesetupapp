@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/failure_message.dart';
 import 'dart:convert';
 import 'package:bikesetupapp/features/strava/repositories/strava_api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,7 +27,7 @@ void main() {
         api.fetchAthleteBikes('test-token'),
         throwsA(
           isA<StravaApiException>().having(
-              (e) => e.message,
+              (e) => failureMessage(e),
               'message',
               allOf(
                 contains('subscription'),
@@ -50,8 +51,8 @@ void main() {
       () async {
     await expectLater(
         service(200, {'id': 123}).fetchAthleteBikes('test-token'),
-        throwsA(isA<StravaApiException>()
-            .having((e) => e.message, 'message', contains('full profile'))));
+        throwsA(isA<StravaApiException>().having(
+            (e) => failureMessage(e), 'message', contains('full profile'))));
     expect(await service(200, {'bikes': []}).fetchAthleteBikes('test-token'),
         isEmpty);
   });
@@ -64,8 +65,8 @@ void main() {
     test('HTTP ${entry.key} does not masquerade as no bikes', () async {
       await expectLater(
           service(entry.key, {}).fetchAthleteBikes('test-token'),
-          throwsA(isA<StravaApiException>()
-              .having((e) => e.message, 'message', contains(entry.value))));
+          throwsA(isA<StravaApiException>().having(
+              (e) => failureMessage(e), 'message', contains(entry.value))));
     });
   }
 
@@ -79,8 +80,8 @@ void main() {
         throwsA(
           isA<StravaApiException>()
               .having((e) => e.statusCode, 'status', 503)
-              .having(
-                  (e) => e.message, 'safe message', isNot(contains('private'))),
+              .having((e) => failureMessage(e), 'safe message',
+                  isNot(contains('private'))),
         ));
   });
 }

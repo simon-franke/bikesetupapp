@@ -1,50 +1,51 @@
-import 'package:flutter/foundation.dart';
+import 'package:bikesetupapp/common/controllers/write_queue.dart';
+import 'package:bikesetupapp/common/controllers/operation_controller.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 
 /// Serializes writes for one field. A failed write does not block retries.
-class SettingWriteQueue {
-  Future<void> _tail = Future<void>.value();
-  Future<void> enqueue(Future<void> Function() write) {
-    final result = _tail.then((_) => write());
-    _tail = result.then((_) {}, onError: (Object error, StackTrace stack) {});
-    return result;
-  }
-}
+class SettingWriteQueue extends WriteQueue {}
 
-/// Owns save revisions and retry state independently of editor focus/animation.
-class SettingSaveController extends ChangeNotifier {
+class SettingSaveController extends OperationController {
   SettingSaveController({SettingWriteQueue? writes})
       : _writes = writes ?? SettingWriteQueue();
   final SettingWriteQueue _writes;
-  int _revision = 0;
-  bool _disposed = false;
-  bool saving = false;
-  bool failed = false;
-  bool dirty = false;
-
-  Future<void> save(String value, Future<void> Function(String) write) async {
-    dirty = false;
-    final revision = ++_revision;
-    saving = true;
-    failed = false;
-    notifyListeners();
-    try {
-      await _writes.enqueue(() => write(value));
-      if (!_disposed && revision == _revision) {
-        saving = false;
-        notifyListeners();
-      }
-    } catch (_) {
-      if (!_disposed && revision == _revision) {
-        saving = false;
-        failed = true;
-        notifyListeners();
-      }
+  bool _saving = false;
+  bool _failed = false;
+  bool _dirty = false;
+  bool get saving => _saving;
+  bool get failed => _failed;
+  bool get dirty => _dirty;
+  void markDirty() {
+    if (!isDisposed) {
+      _dirty = true;
+      emit();
     }
   }
 
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
-  }
+  Future<CommandResult<void>> save(
+          String value, Future<void> Function(String) write) =>
+      command(() async {
+        final generation = beginRequest('save');
+        _dirty = false;
+        _saving = true;
+        _failed = false;
+        emit();
+        try {
+          // Accepted edits must persist even if the user switches fields.
+          await _writes.enqueue(() => write(value));
+          if (!isCurrentRequest('save', generation)) {
+            throw const CommandAborted();
+          }
+        } catch (error) {
+          if (isCurrentRequest('save', generation) && error is! CommandAborted) {
+            _failed = true;
+          }
+          rethrow;
+        } finally {
+          if (isCurrentRequest('save', generation)) {
+            _saving = false;
+            emit();
+          }
+        }
+      });
 }

@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/failure_message.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
 import 'package:bikesetupapp/common/layout/responsive_layout.dart';
@@ -25,13 +27,21 @@ class LoginPage extends StatelessWidget {
     final UserCredential userCredential;
     try {
       userCredential = await signInFn();
-    } catch (e) {
-      if (!context.mounted) return;
-      AuthAlerts.generalError(context, 'Error: $e');
+    } catch (e, stack) {
+      if (e is! AppFailure && e is! CommandAborted) {
+        FlutterError.reportError(
+            FlutterErrorDetails(exception: e, stack: stack));
+      }
+      if (e is CommandAborted || !context.mounted) return;
+      AuthAlerts.generalError(
+          context,
+          e is AppFailure
+              ? failureMessage(e)
+              : 'Could not sign in. Try again.');
       return;
     }
     if (!context.mounted) return;
-    AuthAlerts.handleAuthentication(userCredential, context);
+    await AuthAlerts.handleAuthentication(userCredential, context);
   }
 
   void _showEmailSignIn(BuildContext context) {
@@ -84,7 +94,8 @@ class LoginPage extends StatelessWidget {
                                             context,
                                             () => AppDependencies.of(context)
                                                 .auth
-                                                .signInWithGoogle(),
+                                                .signInWithGoogle()
+                                                .orThrow(),
                                           ),
                                         ),
                                         if (_showAppleSignIn) ...[
@@ -102,7 +113,8 @@ class LoginPage extends StatelessWidget {
                                               context,
                                               () => AppDependencies.of(context)
                                                   .auth
-                                                  .signInWithApple(),
+                                                  .signInWithApple()
+                                                  .orThrow(),
                                             ),
                                           ),
                                         ],
@@ -134,7 +146,8 @@ class LoginPage extends StatelessWidget {
                                             context,
                                             () => AppDependencies.of(context)
                                                 .auth
-                                                .signInAnonymously(),
+                                                .signInAnonymously()
+                                                .orThrow(),
                                           ),
                                         ),
                                       ],
@@ -216,7 +229,10 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
     });
     try {
       if (_isSignUp) {
-        await AppDependencies.of(context).auth.signUpWithEmail(email, password);
+        await AppDependencies.of(context)
+            .auth
+            .signUpWithEmail(email, password)
+            .orThrow();
         if (mounted) {
           setState(() {
             _isSignUp = false;
@@ -226,15 +242,18 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
         }
       } else {
         await widget.onSignIn(
-          () =>
-              AppDependencies.of(context).auth.signInWithEmail(email, password),
+          () => AppDependencies.of(context)
+              .auth
+              .signInWithEmail(email, password)
+              .orThrow(),
         );
         if (mounted) Navigator.of(context).pop();
       }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+    } on AppFailure catch (e) {
+      if (mounted) setState(() => _error = failureMessage(e));
+    } catch (e, stack) {
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: stack));
+      if (mounted) setState(() => _error = "Could not sign in. Try again.");
     } finally {
       if (mounted) setState(() => _loading = false);
     }

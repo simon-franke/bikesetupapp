@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/data/firebase_operation.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/strava/models/strava_bike.dart';
@@ -13,80 +15,93 @@ class FirestoreStravaBikesRepository implements StravaBikesRepository {
       _firestore.collection(FirestoreKeys.userBikeSetup);
   @override
   Future<void> saveStravaBikes(List<StravaBike> bikes) async {
-    final batch = _firestore.batch();
-    for (final bike in bikes) {
-      final ref = userBikeSetup
-          .doc(userID)
-          .collection(FirestoreKeys.stravaBikes)
-          .doc(bike.stravaGearId);
-      batch.set(ref, encodeFirestoreMap(bike.toMap()), SetOptions(merge: true));
-    }
-    await batch.commit();
+    return firebaseOperation(() async {
+      final batch = _firestore.batch();
+      for (final bike in bikes) {
+        final ref = userBikeSetup
+            .doc(userID)
+            .collection(FirestoreKeys.stravaBikes)
+            .doc(bike.stravaGearId);
+        batch.set(
+            ref, encodeFirestoreMap(bike.toMap()), SetOptions(merge: true));
+      }
+      await batch.commit();
+    }, fallback: FailureCode.saveFailed);
   }
 
   @override
   Stream<List<StravaBike>> getStravaBikes() {
-    return userBikeSetup
+    return firebaseStream(userBikeSetup
         .doc(userID)
         .collection(FirestoreKeys.stravaBikes)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => StravaBike.fromMap(d.id, decodeFirestoreMap(d.data())))
-            .toList());
+            .toList()));
   }
 
   @override
   Future<void> linkStravaBike(String stravaGearId, String appBikeId) {
-    return userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.stravaBikes)
-        .doc(stravaGearId)
-        .update({FirestoreKeys.linkedBikeId: appBikeId});
+    return firebaseOperation(() async {
+      return userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.stravaBikes)
+          .doc(stravaGearId)
+          .update({FirestoreKeys.linkedBikeId: appBikeId});
+    }, fallback: FailureCode.saveFailed);
   }
 
   @override
   Future<void> unlinkStravaBike(String stravaGearId) {
-    return userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.stravaBikes)
-        .doc(stravaGearId)
-        .update({FirestoreKeys.linkedBikeId: FieldValue.delete()});
+    return firebaseOperation(() async {
+      return userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.stravaBikes)
+          .doc(stravaGearId)
+          .update({FirestoreKeys.linkedBikeId: FieldValue.delete()});
+    }, fallback: FailureCode.saveFailed);
   }
 
   @override
   Future<String?> getStravaGearIdForBike(String appBikeId) async {
-    final snap = await userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.stravaBikes)
-        .where(FirestoreKeys.linkedBikeId, isEqualTo: appBikeId)
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    return snap.docs.first.id;
+    return firebaseOperation(() async {
+      final snap = await userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.stravaBikes)
+          .where(FirestoreKeys.linkedBikeId, isEqualTo: appBikeId)
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) return null;
+      return snap.docs.first.id;
+    });
   }
 
   @override
   Future<double?> getMileageForBike(String appBikeId) async {
-    final snap = await userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.stravaBikes)
-        .where(FirestoreKeys.linkedBikeId, isEqualTo: appBikeId)
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    final bike = StravaBike.fromMap(
-        snap.docs.first.id, decodeFirestoreMap(snap.docs.first.data()));
-    return bike.distanceKm;
+    return firebaseOperation(() async {
+      final snap = await userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.stravaBikes)
+          .where(FirestoreKeys.linkedBikeId, isEqualTo: appBikeId)
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) return null;
+      final bike = StravaBike.fromMap(
+          snap.docs.first.id, decodeFirestoreMap(snap.docs.first.data()));
+      return bike.distanceKm;
+    });
   }
 
   @override
   Future<void> deleteAllStravaBikes() async {
-    final snap = await userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.stravaBikes)
-        .get();
-    for (var doc in snap.docs) {
-      await doc.reference.delete();
-    }
+    return firebaseOperation(() async {
+      final snap = await userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.stravaBikes)
+          .get();
+      for (var doc in snap.docs) {
+        await doc.reference.delete();
+      }
+    }, fallback: FailureCode.saveFailed);
   }
 }

@@ -6,11 +6,11 @@ abstract interface class StravaRepository {
   Future<StravaAuth?> authorize();
   Future<void> authorizeWeb();
   Future<void> deauthorize();
+  Future<void> clearAuth();
   Future<String?> getValidToken();
   Future<List<StravaBike>> fetchAthleteBikes(String token);
   Future<double?> fetchMileageAtDate(
-      {required String accessToken,
-      required String gearId,
+      {required String gearId,
       required DateTime date,
       required double currentTotalKm});
   Future<DateTime?> getLastSyncTime();

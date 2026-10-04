@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -138,7 +139,9 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
     });
   }
 
-  void _onAdd() {
+  bool _saving = false;
+  Future<void> _onAdd() async {
+    if (_saving) return;
     final key = _resolvedKey;
     if (key.isEmpty) return;
     if (_existingKeys.contains(key)) {
@@ -159,23 +162,18 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
     } else {
       stored = SettingValue.numeric(_value, _family, _unit).format();
     }
-    Navigator.of(context).pop();
+    setState(() => _saving = true);
     final db = AppDependencies.of(context).forUser(widget.user.uid);
-    db.setups.setSetting(
-      key,
-      stored,
-      widget.uBikeID,
-      widget.category,
-      widget.uSetupID,
-    );
-    if (!_isKnownKey) {
-      db.setups.setSettingMeta(
-        key,
-        _family.name,
-        widget.uBikeID,
-        widget.category,
-        widget.uSetupID,
-      );
+    final saved = await presentCommand(
+        context,
+        () => db.setups.addField(
+            key, stored, widget.uBikeID, widget.category, widget.uSetupID,
+            familyName: _isKnownKey ? null : _family.name));
+    if (!mounted) return;
+    if (saved) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _saving = false);
     }
   }
 

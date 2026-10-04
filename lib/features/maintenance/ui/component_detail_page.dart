@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
 import 'package:bikesetupapp/common/ui/dialog_helpers.dart';
@@ -101,12 +102,14 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
         ],
       ),
     );
-    if (saved != null && saved != _intervalKm) {
-      await _db.updateComponent(
-        widget.component.id,
-        serviceIntervalKm: saved,
-      );
-      if (mounted) {
+    if (saved != null && saved != _intervalKm && mounted) {
+      final updated = await presentCommand(
+          context,
+          () => _db.updateComponent(
+                widget.component.id,
+                serviceIntervalKm: saved,
+              ));
+      if (mounted && updated) {
         setState(() => _intervalKm = saved);
         HapticFeedback.lightImpact();
       }
@@ -137,8 +140,10 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
         ],
       ),
     );
-    if (confirmed == true) {
-      await _db.deleteComponent(widget.component.id);
+    if (confirmed == true && mounted) {
+      final deleted = await presentCommand(
+          context, () => _db.deleteComponent(widget.component.id));
+      if (!deleted) return;
       HapticFeedback.mediumImpact();
       if (mounted) Navigator.of(context).pop();
     }
@@ -171,8 +176,10 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
         ],
       ),
     );
-    if (confirmed == true) {
-      await _db.deleteServiceEntry(widget.component.id, entry.id);
+    if (confirmed == true && mounted) {
+      final deleted = await presentCommand(
+          context, () => _db.deleteServiceEntry(widget.component.id, entry.id));
+      if (!deleted) return;
       HapticFeedback.mediumImpact();
     }
   }

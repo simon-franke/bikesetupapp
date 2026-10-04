@@ -1,69 +1,61 @@
-// Web implementation: parses the Strava auth payload that the Firebase
-// Function encodes into the URL after a successful OAuth exchange, saves the
-// tokens, and strips the param from the browser's address bar.
-//
-// Imported via conditional import — the stub at
-// strava_web_callback_stub.dart is used on all non-web platforms.
-
 import 'dart:convert';
-
 import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.dart';
 import 'package:bikesetupapp/features/strava/models/strava_auth.dart';
 import 'package:web/web.dart' as web;
 
-/// Checks whether the current URL contains a `strava_auth` query parameter
-/// written by the Firebase Function redirect.
-///
-/// Returns `true` if tokens were successfully saved (new auth).
-/// Returns `false` if there was no callback, or if it was an error.
-Future<bool> handleStravaWebCallback() async {
+const _pendingKey = 'strava_pending_auth';
+
+/// Session storage binds the callback to the initiating tab and Firebase user.
+void rememberStravaWebAuth({required String userId, required String state}) {
+  web.window.sessionStorage.setItem(
+      _pendingKey,
+      jsonEncode({
+        'userId': userId,
+        'state': state,
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+      }));
+}
+
+void clearPendingStravaWebAuth() =>
+    web.window.sessionStorage.removeItem(_pendingKey);
+
+Future<bool> handleStravaWebCallback({required String? userId}) async {
   final uri = Uri.parse(web.window.location.href);
   final encoded = uri.queryParameters['strava_auth'];
-
-  // Nothing to handle on a normal app load.
   if (encoded == null) return false;
-
-  // Always strip the param so a page refresh does not re-process it.
-  _stripStravaAuthParam(uri);
-
-  if (encoded == 'error') return false;
+  final state = uri.queryParameters['strava_state'];
+  final params = Map<String, String>.from(uri.queryParameters)
+    ..remove('strava_auth')
+    ..remove('strava_state');
+  web.window.history
+      .replaceState(null, '', uri.replace(queryParameters: params).toString());
 
   try {
-    // The Firebase Function uses Buffer.toString('base64url') — URL-safe
-    // base64 with no padding. Dart's base64Url codec with normalize() handles
-    // the missing padding.
-    final bytes = base64Url.decode(base64Url.normalize(encoded));
-    final json = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
-
-    // The Firebase Function forwards Strava's raw response, which uses
-    // snake_case keys and nests the athlete under an 'athlete' object.
-    final auth = StravaAuth(
-      accessToken: json['access_token'] as String? ?? '',
-      refreshToken: json['refresh_token'] as String? ?? '',
-      expiresAt: json['expires_at'] as int? ?? 0,
-      athleteId: (json['athlete'] as Map<String, dynamic>?)?['id'] as int? ?? 0,
-    );
-
-    await StravaTokenStorage.saveAuth(auth);
+    final raw = web.window.sessionStorage.getItem(_pendingKey);
+    if (raw == null || userId == null) return false;
+    final pending = jsonDecode(raw) as Map<String, dynamic>;
+    final age =
+        DateTime.now().millisecondsSinceEpoch - (pending['createdAt'] as int);
+    if (state == null ||
+        state != pending['state'] ||
+        userId != pending['userId'] ||
+        age < 0 ||
+        age > const Duration(minutes: 10).inMilliseconds) {
+      return false;
+    }
+    // A matching callback is consumed even if denied or malformed.
+    clearPendingStravaWebAuth();
+    if (encoded == 'error') return false;
+    final json =
+        jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(encoded))))
+            as Map<String, dynamic>;
+    final auth = StravaAuth.fromTokenResponse(json,
+        scopes: StravaAuth.parseScopes(json['scope'] as String?));
+    await StravaTokenStorage.saveAuth(auth, userId: userId);
     return true;
-  } catch (e) {
-    // Malformed payload — silently ignore so the app still loads normally.
+  } catch (_) {
     return false;
   }
 }
 
-/// Navigates the current browser tab to [url].
-///
-/// This is a full-page navigation (not a new tab or popup), which avoids
-/// popup blockers. The Firebase Function will redirect back to the app after
-/// the token exchange.
-void openStravaAuthInTab(String url) {
-  web.window.location.href = url;
-}
-
-void _stripStravaAuthParam(Uri uri) {
-  final params = Map<String, String>.from(uri.queryParameters)
-    ..remove('strava_auth');
-  final cleaned = uri.replace(queryParameters: params.isEmpty ? null : params);
-  web.window.history.replaceState(null, '', cleaned.toString());
-}
+void openStravaAuthInTab(String url) => web.window.location.href = url;
