@@ -61,9 +61,10 @@ class AppDependencies {
   final StravaBikesRepository Function(String) _stravaBikes;
   late final AuthController auth = _own(AuthController(
       _authRepository ?? FirebaseAuthRepository(),
-      onSignedOut: clearUsers));
-  late final StravaRepository _connection =
-      _stravaRepository ?? PlatformStravaRepository();
+      onSignedOut: clearUsers,
+      onSigningOut: () => _connection.clearAuth()));
+  late final StravaRepository _connection = _stravaRepository ??
+      PlatformStravaRepository(userId: () => auth.currentUser?.uid);
   late final StravaConnectionController stravaConnection =
       _own(StravaConnectionController(_connection));
   final Map<String, UserControllers> _users = {};
@@ -123,9 +124,8 @@ class UserControllers {
     return controller;
   }
 
-  late final BikesController bikes =
-      _own(BikesController(_bikes(), () => setups));
-  late final StartupController startup = StartupController(bikes, setups);
+  late final BikesController bikes = _own(BikesController(_bikes(), _setups()));
+  late final StartupController startup = StartupController(_bikes(), _setups());
   late final SetupsController setups = _own(SetupsController(_setups()));
   late final MaintenanceController maintenance =
       _own(MaintenanceController(_maintenance()));

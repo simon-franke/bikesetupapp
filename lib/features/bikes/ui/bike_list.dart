@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_alert_dialogs.dart';
@@ -163,16 +164,12 @@ class _BikeListState extends State<BikeList> {
           'Are you sure you want to delete "${bike.name}"? This cannot be undone.',
     );
     if (confirmed && mounted) {
-      try {
-        await AppDependencies.of(context)
-            .forUser(widget.user!.uid)
-            .bikes
-            .deleteBike(bike.id);
-      } catch (_) {
-        if (mounted) {
-          BikeAlerts.generalError(context, 'Error deleting bike');
-        }
-      }
+      return presentCommand(
+          context,
+          () => AppDependencies.of(context)
+              .forUser(widget.user!.uid)
+              .bikes
+              .deleteBike(bike.id));
     }
     return confirmed;
   }
@@ -432,14 +429,12 @@ class _SetupsList extends StatelessWidget {
       message: 'Are you sure you want to delete this setup?',
     );
     if (confirmed && context.mounted) {
-      try {
-        AppDependencies.of(context)
-            .forUser(user.uid)
-            .setups
-            .deleteSetup(bike.id, setupId);
-      } catch (_) {
-        BikeAlerts.generalError(context, 'Error deleting setup');
-      }
+      return presentCommand(
+          context,
+          () => AppDependencies.of(context)
+              .forUser(user.uid)
+              .setups
+              .deleteSetup(bike.id, setupId));
     }
     return confirmed;
   }
@@ -554,19 +549,11 @@ class _SetupRow extends StatelessWidget {
         name: setup.name,
         isSelected: isSelected,
         onSelect: () async {
-          try {
-            final db = AppDependencies.of(context).forUser(user.uid);
-            await db.bikes.selectSetup(bike.id, setup.id);
-            if (!context.mounted) return;
-            onSelect(bike.name, bike.id, bikeType, setup.name, setup.id);
-          } catch (_) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Could not select setup. Try again.')),
-              );
-            }
-          }
+          final db = AppDependencies.of(context).forUser(user.uid);
+          final selected = await presentCommand(
+              context, () => db.bikes.selectSetup(bike.id, setup.id));
+          if (!context.mounted || !selected) return;
+          onSelect(bike.name, bike.id, bikeType, setup.name, setup.id);
         },
         onDetails: () =>
             onSetupDetails(bike.name, bike.id, bikeType, setup.name, setup.id),

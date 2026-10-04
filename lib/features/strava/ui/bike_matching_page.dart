@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/bike_matching_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -47,24 +48,16 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
   }
 
   Future<void> _loadData() async {
-    await _controller.load();
-    _showSyncError(_controller.syncError);
+    await presentCommand(context, () => _controller.load());
   }
 
   Future<void> _manualSync() async {
-    await _controller.sync();
-    _showSyncError(_controller.syncError);
-  }
-
-  void _showSyncError(String? message) {
-    if (!mounted || message == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 8)));
+    await presentCommand(context, _controller.sync);
   }
 
   Future<void> _saveLinks() async {
-    await _controller.save();
-    if (mounted) Navigator.of(context).pop();
+    final saved = await presentCommand(context, _controller.save);
+    if (mounted && saved) Navigator.of(context).pop();
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'dart:async';
 
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -229,7 +230,7 @@ void main() {
             name: 'Pressure',
             value: '3.0 bar',
             onSave: (value) async {
-              if (fail) throw StateError('offline');
+              if (fail) throw const AppFailure(FailureCode.saveFailed);
               saves.add(value);
             }));
     await moveRuler(tester, 1);

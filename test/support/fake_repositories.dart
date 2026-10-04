@@ -119,6 +119,8 @@ class FakeStravaBikesRepository implements StravaBikesRepository {
 }
 
 class FakeStravaRepository implements StravaRepository {
+  @override
+  Future<void> clearAuth() async {}
   String? token = 'token';
   Object? failure;
   int markedSynced = 0;

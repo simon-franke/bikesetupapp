@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'dart:async';
 
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -28,9 +29,10 @@ void main() {
     final bikes = FakeBikesRepository();
     final setups = FakeSetupsRepository();
     final setupController = SetupsController(setups);
-    final controller = BikesController(bikes, () => setupController);
-    final id = await controller.createBike(
-        'Enduro', {'shock': 'Coil'}, BikeType.enduro.bikeType);
+    final controller = BikesController(bikes, setups);
+    final id = await controller
+        .createBike('Enduro', {'shock': 'Coil'}, BikeType.enduro.bikeType)
+        .orThrow();
     final setupId = setups.defaults[id]!;
     expect(bikes.defaultBike, id);
     expect(bikes.bikes.single.name, 'Enduro');
@@ -47,8 +49,8 @@ void main() {
     final bikes = FakeBikesRepository();
     final setups = FakeSetupsRepository();
     final setupController = SetupsController(setups);
-    final bikeController = BikesController(bikes, () => setupController);
-    final startup = StartupController(bikeController, setupController);
+    final bikeController = BikesController(bikes, setups);
+    final startup = StartupController(bikes, setups);
     expect(await startup.loadSelection(), isNull);
     bikes.defaultBike = 'bike';
     bikes.bikes = [
@@ -119,7 +121,7 @@ void main() {
     first.complete();
     await a;
     expect(controller.saving, isTrue);
-    next.completeError(StateError('offline'));
+    next.completeError(const AppFailure(FailureCode.saveFailed));
     await b;
     expect(controller.saving, isFalse);
     expect(controller.failed, isTrue);
@@ -145,12 +147,15 @@ void main() {
     final strava = StravaController(repository, connection);
     final auth = StravaConnectionController(connection);
     final controller = ServicesController(strava, auth, 'old');
-    final oldLoad = controller.loadMileage();
-    controller.selectBike('new');
+    final oldLoad = controller.load();
+    await flush();
+    final newLoad = controller.selectBike('new');
+    await flush();
     repository.mileage['new']!.complete(200);
     await flush();
     repository.mileage['old']!.complete(100);
-    await oldLoad;
+    expect((await oldLoad).isCancelled, isTrue);
+    expect((await newLoad).isSuccess, isTrue);
     expect(controller.mileageKm, 200);
     expect(controller.bikeId, 'new');
     controller.dispose();
@@ -188,9 +193,8 @@ void main() {
     final connection = FakeStravaRepository();
     final repository = FakeStravaBikesRepository();
     final service = StravaSyncService(repository, connection);
-    connection.failure = const StravaApiException('Rate limit reached');
-    expect(await service.sync(), isFalse);
-    expect(service.lastError, 'Rate limit reached');
+    connection.failure = const StravaApiException(FailureCode.rateLimited);
+    expect((await service.sync()).failure?.code, FailureCode.rateLimited);
     expect(repository.saves, 0);
     expect(connection.markedSynced, 0);
     connection.failure = null;
@@ -198,10 +202,9 @@ void main() {
       const StravaBike(
           stravaGearId: 'gear', name: 'Bike', distanceMeters: 123000)
     ];
-    expect(await service.sync(), isTrue);
+    expect((await service.sync()).isSuccess, isTrue);
     expect(repository.bikes.single.distanceKm, 123);
     expect(connection.markedSynced, 1);
-    expect(service.lastError, isNull);
   });
 
   testWidgets(

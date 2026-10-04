@@ -21,14 +21,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // On web: check if we landed here via the Strava OAuth redirect. If so,
-  // save the tokens from the URL and strip the param from the address bar.
-  // This must run before the auth state check below so the Settings page
-  // immediately reflects the new connection on first render.
-  final bool newStravaAuth = await handleStravaWebCallback();
-
   final dependencies = AppDependencies.instance;
   final user = dependencies.auth.currentUser;
+  // Validate the pending OAuth session against the restored Firebase user.
+  final bool newStravaAuth = await handleStravaWebCallback(userId: user?.uid);
   final selection = user == null
       ? null
       : await dependencies.forUser(user.uid).startup.loadSelection();

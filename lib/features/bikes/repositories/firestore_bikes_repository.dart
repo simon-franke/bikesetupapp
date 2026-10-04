@@ -1,7 +1,8 @@
+import 'package:bikesetupapp/common/data/firebase_operation.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'bikes_repository.dart';
 
 class FirestoreBikesRepository implements BikesRepository {
@@ -13,51 +14,59 @@ class FirestoreBikesRepository implements BikesRepository {
       _firestore.collection(FirestoreKeys.userBikeSetup);
   @override
   Future<void> setDefaultBike(String uBikeID) {
-    return userBikeSetup
-        .doc(userID)
-        .set({FirestoreKeys.defaultBike: uBikeID}, SetOptions(merge: true));
+    return firebaseOperation(() async {
+      return userBikeSetup
+          .doc(userID)
+          .set({FirestoreKeys.defaultBike: uBikeID}, SetOptions(merge: true));
+    }, fallback: FailureCode.saveFailed);
   }
 
   @override
   Future<void> renameBike(String uBikeID, String bikeName) {
-    return userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(uBikeID)
-        .update({FirestoreKeys.bikeName: bikeName});
+    return firebaseOperation(() async {
+      return userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .update({FirestoreKeys.bikeName: bikeName});
+    }, fallback: FailureCode.saveFailed);
   }
 
   @override
   Future<void> deleteBike(String uBikeID) async {
-    final wasDefault = (await getDefaultBike()) == uBikeID;
+    return firebaseOperation(() async {
+      final wasDefault = (await getDefaultBike()) == uBikeID;
 
-    var setups = await userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(uBikeID)
-        .collection(FirestoreKeys.setupList)
-        .get();
-    for (var doc in setups.docs) {
-      await _deleteSetupData(uBikeID, doc.id);
-    }
-
-    await userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(uBikeID)
-        .delete();
-
-    if (wasDefault) {
-      final remaining =
-          await userBikeSetup.doc(userID).collection(FirestoreKeys.bikes).get();
-      if (remaining.docs.isNotEmpty) {
-        await setDefaultBike(remaining.docs.first.id);
-      } else {
-        await userBikeSetup
-            .doc(userID)
-            .update({FirestoreKeys.defaultBike: FieldValue.delete()});
+      var setups = await userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .collection(FirestoreKeys.setupList)
+          .get();
+      for (var doc in setups.docs) {
+        await _deleteSetupData(uBikeID, doc.id);
       }
-    }
+
+      await userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .delete();
+
+      if (wasDefault) {
+        final remaining = await userBikeSetup
+            .doc(userID)
+            .collection(FirestoreKeys.bikes)
+            .get();
+        if (remaining.docs.isNotEmpty) {
+          await setDefaultBike(remaining.docs.first.id);
+        } else {
+          await userBikeSetup
+              .doc(userID)
+              .update({FirestoreKeys.defaultBike: FieldValue.delete()});
+        }
+      }
+    }, fallback: FailureCode.saveFailed);
   }
 
   Future<void> _deleteSetupData(String uBikeID, String uSetupID) async {
@@ -83,40 +92,38 @@ class FirestoreBikesRepository implements BikesRepository {
 
   @override
   Stream<List<Bike>> getBikes() {
-    return userBikeSetup
+    return firebaseStream(userBikeSetup
         .doc(userID)
         .collection(FirestoreKeys.bikes)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Bike.fromMap(doc.id, doc.data()))
-            .toList());
+            .toList()));
   }
 
   @override
   Future<String> getDefaultBike() async {
-    DocumentSnapshot<Map<String, dynamic>> snapshot;
-    dynamic value;
-    try {
+    return firebaseOperation(() async {
+      DocumentSnapshot<Map<String, dynamic>> snapshot;
+      dynamic value;
       snapshot = await userBikeSetup.doc(userID).get();
       if (!snapshot.exists) {
         return "";
       }
-      value = snapshot[FirestoreKeys.defaultBike];
-    } catch (e) {
-      debugPrint('getDefaultBike error: $e');
-      return "";
-    }
-    if (value == null) {
-      return "";
-    }
-    return value.toString();
+      value = snapshot.data()?[FirestoreKeys.defaultBike];
+
+      if (value == null) {
+        return "";
+      }
+      return value?.toString() ?? "";
+    });
   }
 
   @override
   Future<String> getBikeNameFromID(String uBikeID) async {
-    DocumentSnapshot<Map<String, dynamic>> snapshot;
-    dynamic value;
-    try {
+    return firebaseOperation(() async {
+      DocumentSnapshot<Map<String, dynamic>> snapshot;
+      dynamic value;
       snapshot = await userBikeSetup
           .doc(userID)
           .collection(FirestoreKeys.bikes)
@@ -125,23 +132,20 @@ class FirestoreBikesRepository implements BikesRepository {
       if (!snapshot.exists) {
         return "";
       }
-      value = snapshot[FirestoreKeys.bikeName];
-    } catch (e) {
-      debugPrint('getBikeNameFromID error: $e');
-      return "";
-    }
+      value = snapshot.data()?[FirestoreKeys.bikeName];
 
-    if (value == null) {
-      return "";
-    }
-    return value.toString();
+      if (value == null) {
+        return "";
+      }
+      return value?.toString() ?? "";
+    });
   }
 
   @override
   Future<String> getBikeType(String uBikeID) async {
-    DocumentSnapshot<Map<String, dynamic>> snapshot;
-    dynamic value;
-    try {
+    return firebaseOperation(() async {
+      DocumentSnapshot<Map<String, dynamic>> snapshot;
+      dynamic value;
       snapshot = await userBikeSetup
           .doc(userID)
           .collection(FirestoreKeys.bikes)
@@ -150,24 +154,24 @@ class FirestoreBikesRepository implements BikesRepository {
       if (!snapshot.exists) {
         return "";
       }
-      value = snapshot[FirestoreKeys.bikeType];
-    } catch (e) {
-      debugPrint('getBikeType error: $e');
-      return "";
-    }
-    if (value == null) {
-      return "";
-    }
-    return value.toString();
+      value = snapshot.data()?[FirestoreKeys.bikeType];
+
+      if (value == null) {
+        return "";
+      }
+      return value?.toString() ?? "";
+    });
   }
 
   @override
   Future<void> createBikeRecord(String id, String name, String type) {
-    return userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(id)
-        .set({FirestoreKeys.bikeName: name, FirestoreKeys.bikeType: type},
-            SetOptions(merge: true));
+    return firebaseOperation(() async {
+      return userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(id)
+          .set({FirestoreKeys.bikeName: name, FirestoreKeys.bikeType: type},
+              SetOptions(merge: true));
+    }, fallback: FailureCode.saveFailed);
   }
 }

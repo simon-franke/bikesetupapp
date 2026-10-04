@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/settings_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/layout/responsive_layout.dart';
@@ -44,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _controller = SettingsController(dependencies.auth,
         dependencies.stravaConnection, (id) => dependencies.forUser(id).strava)
       ..addListener(_changed);
-    _controller.load();
+    presentCommand(context, _controller.load);
   }
 
   void _changed() {
@@ -58,14 +59,16 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _connectStrava() async {
-    final message = await _controller.connect();
-    if (!mounted || message == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 8)));
+    await presentCommand(context, _controller.connect);
   }
 
-  Future<void> _connectStravaWeb() => _controller.connectWeb();
-  Future<void> _disconnectStrava() => _controller.disconnect();
+  Future<void> _connectStravaWeb() async {
+    await presentCommand(context, _controller.connectWeb);
+  }
+
+  Future<void> _disconnectStrava() async {
+    await presentCommand(context, _controller.disconnect);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (wantsToSignOut == null || !wantsToSignOut) return;
     }
     if (!mounted) return;
-    await _controller.signOut();
+    await presentCommand(context, _controller.signOut);
     if (!mounted) return;
   }
 
@@ -201,7 +204,8 @@ class _ThemeSegmented extends StatelessWidget {
           ButtonSegment(value: ThemeMode.light, label: Text('Light')),
         ],
         selected: {notifier.themeMode},
-        onSelectionChanged: (modes) => notifier.updateTheme(modes.single),
+        onSelectionChanged: (modes) =>
+            presentCommand(context, () => notifier.updateTheme(modes.single)),
       ),
     ]);
   }

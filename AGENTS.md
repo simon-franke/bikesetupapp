@@ -9,7 +9,7 @@ checks for pull requests targeting `main`, pushes to `main`, and manual runs.
 Both use Flutter 3.41.4, enforce `pubspec.lock`, and use placeholder Firebase
 options and a placeholder `.env` so checks do not need repository secrets.
 Lint runs `flutter analyze --fatal-infos`; tests run `flutter test` and the
-Strava web callback tests in Chrome.
+Strava web callback tests in Chrome. A separate Node 22 job runs the Strava function tests.
 
 The app deploys to **GitHub Pages** (`https://simon-franke.github.io/bikesetupapp/`) via
 `.github/workflows/deploy.yml` on every push to `main`. The workflow has three jobs:
@@ -25,11 +25,15 @@ The app deploys to **GitHub Pages** (`https://simon-franke.github.io/bikesetupap
 
 ### Firebase Function
 
-`functions/index.js` — a 2nd-gen Cloud Function (`stravaCallback`) that acts as the
+`functions/index.js` exports 2nd-gen Cloud Functions (`stravaCallback` and
+`stravaRefresh`). `stravaCallback` acts as the
 Strava OAuth proxy on web. It receives the authorization code from Strava, exchanges it
 for tokens using `STRAVA_CLIENT_SECRET` (stored in Google Cloud Secret Manager, never
 in the web bundle), then redirects back to the app with the token payload base64url-encoded
-in `?strava_auth=`.
+in `?strava_auth=` with the original state in `?strava_state=`.
+`stravaRefresh` accepts a refresh token in a POST body and renews credentials
+server-side using the same secret; browser CORS permits the production Pages origin.
+The handlers live in `functions/strava_handlers.js`; `npm test` runs their tests.
 
 To redeploy the function manually:
 ```bash
@@ -44,11 +48,14 @@ Firebase Function URL as the redirect URI. After the user authorizes:
 
 1. Strava → Firebase Function (`stravaCallback`)
 2. Function exchanges code → tokens (server-side)
-3. Function → redirects to `https://simon-franke.github.io/bikesetupapp/?strava_auth=<base64url>`
-4. `main()` calls `handleStravaWebCallback()` which saves the tokens and strips the URL param
+3. Function → redirects to `https://simon-franke.github.io/bikesetupapp/?strava_auth=<base64url>&strava_state=<state>`
+4. `main()` calls `handleStravaWebCallback(userId: user?.uid)` which validates the initiating tab's single-use state (ten-minute expiry) and user, saves UID-scoped tokens and granted scopes, and strips the callback parameters
 5. If a new auth was detected and the user is signed in, Strava bikes are auto-synced
 
-On mobile the existing `FlutterWebAuth2` / custom-scheme flow is unchanged.
+On mobile the existing `FlutterWebAuth2` / custom-scheme flow also validates OAuth state.
+Both platforms request `activity:read_all`; historical mileage refuses unknown or
+partial activity scopes. Legacy unscoped credentials require reconnection.
+Sign-out clears local credentials and the sync timestamp for the active UID.
 
 Key files:
 - `lib/features/strava/platform/strava_web_callback.dart` — web implementation (conditional import)
@@ -91,7 +98,7 @@ This is a Flutter app for storing bike setup data in Firebase Firestore, with Go
 - Feature controllers own commands and async state; UI consumes controller state and typed repository streams. Controllers receive repository contracts through constructor injection. Screen controllers are disposed by their owning widgets.
 
 ### App Startup Flow (`lib/main.dart`)
-On launch, the app reads `AuthController.currentUser`. If signed in, `StartupController` resolves the user's default bike and setup through the bikes and setups controllers. If all required data is present, the app opens `MyHomePage`; otherwise it redirects to `LoginPage`.
+On launch, the app reads `AuthController.currentUser`. If signed in, `StartupController` resolves the user's default bike and setup through injected bikes and setups repository contracts. If all required data is present, the app opens `MyHomePage`; otherwise it redirects to `LoginPage`.
 
 ### Firestore Data Model
 All data lives under the `UserBikeSetup` collection, keyed by `userID`:
@@ -120,6 +127,17 @@ UserBikeSetup/{userID}
 | `lib/app/` | Dependency composition, startup orchestration and navigation transitions |
 
 Controllers depend on repository contracts, never concrete persistence implementations or UI. UI reads `AppDependencies.of(context)` and invokes feature controllers. `test/architecture_test.dart` enforces import boundaries. Successful sign-out disposes cached user controllers; screens dispose their own controllers.
+
+Commands return `CommandResult<T>` (success, expected failure, or cancellation).
+`OperationController` owns activity, exceptions/stacks, named request generations,
+shared in-flight commands and disposal checks; `WriteQueue` orders persistence.
+Keep state private and expose read-only getters/collections. Translate known
+adapter failures to `AppFailure` in repositories; UI owns messages via
+`failureMessage` / `presentCommand`. Unexpected exceptions retain their stacks.
+`ServiceEditorController` owns service drafts, stable retry IDs and save state;
+widgets own form input and navigation. Pure model rules cover setup defaults,
+bike-link suggestions and deferred mileage. See `test/controller_async_test.dart`
+and `test/controller_domain_rules_test.dart`.
 
 ### Enums as Configuration
 `BikeType` carries `hasShock` and `hasFork` booleans that control which `SchematicBubble` widgets are shown on the home page. `Category.category` returns the exact Firestore document name used as the settings category.

@@ -281,7 +281,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                       stream: AppDependencies.of(context)
                           .forUser(widget.user.uid)
                           .setups
-                          .getDocumentElement(widget.bikeName,
+                          .getSettings(widget.bikeName,
                               widget.category.category, widget.setup),
                       builder: (context, AsyncSnapshot snapshot) {
                         final String label = _categoryLabel(widget.category);

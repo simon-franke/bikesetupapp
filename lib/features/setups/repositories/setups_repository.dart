@@ -6,8 +6,6 @@ abstract interface class SetupsRepository {
   Future<void> setDefaultSetup(String uBikeID, String uSetupID);
   Future<void> setSetting(String key, String value, String uBikeID,
       String category, String uSetupID);
-  Future<void> editSetting(String key, String value, String uBikeID,
-      String category, String uSetupID);
   Future<void> deleteSetup(String uBikeID, String uSetupID);
   Future<void> deleteSetting(
       String key, String uBikeID, String category, String uSetupID);
@@ -20,12 +18,8 @@ abstract interface class SetupsRepository {
   Stream<Map<String, dynamic>> getSettings(
       String uBikeID, String category, String uSetupID);
   Stream<List<BikeSetup>> getSetups(String uBikeID);
-  Stream<Map<String, dynamic>> getDocumentElement(
-      String uBikeID, String category, String uSetupID);
   Future<String> getDefaultSetup(String uBikeID);
   Future<String> getSetupNameFromID(String uBikeID, String uSetupID);
   Future<Map<String, dynamic>> getSetupInformation(
-      String uBikeID, String uSetupID);
-  Future<Map<String, dynamic>> getSetupInformationAsMap(
       String uBikeID, String uSetupID);
 }

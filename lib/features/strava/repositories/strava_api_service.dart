@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import '../models/strava_exception.dart';
 export '../models/strava_exception.dart';
 import 'dart:convert';
@@ -15,24 +17,16 @@ StravaApiException _exceptionFromResponse(http.Response response) {
           error['resource'].toString().toLowerCase() == 'application' &&
           error['code'].toString().toLowerCase() == 'inactive');
     }
-  } catch (_) {/* Non-JSON failures still have an HTTP status. */}
-  final String message;
-  if (inactive) {
-    message =
-        'Strava has disabled this API application. Its owner must check their Strava subscription and reactivate the app at strava.com/settings/api.';
-  } else if (response.statusCode == 401) {
-    message =
-        'Strava authorization is no longer valid. Reconnect Strava in Settings.';
-  } else if (response.statusCode == 403) {
-    message =
-        'Strava denied access. Check the API application status and granted permissions.';
-  } else if (response.statusCode == 429) {
-    message = 'Strava’s request limit has been reached. Try again later.';
-  } else {
-    message =
-        'Strava returned an error (${response.statusCode}). Try again later.';
-  }
-  return StravaApiException(message, statusCode: response.statusCode);
+  } on FormatException {/* Non-JSON failures still have an HTTP status. */}
+  final code = inactive
+      ? FailureCode.stravaInactive
+      : switch (response.statusCode) {
+          401 => FailureCode.connectionExpired,
+          403 => FailureCode.stravaDenied,
+          429 => FailureCode.rateLimited,
+          _ => FailureCode.stravaError,
+        };
+  return StravaApiException(code, statusCode: response.statusCode);
 }
 
 class StravaApiService {
@@ -41,8 +35,9 @@ class StravaApiService {
 
   Future<http.Response> _get(Uri uri, String accessToken) {
     final headers = {'Authorization': 'Bearer $accessToken'};
-    return _client?.get(uri, headers: headers) ??
-        http.get(uri, headers: headers);
+    return (_client?.get(uri, headers: headers) ??
+            http.get(uri, headers: headers))
+        .timeout(const Duration(seconds: 15));
   }
 
   static const _athleteUrl = 'https://www.strava.com/api/v3/athlete';
@@ -58,20 +53,28 @@ class StravaApiService {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final bikesJson = json['bikes'];
       if (bikesJson == null) {
-        throw const StravaApiException(
-            'Strava did not provide bike data. Reconnect Strava and grant permission to read your full profile.');
+        throw const StravaApiException(FailureCode.missingProfileScope);
       }
       return (bikesJson as List<dynamic>)
           .map((b) => StravaBike.fromStravaJson(b as Map<String, dynamic>))
           .toList();
     } on StravaApiException {
       rethrow;
-    } on http.ClientException {
-      throw const StravaApiException(
-          'Could not reach Strava. Check your connection and try again.');
-    } catch (_) {
-      throw const StravaApiException(
-          'Could not read Strava’s bike data. Try again later.');
+    } on TimeoutException catch (error, stack) {
+      throw StravaApiException(FailureCode.network,
+          cause: error, stackTrace: stack);
+    } on http.ClientException catch (error, stack) {
+      throw StravaApiException(FailureCode.network,
+          cause: error, stackTrace: stack);
+    } on FormatException catch (error, stack) {
+      throw StravaApiException(FailureCode.invalidResponse,
+          cause: error, stackTrace: stack);
+    } on TypeError catch (error, stack) {
+      throw StravaApiException(FailureCode.invalidResponse,
+          cause: error, stackTrace: stack);
+    } on RangeError catch (error, stack) {
+      throw StravaApiException(FailureCode.invalidResponse,
+          cause: error, stackTrace: stack);
     }
   }
 
@@ -83,8 +86,8 @@ class StravaApiService {
   /// paginating the full history from the beginning.
   ///
   /// Throws [StravaInsufficientScopeException] when the token lacks
-  /// `activity:read` (the user needs to re-connect Strava).
-  /// Returns null on rate-limit or network error.
+  /// `activity:read_all` (the user needs to re-connect Strava).
+  /// Network, rate-limit and response failures throw typed [AppFailure] values.
   Future<double?> fetchMileageAtDate({
     required String accessToken,
     required String gearId,
@@ -106,7 +109,6 @@ class StravaApiService {
         afterTimestamp: afterTimestamp,
         page: page,
       );
-      if (activities == null) return null;
 
       for (final act in activities) {
         if ((act['gear_id'] as String?) == gearId) {
@@ -123,9 +125,9 @@ class StravaApiService {
   }
 
   /// Fetches one page of activities started after [afterTimestamp] (Unix s).
-  /// Returns null on rate-limit or network error.
+  /// Network, rate-limit and response failures throw typed [AppFailure] values.
   /// Throws [StravaInsufficientScopeException] on HTTP 403.
-  Future<List<Map<String, dynamic>>?> _fetchActivitiesPage(
+  Future<List<Map<String, dynamic>>> _fetchActivitiesPage(
     String accessToken, {
     required int afterTimestamp,
     required int page,
@@ -144,21 +146,30 @@ class StravaApiService {
         throw const StravaInsufficientScopeException();
       }
       if (response.statusCode == 429) {
-        debugPrint('Strava: rate limit reached');
-        return null;
+        throw _exceptionFromResponse(response);
       }
       if (response.statusCode != 200) {
-        debugPrint('Strava activities error: ${response.statusCode}');
-        return null;
+        throw _exceptionFromResponse(response);
       }
 
       return (jsonDecode(response.body) as List<dynamic>)
           .cast<Map<String, dynamic>>();
     } on StravaInsufficientScopeException {
       rethrow;
-    } catch (e) {
-      debugPrint('Strava fetch activities error: $e');
-      return null;
+    } on AppFailure {
+      rethrow;
+    } on TimeoutException catch (error, stack) {
+      throw StravaApiException(FailureCode.network,
+          cause: error, stackTrace: stack);
+    } on http.ClientException catch (error, stack) {
+      throw StravaApiException(FailureCode.network,
+          cause: error, stackTrace: stack);
+    } on FormatException catch (error, stack) {
+      throw StravaApiException(FailureCode.invalidResponse,
+          cause: error, stackTrace: stack);
+    } on TypeError catch (error, stack) {
+      throw StravaApiException(FailureCode.invalidResponse,
+          cause: error, stackTrace: stack);
     }
   }
 }

@@ -42,7 +42,7 @@ class WorkshopDialog extends StatelessWidget {
 
 class DialogPrimaryButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color? color;
   const DialogPrimaryButton({
     super.key,
@@ -59,7 +59,7 @@ class DialogPrimaryButton extends StatelessWidget {
 
 class DialogSecondaryButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   const DialogSecondaryButton(
       {super.key, required this.label, required this.onPressed});
 

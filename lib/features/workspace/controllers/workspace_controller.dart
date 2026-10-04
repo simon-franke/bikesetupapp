@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:bikesetupapp/features/setups/models/category.dart';
@@ -6,74 +7,79 @@ import '../models/active_view.dart';
 
 class WorkspaceController extends OperationController {
   WorkspaceController(
-      {required this.bikeName,
-      required this.bikeId,
-      required this.bikeType,
-      required this.setupName,
-      required this.setupId,
+      {required String bikeName,
+      required String bikeId,
+      required BikeType bikeType,
+      required String setupName,
+      required String setupId,
       StravaController? strava})
       : _strava = strava,
-        category = _initialCategory(bikeType);
+        _bikeName = bikeName,
+        _bikeId = bikeId,
+        _bikeType = bikeType,
+        _setupName = setupName,
+        _setupId = setupId,
+        _category = _initialCategory(bikeType);
   final StravaController? _strava;
-  String bikeName;
-  String bikeId;
-  BikeType bikeType;
-  String setupName;
-  String setupId;
-  Category category;
-  ActiveView activeView = ActiveView.setup;
-  bool serviceAlert = false;
-  double? mileageKm;
-  int _mileageGeneration = 0;
+  String _bikeName;
+  String _bikeId;
+  BikeType _bikeType;
+  String _setupName;
+  String _setupId;
+  Category _category;
+  ActiveView _activeView = ActiveView.setup;
+  bool _serviceAlert = false;
+  double? _mileageKm;
+  String get bikeName => _bikeName;
+  String get bikeId => _bikeId;
+  BikeType get bikeType => _bikeType;
+  String get setupName => _setupName;
+  String get setupId => _setupId;
+  Category get category => _category;
+  ActiveView get activeView => _activeView;
+  bool get serviceAlert => _serviceAlert;
+  double? get mileageKm => _mileageKm;
   static Category _initialCategory(BikeType type) =>
       type.hasShock ? Category.shock : Category.rearTire;
 
-  void selectBike(
+  Future<CommandResult<void>> selectBike(
       String name, String id, BikeType type, String setup, String setupID) {
-    bikeName = name;
-    bikeId = id;
-    bikeType = type;
-    setupName = setup;
-    setupId = setupID;
-    category = _initialCategory(type);
-    mileageKm = null;
-    serviceAlert = false;
+    _bikeName = name;
+    _bikeId = id;
+    _bikeType = type;
+    _setupName = setup;
+    _setupId = setupID;
+    _category = _initialCategory(type);
+    _mileageKm = null;
+    _serviceAlert = false;
     emit();
-    loadMileage();
+    return loadMileage();
   }
 
   void selectCategory(Category value) {
-    category = value;
+    _category = value;
     emit();
   }
 
   void selectView(ActiveView value) {
-    activeView = value;
+    _activeView = value;
     emit();
   }
 
   void setServiceAlert(bool value) {
-    if (serviceAlert == value) return;
-    serviceAlert = value;
+    if (_serviceAlert == value) return;
+    _serviceAlert = value;
     emit();
   }
 
-  Future<void> loadMileage() async {
-    if (_strava == null || bikeId.isEmpty) return;
-    final id = bikeId;
-    final generation = ++_mileageGeneration;
-    try {
-      final mileage = await _strava.getMileageForBike(id);
-      if (isDisposed || generation != _mileageGeneration || id != bikeId) {
-        return;
-      }
-      mileageKm = mileage;
-    } catch (_) {
-      if (isDisposed || generation != _mileageGeneration || id != bikeId) {
-        return;
-      }
-      mileageKm = null;
-    }
-    emit();
-  }
+  Future<CommandResult<void>> loadMileage() => command(() async {
+        final generation = beginRequest('mileage');
+        if (_strava == null || _bikeId.isEmpty) return;
+        final mileage = await _strava.getMileageForBike(_bikeId);
+        if (!isCurrentRequest('mileage', generation)) {
+          throw const CommandAborted();
+        }
+        _mileageKm = mileage;
+        emit();
+      });
 }

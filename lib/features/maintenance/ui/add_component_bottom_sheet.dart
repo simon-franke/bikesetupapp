@@ -1,14 +1,12 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
-import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
-import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_status.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 
 Future<void> showAddComponentSheet(
   BuildContext context, {
@@ -43,6 +41,7 @@ class _AddComponentSheet extends StatefulWidget {
 
 class _AddComponentSheetState extends State<_AddComponentSheet> {
   ComponentType? _selectedType;
+  bool _saving = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _intervalController = TextEditingController();
 
@@ -65,40 +64,27 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
     });
   }
 
-  void _onSave() {
-    if (_selectedType == null) return;
+  Future<void> _onSave() async {
+    if (_saving || _selectedType == null) return;
     final name = _nameController.text.trim();
-    if (name.isEmpty) return;
     final interval = int.tryParse(_intervalController.text.trim()) ?? 0;
-    if (interval <= 0) return;
-    final double? mileage = widget.currentMileageKm;
-
-    final componentId = const Uuid().v4();
-    final entryId = const Uuid().v4();
-    final now = DateTime.now().toUtc();
-
-    final component = ServiceComponent(
-      id: componentId,
-      bikeId: widget.uBikeID,
-      type: _selectedType!,
-      name: name,
-      serviceIntervalKm: interval,
-      createdAt: now,
-    );
-
-    final entry = ServiceEntry(
-      id: entryId,
-      componentId: componentId,
-      mileageAtServiceKm: mileage,
-      date: now,
-      note: 'Initial setup',
-    );
-
+    if (name.isEmpty || interval <= 0) return;
+    setState(() => _saving = true);
     final db = AppDependencies.of(context).forUser(widget.user.uid);
-    db.maintenance.addComponent(component);
-    db.maintenance.addServiceEntry(componentId, entry);
-
-    Navigator.of(context).pop();
+    final saved = await presentCommand(
+        context,
+        () => db.maintenance.createComponent(
+            bikeId: widget.uBikeID,
+            type: _selectedType!,
+            name: name,
+            serviceIntervalKm: interval,
+            currentMileageKm: widget.currentMileageKm));
+    if (!mounted) return;
+    if (saved) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _saving = false);
+    }
   }
 
   @override
@@ -156,7 +142,7 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _onSave,
+                  onPressed: _saving ? null : _onSave,
                   child: Text(
                     'ADD COMPONENT',
                     style: AppTextStyles.inter(

@@ -1,47 +1,41 @@
+import 'package:bikesetupapp/common/controllers/write_queue.dart';
+import 'package:bikesetupapp/common/models/command_result.dart';
 import '../repositories/strava_repository.dart';
 import '../repositories/strava_bikes_repository.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:bikesetupapp/features/strava/models/strava_exception.dart';
 
+/// Stateless workflow; its caller owns loading and failure presentation.
 class StravaSyncService {
+  StravaSyncService(this._db, this._connection, {WriteQueue? writes})
+      : _writes = writes ?? WriteQueue();
+  final WriteQueue _writes;
   final StravaBikesRepository _db;
   final StravaRepository _connection;
 
-  StravaSyncService(this._db, this._connection);
+  Future<CommandResult<void>> sync({bool Function()? isCurrent}) async {
+    void checkCurrent() {
+      if (isCurrent != null && !isCurrent()) throw const CommandAborted();
+    }
 
-  String? lastError;
-
-  Future<bool> sync() async {
-    lastError = null;
     try {
+      checkCurrent();
       final token = await _connection.getValidToken();
-      if (token == null) {
-        lastError =
-            'Strava connection could not be renewed. Reconnect Strava in Settings.';
-        return false;
-      }
-
+      checkCurrent();
+      if (token == null) throw const AppFailure(FailureCode.connectionExpired);
       final bikes = await _connection.fetchAthleteBikes(token);
-      if (bikes.isEmpty) {
-        lastError =
-            'No bikes found in Strava. Add a bike under My Gear in Strava.';
-        return false;
-      }
-
-      await _db.saveStravaBikes(bikes);
-
+      checkCurrent();
+      if (bikes.isEmpty) throw const AppFailure(FailureCode.noStravaBikes);
+      await _writes.enqueue(() {
+        checkCurrent();
+        return _db.saveStravaBikes(bikes);
+      });
+      checkCurrent();
       await _connection.markSynced();
-
-      return true;
-    } on StravaApiException catch (e) {
-      lastError = e.message;
-      debugPrint('Strava sync error: $e');
-      return false;
-    } catch (e) {
-      lastError =
-          'Could not complete Strava sync. Check your connection and try again.';
-      debugPrint('Strava sync error: $e');
-      return false;
+      checkCurrent();
+      return const CommandSuccess(null);
+    } on AppFailure catch (failure) {
+      return CommandFailure(failure);
+    } on CommandAborted {
+      return const CommandCancelled();
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/services_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/layout/responsive_layout.dart';
@@ -45,7 +46,7 @@ class _ServicesViewState extends State<ServicesView> {
         dependencies.stravaConnection,
         widget.uBikeID)
       ..addListener(_changed);
-    _controller.load();
+    presentCommand(context, _controller.load);
   }
 
   void _changed() {
@@ -65,7 +66,7 @@ class _ServicesViewState extends State<ServicesView> {
       _controller.dispose();
       _createController();
     } else if (oldWidget.uBikeID != widget.uBikeID) {
-      _controller.selectBike(widget.uBikeID);
+      presentCommand(context, () => _controller.selectBike(widget.uBikeID));
     }
   }
 
@@ -75,19 +76,16 @@ class _ServicesViewState extends State<ServicesView> {
     super.dispose();
   }
 
-  Future<void> _loadState() => _controller.load();
+  Future<void> _loadState() async {
+    await presentCommand(context, _controller.load);
+  }
+
   Future<void> _syncStrava() async {
-    _showError(await _controller.sync());
+    await presentCommand(context, _controller.sync);
   }
 
   Future<void> _connectStrava() async {
-    _showError(await _controller.connect(web: kIsWeb));
-  }
-
-  void _showError(String? message) {
-    if (!mounted || message == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 8)));
+    await presentCommand(context, () => _controller.connect(web: kIsWeb));
   }
 
   @override

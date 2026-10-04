@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/workspace_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/ui/add_component_bottom_sheet.dart';
@@ -72,7 +73,9 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       });
     }
-    _workspace.loadMileage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) presentCommand(context, _workspace.loadMileage);
+    });
   }
 
   void _changed() {
@@ -87,7 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _onBikeSelected(String bikeName, String uBikeID, BikeType bikeType,
       String setupName, String uSetupID) {
-    _workspace.selectBike(bikeName, uBikeID, bikeType, setupName, uSetupID);
+    presentCommand(
+        context,
+        () => _workspace.selectBike(
+            bikeName, uBikeID, bikeType, setupName, uSetupID));
   }
 
   Widget _buildBikeHeader(
@@ -504,19 +510,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _addComponent() async {
-    try {
-      await _workspace.loadMileage();
-      if (!mounted) return;
-      showAddComponentSheet(context,
-          user: widget.user!,
-          uBikeID: _uBikeID,
-          currentMileageKm: _currentMileageKm);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Could not load mileage. Try again.')));
-      }
-    }
+    final loaded = await presentCommand(context, _workspace.loadMileage);
+    if (!mounted || !loaded) return;
+    await showAddComponentSheet(context,
+        user: widget.user!,
+        uBikeID: _uBikeID,
+        currentMileageKm: _currentMileageKm);
   }
 
   @override
