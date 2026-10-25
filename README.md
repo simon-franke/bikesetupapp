@@ -35,7 +35,7 @@ See [AGENTS.md](AGENTS.md) for architecture, development conventions, and deploy
 
 ## Code structure
 
-Feature code lives in `lib/features/`, shared UI and infrastructure in `lib/common/`, and dependency wiring, startup and navigation in `lib/app/`. Features use a UI → controller → repository flow. See [the architecture guide](docs/architecture.md) for responsibilities, injection and tests.
+Feature code lives in `lib/features/`, shared UI and infrastructure in `lib/common/`, and dependency wiring, startup and navigation in `lib/app/`. Features use a UI → controller → repository flow. See [AGENTS.md](AGENTS.md) for responsibilities, injection and tests.
 
 ## Strava connection changes
 
