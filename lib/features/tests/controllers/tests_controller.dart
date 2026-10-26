@@ -20,16 +20,19 @@ class TestsController extends OperationController {
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
             final existing = await _repository.watch(bike, setup).first;
-            if (existing.any((t) => t.stage != 'finished')) return;
+            if (existing.any((t) => t.stage != TestStage.finished)) return;
             final values = <String, Map<String, String>>{};
             final information = await _setups.getSetupInformation(bike, setup);
-            final configuration = SetupConfiguration.fromInformation(information);
-            final defaults = SetupDefaults.forShock(information['shock']?.toString() ?? 'Air');
+            final configuration =
+                SetupConfiguration.fromInformation(information);
+            final defaults = SetupDefaults.forShock(
+                information['shock']?.toString() ?? 'Air');
             for (final category in configuration?.fields.keys ?? categories) {
               values[category] =
                   (await _setups.getSettings(bike, category, setup).first)
                       .map((k, v) => MapEntry(k, v.toString()));
-              final fields = configuration?.fields[category] ?? defaults.entries
+              final fields = configuration?.fields[category] ??
+                  defaults.entries
                       .where((e) => e.key.category == category)
                       .firstOrNull
                       ?.value
@@ -49,40 +52,83 @@ class TestsController extends OperationController {
                     before: readValues(values),
                     values: readValues(values)));
           }));
-  Future<CommandResult<void>> save(String bike, String setup, SetupTest test) =>
-      command(() => _writes.enqueue(() {
-            if (isDisposed) throw const CommandAborted();
-            return _repository.save(bike, setup, test);
-          }));
-  Future<CommandResult<void>> updateDraft(String bike, String setup, String id,
-          {String? name,
-          String? category,
-          String? field,
-          String? value,
-          Map<String, String>? feedback}) =>
+  Future<CommandResult<void>> _update(String bike, String setup, String id,
+          TestStage stage, SetupTest Function(SetupTest) change) =>
       command(() => _writes.enqueue(() async {
-            if (isDisposed) throw const CommandAborted();
-            final latest = (await _repository.watch(bike, setup).first)
-                .where((test) => test.id == id && test.stage != 'finished')
-                .firstOrNull;
-            if (latest == null) throw const AppFailure(FailureCode.saveFailed);
-            final values = readValues(latest.values);
-            if (category != null && field != null && value != null) {
-              if (latest.stage != 'draft') {
-                throw const AppFailure(FailureCode.saveFailed);
-              }
-              (values[category] ??= {})[field] = value;
+            final latest = await _latest(bike, setup, id);
+            if (latest.stage != stage) {
+              throw const AppFailure(FailureCode.saveFailed);
             }
-            await _repository.save(
-                bike,
-                setup,
-                latest.copyWith(
-                    name: name, values: values, feedback: feedback));
+            await _repository.save(bike, setup, change(latest));
           }));
-  Future<CommandResult<void>> finish(String bike, String setup, SetupTest test,
+
+  Future<SetupTest> _latest(String bike, String setup, String id) async {
+    if (isDisposed) throw const CommandAborted();
+    final latest = (await _repository.watch(bike, setup).first)
+        .where((test) => test.id == id)
+        .firstOrNull;
+    if (isDisposed) throw const CommandAborted();
+    if (latest == null) throw const AppFailure(FailureCode.saveFailed);
+    return latest;
+  }
+
+  Future<CommandResult<void>> renameDraft(
+          String bike, String setup, String id, String name) =>
+      _update(bike, setup, id, TestStage.draft,
+          (latest) => latest.copyWith(name: name.trim()));
+
+  Future<CommandResult<void>> updateField(String bike, String setup, String id,
+          String category, String field, String value) =>
+      _update(bike, setup, id, TestStage.draft, (latest) {
+        if (!latest.values.containsKey(category) ||
+            !latest.values[category]!.containsKey(field)) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        final values = readValues(latest.values);
+        values[category]![field] = value;
+        return latest.copyWith(values: values);
+      });
+
+  Future<CommandResult<void>> startTest(
+          String bike, String setup, String id, String name) =>
+      _update(bike, setup, id, TestStage.draft, (latest) {
+        if (latest.changes.isEmpty) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        return latest.copyWith(name: name.trim(), stage: TestStage.ride);
+      });
+
+  Future<CommandResult<void>> updateFeedback(
+          String bike, String setup, String id, RideFeedback feedback) =>
+      _update(bike, setup, id, TestStage.ride,
+          (latest) => latest.copyWith(feedback: feedback));
+
+  Future<CommandResult<void>> logRide(
+          String bike, String setup, String id, RideFeedback feedback) =>
+      _update(bike, setup, id, TestStage.ride, (latest) {
+        if (feedback.validationError != null) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        return latest.copyWith(
+            stage: TestStage.review,
+            feedback: const RideFeedback(),
+            rides: [...latest.rides, feedback.trimmed]);
+      });
+
+  Future<CommandResult<void>> resumeTest(
+          String bike, String setup, String id) =>
+      _update(bike, setup, id, TestStage.review,
+          (latest) => latest.copyWith(stage: TestStage.ride));
+
+  Future<CommandResult<void>> finish(String bike, String setup, String id,
           {bool apply = false, String? newSetupName}) =>
       command(() => _writes.enqueue(() async {
-            if (isDisposed) throw const CommandAborted();
+            final test = await _latest(bike, setup, id);
+            if (test.stage == TestStage.finished) return;
+            if ((apply || newSetupName != null) &&
+                test.stage != TestStage.review) {
+              throw const AppFailure(FailureCode.invalidInput);
+            }
             if (newSetupName != null) {
               final name = newSetupName.trim();
               if (name.isEmpty ||

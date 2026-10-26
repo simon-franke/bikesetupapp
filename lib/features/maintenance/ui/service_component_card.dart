@@ -41,7 +41,7 @@ class ServiceComponentCard extends StatelessWidget {
       latestEntry: latestEntry,
       mileageAvailable: mileageAvailable,
     );
-    final color = s.mileageUnknown ? p.inkMuted : s.status.color(p);
+    final color = s.usageUnknown ? p.inkMuted : s.status.color(p);
     final format = NumberFormat('#,###');
     final lastService = s.lastServicedAt == null
         ? 'No service recorded'
@@ -98,12 +98,12 @@ class ServiceComponentCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                s.mileageUnknown
+                s.usageUnknown
                     ? 'Service interval: ${format.format(component.interval)} ${component.unitLabel}'
                     : '${component.usesHours ? s.usage.toStringAsFixed(1) : format.format(s.usage.round())} of ${format.format(component.interval)} ${component.unitLabel} since service',
                 style: TextStyle(fontSize: 13, color: p.inkMuted),
               ),
-              if (!s.mileageUnknown) ...[
+              if (!s.usageUnknown) ...[
                 const SizedBox(height: 10),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(2),

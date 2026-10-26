@@ -19,6 +19,39 @@ bool sameSettingValue(String? a, String? b) {
       0.00001;
 }
 
+enum TestStage { draft, ride, review, finished }
+
+class RideFeedback {
+  const RideFeedback({this.feeling, this.note = '', this.time = ''});
+  final String? feeling;
+  final String note, time;
+
+  String? get validationError {
+    if (!const ['Better', 'Same', 'Worse'].contains(feeling)) {
+      return 'Choose Better, Same or Worse.';
+    }
+    if (time.trim().isNotEmpty &&
+        !RegExp(r'^\d{1,3}:[0-5]\d$').hasMatch(time.trim())) {
+      return 'Use minutes:seconds, e.g. 03:42.';
+    }
+    return null;
+  }
+
+  RideFeedback get trimmed =>
+      RideFeedback(feeling: feeling, note: note.trim(), time: time.trim());
+
+  Map<String, String> toMap() => {
+        if (feeling != null) 'feeling': feeling!,
+        'note': note,
+        'time': time,
+      };
+
+  factory RideFeedback.fromMap(Map data) => RideFeedback(
+      feeling: data['feeling'] as String?,
+      note: data['note'] as String? ?? '',
+      time: data['time'] as String? ?? '');
+}
+
 class TestChange {
   const TestChange(this.category, this.field, this.before, this.after);
   final String category, field, before, after;
@@ -30,14 +63,15 @@ class SetupTest {
       required this.name,
       required this.before,
       required this.values,
-      this.stage = 'draft',
+      this.stage = TestStage.draft,
       this.rides = const [],
       this.result = '',
-      this.feedback = const {}});
-  final String id, name, stage, result;
+      this.feedback = const RideFeedback()});
+  final String id, name, result;
+  final TestStage stage;
   final SetupValues before, values;
-  final List<Map<String, String>> rides;
-  final Map<String, String> feedback;
+  final List<RideFeedback> rides;
+  final RideFeedback feedback;
   List<TestChange> get changes => [
         for (final category in values.entries)
           for (final field in category.value.entries)
@@ -49,10 +83,10 @@ class SetupTest {
   SetupTest copyWith(
           {String? name,
           SetupValues? values,
-          String? stage,
-          List<Map<String, String>>? rides,
+          TestStage? stage,
+          List<RideFeedback>? rides,
           String? result,
-          Map<String, String>? feedback}) =>
+          RideFeedback? feedback}) =>
       SetupTest(
           id: id,
           name: name ?? this.name,
@@ -67,9 +101,9 @@ class SetupTest {
         'name': name,
         'before': before,
         'values': values,
-        'stage': stage,
-        'rides': rides,
-        'feedback': feedback,
+        'stage': stage.name,
+        'rides': rides.map((ride) => ride.toMap()).toList(),
+        'feedback': feedback.toMap(),
         'result': result
       };
   factory SetupTest.fromMap(Map data) => SetupTest(
@@ -77,10 +111,10 @@ class SetupTest {
       name: data['name'] as String,
       before: readValues(data['before'] as Map),
       values: readValues(data['values'] as Map),
-      stage: data['stage'] as String,
+      stage: TestStage.values.byName(data['stage'] as String),
       rides: (data['rides'] as List)
-          .map((r) => Map<String, String>.from(r as Map))
+          .map((r) => RideFeedback.fromMap(r as Map))
           .toList(),
-      feedback: Map<String, String>.from(data['feedback'] as Map? ?? {}),
+      feedback: RideFeedback.fromMap(data['feedback'] as Map? ?? {}),
       result: data['result'] as String? ?? '');
 }

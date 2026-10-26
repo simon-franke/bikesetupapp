@@ -23,7 +23,7 @@ extension ServiceStatusColor on ServiceStatus {
 String serviceDistanceLabel(AnnotatedService service) {
   if (service.component.interval <= 0) return 'Set a service interval';
   if (service.lastServicedAt == null) return 'No service recorded';
-  if (service.mileageUnknown) {
+  if (service.usageUnknown) {
     return service.component.usesHours
         ? 'Ride log needed to estimate service'
         : 'Mileage needed to estimate service';

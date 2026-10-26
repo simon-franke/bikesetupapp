@@ -18,7 +18,6 @@ class TestsView extends StatefulWidget {
       required this.bike,
       required this.setup,
       required this.setupName,
-
       this.onSetupSaved,
       this.onApplied});
   final String uid, bike, setup, setupName;
@@ -47,13 +46,11 @@ class _TestsViewState extends State<TestsView> {
     super.dispose();
   }
 
-  Future<bool> save(SetupTest test) => presentCommand(
-      context, () => controller.save(widget.bike, widget.setup, test));
   Future<void> finish(SetupTest test,
       {bool apply = false, String? newName}) async {
     final saved = await presentCommand(
         context,
-        () => controller.finish(widget.bike, widget.setup, test,
+        () => controller.finish(widget.bike, widget.setup, test.id,
             apply: apply, newSetupName: newName));
     if (!mounted || !saved) return;
     if (newName != null) widget.onSetupSaved?.call(newName, test.id);
@@ -92,14 +89,15 @@ class _TestsViewState extends State<TestsView> {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final active =
-                snapshot.data!.where((t) => t.stage != 'finished').firstOrNull;
+            final active = snapshot.data!
+                .where((t) => t.stage != TestStage.finished)
+                .firstOrNull;
             if (active != null && loadedId != active.id) {
               loadedId = active.id;
               name.text = active.name;
-              feeling = active.feedback['feeling'];
-              notes.text = active.feedback['note'] ?? '';
-              time.text = active.feedback['time'] ?? '';
+              feeling = active.feedback.feeling;
+              notes.text = active.feedback.note;
+              time.text = active.feedback.time;
             }
             return ListView(
                 padding: EdgeInsets.fromLTRB(
@@ -134,14 +132,14 @@ class _TestsViewState extends State<TestsView> {
                         ])),
                     if (snapshot.data!.isNotEmpty) title('Previous tests'),
                     for (final t in snapshot.data!
-                        .where((t) => t.stage == 'finished')) ...[
+                        .where((t) => t.stage == TestStage.finished)) ...[
                       comparison(t, badge: t.result),
                       for (final ride in t.rides)
                         rideCard(ride, t.rides.indexOf(ride) + 1),
                     ],
-                  ] else if (active.stage == 'draft')
+                  ] else if (active.stage == TestStage.draft)
                     ...draft(active)
-                  else if (active.stage == 'ride')
+                  else if (active.stage == TestStage.ride)
                     ...feedback(active)
                   else
                     ...results(active),
@@ -155,8 +153,8 @@ class _TestsViewState extends State<TestsView> {
             hint: 'Test name',
             onChanged: (_) => presentCommand(
                 context,
-                () => controller.updateDraft(widget.bike, widget.setup, t.id,
-                    name: name.text.trim()))),
+                () => controller.renameDraft(
+                    widget.bike, widget.setup, t.id, name.text))),
         const SizedBox(height: 24),
         Row(children: [
           const Expanded(child: Text('Choose settings to change')),
@@ -200,10 +198,8 @@ class _TestsViewState extends State<TestsView> {
                   name: selectedField!.$2,
                   value: t.values[selectedField!.$1]![selectedField!.$2]!,
                   onSave: (value) async {
-                    final values = readValues(t.values);
-                    values[selectedField!.$1]![selectedField!.$2] = value;
-                    (await controller.save(widget.bike, widget.setup,
-                            t.copyWith(values: values)))
+                    (await controller.updateField(widget.bike, widget.setup,
+                            t.id, selectedField!.$1, selectedField!.$2, value))
                         .requireValue();
                   })),
         Padding(
@@ -214,11 +210,15 @@ class _TestsViewState extends State<TestsView> {
           comparison(t, badge: '${t.changes.length} changes', showName: false),
         action(
             'Start test',
-            () => save(t.copyWith(
-                name: name.text.trim().isEmpty
-                    ? '${widget.setupName} test'
-                    : name.text.trim(),
-                stage: 'ride')),
+            () => presentCommand(
+                context,
+                () => controller.startTest(
+                    widget.bike,
+                    widget.setup,
+                    t.id,
+                    name.text.trim().isEmpty
+                        ? '${widget.setupName} test'
+                        : name.text)),
             primary: true,
             enabled: t.changes.isNotEmpty),
         action('Discard draft', () => finish(t)),
@@ -264,8 +264,8 @@ class _TestsViewState extends State<TestsView> {
         settingKey: field,
         currentValue: value,
         isDefault: true, onSave: (v) {
-      return controller.updateDraft(widget.bike, widget.setup, t.id,
-          category: category, field: field, value: v, name: name.text.trim());
+      return controller.updateField(
+          widget.bike, widget.setup, t.id, category, field, v);
     });
   }
 
@@ -314,15 +314,14 @@ class _TestsViewState extends State<TestsView> {
                 ])
             ]),
       ]));
+  RideFeedback get enteredFeedback =>
+      RideFeedback(feeling: feeling, note: notes.text, time: time.text);
+
   void persistFeedback(SetupTest t) {
     presentCommand(
         context,
-        () => controller.updateDraft(widget.bike, widget.setup, t.id,
-                feedback: {
-                  if (feeling != null) 'feeling': feeling!,
-                  'note': notes.text,
-                  'time': time.text
-                }));
+        () => controller.updateFeedback(
+            widget.bike, widget.setup, t.id, enteredFeedback));
   }
 
   List<Widget> feedback(SetupTest t) => [
@@ -373,22 +372,15 @@ class _TestsViewState extends State<TestsView> {
             onChanged: (_) => persistFeedback(t)),
         const SizedBox(height: 18),
         action('Log ride', () async {
-          if (feeling == null ||
-              (time.text.isNotEmpty &&
-                  !RegExp(r'^\d{1,3}:[0-5]\d$').hasMatch(time.text.trim()))) {
-            setState(() => error = feeling == null
-                ? 'Choose Better, Same or Worse.'
-                : 'Use minutes:seconds, e.g. 03:42.');
+          final feedback = enteredFeedback;
+          if (feedback.validationError != null) {
+            setState(() => error = feedback.validationError);
             return;
           }
-          if (await save(t.copyWith(stage: 'review', feedback: {}, rides: [
-            ...t.rides,
-            {
-              'feeling': feeling!,
-              'note': notes.text.trim(),
-              'time': time.text.trim()
-            }
-          ]))) {
+          if (await presentCommand(
+              context,
+              () => controller.logRide(
+                  widget.bike, widget.setup, t.id, feedback))) {
             if (!mounted) return;
             setState(() {
               feeling = null;
@@ -400,17 +392,17 @@ class _TestsViewState extends State<TestsView> {
         }, primary: true),
         action('Discard test', () => finish(t)),
       ];
-  Widget rideCard(Map<String, String> ride, int index) => SetupCard(
+  Widget rideCard(RideFeedback ride, int index) => SetupCard(
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('RIDE $index${ride['time']!.isEmpty ? '' : '   ${ride['time']}'}',
+        Text('RIDE $index${ride.time.isEmpty ? '' : '   ${ride.time}'}',
             style: AppTextStyles.eyebrow(color: context.palette.inkMuted)),
         const SizedBox(height: 20),
-        Text(ride['feeling']!,
+        Text(ride.feeling ?? '',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-        if (ride['note']!.isNotEmpty) ...[
+        if (ride.note.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(ride['note']!)
+          Text(ride.note)
         ],
       ]));
   List<Widget> results(SetupTest t) => [
@@ -423,7 +415,10 @@ class _TestsViewState extends State<TestsView> {
               context: context, builder: (_) => _SetupName(initial: t.name));
           if (newName != null && mounted) await finish(t, newName: newName);
         }),
-        action('Log another ride', () => save(t.copyWith(stage: 'ride'))),
+        action(
+            'Log another ride',
+            () => presentCommand(context,
+                () => controller.resumeTest(widget.bike, widget.setup, t.id))),
         action('Finish without changes', () => finish(t)),
       ];
 }

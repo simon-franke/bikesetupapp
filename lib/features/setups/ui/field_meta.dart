@@ -221,6 +221,13 @@ const frameFields = ['Flip chip', 'Headset cups'];
 
 /// Editable starting values for new numeric settings, not measured bike specs.
 String initialSettingValue(String category, String field) {
+  if (category == 'Frame') {
+    return switch (field) {
+      'Flip chip' => 'Standard',
+      'Headset cups' => 'Neutral',
+      _ => '',
+    };
+  }
   final meta = kFieldMeta[field] ?? kDefaultFieldMeta;
   if (meta.family == UnitFamily.freeText) return '';
   final value = switch (field) {

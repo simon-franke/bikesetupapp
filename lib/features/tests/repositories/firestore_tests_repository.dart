@@ -93,7 +93,7 @@ class FirestoreTestsRepository implements TestsRepository {
             }
           }
           tx.update(parent, {'activeTestId': FieldValue.delete()});
-          if (test.stage == 'draft' && !apply && newSetupId == null) {
+          if (test.stage == TestStage.draft && !apply && newSetupId == null) {
             tx.delete(testRef);
             return;
           }
@@ -101,7 +101,7 @@ class FirestoreTestsRepository implements TestsRepository {
               testRef,
               test
                   .copyWith(
-                      stage: 'finished',
+                      stage: TestStage.finished,
                       result: apply
                           ? 'Applied to baseline'
                           : newSetupId != null

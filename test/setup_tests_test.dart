@@ -37,12 +37,12 @@ class MemoryTests implements TestsRepository {
       {bool apply = false, String? newSetupId, String? newSetupName}) async {
     if (fail) throw const AppFailure(FailureCode.saveFailed);
     applied = apply;
-    await save(
-        bike, setup, test.copyWith(stage: 'finished', result: 'Baseline kept'));
+    await save(bike, setup,
+        test.copyWith(stage: TestStage.finished, result: 'Baseline kept'));
   }
 }
 
-SetupTest sample({String stage = 'draft'}) =>
+SetupTest sample({TestStage stage = TestStage.draft}) =>
     SetupTest(id: 'test', name: 'Roots and braking', stage: stage, before: {
       'FrontTire': {'Pressure': '22 psi'},
       'Fork': {'Compression': '6 clicks'}
@@ -52,15 +52,20 @@ SetupTest sample({String stage = 'draft'}) =>
     });
 
 void main() {
-  test('configured tests preserve selected parts without adding air fields to a coil fork', () async {
+  test(
+      'configured tests preserve selected parts without adding air fields to a coil fork',
+      () async {
     final repo = MemoryTests();
     final setups = FakeSetupsRepository();
     final configuration = SetupConfiguration({
-      'FrontTire': ['Pressure'], 'RearTire': ['Pressure'],
+      'FrontTire': ['Pressure'],
+      'RearTire': ['Pressure'],
       'Fork': ['Spring Rate', 'Preload', 'Sag', 'Rebound'],
       'GeneralSettings': ['Stem length', 'Seat Height'],
     });
-    setups.information['setup'] = {SetupConfiguration.metadataKey: configuration.encode()};
+    setups.information['setup'] = {
+      SetupConfiguration.metadataKey: configuration.encode()
+    };
     setups.settings['bike/setup/Fork/Spring Rate'] = '65 N/mm';
     final controller = TestsController(repo, setups);
     final result = await controller.create('bike', 'setup', 'Coil',
@@ -88,28 +93,98 @@ void main() {
             .isSuccess,
         isTrue);
     final draft = repo.records.values.single;
-    final values = readValues(draft.values);
-    values['FrontTire']!['Pressure'] = '21 psi';
-    values['Fork']!['Compression'] = '4 clicks';
-    await controller.save('bike', 'setup', draft.copyWith(values: values));
+    await Future.wait([
+      controller.updateField(
+          'bike', 'setup', draft.id, 'FrontTire', 'Pressure', '21 psi'),
+      controller.updateField(
+          'bike', 'setup', draft.id, 'Fork', 'Compression', '4 clicks'),
+    ]);
     final restored = SetupTest.fromMap(repo.records.values.single.toMap());
     expect(restored.changes, hasLength(2));
     expect(restored.before['FrontTire']!['Pressure'], '22 psi');
     expect(setups.settings['bike/setup/FrontTire/Pressure'], '22 psi');
     await controller.create('bike', 'setup', 'Duplicate', ['FrontTire']);
     expect(repo.records, hasLength(1));
+    await controller.startTest('bike', 'setup', restored.id, restored.name);
+    await controller.logRide('bike', 'setup', restored.id,
+        const RideFeedback(feeling: 'Better'));
     repo.fail = true;
     expect(
-        (await controller.finish('bike', 'setup', restored, apply: true))
+        (await controller.finish('bike', 'setup', restored.id, apply: true))
             .isSuccess,
         isFalse);
-    expect(repo.records.values.single.stage, 'draft');
+    expect(repo.records.values.single.stage, TestStage.review);
     repo.fail = false;
-    expect(
-        (await controller.finish('bike', 'setup', restored)).isSuccess, isTrue);
+    expect((await controller.finish('bike', 'setup', restored.id)).isSuccess,
+        isTrue);
     expect(repo.applied, isFalse);
     controller.dispose();
     await repo.updates.close();
+  });
+
+  test('test commands enforce transitions and preserve queued changes',
+      () async {
+    final repo = MemoryTests();
+    repo.records['test'] = sample();
+    final controller = TestsController(repo, FakeSetupsRepository());
+    addTearDown(controller.dispose);
+    addTearDown(repo.updates.close);
+    expect((await controller.resumeTest('bike', 'setup', 'test')).isSuccess,
+        isFalse);
+    await Future.wait([
+      controller.renameDraft('bike', 'setup', 'test', 'Renamed'),
+      controller.updateField(
+          'bike', 'setup', 'test', 'Fork', 'Compression', '3 clicks'),
+      controller.startTest('bike', 'setup', 'test', 'Renamed'),
+    ]);
+    expect(repo.records['test']!.values['Fork']!['Compression'], '3 clicks');
+    expect(repo.records['test']!.stage, TestStage.ride);
+    expect(
+        (await controller.updateField(
+                'bike', 'setup', 'test', 'Fork', 'Compression', '9 clicks'))
+            .isSuccess,
+        isFalse);
+    expect(
+        (await controller.logRide('bike', 'setup', 'test',
+                const RideFeedback(feeling: 'Better', time: '03:99')))
+            .isSuccess,
+        isFalse);
+    expect(repo.records['test']!.rides, isEmpty);
+    expect(
+        (await controller.logRide(
+                'bike',
+                'setup',
+                'test',
+                const RideFeedback(
+                    feeling: 'Better', note: ' Grip ', time: '03:42')))
+            .isSuccess,
+        isTrue);
+    expect(repo.records['test']!.rides.single.note, 'Grip');
+    expect(
+        (await controller.logRide(
+                'bike', 'setup', 'test', const RideFeedback(feeling: 'Same')))
+            .isSuccess,
+        isFalse);
+    await controller.resumeTest('bike', 'setup', 'test');
+    await controller.logRide(
+        'bike', 'setup', 'test', const RideFeedback(feeling: 'Same'));
+    expect(repo.records['test']!.rides, hasLength(2));
+    await controller.finish('bike', 'setup', 'test');
+    expect((await controller.resumeTest('bike', 'setup', 'test')).isSuccess,
+        isFalse);
+  });
+
+  test('typed feedback preserves the stored map format', () {
+    final data = sample(stage: TestStage.review).copyWith(rides: [
+      const RideFeedback(feeling: 'Better', note: 'Grip', time: '03:42')
+    ]).toMap();
+    expect(data['stage'], 'review');
+    expect((data['rides'] as List).single,
+        {'feeling': 'Better', 'note': 'Grip', 'time': '03:42'});
+    final restored = SetupTest.fromMap(data);
+    expect(restored.stage, TestStage.review);
+    expect(restored.rides.single.validationError, isNull);
+    expect(restored.toMap(), data);
   });
 
   testWidgets(
@@ -120,7 +195,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final repo = MemoryTests();
-    repo.records['test'] = sample(stage: 'ride');
+    repo.records['test'] = sample(stage: TestStage.ride);
     final deps = AppDependencies(
         testsRepository: (_) => repo,
         setupsRepository: (_) => FakeSetupsRepository());
@@ -130,11 +205,11 @@ void main() {
             theme: AppTheme.lightTheme,
             home: const Scaffold(
                 body: TestsView(
-                    uid: 'user',
-                    bike: 'bike',
-                    setup: 'setup',
-                    setupName: 'Dry trails',
-                    )))));
+              uid: 'user',
+              bike: 'bike',
+              setup: 'setup',
+              setupName: 'Dry trails',
+            )))));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
@@ -148,9 +223,9 @@ void main() {
     await tester.enterText(find.byType(TextField).last, '03:42');
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
-    expect(repo.records['test']!.stage, 'review');
+    expect(repo.records['test']!.stage, TestStage.review);
     expect(find.text('More grip on roots.'), findsOneWidget);
-    expect(repo.records['test']!.rides.single['time'], '03:42');
+    expect(repo.records['test']!.rides.single.time, '03:42');
     await tester.tap(find.text('Log another ride'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Same'));
@@ -160,7 +235,7 @@ void main() {
     await tester.ensureVisible(find.text('Finish without changes'));
     await tester.tap(find.text('Finish without changes'));
     await tester.pumpAndSettle();
-    expect(repo.records['test']!.stage, 'finished');
+    expect(repo.records['test']!.stage, TestStage.finished);
     expect(repo.applied, isFalse);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
@@ -168,7 +243,7 @@ void main() {
     await repo.updates.close();
   });
 
-  for (final stage in ['draft', 'ride', 'review']) {
+  for (final stage in [TestStage.draft, TestStage.ride, TestStage.review]) {
     testWidgets('$stage fits narrow screens with enlarged text',
         (tester) async {
       tester.view.physicalSize = const Size(320, 850);
@@ -188,11 +263,11 @@ void main() {
                   data: const MediaQueryData(textScaler: TextScaler.linear(2)),
                   child: const Scaffold(
                       body: TestsView(
-                          uid: 'user',
-                          bike: 'bike',
-                          setup: 'setup',
-                          setupName: 'Dry trails',
-                          ))))));
+                    uid: 'user',
+                    bike: 'bike',
+                    setup: 'setup',
+                    setupName: 'Dry trails',
+                  ))))));
       await tester.pumpAndSettle();
       await tester.drag(find.byType(ListView), const Offset(0, -600));
       await tester.pumpAndSettle();
