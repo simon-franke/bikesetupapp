@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme_data.dart';
-import 'adaptive_modal.dart';
+import 'app_sheet.dart';
 
 /// A shared selector with a scrollable choice sheet instead of a popup menu.
 class AppSelect<T> extends StatelessWidget {
@@ -15,7 +15,7 @@ class AppSelect<T> extends StatelessWidget {
 
   Future<void> open(BuildContext context) async {
     FocusScope.of(context).unfocus();
-    await showAdaptiveModal<void>(context: context, builder: (sheet) => SafeArea(
+    await showAppSheet<void>(context: context, builder: (sheet) => SafeArea(
       top: false,
       child: Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: ConstrainedBox(constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheet).height * .7),

@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/features/setups/models/category.dart';
 import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import 'package:bikesetupapp/common/ui/progress_indicator.dart';
@@ -12,10 +11,8 @@ import 'package:flutter/services.dart';
 const double bubbleCardW = 70.0;
 const double bubbleCardH = 44.0;
 Size schematicCardSize(BuildContext context) {
-  final wide = ResponsiveLayout.isWide(context);
   final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-  return Size(
-      (wide ? 112 : bubbleCardW) * scale, (wide ? 64 : bubbleCardH) * scale);
+  return Size(bubbleCardW * scale, bubbleCardH * scale);
 }
 
 const double _dotRadius = 5.0;
@@ -201,7 +198,6 @@ class _SchematicBubbleState extends State<SchematicBubble>
     final p = context.palette;
     final bool isSelected = _isSelected;
     final cardSize = schematicCardSize(context);
-    final wide = ResponsiveLayout.isWide(context);
 
     // Convert bottom-origin coordinates to top-origin for the painter.
     final Offset dotCenter = Offset(
@@ -217,7 +213,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
       child: Stack(
         children: [
           // Leader line spanning the full container
-          if (wide || isSelected)
+          if (isSelected)
             Positioned.fill(
               child: IgnorePointer(
                 child: CustomPaint(
@@ -234,7 +230,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
             ),
 
           // Anchor dot on the bike part
-          if (wide || isSelected)
+          if (isSelected)
             Positioned(
               left: widget.anchorLeft,
               bottom: widget.anchorBottom,
@@ -379,7 +375,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                 label,
                                 style: TextStyle(
                                   color: chipInk,
-                                  fontSize: wide ? 14 : 10,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0,
                                   height: 1.2,
@@ -400,7 +396,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTextStyles.mono(
-                                              size: wide ? 20 : 13,
+                                              size: 13,
                                               weight: FontWeight.w700,
                                               color: chipInk,
                                               height: 1,
@@ -415,7 +411,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               color: chipInk,
-                                              fontSize: wide ? 12 : 8.5,
+                                              fontSize: 8.5,
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),

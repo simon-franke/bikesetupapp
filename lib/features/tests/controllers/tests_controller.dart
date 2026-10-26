@@ -43,7 +43,7 @@ class TestsController extends OperationController {
               }
             }
             if (isDisposed) throw const CommandAborted();
-            await _repository.save(
+            await _repository.create(
                 bike,
                 setup,
                 SetupTest(
@@ -54,23 +54,14 @@ class TestsController extends OperationController {
           }));
   Future<CommandResult<void>> _update(String bike, String setup, String id,
           TestStage stage, SetupTest Function(SetupTest) change) =>
-      command(() => _writes.enqueue(() async {
-            final latest = await _latest(bike, setup, id);
-            if (latest.stage != stage) {
-              throw const AppFailure(FailureCode.saveFailed);
-            }
-            await _repository.save(bike, setup, change(latest));
+      command(() => _writes.enqueue(() {
+            if (isDisposed) throw const CommandAborted();
+            return _repository.update(bike, setup, id, expectedStage: stage,
+                change: (current) {
+              if (isDisposed) throw const CommandAborted();
+              return change(current);
+            });
           }));
-
-  Future<SetupTest> _latest(String bike, String setup, String id) async {
-    if (isDisposed) throw const CommandAborted();
-    final latest = (await _repository.watch(bike, setup).first)
-        .where((test) => test.id == id)
-        .firstOrNull;
-    if (isDisposed) throw const CommandAborted();
-    if (latest == null) throw const AppFailure(FailureCode.saveFailed);
-    return latest;
-  }
 
   Future<CommandResult<void>> renameDraft(
           String bike, String setup, String id, String name) =>
@@ -123,12 +114,7 @@ class TestsController extends OperationController {
   Future<CommandResult<void>> finish(String bike, String setup, String id,
           {bool apply = false, String? newSetupName}) =>
       command(() => _writes.enqueue(() async {
-            final test = await _latest(bike, setup, id);
-            if (test.stage == TestStage.finished) return;
-            if ((apply || newSetupName != null) &&
-                test.stage != TestStage.review) {
-              throw const AppFailure(FailureCode.invalidInput);
-            }
+            if (isDisposed) throw const CommandAborted();
             if (newSetupName != null) {
               final name = newSetupName.trim();
               if (name.isEmpty ||
@@ -137,9 +123,10 @@ class TestsController extends OperationController {
                 throw const AppFailure(FailureCode.duplicateName);
               }
             }
-            await _repository.finish(bike, setup, test,
+            if (isDisposed) throw const CommandAborted();
+            await _repository.finish(bike, setup, id,
                 apply: apply,
-                newSetupId: newSetupName == null ? null : test.id,
+                newSetupId: newSetupName == null ? null : id,
                 newSetupName: newSetupName?.trim());
           }));
 }

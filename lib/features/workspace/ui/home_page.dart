@@ -9,7 +9,6 @@ import 'package:bikesetupapp/features/maintenance/ui/add_component_bottom_sheet.
 import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
 import 'package:bikesetupapp/features/settings/ui/settings_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_chooser_sheet.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
@@ -283,7 +282,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   bikeName: _bikeName,
                   user: widget.user!,
                   uBikeID: _uBikeID,
-                  onAddComponent: _addComponent,
                   onAlertChanged: (hasAlert) {
                     if (_showServiceAlert != hasAlert) {
                       _workspace.setServiceAlert(hasAlert);
@@ -304,7 +302,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = ResponsiveLayout.isWide(context);
     return Scaffold(
       extendBody: true,
       appBar: _buildAppBar(context),
@@ -318,17 +315,10 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SafeArea(
           top: false,
           bottom: false,
-          child: AppContentFrame(
-            maxWidth: wide ? double.infinity : kContentMaxWidth,
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: wide ? 24 : 0, vertical: wide ? 24 : 0),
-              child: LayoutBuilder(
-                  builder: (context, constraints) =>
-                      _buildBody(context, constraints.maxWidth)),
-            ),
-          )),
-      floatingActionButton: _activeView == ActiveView.services && !wide
+          child: LayoutBuilder(
+              builder: (context, constraints) =>
+                  _buildBody(context, constraints.maxWidth))),
+      floatingActionButton: _activeView == ActiveView.services
           ? FloatingActionButton.extended(
               onPressed: _addComponent,
               icon: const Icon(CupertinoIcons.plus),

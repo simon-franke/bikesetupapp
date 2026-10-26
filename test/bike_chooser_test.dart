@@ -165,16 +165,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final count in [2, 20]) {
-    testWidgets('tablet chooser fits $count bikes and keeps actions visible',
+    testWidgets('phone chooser fits $count bikes and keeps actions visible',
         (tester) async {
       var added = 0;
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
             body: Center(
                 child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560, maxHeight: 480),
+          constraints: const BoxConstraints(maxWidth: 480, maxHeight: 480),
           child: BikeChooserContent(
-            compact: true,
             onAddBike: () => added++,
             bikeList: ListView(
                 shrinkWrap: true,
@@ -186,7 +185,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSize(find.byType(BikeChooserContent)).height,
           count == 2 ? lessThan(400) : lessThanOrEqualTo(480));
-      expect(find.byTooltip('Close bike chooser'), findsOneWidget);
+      expect(find.byTooltip('Close bike chooser'), findsNothing);
       if (count == 20) {
         await tester.drag(find.byType(ListView), const Offset(0, -1000));
         await tester.pumpAndSettle();

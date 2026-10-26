@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../../rides/models/ride.dart';
@@ -27,7 +27,7 @@ class _HourComponentDetailState extends State<HourComponentDetail> {
       db.maintenance.getEntriesForComponent(widget.component.id);
   late ServiceComponent component = widget.component;
   Future<void> editInterval() async {
-    final interval = await showAdaptiveModal<double>(
+    final interval = await showAppSheet<double>(
         context: context,
         builder: (_) =>
             HourIntervalForm(initial: component.serviceIntervalHours!));
@@ -150,7 +150,7 @@ class _HourComponentDetailState extends State<HourComponentDetail> {
       floatingActionButton: FloatingActionButton.extended(
           icon: const Icon(CupertinoIcons.check_mark),
           label: const Text('Log service'),
-          onPressed: () => showAdaptiveModal<void>(
+          onPressed: () => showAppSheet<void>(
               context: context,
               builder: (_) =>
                   HourServiceSheet(uid: widget.uid, component: component))));

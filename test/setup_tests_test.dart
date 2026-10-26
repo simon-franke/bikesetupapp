@@ -1,46 +1,14 @@
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/features/tests/controllers/tests_controller.dart';
 import 'package:bikesetupapp/features/tests/models/setup_test.dart';
-import 'package:bikesetupapp/features/tests/repositories/tests_repository.dart';
+import 'support/fake_tests_repository.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
 import 'support/fake_repositories.dart';
-
-class MemoryTests implements TestsRepository {
-  final records = <String, SetupTest>{};
-  final updates = StreamController<void>.broadcast();
-  bool fail = false;
-  bool applied = false;
-  @override
-  Stream<List<SetupTest>> watch(String bike, String setup) async* {
-    yield records.values.toList();
-    await for (final _ in updates.stream) {
-      yield records.values.toList();
-    }
-  }
-
-  @override
-  Future<void> save(String bike, String setup, SetupTest test) async {
-    if (fail) throw const AppFailure(FailureCode.saveFailed);
-    records[test.id] = test;
-    updates.add(null);
-  }
-
-  @override
-  Future<void> finish(String bike, String setup, SetupTest test,
-      {bool apply = false, String? newSetupId, String? newSetupName}) async {
-    if (fail) throw const AppFailure(FailureCode.saveFailed);
-    applied = apply;
-    await save(bike, setup,
-        test.copyWith(stage: TestStage.finished, result: 'Baseline kept'));
-  }
-}
 
 SetupTest sample({TestStage stage = TestStage.draft}) =>
     SetupTest(id: 'test', name: 'Roots and braking', stage: stage, before: {
@@ -106,8 +74,8 @@ void main() {
     await controller.create('bike', 'setup', 'Duplicate', ['FrontTire']);
     expect(repo.records, hasLength(1));
     await controller.startTest('bike', 'setup', restored.id, restored.name);
-    await controller.logRide('bike', 'setup', restored.id,
-        const RideFeedback(feeling: 'Better'));
+    await controller.logRide(
+        'bike', 'setup', restored.id, const RideFeedback(feeling: 'Better'));
     repo.fail = true;
     expect(
         (await controller.finish('bike', 'setup', restored.id, apply: true))

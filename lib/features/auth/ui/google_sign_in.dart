@@ -3,8 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/failure_message.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'dart:io';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 
@@ -47,7 +46,7 @@ class LoginPage extends StatelessWidget {
   }
 
   void _showEmailSignIn(BuildContext context) {
-    showAdaptiveModal<void>(
+    showAppSheet<void>(
       context: context,
       builder: (_) => _EmailSignInSheet(
         onSignIn: (signInFn) => _handleSignIn(context, signInFn),
@@ -67,8 +66,8 @@ class LoginPage extends StatelessWidget {
                         constraints:
                             BoxConstraints(minHeight: constraints.maxHeight),
                         child: Center(
-                          child: AppContentFrame(
-                            maxWidth: 440,
+                          child: SizedBox(
+                            width: double.infinity,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [

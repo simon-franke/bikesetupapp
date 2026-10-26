@@ -1,7 +1,7 @@
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/new_bike_bottom_sheet.dart';
@@ -19,7 +19,7 @@ Future<void> showBikeInfoSheet(
   required void Function(String, String, String, String)
       onBikeSelected,
 }) {
-  return showAdaptiveModal<void>(
+  return showAppSheet<void>(
     context: context,
     builder: (_) => _BikeInfoSheetContent(
       user: user,

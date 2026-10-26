@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_info_bottom_sheet.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_list.dart';
@@ -7,8 +6,7 @@ import 'package:bikesetupapp/features/bikes/ui/new_bike_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-typedef BikeSelectionCallback = void Function(
-    String, String, String, String);
+typedef BikeSelectionCallback = void Function(String, String, String, String);
 
 Future<void> showBikeChooserSheet({
   required BuildContext context,
@@ -17,11 +15,8 @@ Future<void> showBikeChooserSheet({
   required String selectedSetupId,
   required BikeSelectionCallback onBikeSelected,
 }) {
-  final compact = ResponsiveLayout.isWide(context);
   Widget content(BuildContext chooserContext) => BikeChooserContent(
-        compact: compact,
         bikeList: BikeList(
-          compact: compact,
           user: user,
           selectedBikeId: selectedBikeId,
           selectedSetupId: selectedSetupId,
@@ -39,8 +34,7 @@ Future<void> showBikeChooserSheet({
               return;
             }
             Navigator.of(chooserContext).pop();
-            showBikeInfoSheet(
-                context, user, bikeID, setupID, setupName, name,
+            showBikeInfoSheet(context, user, bikeID, setupID, setupName, name,
                 onBikeSelected: onBikeSelected);
           },
         ),
@@ -54,80 +48,50 @@ Future<void> showBikeChooserSheet({
               onBikeSelected: onBikeSelected);
         },
       );
-  if (compact) {
-    return showDialog<void>(
-        context: context,
-        builder: (dialogContext) => Dialog(
-              insetPadding: const EdgeInsets.all(24),
-              constraints: BoxConstraints(
-                  maxWidth: 560,
-                  maxHeight: MediaQuery.sizeOf(dialogContext).height * .8),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(width: 560, child: content(dialogContext)),
-            ));
-  }
   return showModalBottomSheet<void>(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
-    constraints: const BoxConstraints(maxWidth: 560),
-    builder: (sheetContext) =>
-        ConstrainedBox(constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * .8), child: content(sheetContext)),
+    builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .8),
+        child: content(sheetContext)),
   );
 }
 
 class BikeChooserContent extends StatelessWidget {
   final Widget bikeList;
   final VoidCallback onAddBike;
-  final bool compact;
 
   const BikeChooserContent(
-      {super.key,
-      required this.bikeList,
-      required this.onAddBike,
-      this.compact = false});
+      {super.key, required this.bikeList, required this.onAddBike});
 
   @override
   Widget build(BuildContext context) => SafeArea(
         top: false,
         child: Padding(
-          padding: EdgeInsets.all(compact ? 24 : 20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!compact) ...[
-                Center(
-                    child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                            color: Theme.of(context).dividerColor,
-                            borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 20),
-              ],
-              Row(children: [
-                Expanded(
-                    child: Text('Bike & setup',
-                        style: Theme.of(context).textTheme.titleLarge)),
-                if (compact) IconButton(
-                    tooltip: 'Close bike chooser',
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(CupertinoIcons.xmark)),
-              ]),
+              Center(
+                  child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).dividerColor,
+                          borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              Text('Bike & setup',
+                  style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               Flexible(fit: FlexFit.loose, child: bikeList),
               const SizedBox(height: 20),
-              Align(
-                  alignment: compact ? Alignment.centerRight : Alignment.center,
-                  child: SizedBox(
-                      width: compact ? null : double.infinity,
-                      child: OutlinedButton.icon(
-                          onPressed: onAddBike,
-                          icon: const Icon(CupertinoIcons.plus, size: 20),
-                          label: const Text('Add bike')))),
+              OutlinedButton.icon(
+                  onPressed: onAddBike,
+                  icon: const Icon(CupertinoIcons.plus, size: 20),
+                  label: const Text('Add bike')),
             ],
           ),
         ),

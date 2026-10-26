@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
 import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
@@ -44,7 +45,6 @@ void main() async {
             defaultBike: selection?.bikeName ?? '',
             defaultSetupID: selection?.setupId ?? '',
             defaultSetup: selection?.setupName ?? '',
-
           ))));
 }
 
@@ -71,6 +71,7 @@ class MyApp extends StatelessWidget {
       builder: (context, appState, child) {
         return MaterialApp(
             debugShowCheckedModeBanner: false,
+            builder: (context, child) => PhoneViewport(child: child!),
             title: "Bike Setup",
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
@@ -82,7 +83,6 @@ class MyApp extends StatelessWidget {
                     user: user,
                     bikeName: defaultBike,
                     uBikeID: defaultBikeID,
-
                     setupName: defaultSetup,
                     uSetupID: defaultSetupID,
                   )

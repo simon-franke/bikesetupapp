@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'hour_service_sheet.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -20,7 +20,7 @@ Future<void> showLogServiceSheet(
         required ServiceComponent component,
         required double currentMileageKm,
         String? stravaGearId}) =>
-    showAdaptiveModal<void>(
+    showAppSheet<void>(
         context: context,
         builder: (_) => component.usesHours
             ? HourServiceSheet(uid: userID, component: component)

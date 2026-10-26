@@ -2,7 +2,7 @@ import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'dart:math' as math;
 
@@ -21,7 +21,7 @@ Future<void> showAddFieldSheet(
   required String category,
   required String uSetupID,
 }) {
-  return showAdaptiveModal<void>(
+  return showAppSheet<void>(
     context: context,
     builder: (ctx) => _AddFieldSheet(
       user: user,

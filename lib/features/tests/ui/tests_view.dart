@@ -1,9 +1,7 @@
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
-import 'package:bikesetupapp/features/setups/ui/inline_setting_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
@@ -37,7 +35,6 @@ class _TestsViewState extends State<TestsView> {
   final time = TextEditingController();
   String? loadedId, feeling, error;
   String part = 'Tires';
-  (String, String)? selectedField;
   @override
   void dispose() {
     name.dispose();
@@ -191,17 +188,6 @@ class _TestsViewState extends State<TestsView> {
                       ? null
                       : () => edit(t, category.key, field.key, field.value)),
         ])),
-        if (ResponsiveLayout.isWide(context) && selectedField != null)
-          SetupCard(
-              child: InlineSettingEditor(
-                  key: ValueKey(selectedField),
-                  name: selectedField!.$2,
-                  value: t.values[selectedField!.$1]![selectedField!.$2]!,
-                  onSave: (value) async {
-                    (await controller.updateField(widget.bike, widget.setup,
-                            t.id, selectedField!.$1, selectedField!.$2, value))
-                        .requireValue();
-                  })),
         Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: Text('The baseline stays unchanged.',
@@ -245,7 +231,6 @@ class _TestsViewState extends State<TestsView> {
                     borderRadius: BorderRadius.circular(11))),
             onPressed: () => setState(() {
                   part = p;
-                  selectedField = null;
                 }),
             child: Text(p)));
     return Wrap(spacing: 6, runSpacing: 6, children: parts.map(tab).toList());
@@ -253,10 +238,6 @@ class _TestsViewState extends State<TestsView> {
 
   Future<void> edit(
       SetupTest t, String category, String field, String value) async {
-    if (ResponsiveLayout.isWide(context)) {
-      setState(() => selectedField = (category, field));
-      return;
-    }
     await showSettingStepperSheet(context,
         uBikeID: widget.bike,
         category: category,
@@ -411,7 +392,7 @@ class _TestsViewState extends State<TestsView> {
         action('Apply changes to baseline', () => finish(t, apply: true),
             primary: true),
         action('Save as separate setup', () async {
-          final newName = await showAdaptiveModal<String>(
+          final newName = await showAppSheet<String>(
               context: context, builder: (_) => _SetupName(initial: t.name));
           if (newName != null && mounted) await finish(t, newName: newName);
         }),

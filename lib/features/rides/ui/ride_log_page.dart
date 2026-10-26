@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/rides_controller.dart';
@@ -49,7 +49,7 @@ class _RideLogPageState extends State<RideLogPage> {
       final rides =
           await compute(FitActivityDecoder.decode, await file.readAsBytes());
       if (!mounted) return;
-      final confirmed = await showAdaptiveModal<bool>(
+      final confirmed = await showAppSheet<bool>(
           context: context,
           builder: (ctx) => SafeArea(
               top: false,
@@ -125,7 +125,7 @@ class _RideLogPageState extends State<RideLogPage> {
                       icon: CupertinoIcons.plus,
                       onPressed: importing || controller.isBusy
                           ? null
-                          : () => showAdaptiveModal<void>(
+                          : () => showAppSheet<void>(
                               context: context,
                               builder: (_) => ManualRideForm(
                                   controller: controller,

@@ -21,58 +21,93 @@ class FirestoreTestsRepository implements TestsRepository {
           .snapshots()
           .map((s) => s.docs.map((d) => SetupTest.fromMap(d.data())).toList()));
   @override
-  Future<void> save(String bike, String setup, SetupTest test) =>
-      firebaseOperation(
-          () => FirebaseFirestore.instance.runTransaction((tx) async {
-                final parent = _bike(bike).collection('SetupList').doc(setup);
-                final ref = _tests(bike, setup).doc(test.id);
-                final baseline = await tx.get(parent);
-                final saved = await tx.get(ref);
-                if (!baseline.exists ||
-                    saved.data()?['stage'] == 'finished' ||
-                    (!saved.exists &&
-                        baseline.data()?['activeTestId'] != null)) {
-                  throw const AppFailure(FailureCode.saveFailed);
-                }
-                tx.set(ref, test.toMap());
-                tx.update(parent, {'activeTestId': test.id});
-              }),
-          fallback: FailureCode.saveFailed);
+  Future<void> create(String bike, String setup, SetupTest test) =>
+      _writeTransaction((tx) async {
+        final parent = _bike(bike).collection('SetupList').doc(setup);
+        final ref = _tests(bike, setup).doc(test.id);
+        final baseline = await tx.get(parent);
+        final saved = await tx.get(ref);
+        if (!baseline.exists ||
+            saved.exists ||
+            baseline.data()?['activeTestId'] != null ||
+            test.stage != TestStage.draft) {
+          throw const AppFailure(FailureCode.saveFailed);
+        }
+        return () {
+          tx.set(ref, test.toMap());
+          tx.update(parent, {'activeTestId': test.id});
+        };
+      });
+
   @override
-  Future<void> finish(String bike, String setup, SetupTest test,
+  Future<void> update(String bike, String setup, String id,
+          {required TestStage expectedStage,
+          required SetupTest Function(SetupTest current) change}) =>
+      _writeTransaction((tx) async {
+        final parent = _bike(bike).collection('SetupList').doc(setup);
+        final ref = _tests(bike, setup).doc(id);
+        final baseline = await tx.get(parent);
+        final saved = await tx.get(ref);
+        if (!saved.exists ||
+            !baseline.exists ||
+            baseline.data()?['activeTestId'] != id) {
+          throw const AppFailure(FailureCode.saveFailed);
+        }
+        final current = SetupTest.fromMap(saved.data()!);
+        if (current.stage == TestStage.finished ||
+            current.stage != expectedStage) {
+          throw const AppFailure(FailureCode.saveFailed);
+        }
+        final updated = change(current);
+        if (updated.id != id || updated.stage == TestStage.finished) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        return () => tx.set(ref, updated.toMap());
+      });
+  @override
+  Future<void> finish(String bike, String setup, String id,
           {bool apply = false, String? newSetupId, String? newSetupName}) =>
-      firebaseOperation(() async {
-        await FirebaseFirestore.instance.runTransaction((tx) async {
-          final testRef = _tests(bike, setup).doc(test.id);
-          final saved = await tx.get(testRef);
-          final parent = _bike(bike).collection('SetupList').doc(setup);
-          final baseline = await tx.get(parent);
-          if (!baseline.exists || !saved.exists) {
-            throw const AppFailure(FailureCode.saveFailed);
-          }
-          if (saved.data()?['stage'] == 'finished') return;
-          final categories = <String, Map<String, dynamic>>{};
-          final metadata = <String, Map<String, dynamic>>{};
-          if (apply || newSetupId != null) {
-            for (final category in test.values.keys) {
-              final doc =
-                  await tx.get(_bike(bike).collection(setup).doc(category));
-              categories[category] = doc.data() ?? {};
-              if (newSetupId != null) {
-                final meta = await tx
-                    .get(_bike(bike).collection(setup).doc('${category}_meta'));
-                metadata[category] = meta.data() ?? {};
-              }
+      _writeTransaction((tx) async {
+        final testRef = _tests(bike, setup).doc(id);
+        final saved = await tx.get(testRef);
+        final parent = _bike(bike).collection('SetupList').doc(setup);
+        final baseline = await tx.get(parent);
+        if (!baseline.exists || !saved.exists) {
+          throw const AppFailure(FailureCode.saveFailed);
+        }
+        final test = SetupTest.fromMap(saved.data()!);
+        if (test.stage == TestStage.finished) return () {};
+        if (baseline.data()?['activeTestId'] != id) {
+          throw const AppFailure(FailureCode.saveFailed);
+        }
+        if ((apply || newSetupId != null) && test.stage != TestStage.review) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        final categories = <String, Map<String, dynamic>>{};
+        final metadata = <String, Map<String, dynamic>>{};
+        if (apply || newSetupId != null) {
+          for (final category in test.values.keys) {
+            final doc =
+                await tx.get(_bike(bike).collection(setup).doc(category));
+            categories[category] = doc.data() ?? {};
+            if (newSetupId != null) {
+              final meta = await tx
+                  .get(_bike(bike).collection(setup).doc('${category}_meta'));
+              metadata[category] = meta.data() ?? {};
             }
           }
+        }
+        if (apply) {
+          for (final change in test.changes) {
+            if ((categories[change.category]?[change.field]?.toString() ??
+                    '') !=
+                change.before) {
+              throw const AppFailure(FailureCode.baselineChanged);
+            }
+          }
+        }
+        return () {
           if (apply) {
-            for (final change in test.changes) {
-              if ((categories[change.category]?[change.field]?.toString() ??
-                      '') !=
-                  change.before) {
-                throw const AppFailure(FailureCode.baselineChanged);
-              }
-            }
             for (final change in test.changes) {
               tx.set(_bike(bike).collection(setup).doc(change.category),
                   {change.field: change.after}, SetOptions(merge: true));
@@ -108,6 +143,27 @@ class FirestoreTestsRepository implements TestsRepository {
                               ? 'Saved as $newSetupName'
                               : 'Baseline kept')
                   .toMap());
+        };
+      });
+
+  /// Preparation performs reads and validation only. Rejected commands commit
+  /// no writes, and their Dart failures never cross the web SDK's JS boundary.
+  Future<void> _writeTransaction(
+          Future<void Function()> Function(Transaction tx) prepare) =>
+      firebaseOperation(() async {
+        final result = await FirebaseFirestore.instance
+            .runTransaction<CommandResult<void>>((tx) async {
+          final void Function() write;
+          try {
+            write = await prepare(tx);
+          } on AppFailure catch (failure) {
+            return CommandFailure<void>(failure);
+          } on CommandAborted {
+            return const CommandCancelled<void>();
+          }
+          write();
+          return const CommandSuccess<void>(null);
         });
+        result.requireValue();
       }, fallback: FailureCode.saveFailed);
 }

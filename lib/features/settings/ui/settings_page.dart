@@ -4,7 +4,6 @@ import 'theme_selector.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/settings_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/auth/ui/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/features/strava/ui/bike_matching_page.dart';
@@ -83,8 +82,7 @@ class _SettingsPageState extends State<SettingsPage> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
-        title: AppContentFrame(
-          maxWidth: 700,
+        title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(children: [
             _IconBtn(
@@ -111,8 +109,8 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: SafeArea(
           top: false,
-          child: AppContentFrame(
-              maxWidth: 700,
+          child: SizedBox(
+              width: double.infinity,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                 children: [
@@ -391,7 +389,7 @@ class _StravaCard extends StatelessWidget {
           ),
         ] else
           SizedBox(
-            width: ResponsiveLayout.isWide(context) ? null : double.infinity,
+            width: double.infinity,
             child: AppActionButton(
                 label: 'Connect Strava',
                 icon: CupertinoIcons.link,
@@ -412,7 +410,7 @@ class _OutlineButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-        width: ResponsiveLayout.isWide(context) ? null : double.infinity,
+        width: double.infinity,
         child: AppActionButton(
             label: label, icon: icon, onPressed: onTap, outlined: true));
   }

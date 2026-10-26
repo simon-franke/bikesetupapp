@@ -17,7 +17,6 @@ class SettingValueEditor extends StatefulWidget {
   final String unitLabel;
   final ValueChanged<double> onChanged;
   final VoidCallback? onValueTap;
-  final bool compact;
   final String? valueLabel;
   final bool centerValueAccessory;
   final Widget? valueAccessory;
@@ -32,7 +31,6 @@ class SettingValueEditor extends StatefulWidget {
     required this.unitLabel,
     required this.onChanged,
     this.onValueTap,
-    this.compact = false,
     this.valueLabel,
     this.centerValueAccessory = false,
     this.valueAccessory,
@@ -93,10 +91,15 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     }
   }
 
-  Widget _valueHeader({required List<Widget> children}) => widget.centerValueAccessory
-      ? Column(mainAxisSize: MainAxisSize.min, children: children)
-      : Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 8, runSpacing: 8, children: children);
+  Widget _valueHeader({required List<Widget> children}) =>
+      widget.centerValueAccessory
+          ? Column(mainAxisSize: MainAxisSize.min, children: children)
+          : Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: children);
 
   @override
   Widget build(BuildContext context) {
@@ -119,28 +122,24 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: Flex(
-                      direction:
-                          widget.compact ? Axis.horizontal : Axis.vertical,
+                      direction: Axis.vertical,
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: widget.compact
-                          ? CrossAxisAlignment.baseline
-                          : CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          widget.valueLabel ?? formatNumber(_currentValue, widget.decimals),
+                          widget.valueLabel ??
+                              formatNumber(_currentValue, widget.decimals),
                           style: AppTextStyles.mono(
-                            size: widget.valueLabel != null ? 32 : widget.compact ? 40 : 64,
+                            size: widget.valueLabel != null ? 32 : 64,
                             weight: FontWeight.w700,
                             color: p.ink,
-                            letterSpacing: widget.compact ? -1 : -3,
+                            letterSpacing: -3,
                             height: 1,
                           ),
                         ),
                         if (widget.valueAccessory == null)
-                          SizedBox(
-                              height: widget.compact ? 0 : 4,
-                              width: widget.compact ? 8 : 0),
+                          SizedBox(height: 4, width: 0),
                         if (widget.valueAccessory == null)
                           Text(
                             widget.unitLabel,
@@ -157,7 +156,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
             if (widget.valueAccessory != null) widget.valueAccessory!,
           ],
         ),
-        SizedBox(height: widget.compact ? 8 : 18),
+        SizedBox(height: 18),
         SizedBox(
           height: _rulerHeight,
           child: LayoutBuilder(

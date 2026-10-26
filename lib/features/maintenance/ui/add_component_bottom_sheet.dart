@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
@@ -15,7 +15,7 @@ Future<void> showAddComponentSheet(
   required String uBikeID,
   required double? currentMileageKm,
 }) {
-  return showAdaptiveModal<void>(
+  return showAppSheet<void>(
     context: context,
     builder: (ctx) => _AddComponentSheet(
       user: user,

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
@@ -13,7 +13,7 @@ import 'create_bike_flow.dart';
 Future<void> showNewBikeSheet(BuildContext context, User user, NewBikeMode mode, {
   String uBikeID = '', String bikeName = '', String uSetupID = '', String setupName = '',
   required void Function(String, String, String, String) onBikeSelected,
-}) => showAdaptiveModal<void>(context: context, builder: (_) => mode == NewBikeMode.newBike
+}) => showAppSheet<void>(context: context, builder: (_) => mode == NewBikeMode.newBike
     ? CreateBikeFlow(user: user, onCreated: onBikeSelected)
     : _SetupSheet(user: user, mode: mode, bike: uBikeID, bikeName: bikeName,
         setup: uSetupID, name: setupName, onSelected: onBikeSelected));

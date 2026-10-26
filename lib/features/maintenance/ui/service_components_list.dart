@@ -1,10 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import '../../rides/models/ride.dart';
 import '../controllers/service_entries_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
-import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
@@ -22,7 +19,6 @@ class ServiceComponentsList extends StatefulWidget {
   final void Function(ServiceComponent component)? onComponentLog;
   final void Function(ServiceComponent component)? onComponentDefer;
   final void Function(bool hasAlert)? onAlertChanged;
-  final VoidCallback? onAddComponent;
 
   const ServiceComponentsList({
     super.key,
@@ -34,7 +30,6 @@ class ServiceComponentsList extends StatefulWidget {
     this.onComponentLog,
     this.onComponentDefer,
     this.onAlertChanged,
-    this.onAddComponent,
   });
 
   @override
@@ -98,7 +93,6 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
           onComponentLog: widget.onComponentLog,
           onComponentDefer: widget.onComponentDefer,
           onAlertChanged: widget.onAlertChanged,
-          onAddComponent: widget.onAddComponent,
         );
       },
     );
@@ -115,7 +109,6 @@ class _ComponentListWithEntries extends StatefulWidget {
   final void Function(ServiceComponent)? onComponentLog;
   final void Function(ServiceComponent)? onComponentDefer;
   final void Function(bool)? onAlertChanged;
-  final VoidCallback? onAddComponent;
 
   const _ComponentListWithEntries({
     super.key,
@@ -128,7 +121,6 @@ class _ComponentListWithEntries extends StatefulWidget {
     this.onComponentLog,
     this.onComponentDefer,
     this.onAlertChanged,
-    this.onAddComponent,
   });
 
   @override
@@ -209,13 +201,10 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
       });
     }
     return ServiceSchedule(
-      onAddComponent: widget.onAddComponent,
       services: services,
       cardBuilder: (service) => ServiceComponentCard(
         key: ValueKey(service.component.id),
-        margin: ResponsiveLayout.isWide(context)
-            ? EdgeInsets.zero
-            : const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
         component: service.component,
         rides: rides,
         currentMileageKm: widget.currentMileageKm,
@@ -238,14 +227,10 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
 /// Presents an already loaded schedule, keeping filtering independent of Firestore.
 class ServiceSchedule extends StatefulWidget {
   final List<AnnotatedService> services;
-  final VoidCallback? onAddComponent;
   final Widget Function(AnnotatedService) cardBuilder;
 
   const ServiceSchedule(
-      {super.key,
-      required this.services,
-      required this.cardBuilder,
-      this.onAddComponent});
+      {super.key, required this.services, required this.cardBuilder});
 
   @override
   State<ServiceSchedule> createState() => _ServiceScheduleState();
@@ -269,23 +254,12 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(
-              ResponsiveLayout.isWide(context) ? 0 : 20,
-              16,
-              ResponsiveLayout.isWide(context) ? 0 : 20,
-              12),
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppSectionToolbar(
-                  title: Text('Service schedule',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  action: widget.onAddComponent == null
-                      ? null
-                      : AppActionButton(
-                          label: 'Add component',
-                          icon: CupertinoIcons.plus,
-                          onPressed: widget.onAddComponent)),
+              Text('Service schedule',
+                  style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 6),
               Text(
                   '${widget.services.length} components, $attention need attention',
@@ -354,15 +328,14 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
     if (services.isEmpty) return [];
     return [
       Padding(
-        padding: EdgeInsets.fromLTRB(ResponsiveLayout.isWide(context) ? 0 : 20,
-            14, ResponsiveLayout.isWide(context) ? 0 : 20, 12),
+        padding: EdgeInsets.fromLTRB(20, 14, 20, 12),
         child: Text('$label (${services.length})',
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: context.palette.inkMuted)),
       ),
-      ResponsiveCardGrid(children: services.map(widget.cardBuilder).toList()),
+      Column(children: services.map(widget.cardBuilder).toList()),
     ];
   }
 }

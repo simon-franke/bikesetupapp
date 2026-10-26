@@ -28,9 +28,21 @@ flutter test --platform chrome test/strava_web_callback_test.dart
 (cd functions && npm test)
 ```
 
-GitHub Actions runs Flutter analysis, standard and browser tests, and the Strava function tests on pull requests. CI uses placeholder configuration and does not need Firebase or Strava credentials.
+The Firestore repository tests also require Node 22, Java 21 or newer, and Chrome:
+
+```bash
+npx --yes firebase-tools@15.18.0 emulators:exec --only firestore --project demo-bike-tests --config test/firestore/firebase.repository.json "flutter test --platform chrome test/firestore_tests_repository_test.dart"
+```
+
+This uses a local demo project on port 8086 and the test-only rules in `test/firestore/repository.rules`; it does not connect to production Firebase.
+
+GitHub Actions runs Flutter analysis, standard and browser tests, the Firestore repository regressions, and the Strava function tests on pull requests. CI uses placeholder configuration and does not need Firebase or Strava credentials.
 
 See [AGENTS.md](AGENTS.md) for architecture, development conventions, and deployment details.
+
+## Layout
+
+The app uses one phone layout at every window size. `PhoneViewport` caps the entire navigator at 480 logical pixels, including routes and bottom sheets. Text scaling and keyboard handling remain enabled.
 
 ## Code structure
 

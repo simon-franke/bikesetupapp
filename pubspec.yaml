@@ -57,6 +57,11 @@ dependencies:
   animations: ^2.0.11
 
 dev_dependencies:
+  # Register Firebase's browser plugins in emulator-backed repository tests.
+  firebase_core_web: ^3.5.0
+  cloud_firestore_web: ^5.1.3
+  flutter_web_plugins:
+    sdk: flutter
   flutter_test:
     sdk: flutter
 
