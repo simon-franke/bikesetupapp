@@ -29,13 +29,31 @@ class MaintenanceController extends OperationController {
       required ComponentType type,
       required String name,
       required int serviceIntervalKm,
-      double? currentMileageKm}) {
-    final key =
-        (bikeId, type, name.trim(), serviceIntervalKm, currentMileageKm);
+      double? currentMileageKm,
+      double? serviceIntervalHours,
+      double initialRideHours = 0,
+      bool includeIndoorRides = false,
+      DateTime? baselineDate}) {
+    final key = (
+      bikeId,
+      type,
+      name.trim(),
+      serviceIntervalKm,
+      currentMileageKm,
+      serviceIntervalHours,
+      initialRideHours,
+      includeIndoorRides,
+      baselineDate
+    );
     return share(
         ('createComponent', key),
         () => command(() async {
-              if (name.trim().isEmpty || serviceIntervalKm <= 0) {
+              if (name.trim().isEmpty ||
+                  !(serviceIntervalHours ?? serviceIntervalKm).isFinite ||
+                  (serviceIntervalHours ?? serviceIntervalKm) <= 0 ||
+                  !initialRideHours.isFinite ||
+                  initialRideHours < 0 ||
+                  (baselineDate?.isAfter(_now()) ?? false)) {
                 throw const AppFailure(FailureCode.invalidInput);
               }
               final (componentId, entryId, date) = _componentDrafts.putIfAbsent(
@@ -46,12 +64,16 @@ class MaintenanceController extends OperationController {
                   type: type,
                   name: name.trim(),
                   serviceIntervalKm: serviceIntervalKm,
+                  serviceIntervalHours: serviceIntervalHours,
+                  includeIndoorRides: includeIndoorRides,
                   createdAt: date);
               final baseline = ServiceEntry(
                   id: entryId,
                   componentId: componentId,
                   mileageAtServiceKm: currentMileageKm,
-                  date: date,
+                  date: baselineDate?.toUtc() ?? date,
+                  initialRideHours:
+                      serviceIntervalHours == null ? null : initialRideHours,
                   note: 'Initial setup');
               await _repository.createComponentWithBaseline(
                   component, baseline);
@@ -61,9 +83,17 @@ class MaintenanceController extends OperationController {
   }
 
   Future<CommandResult<void>> updateComponent(String componentId,
-          {String? name, int? serviceIntervalKm}) =>
-      command(() => _repository.updateComponent(componentId,
-          name: name, serviceIntervalKm: serviceIntervalKm));
+          {String? name,
+          int? serviceIntervalKm,
+          double? serviceIntervalHours}) =>
+      command(() {
+        if ((serviceIntervalHours != null && (!serviceIntervalHours.isFinite || serviceIntervalHours <= 0)) ||
+            (serviceIntervalKm != null && serviceIntervalKm <= 0)) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        return _repository.updateComponent(componentId, name: name,
+          serviceIntervalKm: serviceIntervalKm, serviceIntervalHours: serviceIntervalHours);
+      });
   Future<CommandResult<void>> deleteComponent(String componentId) =>
       command(() => _repository.deleteComponent(componentId));
   Future<CommandResult<void>> deleteServiceEntry(
@@ -74,12 +104,14 @@ class MaintenanceController extends OperationController {
           {required String componentId,
           required DateTime date,
           double? mileageAtServiceKm,
+          double? initialRideHours,
           String? note,
           String? entryId}) =>
       command(() => _writeService(
           componentId: componentId,
           date: date,
           mileageAtServiceKm: mileageAtServiceKm,
+          initialRideHours: initialRideHours,
           note: note,
           entryId: entryId));
 
@@ -100,7 +132,7 @@ class MaintenanceController extends OperationController {
                 currentMileageKm: currentMileageKm,
                 extendKm: extendKm,
                 serviceIntervalKm: component.serviceIntervalKm),
-            note: 'Checked — still good for $extendKm km',
+            note: 'Checked, still good for $extendKm km',
             entryId: entryId);
       });
 
@@ -108,8 +140,12 @@ class MaintenanceController extends OperationController {
       {required String componentId,
       required DateTime date,
       double? mileageAtServiceKm,
+      double? initialRideHours,
       String? note,
       String? entryId}) {
+    if (initialRideHours != null && (!initialRideHours.isFinite || initialRideHours < 0 || date.isAfter(_now()))) {
+      throw const AppFailure(FailureCode.invalidInput);
+    }
     final trimmed = note?.trim();
     return _repository.addServiceEntry(
         componentId,
@@ -118,6 +154,7 @@ class MaintenanceController extends OperationController {
             componentId: componentId,
             date: date.toUtc(),
             mileageAtServiceKm: mileageAtServiceKm,
+            initialRideHours: initialRideHours,
             note: trimmed == null || trimmed.isEmpty ? null : trimmed));
   }
 }

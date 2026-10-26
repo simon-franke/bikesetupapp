@@ -1,6 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import '../models/service_schedule.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 export '../models/service_schedule.dart';
@@ -21,31 +21,37 @@ extension ServiceStatusColor on ServiceStatus {
 }
 
 String serviceDistanceLabel(AnnotatedService service) {
-  if (service.component.serviceIntervalKm <= 0) return 'Set a service interval';
+  if (service.component.interval <= 0) return 'Set a service interval';
   if (service.lastServicedAt == null) return 'No service recorded';
-  if (service.mileageUnknown) return 'Mileage needed to estimate service';
+  if (service.mileageUnknown) {
+    return service.component.usesHours
+        ? 'Ride log needed to estimate service'
+        : 'Mileage needed to estimate service';
+  }
   final format = NumberFormat('#,###');
-  final overdue = service.kmSinceService - service.component.serviceIntervalKm;
-  if (overdue > 0) return '${format.format(overdue.round())} km overdue';
-  if (service.remainingKm == 0) return 'Service due now';
-  return 'Service in ${format.format(service.remainingKm.round())} km';
+  final overdue = service.usage - service.component.interval;
+  if (overdue > 0) {
+    return '${service.component.usesHours ? overdue.toStringAsFixed(1) : format.format(overdue.round())} ${service.component.unitLabel} overdue';
+  }
+  if (service.remaining == 0) return 'Service due now';
+  return 'Service in ${service.component.usesHours ? service.remaining.toStringAsFixed(1) : format.format(service.remaining.round())} ${service.component.unitLabel}';
 }
 
 IconData iconForComponent(String icon) {
   switch (icon) {
     case 'link':
-      return Icons.link_rounded;
+      return CupertinoIcons.link;
     case 'brake':
-      return Icons.pan_tool_rounded;
+      return CupertinoIcons.hand_raised;
     case 'tire':
-      return Icons.circle_outlined;
+      return CupertinoIcons.circle;
     case 'fork':
-      return Icons.swap_vert_rounded;
+      return CupertinoIcons.arrow_up_arrow_down;
     case 'shock':
-      return Icons.compress_rounded;
+      return CupertinoIcons.arrow_down_right_arrow_up_left;
     case 'bearing':
-      return Icons.settings_rounded;
+      return CupertinoIcons.gear_alt;
     default:
-      return Icons.build_rounded;
+      return CupertinoIcons.wrench;
   }
 }

@@ -1,3 +1,6 @@
+import 'package:bikesetupapp/common/ui/app_select.dart';
+import 'package:bikesetupapp/common/ui/bike_icon.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/bike_matching_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -74,7 +77,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: _IconBtn(
-              icon: Icons.arrow_back_rounded,
+              icon: CupertinoIcons.chevron_back,
               onTap: () => Navigator.of(context).pop(),
             ),
           ),
@@ -138,8 +141,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.directions_bike_rounded,
-                        size: 16, color: p.accentText),
+                    BikeIcon(size: 16, color: p.accentText),
                     const SizedBox(width: 6),
                     Text(
                       'No strava bikes'.toUpperCase(),
@@ -163,7 +165,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
                 ),
                 const SizedBox(height: 16),
                 _OutlineButton(
-                  icon: Icons.refresh_rounded,
+                  icon: CupertinoIcons.arrow_clockwise,
                   label: 'Retry sync',
                   onTap: _manualSync,
                 ),
@@ -192,7 +194,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
             Expanded(
               flex: 1,
               child: _OutlineButton(
-                icon: Icons.refresh_rounded,
+                icon: CupertinoIcons.arrow_clockwise,
                 label: 'Resync',
                 onTap: _manualSync,
               ),
@@ -201,7 +203,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
             Expanded(
               flex: 2,
               child: _PrimaryButton(
-                icon: Icons.link_rounded,
+                icon: CupertinoIcons.link,
                 label: 'Save Links',
                 onTap: _saveLinks,
               ),
@@ -244,11 +246,11 @@ class _BikeMatchCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.local_fire_department_rounded,
+              Icon(CupertinoIcons.flame,
                   size: 13, color: p.accentText),
               const SizedBox(width: 5),
               Text(
-                'Strava bike · mileage'.toUpperCase(),
+                'Strava bike mileage'.toUpperCase(),
                 style: AppTextStyles.inter(
                   size: 9,
                   weight: FontWeight.w700,
@@ -336,66 +338,11 @@ class _BikeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surface2,
-        border: Border.all(color: p.border),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String?>(
-          value: value,
-          isExpanded: true,
-          isDense: true,
-          icon: Icon(Icons.expand_more_rounded, size: 20, color: p.inkMuted),
-          dropdownColor: p.surface2,
-          borderRadius: BorderRadius.circular(10),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          style: AppTextStyles.inter(
-            size: 13,
-            weight: FontWeight.w600,
-            color: p.ink,
-          ),
-          hint: Text(
-            'Select app bike',
-            style: AppTextStyles.inter(
-              size: 13,
-              weight: FontWeight.w600,
-              color: p.inkDim,
-            ),
-          ),
-          items: [
-            DropdownMenuItem<String?>(
-              value: null,
-              child: Text(
-                'Skip',
-                style: AppTextStyles.inter(
-                  size: 13,
-                  weight: FontWeight.w600,
-                  color: p.inkDim,
-                ),
-              ),
-            ),
-            ...appBikes.map(
-              (app) => DropdownMenuItem<String?>(
-                value: app.id,
-                child: Text(
-                  app.name,
-                  style: AppTextStyles.inter(
-                    size: 13,
-                    weight: FontWeight.w600,
-                    color: p.ink,
-                  ),
-                ),
-              ),
-            ),
-          ],
-          onChanged: onChanged,
-        ),
-      ),
-    );
+    return AppSelect<String?>(label: 'Select app bike', value: value,
+      items: [const DropdownMenuItem<String?>(value: null, child: Text('Skip')),
+        for (final bike in appBikes) DropdownMenuItem<String?>(value: bike.id, child: Text(bike.name))],
+      onChanged: onChanged);
+
   }
 }
 

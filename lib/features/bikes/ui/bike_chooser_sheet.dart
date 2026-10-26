@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/layout/responsive_layout.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_info_bottom_sheet.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_list.dart';
@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 typedef BikeSelectionCallback = void Function(
-    String, String, BikeType, String, String);
+    String, String, String, String);
 
 Future<void> showBikeChooserSheet({
   required BuildContext context,
@@ -25,22 +25,22 @@ Future<void> showBikeChooserSheet({
           user: user,
           selectedBikeId: selectedBikeId,
           selectedSetupId: selectedSetupId,
-          onBikeSelected: (name, bikeID, type, setupName, setupID) {
+          onBikeSelected: (name, bikeID, setupName, setupID) {
             if (!chooserContext.mounted ||
                 ModalRoute.of(chooserContext)?.isCurrent != true) {
               return;
             }
             Navigator.of(chooserContext).pop();
-            onBikeSelected(name, bikeID, type, setupName, setupID);
+            onBikeSelected(name, bikeID, setupName, setupID);
           },
-          onSetupDetails: (name, bikeID, type, setupName, setupID) {
+          onSetupDetails: (name, bikeID, setupName, setupID) {
             if (!chooserContext.mounted ||
                 ModalRoute.of(chooserContext)?.isCurrent != true) {
               return;
             }
             Navigator.of(chooserContext).pop();
             showBikeInfoSheet(
-                context, user, bikeID, setupID, setupName, name, type,
+                context, user, bikeID, setupID, setupName, name,
                 onBikeSelected: onBikeSelected);
           },
         ),
@@ -74,7 +74,7 @@ Future<void> showBikeChooserSheet({
     isScrollControlled: true,
     constraints: const BoxConstraints(maxWidth: 560),
     builder: (sheetContext) =>
-        FractionallySizedBox(heightFactor: .8, child: content(sheetContext)),
+        ConstrainedBox(constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * .8), child: content(sheetContext)),
   );
 }
 
@@ -93,9 +93,9 @@ class BikeChooserContent extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
         top: false,
         child: Padding(
-          padding: EdgeInsets.all(compact ? 24 : 16),
+          padding: EdgeInsets.all(compact ? 24 : 20),
           child: Column(
-            mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!compact) ...[
@@ -110,27 +110,23 @@ class BikeChooserContent extends StatelessWidget {
               ],
               Row(children: [
                 Expanded(
-                    child: Text('Bikes & setups',
+                    child: Text('Bike & setup',
                         style: Theme.of(context).textTheme.titleLarge)),
-                if (compact)
-                  IconButton(
-                      tooltip: 'Close bike chooser',
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close)),
+                if (compact) IconButton(
+                    tooltip: 'Close bike chooser',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(CupertinoIcons.xmark)),
               ]),
               const SizedBox(height: 16),
-              if (compact)
-                Flexible(fit: FlexFit.loose, child: bikeList)
-              else
-                Expanded(child: bikeList),
+              Flexible(fit: FlexFit.loose, child: bikeList),
               const SizedBox(height: 20),
               Align(
                   alignment: compact ? Alignment.centerRight : Alignment.center,
                   child: SizedBox(
                       width: compact ? null : double.infinity,
-                      child: FilledButton.icon(
+                      child: OutlinedButton.icon(
                           onPressed: onAddBike,
-                          icon: const Icon(Icons.add, size: 20),
+                          icon: const Icon(CupertinoIcons.plus, size: 20),
                           label: const Text('Add bike')))),
             ],
           ),

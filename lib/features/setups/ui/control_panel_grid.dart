@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import '../controllers/setting_save_controller.dart';
@@ -58,7 +59,8 @@ class ControlPanelGrid extends StatefulWidget {
 
 Future<void> showSettingStepperSheet(
   BuildContext context, {
-  required User user,
+  User? user,
+  Future<CommandResult<void>> Function(String)? onSave,
   required String uBikeID,
   required String category,
   required String uSetupID,
@@ -118,6 +120,7 @@ Future<void> showSettingStepperSheet(
     context: context,
     builder: (ctx) => _StepperSheetContent(
       user: user,
+      onSave: onSave,
       uBikeID: uBikeID,
       category: category,
       uSetupID: uSetupID,
@@ -127,6 +130,7 @@ Future<void> showSettingStepperSheet(
       initialUnit: unit,
       initialNumeric: parsed.number ?? 0,
       initialText: parsed.text ?? '',
+      savedValue: currentValue,
       knownMeta: knownMeta,
       isFreeText: isFreeText,
       isDefault: isDefault,
@@ -135,7 +139,8 @@ Future<void> showSettingStepperSheet(
 }
 
 class _StepperSheetContent extends StatefulWidget {
-  final User user;
+  final User? user;
+  final Future<CommandResult<void>> Function(String)? onSave;
   final String uBikeID;
   final String category;
   final String uSetupID;
@@ -145,12 +150,14 @@ class _StepperSheetContent extends StatefulWidget {
   final UnitDef initialUnit;
   final double initialNumeric;
   final String initialText;
+  final String savedValue;
   final FieldMeta? knownMeta;
   final bool isFreeText;
   final bool isDefault;
 
   const _StepperSheetContent({
     required this.user,
+    this.onSave,
     required this.uBikeID,
     required this.category,
     required this.uSetupID,
@@ -160,6 +167,7 @@ class _StepperSheetContent extends StatefulWidget {
     required this.initialUnit,
     required this.initialNumeric,
     required this.initialText,
+    required this.savedValue,
     required this.knownMeta,
     required this.isFreeText,
     required this.isDefault,
@@ -173,6 +181,9 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   late UnitDef _unit;
   late double _value;
   late TextEditingController _textController;
+  final _numberController = TextEditingController();
+  bool _editingNumber = false;
+  String? _numberError;
 
   @override
   void initState() {
@@ -184,32 +195,48 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
 
   @override
   void dispose() {
+    _numberController.dispose();
     _textController.dispose();
     super.dispose();
   }
 
   void _onChipTap(UnitDef target) {
     if (target.id == _unit.id) return;
+    if (_editingNumber && !_readNumber()) return;
+    _editingNumber = false;
     setState(() {
       _value = convertValue(_value, _unit, target);
       _unit = target;
     });
   }
 
+  bool _readNumber() {
+    final number = double.tryParse(_numberController.text.replaceAll(',', '.'));
+    if (number == null || !number.isFinite || number < 0 || number > 10000) {
+      setState(() => _numberError = 'Enter a number between 0 and 10000.');
+      return false;
+    }
+    _value = number;
+    return true;
+  }
+
   bool _saving = false;
   Future<void> _onSave() async {
     if (_saving) return;
+    if (_editingNumber && !_readNumber()) return;
     setState(() => _saving = true);
     final stored = widget.isFreeText
         ? _textController.text.trim()
         : SettingValue.numeric(_value, widget.family, _unit).format();
     final saved = await presentCommand(
         context,
-        () => AppDependencies.of(context)
-            .forUser(widget.user.uid)
-            .setups
-            .setSetting(widget.settingKey, stored, widget.uBikeID,
-                widget.category, widget.uSetupID));
+        () => widget.onSave != null
+            ? widget.onSave!(stored)
+            : AppDependencies.of(context)
+                .forUser(widget.user!.uid)
+                .setups
+                .setSetting(widget.settingKey, stored, widget.uBikeID,
+                    widget.category, widget.uSetupID));
     if (!mounted) return;
     if (saved) {
       Navigator.of(context).pop();
@@ -239,7 +266,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     );
     if (confirmed == true && mounted && !_saving) {
       setState(() => _saving = true);
-      final db = AppDependencies.of(context).forUser(widget.user.uid);
+      final db = AppDependencies.of(context).forUser(widget.user!.uid);
       final deleted = await presentCommand(
           context,
           () => db.setups.deleteField(widget.settingKey, widget.uBikeID,
@@ -270,22 +297,17 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
         children: [
           const AppSheetHandle(),
           const SizedBox(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FieldIcon(asset: widget.iconAsset, size: 15, color: p.inkMuted),
-              const SizedBox(width: 8),
-              Text(
-                widget.settingKey.toUpperCase(),
-                style: AppTextStyles.inter(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: p.inkMuted,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
-          ),
+          Row(children: [
+            Expanded(
+                child: Text(
+                    '${widget.category == 'FrontTire' ? 'Front tire' : widget.category == 'RearTire' ? 'Rear tire' : widget.category == 'GeneralSettings' ? 'General' : widget.category} ${widget.settingKey.toLowerCase()}',
+                    style: AppTextStyles.inter(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: p.inkMuted,
+                        letterSpacing: 0))),
+
+          ]),
           if (!widget.isFreeText && units.length > 1) ...[
             const SizedBox(height: 14),
             _UnitChipRow(units: units, selected: _unit, onTap: _onChipTap),
@@ -295,12 +317,16 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
             _FreeTextField(controller: _textController)
           else
             _buildEditor(),
-          const SizedBox(height: 28),
+          if (widget.savedValue.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text('Saved: ${widget.savedValue}', style: TextStyle(fontSize: 12, color: p.inkMuted)),
+          ],
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _saving ? null : _onSave,
-              child: Text('Save'),
+              child: Text(widget.onSave == null ? 'Save' : 'Save to test'),
             ),
           ),
           if (!widget.isDefault) ...[
@@ -324,6 +350,22 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   }
 
   Widget _buildEditor() {
+    if (_editingNumber) {
+      return TextField(
+          controller: _numberController,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textAlign: TextAlign.center,
+          style: AppTextStyles.mono(
+              size: 44, weight: FontWeight.w400, color: context.palette.ink),
+          decoration: InputDecoration(
+              labelText: widget.settingKey,
+              suffixText: _unit.label,
+              errorText: _numberError),
+          onSubmitted: (_) {
+            if (_readNumber()) setState(() => _editingNumber = false);
+          });
+    }
     final knownMeta = widget.knownMeta;
     double minInActive;
     double maxInActive;
@@ -340,6 +382,13 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     return SettingValueEditor(
       key: ValueKey('${widget.settingKey}-${_unit.id}'),
       initialValue: _value,
+      onValueTap: () => setState(() {
+        _numberController.text = formatNumber(_value, _unit.decimals);
+        _numberController.selection = TextSelection(
+            baseOffset: 0, extentOffset: _numberController.text.length);
+        _editingNumber = true;
+        _numberError = null;
+      }),
       min: minInActive,
       max: maxInActive,
       step: step,
@@ -584,7 +633,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                   category: widget.category,
                   uSetupID: widget.uSetupID,
                 ),
-                icon: const Icon(Icons.add, size: 18),
+                icon: const Icon(CupertinoIcons.plus, size: 18),
                 label: const Text('Add setting'),
               ),
             ),
@@ -794,7 +843,7 @@ class SettingRow extends StatelessWidget {
                     style: AppTextStyles.mono(
                         size: 20, weight: FontWeight.w600, color: p.ink))),
             const SizedBox(width: 12),
-            Icon(Icons.chevron_right, size: 18, color: p.inkMuted),
+            Icon(CupertinoIcons.chevron_right, size: 18, color: p.inkMuted),
           ]),
         ),
       ),
@@ -942,7 +991,7 @@ class _TabletSettingsPanelState extends State<TabletSettingsPanel> {
                       style: Theme.of(context).textTheme.titleMedium)),
               TextButton.icon(
                   onPressed: widget.onAdd,
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const Icon(CupertinoIcons.plus, size: 18),
                   label: const Text('Add setting')),
             ]),
             const SizedBox(height: 12),
@@ -967,7 +1016,7 @@ class _TabletSettingsPanelState extends State<TabletSettingsPanel> {
                   style: Theme.of(context).textTheme.titleMedium)),
           TextButton.icon(
               onPressed: widget.onAdd,
-              icon: const Icon(Icons.add, size: 18),
+              icon: const Icon(CupertinoIcons.plus, size: 18),
               label: const Text('Add setting')),
         ]),
         const SizedBox(height: 12),

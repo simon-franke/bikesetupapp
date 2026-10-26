@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/bike_icon.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/failure_message.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -124,7 +126,7 @@ class LoginPage extends StatelessWidget {
                                               theme.colorScheme.primary,
                                           foregroundColor:
                                               theme.colorScheme.onPrimary,
-                                          icon: Icon(Icons.email_outlined,
+                                          icon: Icon(CupertinoIcons.envelope,
                                               size: 22,
                                               color:
                                                   theme.colorScheme.onPrimary),
@@ -177,8 +179,7 @@ class _Header extends StatelessWidget {
           decoration: BoxDecoration(
               color: theme.colorScheme.primary,
               borderRadius: BorderRadius.circular(20)),
-          child: Icon(Icons.directions_bike,
-              size: 44, color: theme.colorScheme.onPrimary)),
+          child: BikeIcon(size: 44, color: theme.colorScheme.onPrimary)),
       const SizedBox(height: 20),
       Text('Bike Setup',
           style: theme.textTheme.headlineMedium?.copyWith(
@@ -283,7 +284,6 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
             autocorrect: false,
             decoration: const InputDecoration(
               labelText: 'Email',
-              border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -292,7 +292,6 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
             obscureText: true,
             decoration: const InputDecoration(
               labelText: 'Password',
-              border: OutlineInputBorder(),
             ),
           ),
           if (_accountCreated) ...[

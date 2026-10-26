@@ -5,6 +5,7 @@ class ServiceEntry {
   final String componentId;
   final double?
       mileageAtServiceKm; // null when mileage at service time is unknown
+  final double? initialRideHours;
   final DateTime date;
   final String? note;
 
@@ -14,6 +15,7 @@ class ServiceEntry {
     this.mileageAtServiceKm,
     required this.date,
     this.note,
+    this.initialRideHours,
   });
 
   factory ServiceEntry.fromMap(String id, Map<String, dynamic> data) {
@@ -23,6 +25,7 @@ class ServiceEntry {
       mileageAtServiceKm:
           (data[FirestoreKeys.mileageAtServiceKm] as num?)?.toDouble(),
       date: (data[FirestoreKeys.serviceDate] as DateTime?) ?? DateTime.now(),
+      initialRideHours: (data['initialRideHours'] as num?)?.toDouble(),
       note: data[FirestoreKeys.serviceNote] as String?,
     );
   }
@@ -33,6 +36,7 @@ class ServiceEntry {
       if (mileageAtServiceKm != null)
         FirestoreKeys.mileageAtServiceKm: mileageAtServiceKm,
       FirestoreKeys.serviceDate: date,
+      if (initialRideHours != null) 'initialRideHours': initialRideHours,
       if (note != null) FirestoreKeys.serviceNote: note,
     };
   }

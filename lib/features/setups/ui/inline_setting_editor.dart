@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import '../controllers/setting_save_controller.dart';
 import 'dart:math' as math;
 
@@ -195,7 +196,7 @@ class _InlineSettingEditorState extends State<InlineSettingEditor> {
               IconButton(
                   tooltip: 'More options for ${widget.name}',
                   onPressed: widget.onManage,
-                  icon: const Icon(Icons.more_horiz)),
+                  icon: const Icon(CupertinoIcons.ellipsis)),
           ]),
           const SizedBox(height: 8),
           if (_isText) ...[

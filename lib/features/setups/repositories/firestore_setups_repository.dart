@@ -78,6 +78,18 @@ class FirestoreSetupsRepository implements SetupsRepository {
   }
 
   Future<void> _deleteSetupData(String uBikeID, String uSetupID) async {
+    final tests = await userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.bikes)
+        .doc(uBikeID)
+        .collection(FirestoreKeys.setupList)
+        .doc(uSetupID)
+        .collection('Tests')
+        .get();
+    for (final test in tests.docs) {
+      await test.reference.delete();
+    }
+
     var setups = await userBikeSetup
         .doc(userID)
         .collection(FirestoreKeys.bikes)

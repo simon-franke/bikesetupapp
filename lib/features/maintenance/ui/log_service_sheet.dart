@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'hour_service_sheet.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -20,11 +22,13 @@ Future<void> showLogServiceSheet(
         String? stravaGearId}) =>
     showAdaptiveModal<void>(
         context: context,
-        builder: (_) => _LogServiceForm(
-            userId: userID,
-            component: component,
-            mileageKm: currentMileageKm,
-            gearId: stravaGearId));
+        builder: (_) => component.usesHours
+            ? HourServiceSheet(uid: userID, component: component)
+            : _LogServiceForm(
+                userId: userID,
+                component: component,
+                mileageKm: currentMileageKm,
+                gearId: stravaGearId));
 
 class _LogServiceForm extends StatefulWidget {
   const _LogServiceForm(
@@ -141,7 +145,7 @@ class _LogServiceFormState extends State<_LogServiceForm> {
                   cursorColor: p.accent,
                   style: AppTextStyles.inter(size: 13, color: p.ink),
                   decoration: const InputDecoration(
-                      hintText: 'Optional — e.g. new chain, cleaned only')),
+                      hintText: 'Optional, e.g. new chain, cleaned only')),
               if (saveError != null) ...[
                 const SizedBox(height: 10),
                 Text(
@@ -191,7 +195,7 @@ Widget _buildMileageStatus(
   if (mileageError == 'scope') {
     return Row(
       children: [
-        Icon(Icons.warning_amber_rounded, size: 14, color: p.red),
+        Icon(CupertinoIcons.exclamationmark_triangle, size: 14, color: p.red),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -210,7 +214,7 @@ Widget _buildMileageStatus(
   if (mileageError == 'error') {
     return Row(
       children: [
-        Icon(Icons.close_rounded, size: 14, color: p.red),
+        Icon(CupertinoIcons.xmark, size: 14, color: p.red),
         const SizedBox(width: 6),
         Text(
           'Could not fetch mileage from Strava',
@@ -227,7 +231,7 @@ Widget _buildMileageStatus(
   if (fetchedMileage != null) {
     return Row(
       children: [
-        Icon(Icons.route_rounded, size: 14, color: p.amber),
+        Icon(CupertinoIcons.map, size: 14, color: p.amber),
         const SizedBox(width: 6),
         Text(
           '${_kmFormat.format(fetchedMileage.round())} km at service',
@@ -266,7 +270,7 @@ class _SheetDateField extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(Icons.calendar_today_rounded, size: 14, color: p.inkMuted),
+              Icon(CupertinoIcons.calendar, size: 14, color: p.inkMuted),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -278,7 +282,7 @@ class _SheetDateField extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(Icons.expand_more_rounded, size: 16, color: p.inkDim),
+              Icon(CupertinoIcons.chevron_down, size: 16, color: p.inkDim),
             ],
           ),
         ),

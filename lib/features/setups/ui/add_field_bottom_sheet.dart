@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/app_select.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
@@ -49,6 +51,7 @@ class _AddFieldSheet extends StatefulWidget {
 
 const Map<UnitFamily, String> _kFamilyLabel = {
   UnitFamily.pressure: 'Pressure',
+  UnitFamily.percent: 'Percentage',
   UnitFamily.length: 'Length',
   UnitFamily.weight: 'Weight',
   UnitFamily.angle: 'Angle',
@@ -203,7 +206,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
           const SizedBox(height: 22),
           Row(
             children: [
-              Icon(Icons.add_rounded, size: 15, color: p.inkMuted),
+              Icon(CupertinoIcons.plus, size: 15, color: p.inkMuted),
               const SizedBox(width: 8),
               Text(
                 'ADD FIELD',
@@ -431,16 +434,6 @@ class _Dropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      hint: Text(hint, style: AppTextStyles.inter(size: 13, color: p.inkDim)),
-      icon: Icon(Icons.keyboard_arrow_down_rounded, color: p.inkMuted),
-      dropdownColor: p.surface,
-      style: AppTextStyles.inter(size: 13, color: p.ink),
-      decoration: InputDecoration(),
-      items: items,
-      onChanged: onChanged,
-    );
+    return AppSelect<T>(label: hint, value: value, items: items, onChanged: onChanged);
   }
 }

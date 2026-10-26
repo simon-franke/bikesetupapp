@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,11 @@ Future<T?> showAdaptiveModal<T>({
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
+      sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(
+              duration: Duration(milliseconds: 280),
+              reverseDuration: Duration(milliseconds: 220)),
       useSafeArea: true,
       backgroundColor: context.palette.surface,
       shape: const RoundedRectangleBorder(
@@ -39,7 +45,7 @@ Future<T?> showAdaptiveModal<T>({
                 child: IconButton(
                   tooltip: 'Close dialog',
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(CupertinoIcons.xmark),
                 ),
               ),
             ),

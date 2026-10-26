@@ -18,6 +18,8 @@ class SettingValueEditor extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final VoidCallback? onValueTap;
   final bool compact;
+  final String? valueLabel;
+  final bool centerValueAccessory;
   final Widget? valueAccessory;
 
   const SettingValueEditor({
@@ -31,6 +33,8 @@ class SettingValueEditor extends StatefulWidget {
     required this.onChanged,
     this.onValueTap,
     this.compact = false,
+    this.valueLabel,
+    this.centerValueAccessory = false,
     this.valueAccessory,
   });
 
@@ -89,6 +93,11 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     }
   }
 
+  Widget _valueHeader({required List<Widget> children}) => widget.centerValueAccessory
+      ? Column(mainAxisSize: MainAxisSize.min, children: children)
+      : Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8, runSpacing: 8, children: children);
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
@@ -98,11 +107,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
+        _valueHeader(
           children: [
             Semantics(
               button: widget.onValueTap != null,
@@ -123,9 +128,9 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          formatNumber(_currentValue, widget.decimals),
+                          widget.valueLabel ?? formatNumber(_currentValue, widget.decimals),
                           style: AppTextStyles.mono(
-                            size: widget.compact ? 40 : 64,
+                            size: widget.valueLabel != null ? 32 : widget.compact ? 40 : 64,
                             weight: FontWeight.w700,
                             color: p.ink,
                             letterSpacing: widget.compact ? -1 : -3,
@@ -262,7 +267,7 @@ class _RulerPainter extends CustomPainter {
     const topY = 8.0;
     for (int i = 0; i < tickCount; i++) {
       final x = i * tickWidth;
-      // Major every 10 ticks, mid every 5 ticks — independent of step so the
+      // Major every 10 ticks, mid every 5 ticks: independent of step so the
       // ruler density looks consistent across units.
       final isMajor = i % 10 == 0;
       final isMid = i % 5 == 0;

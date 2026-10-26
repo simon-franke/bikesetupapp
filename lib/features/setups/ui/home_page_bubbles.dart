@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/layout/responsive_layout.dart';
@@ -6,7 +7,6 @@ import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import 'package:bikesetupapp/common/ui/progress_indicator.dart';
 import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 const double bubbleCardW = 70.0;
@@ -79,10 +79,10 @@ class _LeaderLinePainter extends CustomPainter {
 
 class SchematicBubble extends StatefulWidget {
   final User user;
-  // Anchor dot — sits on the bike part
+  // Anchor dot: sits on the bike part
   final double anchorLeft;
   final double anchorBottom;
-  // Floating card — in clear space nearby
+  // Floating card: in clear space nearby
   final double bubbleLeft;
   final double bubbleBottom;
   final double containerHeight;
@@ -185,6 +185,12 @@ class _SchematicBubbleState extends State<SchematicBubble>
         return 'Fork';
       case Category.generalSettings:
         return 'Geometry';
+      case Category.cockpit:
+        return 'Cockpit';
+      case Category.frame:
+        return 'Frame';
+      case Category.saddle:
+        return 'Saddle';
     }
   }
 
@@ -381,7 +387,7 @@ class _SchematicBubbleState extends State<SchematicBubble>
                               ),
                               const SizedBox(height: 1),
                               hasError
-                                  ? Icon(Icons.error_outline,
+                                  ? Icon(CupertinoIcons.exclamationmark_circle,
                                       size: 14, color: chipInk)
                                   : Row(
                                       crossAxisAlignment:
