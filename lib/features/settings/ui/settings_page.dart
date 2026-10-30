@@ -1,7 +1,9 @@
+import 'package:bikesetupapp/common/ui/bike_icon.dart';
+import 'package:flutter/cupertino.dart';
+import 'theme_selector.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/settings_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/auth/ui/auth_alert_dialogs.dart';
 import 'package:bikesetupapp/features/strava/ui/bike_matching_page.dart';
@@ -9,7 +11,6 @@ import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -18,12 +19,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsPage extends StatefulWidget {
   final String bikeName;
-  final BikeType bikeType;
+
   final String chosenSetup;
   const SettingsPage({
     super.key,
     required this.bikeName,
-    required this.bikeType,
+
     required this.chosenSetup,
   });
 
@@ -81,12 +82,11 @@ class _SettingsPageState extends State<SettingsPage> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
-        title: AppContentFrame(
-          maxWidth: 700,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(children: [
             _IconBtn(
-              icon: Icons.close_rounded,
+              icon: CupertinoIcons.xmark,
               onTap: () {
                 if (user == null) {
                   Navigator.of(context)
@@ -109,13 +109,13 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: SafeArea(
           top: false,
-          child: AppContentFrame(
-              maxWidth: 700,
+          child: SizedBox(
+              width: double.infinity,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 60),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                 children: [
                   _SectionLabel('Appearance'),
-                  _SettingsCard(child: _ThemeSegmented()),
+                  _SettingsCard(child: _ThemePreferences()),
                   _SectionLabel('Account'),
                   _SettingsCard(
                       child: _AccountRow(
@@ -190,24 +190,16 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-class _ThemeSegmented extends StatelessWidget {
+class _ThemePreferences extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifier = Provider.of<AppStateNotifier>(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const AppFieldLabel('Theme'),
-      const SizedBox(height: 10),
-      SegmentedButton<ThemeMode>(
-        segments: const [
-          ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
-          ButtonSegment(value: ThemeMode.system, label: Text('System')),
-          ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-        ],
-        selected: {notifier.themeMode},
-        onSelectionChanged: (modes) =>
-            presentCommand(context, () => notifier.updateTheme(modes.single)),
-      ),
-    ]);
+    return ThemeSelector(
+        selected: notifier.themeMode,
+        onChanged: notifier.isBusy
+            ? null
+            : (mode) =>
+                presentCommand(context, () => notifier.updateTheme(mode)));
   }
 }
 
@@ -336,8 +328,7 @@ class _StravaCard extends StatelessWidget {
                 color: p.accent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.directions_bike_rounded,
-                  size: 18, color: p.accentInk),
+              child: BikeIcon(size: 18, color: p.accentInk),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -355,7 +346,7 @@ class _StravaCard extends StatelessWidget {
                   Text(
                     isConnected
                         ? (bikeCount > 0
-                            ? 'Connected · $bikeCount bike${bikeCount == 1 ? '' : 's'} synced'
+                            ? 'Connected with $bikeCount bike${bikeCount == 1 ? '' : 's'} synced'
                             : 'Connected')
                         : 'Not connected',
                     style: AppTextStyles.inter(size: 10.5, color: p.inkMuted),
@@ -376,7 +367,7 @@ class _StravaCard extends StatelessWidget {
         const SizedBox(height: 12),
         if (isConnected) ...[
           _OutlineButton(
-            icon: Icons.sync_alt_rounded,
+            icon: CupertinoIcons.arrow_right_arrow_left,
             label: 'Manage Strava bikes',
             onTap: onManageBikes,
           ),
@@ -398,10 +389,10 @@ class _StravaCard extends StatelessWidget {
           ),
         ] else
           SizedBox(
-            width: ResponsiveLayout.isWide(context) ? null : double.infinity,
+            width: double.infinity,
             child: AppActionButton(
                 label: 'Connect Strava',
-                icon: Icons.directions_bike_rounded,
+                icon: CupertinoIcons.link,
                 onPressed: onConnect),
           ),
       ],
@@ -419,7 +410,7 @@ class _OutlineButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-        width: ResponsiveLayout.isWide(context) ? null : double.infinity,
+        width: double.infinity,
         child: AppActionButton(
             label: label, icon: icon, onPressed: onTap, outlined: true));
   }

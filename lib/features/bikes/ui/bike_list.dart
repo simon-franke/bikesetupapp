@@ -1,9 +1,10 @@
+import 'package:bikesetupapp/common/ui/bike_icon.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_alert_dialogs.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
 import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
@@ -16,14 +17,12 @@ class BikeList extends StatefulWidget {
   final User? user;
   final String selectedBikeId;
   final String selectedSetupId;
-  final void Function(String, String, BikeType, String, String) onSetupDetails;
-  final void Function(String, String, BikeType, String, String) onBikeSelected;
-  final bool compact;
+  final void Function(String, String, String, String) onSetupDetails;
+  final void Function(String, String, String, String) onBikeSelected;
 
   const BikeList({
     super.key,
     required this.user,
-    this.compact = false,
     required this.selectedBikeId,
     required this.selectedSetupId,
     required this.onSetupDetails,
@@ -65,7 +64,6 @@ class _BikeListState extends State<BikeList> {
     final p = context.palette;
     if (widget.user == null) {
       return Center(
-        heightFactor: widget.compact ? 1 : null,
         child: Text(
           'No User',
           style: AppTextStyles.inter(size: 12, color: p.inkMuted),
@@ -77,7 +75,6 @@ class _BikeListState extends State<BikeList> {
       builder: (context, AsyncSnapshot<List<Bike>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
-            heightFactor: widget.compact ? 1 : null,
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation(p.accent),
             ),
@@ -85,7 +82,6 @@ class _BikeListState extends State<BikeList> {
         }
         if (snapshot.hasError) {
           return Center(
-            heightFactor: widget.compact ? 1 : null,
             child: Text(
               'Error',
               style: AppTextStyles.inter(size: 12, color: p.red),
@@ -94,14 +90,16 @@ class _BikeListState extends State<BikeList> {
         }
         if (snapshot.data == null || snapshot.data!.isEmpty) {
           return Center(
-            heightFactor: widget.compact ? 1 : null,
             child: Text(
               'No bikes',
               style: AppTextStyles.inter(size: 12, color: p.inkMuted),
             ),
           );
         }
-        final docs = snapshot.data!;
+        final docs = [
+          ...snapshot.data!.where((bike) => bike.id == widget.selectedBikeId),
+          ...snapshot.data!.where((bike) => bike.id != widget.selectedBikeId),
+        ];
         if (!_didInitExpansion) {
           _didInitExpansion = true;
           for (final d in docs) {
@@ -113,7 +111,7 @@ class _BikeListState extends State<BikeList> {
           }
         }
         return ListView.separated(
-          shrinkWrap: widget.compact,
+          shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.zero,
           itemCount: docs.length,
@@ -179,12 +177,12 @@ class _BikeCard extends StatelessWidget {
   final Bike bike;
   final User user;
   final String? selectedSetupId;
-  final void Function(String, String, BikeType, String, String) onSetupDetails;
+  final void Function(String, String, String, String) onSetupDetails;
   final bool active;
   final bool expanded;
   final Stream<List<BikeSetup>> setupStream;
   final VoidCallback onToggleExpand;
-  final void Function(String, String, BikeType, String, String) onSelectSetup;
+  final void Function(String, String, String, String) onSelectSetup;
   final Future<bool> Function() onConfirmDeleteBike;
 
   const _BikeCard({
@@ -203,206 +201,100 @@ class _BikeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final bikeType = BikeType.fromString(bike.bikeType);
-    final isLight = Theme.of(context).brightness == Brightness.light;
     return Dismissible(
-      key: Key(bike.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        decoration: BoxDecoration(
-          color: p.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 18),
-        child:
-            Icon(Icons.delete_outline_rounded, color: AppColors.onColor(p.red)),
-      ),
-      confirmDismiss: (_) => onConfirmDeleteBike(),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          color: active ? p.surface2 : Colors.transparent,
-          border: Border.all(color: active ? p.borderStrong : p.border),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onToggleExpand,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 11, 8, 11),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: p.bg,
-                          border: Border.all(color: p.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Center(
-                          child: SizedBox(
-                            width: 26,
-                            height: 18,
-                            child: ColorFiltered(
-                              colorFilter: isLight
-                                  ? const ColorFilter.matrix(<double>[
-                                      0.18,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0.18,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0.18,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0.9,
-                                      0,
-                                    ])
-                                  : const ColorFilter.matrix(<double>[
-                                      -1,
-                                      0,
-                                      0,
-                                      0,
-                                      255,
-                                      0,
-                                      -1,
-                                      0,
-                                      0,
-                                      255,
-                                      0,
-                                      0,
-                                      -1,
-                                      0,
-                                      255,
-                                      0,
-                                      0,
-                                      0,
-                                      1,
-                                      0,
-                                    ]),
-                              child: Image.asset(bikeType.path,
-                                  fit: BoxFit.contain),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOut,
-                              style: AppTextStyles.inter(
-                                size: 13,
-                                weight: FontWeight.w700,
-                                color: active ? p.accentText : p.ink,
-                              ),
-                              child: Text(
-                                bike.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              bikeType == BikeType.error
-                                  ? '—'
-                                  : bikeType.bikeType,
-                              style: AppTextStyles.inter(
-                                size: 12,
+        key: Key(bike.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) => onConfirmDeleteBike(),
+        background: Container(
+            color: p.red,
+            alignment: Alignment.centerRight,
+            child: Icon(CupertinoIcons.trash, color: AppColors.onColor(p.red))),
+        child: Container(
+          decoration: BoxDecoration(
+              color: expanded ? p.bg : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: p.border)),
+          clipBehavior: Clip.antiAlias,
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            InkWell(
+              onTap: onToggleExpand,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                child: Row(children: [
+                  BikeIcon(size: 24, color: p.inkMuted),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(bike.name,
+                            style: AppTextStyles.inter(
+                                size: 15,
                                 weight: FontWeight.w600,
-                                color: p.inkDim,
-                                letterSpacing: 0,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () =>
-                            BikeAlerts.renameBike(context, bike.id, bike.name),
+                                color: p.ink)),
+                      ],
+                    ),
+                  ),
+                  if (expanded)
+                    IconButton(
                         tooltip: 'Rename bike',
-                        padding: EdgeInsets.zero,
-                        icon: Icon(Icons.edit_outlined,
-                            size: 20, color: p.inkMuted),
-                      ),
-                      AnimatedRotation(
-                        turns: expanded ? 0 : -0.25,
-                        duration: const Duration(milliseconds: 150),
-                        child: Icon(Icons.keyboard_arrow_down_rounded,
-                            size: 18, color: p.inkMuted),
-                      ),
-                    ],
-                  ),
-                ),
+                        icon: const Icon(CupertinoIcons.pencil, size: 17),
+                        onPressed: () =>
+                            BikeAlerts.renameBike(context, bike.id, bike.name)),
+                  Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: AnimatedRotation(
+                          turns: expanded ? .25 : 0,
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 240),
+                          curve: Curves.easeInOutCubic,
+                          child: Icon(CupertinoIcons.chevron_right,
+                              size: 15, color: p.inkMuted))),
+                ]),
               ),
             ),
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 220),
-              sizeCurve: Curves.easeOutCubic,
-              firstCurve: Curves.easeOut,
-              secondCurve: Curves.easeIn,
+            AnimatedSize(
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 240),
+              curve: Curves.easeInOutCubic,
               alignment: Alignment.topCenter,
-              firstChild: Column(
-                children: [
-                  Divider(height: 1, color: p.border),
-                  _SetupsList(
-                    user: user,
-                    bike: bike,
-                    bikeType: bikeType,
-                    setupStream: setupStream,
-                    onSelectSetup: onSelectSetup,
-                    selectedSetupId: selectedSetupId,
-                    onSetupDetails: onSetupDetails,
-                  ),
-                ],
-              ),
-              secondChild: const SizedBox(width: double.infinity, height: 0),
-              crossFadeState: expanded
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
+              child: Visibility(
+                  visible: expanded,
+                  maintainState: true,
+                  child: Column(children: [
+                    Divider(
+                        height: 1, indent: 14, endIndent: 14, color: p.border),
+                    _SetupsList(
+                        user: user,
+                        bike: bike,
+                        setupStream: setupStream,
+                        onSelectSetup: onSelectSetup,
+                        selectedSetupId: selectedSetupId,
+                        onSetupDetails: onSetupDetails),
+                  ])),
             ),
-          ],
-        ),
-      ),
-    );
+          ]),
+        ));
   }
 }
 
 class _SetupsList extends StatelessWidget {
   final User user;
   final String? selectedSetupId;
-  final void Function(String, String, BikeType, String, String) onSetupDetails;
+  final void Function(String, String, String, String) onSetupDetails;
   final Bike bike;
-  final BikeType bikeType;
+
   final Stream<List<BikeSetup>> setupStream;
-  final void Function(String, String, BikeType, String, String) onSelectSetup;
+  final void Function(String, String, String, String) onSelectSetup;
 
   const _SetupsList({
     required this.user,
     required this.selectedSetupId,
     required this.onSetupDetails,
     required this.bike,
-    required this.bikeType,
     required this.setupStream,
     required this.onSelectSetup,
   });
@@ -442,15 +334,6 @@ class _SetupsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    if (bikeType == BikeType.error) {
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: Text(
-          'Something went wrong',
-          style: AppTextStyles.inter(size: 11, color: p.red),
-        ),
-      );
-    }
     return StreamBuilder(
       stream: setupStream,
       builder: (context, AsyncSnapshot<List<BikeSetup>> snap) {
@@ -482,7 +365,6 @@ class _SetupsList extends StatelessWidget {
                   setup: d,
                   user: user,
                   bike: bike,
-                  bikeType: bikeType,
                   onSelect: onSelectSetup,
                   isSelected: d.id == selectedSetupId,
                   onSetupDetails: onSetupDetails,
@@ -495,8 +377,8 @@ class _SetupsList extends StatelessWidget {
                     context,
                     user,
                     NewBikeMode.newSetup,
-                    bikeType: bikeType,
                     uBikeID: bike.id,
+                    uSetupID: selectedSetupId ?? docs.firstOrNull?.id ?? '',
                     bikeName: bike.name,
                     onBikeSelected: onSelectSetup,
                   );
@@ -513,11 +395,11 @@ class _SetupsList extends StatelessWidget {
 class _SetupRow extends StatelessWidget {
   final BikeSetup setup;
   final bool isSelected;
-  final void Function(String, String, BikeType, String, String) onSetupDetails;
+  final void Function(String, String, String, String) onSetupDetails;
   final User user;
   final Bike bike;
-  final BikeType bikeType;
-  final void Function(String, String, BikeType, String, String) onSelect;
+
+  final void Function(String, String, String, String) onSelect;
   final Future<bool> Function() onConfirmDelete;
 
   const _SetupRow({
@@ -526,7 +408,6 @@ class _SetupRow extends StatelessWidget {
     required this.onSetupDetails,
     required this.user,
     required this.bike,
-    required this.bikeType,
     required this.onSelect,
     required this.onConfirmDelete,
   });
@@ -541,8 +422,7 @@ class _SetupRow extends StatelessWidget {
         color: p.red,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
-        child:
-            Icon(Icons.delete_outline_rounded, color: AppColors.onColor(p.red)),
+        child: Icon(CupertinoIcons.trash, color: AppColors.onColor(p.red)),
       ),
       confirmDismiss: (_) => onConfirmDelete(),
       child: SetupChoiceTile(
@@ -553,15 +433,14 @@ class _SetupRow extends StatelessWidget {
           final selected = await presentCommand(
               context, () => db.bikes.selectSetup(bike.id, setup.id));
           if (!context.mounted || !selected) return;
-          onSelect(bike.name, bike.id, bikeType, setup.name, setup.id);
+          onSelect(bike.name, bike.id, setup.name, setup.id);
         },
         onDetails: () =>
-            onSetupDetails(bike.name, bike.id, bikeType, setup.name, setup.id),
+            onSetupDetails(bike.name, bike.id, setup.name, setup.id),
         onEdit: () => showNewBikeSheet(
           context,
           user,
           NewBikeMode.editSetup,
-          bikeType: bikeType,
           uBikeID: bike.id,
           bikeName: bike.name,
           uSetupID: setup.id,
@@ -583,7 +462,11 @@ class _NewSetupRow extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
             onPressed: onTap,
-            icon: const Icon(Icons.add, size: 18),
+            style: TextButton.styleFrom(
+                foregroundColor: context.palette.inkMuted,
+                textStyle:
+                    AppTextStyles.inter(size: 12, weight: FontWeight.w500)),
+            icon: const Icon(CupertinoIcons.plus, size: 15),
             label: const Text('Add setup')));
   }
 }

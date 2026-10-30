@@ -36,14 +36,15 @@ as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
 ## UI
 
 - Use `AppTheme`, controls from `lib/common/ui/app_components.dart`,
-  `showAdaptiveModal` for forms and `AppRoutes.fadeSlide()` for routes.
+  `showAppSheet` for forms and `AppRoutes.fadeSlide()` for routes.
 - Orange fills use `accent` with `accentInk`; orange text/icons use `accentText`.
   Use `inkMuted`/`inkDim` without reduced opacity. Contrast is tested in
   `test/contrast_test.dart`.
-- Layout follows available window width and text scale. Use the helpers in
-  `lib/common/layout/responsive_layout.dart`; check `test/responsive_layout_test.dart`.
-- `bike_chooser_sheet.dart` is the single bike/setup chooser. There is no drawer
-  or sidebar. Phones use modal setting editors; wide layouts use the inline editor.
+- The entire app uses the phone layout, capped at 480 logical pixels by
+  `lib/common/layout/phone_viewport.dart`. Preserve text scaling and keyboard
+  handling; do not add tablet or desktop layouts. Check `test/phone_viewport_test.dart`.
+- `bike_chooser_sheet.dart` is the single bike/setup chooser. There is no drawer,
+  sidebar or inline editor. All setting editors open as bottom sheets.
 
 ## Strava and deployment
 

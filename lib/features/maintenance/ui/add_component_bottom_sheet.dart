@@ -1,6 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
@@ -14,7 +15,7 @@ Future<void> showAddComponentSheet(
   required String uBikeID,
   required double? currentMileageKm,
 }) {
-  return showAdaptiveModal<void>(
+  return showAppSheet<void>(
     context: context,
     builder: (ctx) => _AddComponentSheet(
       user: user,
@@ -42,11 +43,16 @@ class _AddComponentSheet extends StatefulWidget {
 class _AddComponentSheetState extends State<_AddComponentSheet> {
   ComponentType? _selectedType;
   bool _saving = false;
+  bool _hours = false, _includeIndoor = false;
+  DateTime _baselineDate = DateUtils.dateOnly(DateTime.now());
+  String? _error;
+  final _initialHours = TextEditingController(text: '0');
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _intervalController = TextEditingController();
 
   @override
   void dispose() {
+    _initialHours.dispose();
     _nameController.dispose();
     _intervalController.dispose();
     super.dispose();
@@ -56,7 +62,7 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
     setState(() {
       _selectedType = type;
       _nameController.text = type.label;
-      if (type.defaultIntervalKm > 0) {
+      if (!_hours && type.defaultIntervalKm > 0) {
         _intervalController.text = type.defaultIntervalKm.toString();
       } else {
         _intervalController.clear();
@@ -67,8 +73,18 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
   Future<void> _onSave() async {
     if (_saving || _selectedType == null) return;
     final name = _nameController.text.trim();
-    final interval = int.tryParse(_intervalController.text.trim()) ?? 0;
-    if (name.isEmpty || interval <= 0) return;
+    final interval = double.tryParse(_intervalController.text.trim()) ?? 0;
+    final initial = double.tryParse(_initialHours.text) ?? -1;
+    if (name.isEmpty ||
+        !interval.isFinite ||
+        interval <= 0 ||
+        (!_hours && interval != interval.roundToDouble()) ||
+        !initial.isFinite ||
+        initial < 0) {
+      setState(() => _error =
+          'Enter a name, positive interval, and non-negative initial hours.');
+      return;
+    }
     setState(() => _saving = true);
     final db = AppDependencies.of(context).forUser(widget.user.uid);
     final saved = await presentCommand(
@@ -77,7 +93,11 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
             bikeId: widget.uBikeID,
             type: _selectedType!,
             name: name,
-            serviceIntervalKm: interval,
+            serviceIntervalKm: _hours ? 0 : interval.toInt(),
+            serviceIntervalHours: _hours ? interval : null,
+            initialRideHours: initial,
+            includeIndoorRides: _includeIndoor,
+            baselineDate: _hours ? _baselineDate : null,
             currentMileageKm: widget.currentMileageKm));
     if (!mounted) return;
     if (saved) {
@@ -106,7 +126,7 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
             const SizedBox(height: 22),
             Row(
               children: [
-                Icon(Icons.build_rounded, size: 15, color: p.inkMuted),
+                Icon(CupertinoIcons.wrench, size: 15, color: p.inkMuted),
                 const SizedBox(width: 8),
                 Text('Add component'),
               ],
@@ -132,12 +152,72 @@ class _AddComponentSheetState extends State<_AddComponentSheet> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 10),
+              Wrap(spacing: 8, children: [
+                ChoiceChip(
+                    label: const Text('Kilometres'),
+                    selected: !_hours,
+                    onSelected: _saving
+                        ? null
+                        : (_) => setState(() {
+                              _hours = false;
+                              _intervalController.clear();
+                            })),
+                ChoiceChip(
+                    label: const Text('Ride hours'),
+                    selected: _hours,
+                    onSelected: _saving
+                        ? null
+                        : (_) => setState(() {
+                              _hours = true;
+                              _intervalController.clear();
+                            })),
+              ]),
+              const SizedBox(height: 12),
               _TextField(
                 controller: _intervalController,
-                hint: 'Service interval (km)',
+                hint: _hours
+                    ? 'Service interval (hours)'
+                    : 'Service interval (km)',
                 keyboardType: TextInputType.number,
                 onChanged: (_) => setState(() {}),
               ),
+              if (_hours) ...[
+                const SizedBox(height: 12),
+                TextButton(
+                    onPressed: _saving
+                        ? null
+                        : () async {
+                            final date = await showDatePicker(
+                                context: context,
+                                initialDate: _baselineDate,
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime.now());
+                            if (date != null && mounted) {
+                              setState(() => _baselineDate = date);
+                            }
+                          },
+                    child: Text(
+                        'Count rides since ${_baselineDate.toLocal().toString().substring(0, 10)}')),
+                AppTextField(
+                    controller: _initialHours,
+                    hint: 'Additional hours already used',
+                    suffix: 'h',
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true)),
+                const SizedBox(height: 8),
+                const Text(
+                    'Only add hours missing from your ride log. Imported rides on or after the selected date count automatically.'),
+                SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Include indoor rides'),
+                    subtitle: const Text(
+                        'Usually off for suspension; useful for drivetrain wear.'),
+                    value: _includeIndoor,
+                    onChanged: _saving
+                        ? null
+                        : (v) => setState(() => _includeIndoor = v)),
+              ],
+              if (_error != null) Text(_error!, style: TextStyle(color: p.red)),
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,

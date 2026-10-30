@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import '../../rides/models/ride.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class ServiceComponentCard extends StatelessWidget {
+  final List<Ride>? rides;
   final ServiceComponent component;
   final EdgeInsetsGeometry margin;
   final double currentMileageKm;
@@ -18,7 +21,8 @@ class ServiceComponentCard extends StatelessWidget {
   const ServiceComponentCard({
     super.key,
     required this.component,
-    this.margin = const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+    this.rides,
+    this.margin = const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
     required this.currentMileageKm,
     this.mileageAvailable = true,
     this.latestEntry,
@@ -32,11 +36,12 @@ class ServiceComponentCard extends StatelessWidget {
     final p = context.palette;
     final s = annotateService(
       component: component,
+      rides: rides,
       currentMileageKm: currentMileageKm,
       latestEntry: latestEntry,
       mileageAvailable: mileageAvailable,
     );
-    final color = s.mileageUnknown ? p.inkMuted : s.status.color(p);
+    final color = s.usageUnknown ? p.inkMuted : s.status.color(p);
     final format = NumberFormat('#,###');
     final lastService = s.lastServicedAt == null
         ? 'No service recorded'
@@ -47,12 +52,11 @@ class ServiceComponentCard extends StatelessWidget {
       child: Material(
         color: p.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: p.border),
+          borderRadius: BorderRadius.circular(19),
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -81,7 +85,7 @@ class ServiceComponentCard extends StatelessWidget {
                         ),
                       ),
                       if (onTap != null)
-                        Icon(Icons.chevron_right, color: p.inkMuted, size: 22),
+                        Icon(CupertinoIcons.chevron_right, color: p.inkMuted, size: 22),
                     ],
                   ),
                 ),
@@ -94,12 +98,12 @@ class ServiceComponentCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                s.mileageUnknown
-                    ? 'Service interval: ${format.format(component.serviceIntervalKm)} km'
-                    : '${format.format(s.kmSinceService.round())} of ${format.format(component.serviceIntervalKm)} km since service',
+                s.usageUnknown
+                    ? 'Service interval: ${format.format(component.interval)} ${component.unitLabel}'
+                    : '${component.usesHours ? s.usage.toStringAsFixed(1) : format.format(s.usage.round())} of ${format.format(component.interval)} ${component.unitLabel} since service',
                 style: TextStyle(fontSize: 13, color: p.inkMuted),
               ),
-              if (!s.mileageUnknown) ...[
+              if (!s.usageUnknown) ...[
                 const SizedBox(height: 10),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(2),
@@ -107,7 +111,7 @@ class ServiceComponentCard extends StatelessWidget {
                     value: s.progress.clamp(0.0, 1.0),
                     minHeight: 4,
                     backgroundColor: p.surface2,
-                    valueColor: AlwaysStoppedAnimation(color),
+                    valueColor: AlwaysStoppedAnimation(p.accent),
                     semanticsLabel:
                         '${component.type.label} service interval used',
                   ),
@@ -125,11 +129,8 @@ class ServiceComponentCard extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     if (onLog != null)
-                      FilledButton.icon(
-                        onPressed: onLog,
-                        icon: const Icon(Icons.check, size: 18),
-                        label: const Text('Log service'),
-                      ),
+                      SizedBox(width: double.infinity, child: FilledButton(
+                        onPressed: onLog, child: const Text('Log service'))),
                     if (s.status == ServiceStatus.red && onDefer != null)
                       TextButton(
                         onPressed: onDefer,

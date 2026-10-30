@@ -82,7 +82,7 @@ class StravaApiService {
   ///
   /// Strategy: fetch all activities on this gear that started **on or after**
   /// [date], sum their distances, then subtract from [currentTotalKm].
-  /// This only needs to page through recent rides — far cheaper than
+  /// This only needs to page through recent rides: far cheaper than
   /// paginating the full history from the beginning.
   ///
   /// Throws [StravaInsufficientScopeException] when the token lacks

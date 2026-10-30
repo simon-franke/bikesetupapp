@@ -21,6 +21,7 @@ class AppActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final child = Text(label);
     if (outlined) {
       return icon == null

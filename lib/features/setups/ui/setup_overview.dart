@@ -1,0 +1,246 @@
+import '../models/setup_configuration.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bikesetupapp/app/app_dependencies.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'control_panel_grid.dart';
+import 'field_meta.dart';
+import '../models/unit_system.dart';
+
+List<String> setupCategories() => [
+      'FrontTire',
+      'RearTire',
+      'Fork', 'Shock',
+      'GeneralSettings'
+    ];
+String categoryLabel(String category) => switch (category) {
+      'FrontTire' => 'Front tire',
+      'RearTire' => 'Rear tire',
+      'GeneralSettings' => 'Bike fit',
+      _ => category,
+    };
+
+class SetupCard extends StatelessWidget {
+  const SetupCard({super.key, required this.child, this.padding = 20});
+  final double padding;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(padding),
+      decoration: BoxDecoration(
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(19)),
+      child: child);
+}
+
+class SetupOverview extends StatelessWidget {
+  const SetupOverview(
+      {super.key,
+      required this.user,
+      required this.bike,
+      required this.setup,
+
+      this.configuration,
+      required this.onCategory});
+  final User user;
+  final String bike, setup;
+
+  final SetupConfiguration? configuration;
+  final ValueChanged<String> onCategory;
+  @override
+  Widget build(BuildContext context) => ListView(
+          padding: EdgeInsets.fromLTRB(
+              20, 12, 20, MediaQuery.paddingOf(context).bottom + 24),
+          children: [
+            SetupCard(
+                padding: 17,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                          onTap: () => onCategory('Tires'),
+                          child: const Row(children: [
+                            Expanded(
+                                child: Text('Tires',
+                                    style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600))),
+                            Icon(CupertinoIcons.chevron_right, size: 19)
+                          ])),
+                      const SizedBox(height: 16),
+                      IntrinsicHeight(
+                          child: Row(children: [
+                        for (final c in ['FrontTire', 'RearTire']) ...[
+                          if (c == 'RearTire') ...[
+                            VerticalDivider(
+                                width: 38,
+                                thickness: 1,
+                                color: context.palette.border),
+                          ],
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text(c == 'FrontTire' ? 'Front' : 'Rear',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: context.palette.inkMuted)),
+                                _Values(
+                                    user: user,
+                                    bike: bike,
+                                    setup: setup,
+                                    category: c,
+                                    pressureOnly: true),
+                              ])),
+                        ],
+                      ])),
+                    ])),
+            for (final category in (configuration?.fields.keys.toList() ?? setupCategories()).where((category) => !category.endsWith('Tire')))
+              SetupCard(
+                  padding: 17,
+                  child: InkWell(
+                      onTap: () => onCategory(category),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Expanded(
+                                  child: Text(categoryLabel(category),
+                                      style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600))),
+                              const Icon(CupertinoIcons.chevron_right, size: 19)
+                            ]),
+                            const SizedBox(height: 16),
+                            _Values(
+                                user: user,
+                                bike: bike,
+                                setup: setup,
+                                category: category),
+                          ]))),
+          ]);
+}
+
+class _Values extends StatefulWidget {
+  const _Values(
+      {required this.user,
+      required this.bike,
+      required this.setup,
+      required this.category,
+      this.pressureOnly = false});
+  final User user;
+  final String bike, setup, category;
+  final bool pressureOnly;
+  @override
+  State<_Values> createState() => _ValuesState();
+}
+
+class _ValuesState extends State<_Values> {
+  late final stream = AppDependencies.of(context)
+      .forUser(widget.user.uid)
+      .setups
+      .getSettings(widget.bike, widget.category, widget.setup);
+  @override
+  Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return const Text('Could not load settings');
+        if (!snapshot.hasData) return const LinearProgressIndicator();
+        final values = snapshot.data!;
+        bool hasValue(String key) => values[key]?.toString().trim().isNotEmpty == true;
+        if (!widget.pressureOnly && !values.keys.any(hasValue)) {
+          return Text(
+              widget.category == 'GeneralSettings'
+                  ? 'Add fit measurements'
+                  : 'Add ${widget.category.toLowerCase()} settings',
+              style: TextStyle(fontSize: 13, color: context.palette.accentText));
+        }
+        Widget value(String key, {bool large = false}) {
+          final meta = kFieldMeta[key];
+          final raw = values[key]?.toString() ?? '';
+          final parsed = SettingValue.parse(raw,
+              fallbackFamily: meta?.family, fallbackUnit: meta?.defaultUnit);
+          final number = parsed.number == null
+              ? (raw.isEmpty ? 'Add pressure' : raw)
+              : formatNumber(parsed.number!, parsed.unit?.decimals ?? 0);
+          return Text.rich(TextSpan(children: [
+            if (!large)
+              TextSpan(
+                  text: '${switch (key) {
+                    'Low Speed Rebound' => 'LSR',
+                    'High Speed Rebound' => 'HSR',
+                    'Low Speed Compression' => 'LSC',
+                    'High Speed Compression' => 'HSC',
+                    'Compression' => 'Comp.',
+                    'Tokens' =>
+                      widget.category == 'Shock' ? 'Spacers' : 'Tokens',
+                    'Stack Height' => 'Stack',
+                    'Seat Height' => 'Seat',
+                    _ => key
+                  }}  ',
+                  style:
+                      TextStyle(color: context.palette.inkMuted, fontSize: 12)),
+            TextSpan(
+                text: number,
+                style: AppTextStyles.mono(
+                    size: large ? (widget.pressureOnly ? 30 : 25) : 13,
+                    weight: FontWeight.w400,
+                    color: context.palette.ink)),
+            if (large || key == 'Reach' || key.contains('Height'))
+              TextSpan(
+                  text: ' ${parsed.unit?.label ?? ''}',
+                  style:
+                      TextStyle(fontSize: 12, color: context.palette.inkMuted)),
+          ]));
+        }
+
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (widget.pressureOnly)
+            InkWell(
+                onTap: () => showSettingStepperSheet(context,
+                    user: widget.user,
+                    uBikeID: widget.bike,
+                    category: widget.category,
+                    uSetupID: widget.setup,
+                    settingKey: 'Pressure',
+                    currentValue: values['Pressure']?.toString() ?? '',
+                    isDefault: true),
+                child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(minHeight: 48, minWidth: 80),
+                    child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: hasValue('Pressure')
+                            ? value('Pressure', large: true)
+                            : Text('Set pressure',
+                                style: TextStyle(fontSize: 13,
+                                    color: context.palette.accentText)))))
+          else if (hasValue('Pressure') || hasValue('Sag'))
+            Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  if (hasValue('Pressure')) value('Pressure', large: true),
+                  if (hasValue('Sag'))
+                    Text(
+                        '${values['Sag']} sag',
+                        style: TextStyle(
+                            fontSize: 12, color: context.palette.inkMuted)),
+                ]),
+          if (!widget.pressureOnly) ...[
+            if (hasValue('Pressure') || hasValue('Sag')) const SizedBox(height: 9),
+            Wrap(spacing: 16, runSpacing: 12, children: [
+              for (final key in [
+                ...?kDefaultFieldKeys[widget.category],
+                ...values.keys.where((k) =>
+                    !(kDefaultFieldKeys[widget.category] ?? []).contains(k))
+              ].where((k) => k != 'Pressure' && k != 'Sag' && hasValue(k)))
+                value(key)
+            ]),
+          ]
+        ]);
+      });
+}

@@ -22,8 +22,8 @@ class FakeBikesRepository implements BikesRepository {
   }
 
   @override
-  Future<void> createBikeRecord(String id, String name, String type) async {
-    bikes.add(Bike(id: id, name: name, bikeType: type));
+  Future<void> createBikeRecord(String id, String name) async {
+    bikes.add(Bike(id: id, name: name));
   }
 
   @override
@@ -31,9 +31,6 @@ class FakeBikesRepository implements BikesRepository {
   @override
   Future<String> getBikeNameFromID(String id) async =>
       bikes.firstWhere((bike) => bike.id == id).name;
-  @override
-  Future<String> getBikeType(String id) async =>
-      bikes.firstWhere((bike) => bike.id == id).bikeType;
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError(invocation.memberName.toString());
@@ -43,6 +40,10 @@ class FakeSetupsRepository implements SetupsRepository {
   final Map<String, String> settings = {};
   final Map<String, String> defaults = {};
   final Map<String, String> names = {};
+  final information = <String, Map<String, dynamic>>{};
+  @override
+  Future<Map<String, dynamic>> getSetupInformation(String bike, String setup) async =>
+      Map.of(information[setup] ?? {});
   Future<void> Function(
           String key, String value, String bike, String category, String setup)?
       onWrite;
@@ -57,6 +58,7 @@ class FakeSetupsRepository implements SetupsRepository {
   Future<void> createSetupList(String bike, String setup, String name,
       Map<String, dynamic> information) async {
     names[setup] = name;
+    this.information[setup] = Map.of(information);
   }
 
   @override

@@ -10,8 +10,8 @@ void main() {
   test('bike suggestions preserve valid links and match case-insensitive names',
       () {
     final bikes = [
-      Bike(id: 'a', name: 'Trail bike', bikeType: 'Enduro'),
-      Bike(id: 'b', name: 'Road', bikeType: 'Road')
+      Bike(id: 'a', name: 'Trail bike'),
+      Bike(id: 'b', name: 'Road')
     ];
     final result = suggestBikeLinks([
       const StravaBike(
@@ -34,7 +34,7 @@ void main() {
   test('setup defaults retain air and coil settings and all categories', () {
     final air = SetupDefaults.forShock('Air');
     final coil = SetupDefaults.forShock('Coil');
-    expect(air.keys.toSet(), Category.values.toSet());
+    expect(air.keys.toSet(), {Category.frontTire, Category.rearTire, Category.fork, Category.shock, Category.generalSettings});
     expect(air[Category.shock],
         {'Pressure': '180', 'Tokens': '0', 'Rebound': '5', 'Compression': '8'});
     expect(coil[Category.shock], {

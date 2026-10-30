@@ -1,7 +1,8 @@
+import 'package:flutter/cupertino.dart';
+import '../../rides/ui/ride_log_page.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/services_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 import 'package:bikesetupapp/features/maintenance/ui/component_detail_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
@@ -16,15 +17,15 @@ import 'package:flutter/material.dart';
 class ServicesView extends StatefulWidget {
   final User user;
   final String uBikeID;
-  final VoidCallback? onAddComponent;
+  final String bikeName;
   final void Function(bool hasAlert)? onAlertChanged;
 
   const ServicesView({
     super.key,
     required this.user,
     required this.uBikeID,
+    this.bikeName = 'Bike',
     this.onAlertChanged,
-    this.onAddComponent,
   });
 
   @override
@@ -90,60 +91,72 @@ class _ServicesViewState extends State<ServicesView> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final wide = ResponsiveLayout.isWide(context);
-      final mileage = MileageBanner(
-        margin:
-            wide ? EdgeInsets.zero : const EdgeInsets.fromLTRB(14, 8, 14, 12),
-        mileageKm: _mileageKm,
-        lastSyncTime: _lastSyncTime,
-        isLoading: _isSyncing,
-        isConnected: _isStravaConnected,
-        onSync: _syncStrava,
-        onConnect: _connectStrava,
-      );
-      return RefreshIndicator(
-        onRefresh: _syncStrava,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              mileage,
-              if (_mileageError)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Row(children: [
-                    const Expanded(child: Text('Could not load bike mileage.')),
-                    TextButton(
-                        onPressed: _loadState, child: const Text('Retry')),
-                  ]),
-                ),
-              const SizedBox(height: 8),
-              ServiceComponentsList(
-                onAddComponent: wide ? widget.onAddComponent : null,
-                userID: widget.user.uid,
-                bikeId: widget.uBikeID,
-                currentMileageKm: _mileageKm ?? 0,
-                mileageAvailable: _mileageKm != null,
-                onAlertChanged: widget.onAlertChanged,
-                onComponentTap: (component) => _openComponentDetail(component),
-                onComponentLog: (component) =>
-                    _logServiceForComponent(component),
-                onComponentDefer: (component) =>
-                    _deferServiceForComponent(component),
+    final mileage = MileageBanner(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      mileageKm: _mileageKm,
+      lastSyncTime: _lastSyncTime,
+      isLoading: _isSyncing,
+      isConnected: _isStravaConnected,
+      onSync: _syncStrava,
+      onConnect: _connectStrava,
+    );
+    return RefreshIndicator(
+      onRefresh: _syncStrava,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                        icon: const Icon(CupertinoIcons.stopwatch),
+                        label: const Text('Ride log & FIT import'),
+                        onPressed: () {
+                          Navigator.of(context).push(AppRoutes.fadeSlide(
+                              RideLogPage(
+                                  uid: widget.user.uid,
+                                  bikeId: widget.uBikeID,
+                                  bikeName: widget.bikeName)));
+                        }))),
+            ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+                title: const Text('Mileage & Strava'),
+                children: [mileage]),
+            if (_mileageError)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(children: [
+                  const Expanded(child: Text('Could not load bike mileage.')),
+                  TextButton(onPressed: _loadState, child: const Text('Retry')),
+                ]),
               ),
-              SizedBox(height: wide ? 24 : 80),
-            ],
-          ),
+            const SizedBox(height: 8),
+            ServiceComponentsList(
+              userID: widget.user.uid,
+              bikeId: widget.uBikeID,
+              currentMileageKm: _mileageKm ?? 0,
+              mileageAvailable: _mileageKm != null,
+              onAlertChanged: widget.onAlertChanged,
+              onComponentTap: (component) => _openComponentDetail(component),
+              onComponentLog: (component) => _logServiceForComponent(component),
+              onComponentDefer: (component) =>
+                  _deferServiceForComponent(component),
+            ),
+            SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
+          ],
         ),
-      );
-    });
+      ),
+    );
   }
 
   Future<void> _openComponentDetail(ServiceComponent component) async {
     final db = AppDependencies.of(context).forUser(widget.user.uid);
-    final stravaGearId = await db.strava.getStravaGearIdForBike(widget.uBikeID);
+    final stravaGearId = component.usesHours
+        ? null
+        : await db.strava.getStravaGearIdForBike(widget.uBikeID);
     if (!mounted) return;
     Navigator.of(context).push(
       AppRoutes.fadeSlide(
@@ -160,7 +173,9 @@ class _ServicesViewState extends State<ServicesView> {
 
   Future<void> _logServiceForComponent(ServiceComponent component) async {
     final db = AppDependencies.of(context).forUser(widget.user.uid);
-    final stravaGearId = await db.strava.getStravaGearIdForBike(widget.uBikeID);
+    final stravaGearId = component.usesHours
+        ? null
+        : await db.strava.getStravaGearIdForBike(widget.uBikeID);
     if (!mounted) return;
     await showLogServiceSheet(
       context: context,

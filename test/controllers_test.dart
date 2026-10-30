@@ -5,7 +5,6 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/app/startup/startup_controller.dart';
 import 'package:bikesetupapp/features/bikes/controllers/bikes_controller.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/service_entries_controller.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/services_controller.dart';
@@ -31,7 +30,7 @@ void main() {
     final setupController = SetupsController(setups);
     final controller = BikesController(bikes, setups);
     final id = await controller
-        .createBike('Enduro', {'shock': 'Coil'}, BikeType.enduro.bikeType)
+        .createBike('Enduro', {'shock': 'Coil'})
         .orThrow();
     final setupId = setups.defaults[id]!;
     expect(bikes.defaultBike, id);
@@ -54,7 +53,7 @@ void main() {
     expect(await startup.loadSelection(), isNull);
     bikes.defaultBike = 'bike';
     bikes.bikes = [
-      Bike(id: 'bike', name: 'Road', bikeType: BikeType.road.bikeType)
+      Bike(id: 'bike', name: 'Road')
     ];
     expect(await startup.loadSelection(), isNull);
     setups.defaults['bike'] = 'setup';
@@ -63,7 +62,6 @@ void main() {
     final selected = (await startup.loadSelection())!;
     expect(selected.bikeName, 'Road');
     expect(selected.setupName, 'Commute');
-    expect(selected.bikeType, BikeType.road);
     bikeController.dispose();
     setupController.dispose();
   });

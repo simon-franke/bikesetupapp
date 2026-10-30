@@ -1,5 +1,5 @@
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -16,7 +16,7 @@ Future<void> showDeferServiceSheet(
         required String userID,
         required ServiceComponent component,
         required double currentMileageKm}) =>
-    showAdaptiveModal<void>(
+    showAppSheet<void>(
         context: context,
         builder: (_) => _DeferServiceForm(
             userId: userID, component: component, mileageKm: currentMileageKm));

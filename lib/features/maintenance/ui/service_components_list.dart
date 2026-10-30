@@ -1,8 +1,7 @@
+import '../../rides/models/ride.dart';
 import '../controllers/service_entries_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
-import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
 
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
@@ -20,7 +19,6 @@ class ServiceComponentsList extends StatefulWidget {
   final void Function(ServiceComponent component)? onComponentLog;
   final void Function(ServiceComponent component)? onComponentDefer;
   final void Function(bool hasAlert)? onAlertChanged;
-  final VoidCallback? onAddComponent;
 
   const ServiceComponentsList({
     super.key,
@@ -32,7 +30,6 @@ class ServiceComponentsList extends StatefulWidget {
     this.onComponentLog,
     this.onComponentDefer,
     this.onAlertChanged,
-    this.onAddComponent,
   });
 
   @override
@@ -83,6 +80,12 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
         return _ComponentListWithEntries(
           key: ValueKey('${widget.userID}_${widget.bikeId}'),
           db: _db,
+          rides: snapshot.data!.any((c) => c.usesHours)
+              ? AppDependencies.of(context)
+                  .forUser(widget.userID)
+                  .rides
+                  .watch(widget.bikeId)
+              : null,
           components: snapshot.data!,
           currentMileageKm: widget.currentMileageKm,
           mileageAvailable: widget.mileageAvailable,
@@ -90,7 +93,6 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
           onComponentLog: widget.onComponentLog,
           onComponentDefer: widget.onComponentDefer,
           onAlertChanged: widget.onAlertChanged,
-          onAddComponent: widget.onAddComponent,
         );
       },
     );
@@ -98,6 +100,7 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
 }
 
 class _ComponentListWithEntries extends StatefulWidget {
+  final Stream<List<Ride>>? rides;
   final MaintenanceController db;
   final List<ServiceComponent> components;
   final double currentMileageKm;
@@ -106,11 +109,11 @@ class _ComponentListWithEntries extends StatefulWidget {
   final void Function(ServiceComponent)? onComponentLog;
   final void Function(ServiceComponent)? onComponentDefer;
   final void Function(bool)? onAlertChanged;
-  final VoidCallback? onAddComponent;
 
   const _ComponentListWithEntries({
     super.key,
     required this.db,
+    this.rides,
     required this.components,
     required this.currentMileageKm,
     required this.mileageAvailable,
@@ -118,7 +121,6 @@ class _ComponentListWithEntries extends StatefulWidget {
     this.onComponentLog,
     this.onComponentDefer,
     this.onAlertChanged,
-    this.onAddComponent,
   });
 
   @override
@@ -156,7 +158,20 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => widget.rides == null
+      ? _content(context, null)
+      : StreamBuilder<List<Ride>>(
+          stream: widget.rides,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                      'Could not load ride hours. Reopen Service to retry.'));
+            }
+            return _content(context, snapshot.data);
+          });
+  Widget _content(BuildContext context, List<Ride>? rides) {
     if (_entries.hasError) {
       return _LoadError(
           message: 'Could not load service history.', onRetry: _entries.retry);
@@ -170,6 +185,7 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
     final services = widget.components
         .map((component) => annotateService(
               component: component,
+              rides: rides,
               currentMileageKm: widget.currentMileageKm,
               latestEntry: _latestEntries[component.id],
               mileageAvailable: widget.mileageAvailable,
@@ -185,14 +201,12 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
       });
     }
     return ServiceSchedule(
-      onAddComponent: widget.onAddComponent,
       services: services,
       cardBuilder: (service) => ServiceComponentCard(
         key: ValueKey(service.component.id),
-        margin: ResponsiveLayout.isWide(context)
-            ? EdgeInsets.zero
-            : const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
         component: service.component,
+        rides: rides,
         currentMileageKm: widget.currentMileageKm,
         latestEntry: _latestEntries[service.component.id],
         mileageAvailable: widget.mileageAvailable,
@@ -202,7 +216,7 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
         onLog: widget.onComponentLog == null
             ? null
             : () => widget.onComponentLog!(service.component),
-        onDefer: widget.onComponentDefer == null
+        onDefer: service.component.usesHours || widget.onComponentDefer == null
             ? null
             : () => widget.onComponentDefer!(service.component),
       ),
@@ -213,14 +227,10 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
 /// Presents an already loaded schedule, keeping filtering independent of Firestore.
 class ServiceSchedule extends StatefulWidget {
   final List<AnnotatedService> services;
-  final VoidCallback? onAddComponent;
   final Widget Function(AnnotatedService) cardBuilder;
 
   const ServiceSchedule(
-      {super.key,
-      required this.services,
-      required this.cardBuilder,
-      this.onAddComponent});
+      {super.key, required this.services, required this.cardBuilder});
 
   @override
   State<ServiceSchedule> createState() => _ServiceScheduleState();
@@ -244,26 +254,15 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(
-              ResponsiveLayout.isWide(context) ? 0 : 18,
-              16,
-              ResponsiveLayout.isWide(context) ? 0 : 18,
-              12),
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppSectionToolbar(
-                  title: Text('Service schedule',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  action: widget.onAddComponent == null
-                      ? null
-                      : AppActionButton(
-                          label: 'Add component',
-                          icon: Icons.add,
-                          onPressed: widget.onAddComponent)),
+              Text('Service schedule',
+                  style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 6),
               Text(
-                  '${widget.services.length} components · $attention need attention',
+                  '${widget.services.length} components, $attention need attention',
                   style: TextStyle(fontSize: 13, color: p.inkMuted)),
               if (widget.services.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -320,24 +319,23 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
   List<Widget> _group(ServiceStatus status, String label) {
     final services = widget.services.where((s) => s.status == status).toList()
       ..sort((a, b) {
-        final remaining = a.remainingKm.compareTo(b.remainingKm);
+        final remaining = b.progress.compareTo(a.progress);
         if (remaining != 0) return remaining;
-        final overdue = b.kmSinceService.compareTo(a.kmSinceService);
+        final overdue = b.usage.compareTo(a.usage);
         if (overdue != 0) return overdue;
         return a.component.id.compareTo(b.component.id);
       });
     if (services.isEmpty) return [];
     return [
       Padding(
-        padding: EdgeInsets.fromLTRB(ResponsiveLayout.isWide(context) ? 0 : 18,
-            14, ResponsiveLayout.isWide(context) ? 0 : 18, 12),
+        padding: EdgeInsets.fromLTRB(20, 14, 20, 12),
         child: Text('$label (${services.length})',
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: context.palette.inkMuted)),
       ),
-      ResponsiveCardGrid(children: services.map(widget.cardBuilder).toList()),
+      Column(children: services.map(widget.cardBuilder).toList()),
     ];
   }
 }
@@ -349,7 +347,7 @@ class _Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -370,7 +368,7 @@ class _LoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(children: [
           Text(message),
           TextButton(onPressed: onRetry, child: const Text('Try again')),

@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'hour_component_detail.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
@@ -208,7 +210,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline_rounded, size: 16, color: p.red),
+              Icon(CupertinoIcons.trash, size: 16, color: p.red),
               const SizedBox(width: 10),
               Text(
                 'Delete entry',
@@ -230,6 +232,10 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.component.usesHours) {
+      return HourComponentDetail(
+          uid: widget.user.uid, component: widget.component);
+    }
     final p = context.palette;
     return Scaffold(
       appBar: AppBar(
@@ -242,7 +248,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
           PopupMenuButton<String>(
             color: p.surface,
             tooltip: 'Component options',
-            icon: Icon(Icons.more_vert_rounded, color: p.ink),
+            icon: Icon(CupertinoIcons.ellipsis, color: p.ink),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(color: p.border),
@@ -259,7 +265,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                 value: 'edit_interval',
                 child: Row(
                   children: [
-                    Icon(Icons.tune_rounded, size: 16, color: p.ink),
+                    Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: p.ink),
                     const SizedBox(width: 10),
                     Text(
                       'Edit interval',
@@ -276,7 +282,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline_rounded, size: 16, color: p.red),
+                    Icon(CupertinoIcons.trash, size: 16, color: p.red),
                     const SizedBox(width: 10),
                     Text(
                       'Delete component',
@@ -349,7 +355,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
           currentMileageKm: widget.currentMileageKm,
           stravaGearId: widget.mileageAvailable ? widget.stravaGearId : null,
         ),
-        icon: const Icon(Icons.check),
+        icon: const Icon(CupertinoIcons.check_mark),
         label: const Text('Log service'),
       ),
     );
@@ -434,7 +440,7 @@ class _HistoryList extends StatelessWidget {
             color: p.red,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 22),
-            child: Icon(Icons.delete_outline_rounded,
+            child: Icon(CupertinoIcons.trash,
                 color: AppColors.onColor(p.red), size: 20),
           ),
           child: _HistoryRow(
@@ -468,7 +474,7 @@ class _HistoryRow extends StatelessWidget {
     final formatter = NumberFormat('#,###');
     final mileageText = entry.mileageAtServiceKm != null
         ? '${formatter.format(entry.mileageAtServiceKm!.round())} km'
-        : '— km';
+        : 'No mileage';
 
     String? deltaText;
     if (entry.mileageAtServiceKm != null && prior?.mileageAtServiceKm != null) {
@@ -575,7 +581,7 @@ class _EmptyHistory extends StatelessWidget {
               border: Border.all(color: p.border),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.history_rounded, size: 24, color: p.inkDim),
+            child: Icon(CupertinoIcons.clock, size: 24, color: p.inkDim),
           ),
           const SizedBox(height: 14),
           Text(

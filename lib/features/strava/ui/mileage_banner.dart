@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -67,7 +68,7 @@ class MileageBanner extends StatelessWidget {
               width: 16,
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2, color: ink))
-          : Icon(isConnected ? Icons.sync : Icons.link, size: 18),
+          : Icon(isConnected ? CupertinoIcons.arrow_2_circlepath : CupertinoIcons.link, size: 18),
       label: Text(isLoading
           ? 'Syncing'
           : isConnected
