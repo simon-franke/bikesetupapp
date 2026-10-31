@@ -1,3 +1,4 @@
+import 'app_haptics.dart';
 import 'package:flutter/cupertino.dart';
 import 'app_sheet.dart';
 import 'package:flutter/services.dart';
@@ -29,9 +30,11 @@ class AppActionButton extends StatelessWidget {
     final child = Text(label, style: textStyle);
     if (outlined) {
       return icon == null
-          ? OutlinedButton(onPressed: onPressed, child: child)
+          ? OutlinedButton(onPressed: AppHaptics.wrap(onPressed), child: child)
           : OutlinedButton.icon(
-              onPressed: onPressed, icon: Icon(icon), label: child);
+              onPressed: AppHaptics.wrap(onPressed),
+              icon: Icon(icon),
+              label: child);
     }
     final style = color == null
         ? null
@@ -40,9 +43,15 @@ class AppActionButton extends StatelessWidget {
             foregroundColor: AppColors.onColor(color!),
           );
     return icon == null
-        ? FilledButton(onPressed: onPressed, style: style, child: child)
+        ? FilledButton(
+            onPressed: AppHaptics.wrap(onPressed, emphasized: true),
+            style: style,
+            child: child)
         : FilledButton.icon(
-            onPressed: onPressed, style: style, icon: Icon(icon), label: child);
+            onPressed: AppHaptics.wrap(onPressed, emphasized: true),
+            style: style,
+            icon: Icon(icon),
+            label: child);
   }
 }
 
@@ -97,7 +106,7 @@ class AppObjectMenu extends StatelessWidget {
         tooltip: tooltip,
         onPressed: onRename == null && onDiscard == null && onDelete == null
             ? null
-            : () => _open(context),
+            : AppHaptics.wrap(() => _open(context)),
         style: IconButton.styleFrom(
           minimumSize: const Size(48, 48),
           foregroundColor: context.palette.inkMuted,
@@ -152,7 +161,10 @@ Future<String?> showAppOptionsSheet({
                   autofocus: entries.any((item) => item.selected)
                       ? entry.selected
                       : index == 0,
-                  onPressed: () => Navigator.pop(sheetContext, entry.value),
+                  onPressed: () {
+                    if (!entry.selected) AppHaptics.selection();
+                    Navigator.pop(sheetContext, entry.value);
+                  },
                   style: TextButton.styleFrom(
                     alignment: Alignment.centerLeft,
                     minimumSize:
@@ -219,7 +231,7 @@ class AppEditButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final button = TextButton(
-      onPressed: onPressed,
+      onPressed: AppHaptics.wrap(onPressed),
       style: TextButton.styleFrom(
         foregroundColor: context.palette.inkMuted,
         minimumSize: const Size(48, 48),
@@ -370,7 +382,7 @@ class AppSuggestionTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-              onTap: onTap,
+              onTap: AppHaptics.wrap(onTap, selection: true),
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 18),

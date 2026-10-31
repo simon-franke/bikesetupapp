@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'service_component_icon.dart';
 import 'package:flutter/cupertino.dart';
 import '../../rides/models/ride.dart';
@@ -45,7 +46,7 @@ class ServiceComponentCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-              onTap: onTap,
+              onTap: AppHaptics.wrap(onTap),
               child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(

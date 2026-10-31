@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/unit_system.dart';
 import '../models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
@@ -136,11 +137,11 @@ class _CategoryRowsState extends State<_CategoryRows> {
                       if (key != keys.first)
                         Divider(height: 1, color: context.palette.border),
                       InkWell(
-                          onTap: () => widget.onEdit(
+                          onTap: AppHaptics.wrap(() => widget.onEdit(
                               key,
                               values[key]?.toString() ?? '',
                               unitFamilyFromName(
-                                  metadata.data![key]?.toString() ?? '')),
+                                  metadata.data![key]?.toString() ?? ''))),
                           child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 17),
                               child: Row(children: [

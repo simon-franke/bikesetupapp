@@ -1,3 +1,4 @@
+import 'app_haptics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -19,7 +20,7 @@ class AppValueButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-      onPressed: onTap,
+      onPressed: AppHaptics.wrap(onTap),
       style: TextButton.styleFrom(
           foregroundColor: context.palette.ink,
           backgroundColor: context.palette.surface2,

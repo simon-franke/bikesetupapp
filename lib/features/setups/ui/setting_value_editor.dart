@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 
 const double _tickWidth = 12;
 const double _rulerHeight = 70;
@@ -82,9 +82,9 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
       final isAtBoundary = (newValue - _effectiveMin).abs() < _step / 2 ||
           (newValue - _effectiveMax).abs() < _step / 2;
       if (isAtBoundary && !wasAtBoundary) {
-        HapticFeedback.mediumImpact();
+        AppHaptics.action();
       } else {
-        HapticFeedback.selectionClick();
+        AppHaptics.selection();
       }
       setState(() => _currentValue = newValue);
       widget.onChanged(newValue);
@@ -116,7 +116,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
               button: widget.onValueTap != null,
               label: widget.onValueTap != null ? 'Enter value' : null,
               child: InkWell(
-                onTap: widget.onValueTap,
+                onTap: AppHaptics.wrap(widget.onValueTap),
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding:

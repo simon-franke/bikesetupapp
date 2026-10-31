@@ -6,7 +6,7 @@ import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import 'package:bikesetupapp/common/ui/progress_indicator.dart';
 import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 
 const double bubbleCardW = 70.0;
 const double bubbleCardH = 44.0;
@@ -261,11 +261,11 @@ class _SchematicBubbleState extends State<SchematicBubble>
                     _tapController.forward(from: 0).then((_) {
                       if (mounted) _tapController.reverse();
                     });
-                    HapticFeedback.lightImpact();
+                    AppHaptics.action();
                     widget.onPressed?.call();
                   },
                   onLongPress: () {
-                    HapticFeedback.mediumImpact();
+                    AppHaptics.action();
                     widget.onValueChange(_latestValue);
                   },
                   child: AnimatedContainer(
