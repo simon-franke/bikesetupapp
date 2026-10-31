@@ -1,3 +1,4 @@
+import '../models/service_icon.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import 'package:uuid/uuid.dart';
@@ -29,19 +30,23 @@ class MaintenanceController extends OperationController {
       required ComponentType type,
       required String name,
       required int serviceIntervalKm,
+      ServiceIcon? customIcon,
       double? currentMileageKm,
       double? serviceIntervalHours,
       double initialRideHours = 0,
+      double initialDistanceKm = 0,
       bool includeIndoorRides = false,
       DateTime? baselineDate}) {
     final key = (
       bikeId,
       type,
       name.trim(),
+      customIcon,
       serviceIntervalKm,
       currentMileageKm,
       serviceIntervalHours,
       initialRideHours,
+      initialDistanceKm,
       includeIndoorRides,
       baselineDate
     );
@@ -53,6 +58,8 @@ class MaintenanceController extends OperationController {
                   (serviceIntervalHours ?? serviceIntervalKm) <= 0 ||
                   !initialRideHours.isFinite ||
                   initialRideHours < 0 ||
+                  !initialDistanceKm.isFinite ||
+                  initialDistanceKm < 0 ||
                   (baselineDate?.isAfter(_now()) ?? false)) {
                 throw const AppFailure(FailureCode.invalidInput);
               }
@@ -63,6 +70,7 @@ class MaintenanceController extends OperationController {
                   bikeId: bikeId,
                   type: type,
                   name: name.trim(),
+                  customIcon: customIcon,
                   serviceIntervalKm: serviceIntervalKm,
                   serviceIntervalHours: serviceIntervalHours,
                   includeIndoorRides: includeIndoorRides,
@@ -74,6 +82,8 @@ class MaintenanceController extends OperationController {
                   date: baselineDate?.toUtc() ?? date,
                   initialRideHours:
                       serviceIntervalHours == null ? null : initialRideHours,
+                  initialDistanceKm:
+                      serviceIntervalHours == null ? initialDistanceKm : null,
                   note: 'Initial setup');
               await _repository.createComponentWithBaseline(
                   component, baseline);
@@ -87,12 +97,16 @@ class MaintenanceController extends OperationController {
           int? serviceIntervalKm,
           double? serviceIntervalHours}) =>
       command(() {
-        if ((serviceIntervalHours != null && (!serviceIntervalHours.isFinite || serviceIntervalHours <= 0)) ||
+        if ((serviceIntervalHours != null &&
+                (!serviceIntervalHours.isFinite ||
+                    serviceIntervalHours <= 0)) ||
             (serviceIntervalKm != null && serviceIntervalKm <= 0)) {
           throw const AppFailure(FailureCode.invalidInput);
         }
-        return _repository.updateComponent(componentId, name: name,
-          serviceIntervalKm: serviceIntervalKm, serviceIntervalHours: serviceIntervalHours);
+        return _repository.updateComponent(componentId,
+            name: name,
+            serviceIntervalKm: serviceIntervalKm,
+            serviceIntervalHours: serviceIntervalHours);
       });
   Future<CommandResult<void>> deleteComponent(String componentId) =>
       command(() => _repository.deleteComponent(componentId));
@@ -143,7 +157,10 @@ class MaintenanceController extends OperationController {
       double? initialRideHours,
       String? note,
       String? entryId}) {
-    if (initialRideHours != null && (!initialRideHours.isFinite || initialRideHours < 0 || date.isAfter(_now()))) {
+    if (initialRideHours != null &&
+        (!initialRideHours.isFinite ||
+            initialRideHours < 0 ||
+            date.isAfter(_now()))) {
       throw const AppFailure(FailureCode.invalidInput);
     }
     final trimmed = note?.trim();

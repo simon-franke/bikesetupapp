@@ -36,22 +36,3 @@ String serviceDistanceLabel(AnnotatedService service) {
   if (service.remaining == 0) return 'Service due now';
   return 'Service in ${service.component.usesHours ? service.remaining.toStringAsFixed(1) : format.format(service.remaining.round())} ${service.component.unitLabel}';
 }
-
-IconData iconForComponent(String icon) {
-  switch (icon) {
-    case 'link':
-      return CupertinoIcons.link;
-    case 'brake':
-      return CupertinoIcons.hand_raised;
-    case 'tire':
-      return CupertinoIcons.circle;
-    case 'fork':
-      return CupertinoIcons.arrow_up_arrow_down;
-    case 'shock':
-      return CupertinoIcons.arrow_down_right_arrow_up_left;
-    case 'bearing':
-      return CupertinoIcons.gear_alt;
-    default:
-      return CupertinoIcons.wrench;
-  }
-}

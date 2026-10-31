@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/app_date_sheet.dart';
+import 'package:bikesetupapp/common/ui/app_value_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'hour_service_sheet.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -47,7 +49,7 @@ class _LogServiceForm extends StatefulWidget {
 class _LogServiceFormState extends State<_LogServiceForm> {
   late final ServiceEditorController _controller;
   DateTime _selectedDate = DateTime.now();
-  String _note = '';
+  final _note = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -67,17 +69,14 @@ class _LogServiceFormState extends State<_LogServiceForm> {
 
   @override
   void dispose() {
+    _note.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   Future<void> _pickDate() async {
     if (_controller.saving) return;
-    final picked = await showDatePicker(
-        context: context,
-        initialDate: _selectedDate,
-        firstDate: DateTime(2000),
-        lastDate: DateTime.now());
+    final picked = await pickAppDate(context, initial: _selectedDate);
     if (!mounted || picked == null || _controller.saving) return;
     setState(() => _selectedDate = picked);
     try {
@@ -91,7 +90,7 @@ class _LogServiceFormState extends State<_LogServiceForm> {
   Future<void> _save() async {
     try {
       final result =
-          await _controller.logService(date: _selectedDate, note: _note);
+          await _controller.logService(date: _selectedDate, note: _note.text);
       if (!mounted || !result.isSuccess) return;
       HapticFeedback.lightImpact();
       Navigator.of(context).pop();
@@ -110,19 +109,31 @@ class _LogServiceFormState extends State<_LogServiceForm> {
     final saveError = _controller.saveError;
     return Padding(
         padding: EdgeInsets.fromLTRB(
-            20, 16, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
+            24,
+            16,
+            24,
+            MediaQuery.viewInsetsOf(context).bottom +
+                MediaQuery.paddingOf(context).bottom +
+                24),
         child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const AppSheetHandle(),
               const SizedBox(height: 18),
-              Text('LOG SERVICE',
-                  style: AppTextStyles.eyebrow(color: p.inkDim)),
+              Text('Log service',
+                  style: AppTextStyles.inter(
+                      size: 22, weight: FontWeight.w600, color: p.ink)),
+              const SizedBox(height: 8),
+              Text(widget.component.name,
+                  style: AppTextStyles.inter(size: 16, color: p.inkMuted)),
               const SizedBox(height: 14),
               const AppFieldLabel('Date'),
               const SizedBox(height: 6),
-              _SheetDateField(date: _selectedDate, onTap: _pickDate),
+              AppValueButton(
+                  label: DateFormat.yMMMd().format(_selectedDate),
+                  icon: CupertinoIcons.calendar,
+                  onTap: _controller.saving ? null : _pickDate),
               if (widget.gearId != null) ...[
                 const SizedBox(height: 10),
                 _buildMileageStatus(
@@ -136,16 +147,12 @@ class _LogServiceFormState extends State<_LogServiceForm> {
                             : 'error'),
               ],
               const SizedBox(height: 14),
-              const AppFieldLabel('Note'),
+              const AppFieldLabel('Note (optional)'),
               const SizedBox(height: 6),
-              TextFormField(
-                  initialValue: _note,
-                  onChanged: (value) => _note = value,
-                  enabled: !_controller.saving,
-                  cursorColor: p.accent,
-                  style: AppTextStyles.inter(size: 13, color: p.ink),
-                  decoration: const InputDecoration(
-                      hintText: 'Optional, e.g. new chain, cleaned only')),
+              IgnorePointer(
+                  ignoring: _controller.saving,
+                  child: AppTextField(
+                      controller: _note, hint: 'What was done?', maxLines: 3)),
               if (saveError != null) ...[
                 const SizedBox(height: 10),
                 Text(
@@ -186,7 +193,7 @@ Widget _buildMileageStatus(
         const SizedBox(width: 8),
         Text(
           'Fetching from Strava…',
-          style: AppTextStyles.inter(size: 11, color: p.inkMuted),
+          style: AppTextStyles.inter(size: 14, color: p.inkMuted),
         ),
       ],
     );
@@ -201,7 +208,7 @@ Widget _buildMileageStatus(
           child: Text(
             'Re-connect Strava in settings to fetch mileage',
             style: AppTextStyles.inter(
-              size: 11,
+              size: 14,
               weight: FontWeight.w600,
               color: p.red,
             ),
@@ -216,14 +223,15 @@ Widget _buildMileageStatus(
       children: [
         Icon(CupertinoIcons.xmark, size: 14, color: p.red),
         const SizedBox(width: 6),
-        Text(
+        Expanded(
+            child: Text(
           'Could not fetch mileage from Strava',
           style: AppTextStyles.inter(
-            size: 11,
+            size: 14,
             weight: FontWeight.w600,
             color: p.red,
           ),
-        ),
+        )),
       ],
     );
   }
@@ -236,7 +244,7 @@ Widget _buildMileageStatus(
         Text(
           '${_kmFormat.format(fetchedMileage.round())} km at service',
           style: AppTextStyles.mono(
-            size: 11,
+            size: 14,
             weight: FontWeight.w700,
             color: p.amber,
           ),
@@ -246,47 +254,4 @@ Widget _buildMileageStatus(
   }
 
   return const SizedBox.shrink();
-}
-
-class _SheetDateField extends StatelessWidget {
-  final DateTime date;
-  final VoidCallback onTap;
-  const _SheetDateField({required this.date, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.surface2,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: p.borderStrong),
-          ),
-          child: Row(
-            children: [
-              Icon(CupertinoIcons.calendar, size: 14, color: p.inkMuted),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  DateFormat('MMM d, yyyy').format(date),
-                  style: AppTextStyles.inter(
-                    size: 13,
-                    weight: FontWeight.w600,
-                    color: p.ink,
-                  ),
-                ),
-              ),
-              Icon(CupertinoIcons.chevron_down, size: 16, color: p.inkDim),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

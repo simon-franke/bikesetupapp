@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
 import 'package:bikesetupapp/features/bikes/repositories/bikes_repository.dart';
@@ -31,34 +32,174 @@ class ChooserUser extends Fake implements User {
   @override
   String get uid => 'user';
 }
+
 class ChooserBikes extends Fake implements BikesRepository {
+  String? selectedBike = 'current';
+  String? deletedBike;
+  Completer<void>? deletion;
+  @override
+  Future<String> getDefaultBike() async => selectedBike!;
+  @override
+  Future<String> getBikeNameFromID(String id) async => 'Other bike';
+  @override
+  Future<void> deleteBike(String id) async {
+    await deletion?.future;
+    deletedBike = id;
+    if (selectedBike == id) selectedBike = 'other';
+  }
+
+  @override
+  Future<void> setDefaultBike(String id) async {
+    selectedBike = id;
+  }
+
   @override
   Stream<List<Bike>> getBikes() => Stream.value(const [
-    Bike(id: 'other', name: 'Other bike'),
-    Bike(id: 'current', name: 'Current bike'),
-  ]);
+        Bike(id: 'other', name: 'Other bike'),
+        Bike(id: 'current', name: 'Current bike'),
+      ]);
 }
+
 class ChooserSetups extends Fake implements SetupsRepository {
   final subscriptions = <String, int>{};
   @override
+  Future<String> getDefaultSetup(String bike) async => 'saved-setup';
+  @override
+  Future<String> getSetupNameFromID(String bike, String setup) async => 'Trail';
+
+  @override
   Stream<List<BikeSetup>> getSetups(String id) => Stream.multi((controller) {
-    subscriptions.update(id, (count) => count + 1, ifAbsent: () => 1);
-    controller.add([BikeSetup(id: 'default', name: '$id setup')]);
-    controller.close();
-  });
+        subscriptions.update(id, (count) => count + 1, ifAbsent: () => 1);
+        controller.add([BikeSetup(id: 'default', name: '$id setup')]);
+        controller.close();
+      });
 }
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-  testWidgets('bike accordion animates height without reloading setup streams', (tester) async {
+  testWidgets(
+      'deleting the selected bike uses a sheet and selects its replacement',
+      (tester) async {
+    final bikes = ChooserBikes();
+    final dependencies = AppDependencies(
+        bikesRepository: (_) => bikes,
+        setupsRepository: (_) => ChooserSetups());
+    addTearDown(dependencies.dispose);
+    List<String>? selected;
+    await tester.pumpWidget(Provider.value(
+        value: dependencies,
+        child: harness(BikeList(
+            user: ChooserUser(),
+            selectedBikeId: 'current',
+            selectedSetupId: 'default',
+            onSetupDetails: (_, __, ___, ____) {},
+            onBikeSelected: (name, bike, setupName, setup) =>
+                selected = [name, bike, setupName, setup]))));
+    await tester.pumpAndSettle();
+    Future<void> openConfirmation() async {
+      await tester.tap(find.byTooltip('Bike options'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete bike'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('Delete Current bike?'), findsOneWidget);
+    }
+
+    await openConfirmation();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(bikes.deletedBike, isNull);
+    expect(selected, isNull);
+    await openConfirmation();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(bikes.deletedBike, 'current');
+    expect(selected, ['Other bike', 'other', 'Trail', 'saved-setup']);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('deletion still updates workspace after chooser is dismissed',
+      (tester) async {
+    final bikes = ChooserBikes()..deletion = Completer<void>();
+    final dependencies = AppDependencies(
+        bikesRepository: (_) => bikes,
+        setupsRepository: (_) => ChooserSetups());
+    addTearDown(dependencies.dispose);
+    List<String>? selected;
+    await tester.pumpWidget(Provider.value(
+      value: dependencies,
+      child: MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => TextButton(
+                      child: const Text('Choose bike'),
+                      onPressed: () => showBikeChooserSheet(
+                          context: context,
+                          user: ChooserUser(),
+                          selectedBikeId: 'current',
+                          selectedSetupId: 'default',
+                          onBikeSelected: (name, bike, setupName, setup) =>
+                              selected = [name, bike, setupName, setup]),
+                    ))),
+      ),
+    ));
+    await tester.tap(find.text('Choose bike'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Bike options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete bike'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.byType(BikeList), findsNothing);
+    bikes.deletion!.complete();
+    await tester.pumpAndSettle();
+    expect(selected, ['Other bike', 'other', 'Trail', 'saved-setup']);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Service selects a bike directly and keeps its saved setup',
+      (tester) async {
+    final bikes = ChooserBikes();
     final setups = ChooserSetups();
     final dependencies = AppDependencies(
-        bikesRepository: (_) => ChooserBikes(), setupsRepository: (_) => setups);
+        bikesRepository: (_) => bikes, setupsRepository: (_) => setups);
+    addTearDown(dependencies.dispose);
+    List<String>? selected;
+    await tester.pumpWidget(Provider.value(
+        value: dependencies,
+        child: harness(BikeList(
+            user: ChooserUser(),
+            bikesOnly: true,
+            selectedBikeId: 'current',
+            selectedSetupId: 'default',
+            onSetupDetails: (_, __, ___, ____) {},
+            onBikeSelected: (name, bike, setupName, setup) =>
+                selected = [name, bike, setupName, setup]))));
+    await tester.pumpAndSettle();
+    expect(find.text('Add setup'), findsNothing);
+    expect(setups.subscriptions, isEmpty);
+    await tester.tap(find.text('Other bike'));
+    await tester.pumpAndSettle();
+    expect(selected, ['Other bike', 'other', 'Trail', 'saved-setup']);
+    expect(bikes.selectedBike, 'other');
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('bike accordion animates height without reloading setup streams',
+      (tester) async {
+    final setups = ChooserSetups();
+    final dependencies = AppDependencies(
+        bikesRepository: (_) => ChooserBikes(),
+        setupsRepository: (_) => setups);
     addTearDown(dependencies.dispose);
     await tester.pumpWidget(Provider.value(
       value: dependencies,
       child: harness(BikeList(
-          user: ChooserUser(), selectedBikeId: 'current', selectedSetupId: 'default',
+          user: ChooserUser(),
+          selectedBikeId: 'current',
+          selectedSetupId: 'default',
           onSetupDetails: (_, __, ___, ____) {},
           onBikeSelected: (_, __, ___, ____) {})),
     ));
@@ -169,6 +310,7 @@ void main() {
         (tester) async {
       var added = 0;
       await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(extensions: const [AppPalette.dark]),
         home: Scaffold(
             body: Center(
                 child: ConstrainedBox(

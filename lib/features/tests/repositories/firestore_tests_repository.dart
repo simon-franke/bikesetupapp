@@ -27,15 +27,11 @@ class FirestoreTestsRepository implements TestsRepository {
         final ref = _tests(bike, setup).doc(test.id);
         final baseline = await tx.get(parent);
         final saved = await tx.get(ref);
-        if (!baseline.exists ||
-            saved.exists ||
-            baseline.data()?['activeTestId'] != null ||
-            test.stage != TestStage.draft) {
+        if (!baseline.exists || saved.exists || test.stage != TestStage.draft) {
           throw const AppFailure(FailureCode.saveFailed);
         }
         return () {
           tx.set(ref, test.toMap());
-          tx.update(parent, {'activeTestId': test.id});
         };
       });
 
@@ -48,9 +44,7 @@ class FirestoreTestsRepository implements TestsRepository {
         final ref = _tests(bike, setup).doc(id);
         final baseline = await tx.get(parent);
         final saved = await tx.get(ref);
-        if (!saved.exists ||
-            !baseline.exists ||
-            baseline.data()?['activeTestId'] != id) {
+        if (!saved.exists || !baseline.exists) {
           throw const AppFailure(FailureCode.saveFailed);
         }
         final current = SetupTest.fromMap(saved.data()!);
@@ -66,7 +60,10 @@ class FirestoreTestsRepository implements TestsRepository {
       });
   @override
   Future<void> finish(String bike, String setup, String id,
-          {bool apply = false, String? newSetupId, String? newSetupName}) =>
+          {bool apply = false,
+          String? newSetupId,
+          String? newSetupName,
+          bool onlyIfUnchanged = false}) =>
       _writeTransaction((tx) async {
         final testRef = _tests(bike, setup).doc(id);
         final saved = await tx.get(testRef);
@@ -76,10 +73,11 @@ class FirestoreTestsRepository implements TestsRepository {
           throw const AppFailure(FailureCode.saveFailed);
         }
         final test = SetupTest.fromMap(saved.data()!);
-        if (test.stage == TestStage.finished) return () {};
-        if (baseline.data()?['activeTestId'] != id) {
-          throw const AppFailure(FailureCode.saveFailed);
+        if (onlyIfUnchanged &&
+            (test.stage != TestStage.draft || test.changes.isNotEmpty)) {
+          return () {};
         }
+        if (test.stage == TestStage.finished) return () {};
         if ((apply || newSetupId != null) && test.stage != TestStage.review) {
           throw const AppFailure(FailureCode.invalidInput);
         }
@@ -127,7 +125,10 @@ class FirestoreTestsRepository implements TestsRepository {
                   metadata[entry.key]!);
             }
           }
-          tx.update(parent, {'activeTestId': FieldValue.delete()});
+          // Remove the legacy single-test pointer only for its own test.
+          if (baseline.data()?['activeTestId'] == id) {
+            tx.update(parent, {'activeTestId': FieldValue.delete()});
+          }
           if (test.stage == TestStage.draft && !apply && newSetupId == null) {
             tx.delete(testRef);
             return;

@@ -1,18 +1,15 @@
-import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:bikesetupapp/common/ui/command_feedback.dart';
-import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/app_sheet.dart';
-import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'dart:math' as math;
-
-import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/features/setups/ui/field_icon.dart';
-import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
-import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
-import 'package:bikesetupapp/features/setups/models/unit_system.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../app/app_dependencies.dart';
+import '../../../common/models/command_result.dart';
+import '../../../common/ui/app_components.dart';
+import '../../../common/ui/app_error_banner.dart';
+import '../../../common/ui/app_select.dart';
+import '../../../common/ui/app_sheet.dart';
+import '../models/unit_system.dart';
+import 'control_panel_grid.dart';
+import 'field_meta.dart';
 
 Future<void> showAddFieldSheet(
   BuildContext context, {
@@ -20,31 +17,20 @@ Future<void> showAddFieldSheet(
   required String uBikeID,
   required String category,
   required String uSetupID,
-}) {
-  return showAppSheet<void>(
-    context: context,
-    builder: (ctx) => _AddFieldSheet(
-      user: user,
-      uBikeID: uBikeID,
-      category: category,
-      uSetupID: uSetupID,
-    ),
-  );
-}
+}) =>
+    showAppSheet<void>(
+        context: context,
+        builder: (_) => _AddFieldSheet(
+            user: user, bike: uBikeID, category: category, setup: uSetupID));
 
 class _AddFieldSheet extends StatefulWidget {
+  const _AddFieldSheet(
+      {required this.user,
+      required this.bike,
+      required this.category,
+      required this.setup});
   final User user;
-  final String uBikeID;
-  final String category;
-  final String uSetupID;
-
-  const _AddFieldSheet({
-    required this.user,
-    required this.uBikeID,
-    required this.category,
-    required this.uSetupID,
-  });
-
+  final String bike, category, setup;
   @override
   State<_AddFieldSheet> createState() => _AddFieldSheetState();
 }
@@ -63,377 +49,162 @@ const Map<UnitFamily, String> _kFamilyLabel = {
 };
 
 class _AddFieldSheetState extends State<_AddFieldSheet> {
-  Set<String> _existingKeys = {};
-  bool _loading = true;
-  String? _selectedChip;
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _textValueController = TextEditingController();
-
+  final _name = TextEditingController();
+  Set<String> _existing = {};
+  bool _loading = true, _failed = false, _custom = false, _opening = false;
+  String? _nameError;
   UnitFamily _family = UnitFamily.count;
-  UnitDef _unit = unitDefById(UnitFamily.count, 'count');
-  double _value = 0;
 
   @override
   void initState() {
     super.initState();
-    AppDependencies.of(context)
-        .forUser(widget.user.uid)
-        .setups
-        .getSettings(widget.uBikeID, widget.category, widget.uSetupID)
-        .first
-        .then((snap) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    try {
+      final values = await AppDependencies.of(context)
+          .forUser(widget.user.uid)
+          .setups
+          .getSettings(widget.bike, widget.category, widget.setup)
+          .first;
       if (mounted) {
-        final data = snap;
         setState(() {
-          _existingKeys = data.keys.toSet();
+          _existing = values.keys.toSet();
           _loading = false;
         });
       }
-    }).catchError((_) {
-      if (mounted) setState(() => _loading = false);
-    });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _textValueController.dispose();
+    _name.dispose();
     super.dispose();
   }
 
-  String get _resolvedKey {
-    final text = _nameController.text.trim();
-    if (text.isNotEmpty) return text;
-    return _selectedChip ?? '';
-  }
-
-  bool get _isKnownKey => kFieldMeta.containsKey(_resolvedKey);
-  FieldMeta? get _knownMeta => kFieldMeta[_resolvedKey];
-
-  void _syncFamilyFromKey() {
-    final meta = _knownMeta;
-    if (meta != null) {
-      _family = meta.family;
-      _unit = meta.defaultUnit;
-      _value = meta.min.clamp(meta.min, meta.max).toDouble();
-    } else {
-      final units = kUnitFamilies[_family] ?? const <UnitDef>[];
-      _unit = units.isNotEmpty ? units.first : _unit;
-    }
-  }
-
-  void _onFamilyChange(UnitFamily? f) {
-    if (f == null) return;
-    setState(() {
-      _family = f;
-      final units = kUnitFamilies[f] ?? const <UnitDef>[];
-      _unit = units.isNotEmpty
-          ? units.first
-          : const UnitDef(id: '', label: '', toCanonical: 1.0);
-      _value = 0;
-    });
-  }
-
-  void _onUnitTap(UnitDef u) {
-    if (u.id == _unit.id) return;
-    setState(() {
-      _value = convertValue(_value, _unit, u);
-      _unit = u;
-    });
-  }
-
-  bool _saving = false;
-  Future<void> _onAdd() async {
-    if (_saving) return;
-    final key = _resolvedKey;
-    if (key.isEmpty) return;
-    if (_existingKeys.contains(key)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"$key" already exists in this category.')),
-      );
+  Future<void> _edit(String key, {UnitFamily? family}) async {
+    if (_opening) return;
+    final name = key.trim();
+    if (name.isEmpty ||
+        _existing.any((k) => k.toLowerCase() == name.toLowerCase())) {
+      setState(() => _nameError = name.isEmpty
+          ? 'Enter a setting name.'
+          : 'This setting already exists.');
       return;
     }
-    String stored;
-    if (_family == UnitFamily.freeText) {
-      stored = _textValueController.text.trim();
-      if (stored.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enter a value for the field.')),
-        );
-        return;
+    FocusScope.of(context).unfocus();
+    setState(() => _opening = true);
+    var saved = false;
+    final setups = AppDependencies.of(context).forUser(widget.user.uid).setups;
+    await showSettingStepperSheet(context,
+        user: widget.user,
+        uBikeID: widget.bike,
+        category: widget.category,
+        uSetupID: widget.setup,
+        settingKey: name,
+        currentValue: '',
+        isDefault: true,
+        familyOverride: family,
+        saveLabel: 'Add setting', onSave: (value) async {
+      if (value.trim().isEmpty) {
+        return const CommandFailure<void>(AppFailure(FailureCode.invalidInput));
       }
-    } else {
-      stored = SettingValue.numeric(_value, _family, _unit).format();
-    }
-    setState(() => _saving = true);
-    final db = AppDependencies.of(context).forUser(widget.user.uid);
-    final saved = await presentCommand(
-        context,
-        () => db.setups.addField(
-            key, stored, widget.uBikeID, widget.category, widget.uSetupID,
-            familyName: _isKnownKey ? null : _family.name));
+      final result = await setups.addField(
+          name, value, widget.bike, widget.category, widget.setup,
+          familyName: kFieldMeta.containsKey(name) ? null : family?.name);
+      saved = result.isSuccess;
+      return result;
+    });
     if (!mounted) return;
     if (saved) {
       Navigator.of(context).pop();
     } else {
-      setState(() => _saving = false);
+      setState(() => _opening = false);
     }
   }
 
-  List<String> get _suggestions {
-    final suggested = kSuggestedFieldKeys[widget.category] ?? [];
-    return suggested.where((k) => !_existingKeys.contains(k)).toList();
-  }
+  Widget _choice(String title, VoidCallback onTap, {bool custom = false}) =>
+      AppSuggestionTile(
+          label: title, onTap: _opening ? null : onTap, isNew: custom);
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    final suggestions = _suggestions;
-    _syncFamilyFromKey();
-
+    final suggestions = (kSuggestedFieldKeys[widget.category] ?? <String>[])
+        .where((key) => !_existing.contains(key));
+    final showNewSetting =
+        _custom || (!_loading && !_failed && suggestions.isEmpty);
     return Padding(
-      padding: EdgeInsets.only(
-        left: 22,
-        right: 22,
-        top: 12,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppSheetHandle(),
-          const SizedBox(height: 22),
-          Row(
+        padding: EdgeInsets.fromLTRB(
+            22, 12, 22, MediaQuery.viewInsetsOf(context).bottom + 28),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(CupertinoIcons.plus, size: 15, color: p.inkMuted),
-              const SizedBox(width: 8),
-              Text(
-                'ADD FIELD',
-                style: AppTextStyles.inter(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: p.inkMuted,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          if (_loading)
-            const Center(child: CircularProgressIndicator.adaptive())
-          else ...[
-            if (suggestions.isNotEmpty) ...[
-              _Dropdown<String>(
-                value: _nameController.text.isEmpty ? _selectedChip : null,
-                hint: 'Suggested fields',
-                items: suggestions
-                    .map((k) => DropdownMenuItem<String>(
-                          value: k,
-                          child: Text(k,
-                              style:
-                                  AppTextStyles.inter(size: 13, color: p.ink)),
-                        ))
-                    .toList(),
-                onChanged: (k) {
-                  if (k == null) return;
-                  setState(() {
-                    _selectedChip = k;
-                    _nameController.clear();
-                    _value = 0;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
-            _TextField(
-              controller: _nameController,
-              hint: 'Custom field name',
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 20),
-            if (_resolvedKey.isNotEmpty) ...[
-              Row(
-                children: [
-                  FieldIcon(
-                    asset: _knownMeta?.iconAsset ?? kDefaultFieldMeta.iconAsset,
-                    size: 16,
-                    color: p.inkMuted,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _resolvedKey.toUpperCase(),
-                    style: AppTextStyles.inter(
-                      size: 11,
-                      weight: FontWeight.w800,
-                      color: p.inkMuted,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              if (!_isKnownKey)
-                _FamilyDropdown(
-                  value: _family,
-                  onChanged: _onFamilyChange,
-                ),
-              if (!_isKnownKey) const SizedBox(height: 14),
-              if (_family != UnitFamily.freeText &&
-                  (kUnitFamilies[_family]?.length ?? 0) > 1) ...[
-                _UnitChipsRow(
-                  units: kUnitFamilies[_family]!,
-                  selected: _unit,
-                  onTap: _onUnitTap,
-                ),
+              const AppSheetHandle(),
+              const SizedBox(height: 18),
+              Row(children: [
+                if (_custom && suggestions.isNotEmpty)
+                  IconButton(
+                      tooltip: 'Back',
+                      onPressed: () => setState(() => _custom = false),
+                      icon: const Icon(CupertinoIcons.chevron_left, size: 20)),
+                Expanded(
+                    child: Text(showNewSetting ? 'New setting' : 'Add setting',
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.w600))),
+              ]),
+              const SizedBox(height: 22),
+              if (_loading)
+                const Center(child: CircularProgressIndicator.adaptive())
+              else if (_failed)
+                AppErrorBanner(
+                    message: 'Couldn’t load your settings.', onRetry: _load)
+              else if (!showNewSetting) ...[
+                for (final key in suggestions) _choice(key, () => _edit(key)),
+                _choice('New setting…', () => setState(() => _custom = true),
+                    custom: true),
+              ] else ...[
+                AppTextField(
+                    controller: _name,
+                    hint: 'Setting name',
+                    autofocus: true,
+                    errorText: _nameError,
+                    textInputAction: TextInputAction.next,
+                    onChanged: (_) => setState(() => _nameError = null)),
                 const SizedBox(height: 14),
+                if (!kFieldMeta.containsKey(_name.text.trim()))
+                  AppSelect<UnitFamily>(
+                      label: 'Value type',
+                      value: _family,
+                      items: UnitFamily.values
+                          .map((family) => DropdownMenuItem(
+                              value: family,
+                              child: Text(_kFamilyLabel[family]!)))
+                          .toList(),
+                      onChanged: (family) {
+                        if (family != null) setState(() => _family = family);
+                      }),
+                const SizedBox(height: 24),
+                AppActionButton(
+                    label: 'Continue',
+                    onPressed: _opening
+                        ? null
+                        : () => _edit(_name.text,
+                            family: kFieldMeta[_name.text.trim()]?.family ??
+                                _family)),
               ],
-              if (_family == UnitFamily.freeText)
-                _TextField(
-                  controller: _textValueController,
-                  hint: 'Value',
-                )
-              else
-                _buildNumericEditor(),
-            ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _resolvedKey.isEmpty ? null : _onAdd,
-                child: Text('Add field'),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNumericEditor() {
-    final meta = _knownMeta;
-    double minInActive, maxInActive;
-    if (meta != null) {
-      final defaultUnit = meta.defaultUnit;
-      minInActive = convertValue(meta.min, defaultUnit, _unit);
-      maxInActive = convertValue(meta.max, defaultUnit, _unit);
-    } else {
-      minInActive = 0;
-      maxInActive = 100;
-    }
-    final step =
-        _unit.decimals <= 0 ? 1.0 : math.pow(10, -_unit.decimals).toDouble();
-    return SettingValueEditor(
-      key: ValueKey('value-editor-$_resolvedKey-${_unit.id}'),
-      initialValue: _value,
-      min: minInActive,
-      max: maxInActive,
-      step: step,
-      decimals: _unit.decimals,
-      unitLabel: _unit.label,
-      onChanged: (v) => _value = v,
-    );
-  }
-}
-
-class _UnitChipsRow extends StatelessWidget {
-  final List<UnitDef> units;
-  final UnitDef selected;
-  final ValueChanged<UnitDef> onTap;
-
-  const _UnitChipsRow({
-    required this.units,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: units.map((u) {
-        final isSelected = u.id == selected.id;
-        return GestureDetector(
-          onTap: () => onTap(u),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? p.accent : p.surface2,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isSelected ? p.accentText : p.border),
-            ),
-            child: Text(
-              u.label.isEmpty ? u.id : u.label,
-              style: AppTextStyles.inter(
-                size: 11,
-                weight: FontWeight.w700,
-                color: isSelected ? p.accentInk : p.inkMuted,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _FamilyDropdown extends StatelessWidget {
-  final UnitFamily value;
-  final ValueChanged<UnitFamily?> onChanged;
-  const _FamilyDropdown({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return _Dropdown<UnitFamily>(
-      value: value,
-      hint: 'Field type',
-      items: UnitFamily.values
-          .map((f) => DropdownMenuItem<UnitFamily>(
-                value: f,
-                child: Text(
-                  _kFamilyLabel[f] ?? f.name,
-                  style:
-                      AppTextStyles.inter(size: 13, color: context.palette.ink),
-                ),
-              ))
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _TextField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final ValueChanged<String>? onChanged;
-  const _TextField(
-      {required this.controller, required this.hint, this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppTextField(
-        controller: controller, hint: hint, onChanged: onChanged);
-  }
-}
-
-class _Dropdown<T> extends StatelessWidget {
-  final T? value;
-  final String hint;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
-  const _Dropdown({
-    required this.value,
-    required this.hint,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSelect<T>(label: hint, value: value, items: items, onChanged: onChanged);
+            ]));
   }
 }

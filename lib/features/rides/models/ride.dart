@@ -6,11 +6,15 @@ class Ride {
       required this.durationSeconds,
       required this.source,
       this.name = '',
+      this.distanceKm,
+      this.distanceInStrava = false,
       this.indoor = false});
   final String id, bikeId, source, name;
   final DateTime startedAt;
   final int durationSeconds;
   final bool indoor;
+  final double? distanceKm;
+  final bool distanceInStrava;
   double get hours => durationSeconds / 3600;
   Ride forBike(String bike) => Ride(
       id: id,
@@ -19,6 +23,8 @@ class Ride {
       durationSeconds: durationSeconds,
       source: source,
       name: name,
+      distanceKm: distanceKm,
+      distanceInStrava: distanceInStrava,
       indoor: indoor);
   Map<String, dynamic> toMap() => {
         'bikeId': bikeId,
@@ -26,6 +32,8 @@ class Ride {
         'durationSeconds': durationSeconds,
         'source': source,
         'name': name,
+        if (distanceKm != null) 'distanceKm': distanceKm,
+        'distanceInStrava': distanceInStrava,
         'indoor': indoor
       };
   factory Ride.fromMap(String id, Map<String, dynamic> map) => Ride(
@@ -34,6 +42,8 @@ class Ride {
       startedAt: map['startedAt'] as DateTime,
       durationSeconds: (map['durationSeconds'] as num).toInt(),
       source: map['source'] as String,
+      distanceKm: (map['distanceKm'] as num?)?.toDouble(),
+      distanceInStrava: map['distanceInStrava'] as bool? ?? false,
       name: map['name'] as String? ?? '',
       indoor: map['indoor'] as bool? ?? false);
 }
@@ -46,3 +56,13 @@ double hoursSince(List<Ride> rides, DateTime since,
         .where(
             (r) => !r.startedAt.isBefore(since) && (includeIndoor || !r.indoor))
         .fold<double>(0, (sum, r) => sum + r.hours);
+
+/// Only add distances outside the odometer when Strava already supplies mileage.
+double distanceSince(List<Ride> rides, DateTime since,
+        {bool hasStravaBaseline = false, bool includeIndoor = false}) =>
+    rides
+        .where((ride) =>
+            !ride.startedAt.isBefore(since) &&
+            (includeIndoor || !ride.indoor) &&
+            !(hasStravaBaseline && ride.distanceInStrava))
+        .fold(0.0, (sum, ride) => sum + (ride.distanceKm ?? 0));

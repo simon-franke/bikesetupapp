@@ -24,9 +24,7 @@ class MemoryTests implements TestsRepository {
   @override
   Future<void> create(String bike, String setup, SetupTest test) async {
     _checkFailure();
-    if (records.containsKey(test.id) ||
-        test.stage != TestStage.draft ||
-        records.values.any((test) => test.stage != TestStage.finished)) {
+    if (records.containsKey(test.id) || test.stage != TestStage.draft) {
       throw const AppFailure(FailureCode.saveFailed);
     }
     records[test.id] = test;
@@ -54,10 +52,17 @@ class MemoryTests implements TestsRepository {
 
   @override
   Future<void> finish(String bike, String setup, String id,
-      {bool apply = false, String? newSetupId, String? newSetupName}) async {
+      {bool apply = false,
+      String? newSetupId,
+      String? newSetupName,
+      bool onlyIfUnchanged = false}) async {
     _checkFailure();
     final current = records[id];
     if (current == null) throw const AppFailure(FailureCode.saveFailed);
+    if (onlyIfUnchanged &&
+        (current.stage != TestStage.draft || current.changes.isNotEmpty)) {
+      return;
+    }
     if (current.stage == TestStage.finished) return;
     if ((apply || newSetupId != null) && current.stage != TestStage.review) {
       throw const AppFailure(FailureCode.invalidInput);

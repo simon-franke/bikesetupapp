@@ -66,8 +66,8 @@ void main() {
       if (!defer) {
         await tester.enterText(find.byType(TextField), 'Keep this note');
       }
-      final buttonLabel = defer ? 'Save' : 'Log service';
-      await tester.tap(find.text(buttonLabel));
+      final buttonLabel = defer ? 'Defer service' : 'Log service';
+      await tester.tap(find.widgetWithText(FilledButton, buttonLabel));
       await tester.pump();
       expect(find.text('Saving…'), findsOneWidget);
       expect(repository.entries, hasLength(1));
@@ -78,7 +78,7 @@ void main() {
       expect(find.text('Could not save service. Try again.'), findsOneWidget);
       if (!defer) expect(find.text('Keep this note'), findsOneWidget);
       repository.result = Completer<void>();
-      await tester.tap(find.text(buttonLabel));
+      await tester.tap(find.widgetWithText(FilledButton, buttonLabel));
       await tester.pump();
       expect(repository.entries, hasLength(2));
       if (!defer) expect(repository.entries.last.note, 'Keep this note');

@@ -16,6 +16,14 @@ Without local Firebase configuration, use `lib/firebase_options.dart.example`
 as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
 `.env` for tests. Do not overwrite existing local configuration.
 
+## Shared debug session
+
+- Preserve the user's VS Code debug session; never stop or replace its app process.
+- Reuse an existing tooling connection for inspection when available. Ask before
+  hot restart or resetting app state.
+- Run tests separately; use another device/browser instance if they relaunch the
+  app. Only stop processes started exclusively for your own tests.
+
 ## Code conventions
 
 - Features live in `lib/features/`; shared code in `lib/common/`.
@@ -45,6 +53,18 @@ as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
   handling; do not add tablet or desktop layouts. Check `test/phone_viewport_test.dart`.
 - `bike_chooser_sheet.dart` is the single bike/setup chooser. There is no drawer,
   sidebar or inline editor. All setting editors open as bottom sheets.
+- Make hierarchy clear with minimal content and grouping. Every label, container
+  and decoration should serve a purpose; reconsider layout when removing content.
+- Use consistent alignment, spacing and visual language. Preserve the app's
+  character while making components feel like parts of one coherent design.
+- Keep copy short, direct and conversational. Explain only what is not already
+  apparent from the interface. Never use em dashes.
+- Choose controls that fit the value, precision and frequency of use. Make
+  choices easy to compare and selected states unmistakable.
+- Minimize effort with sensible defaults and grouped, relevant inputs. Preserve
+  user edits and context as choices change; avoid unnecessary steps or disclosure.
+- Use subtle motion and feedback to clarify changes and maintain continuity,
+  without distracting from the task or making the interface feel unstable.
 
 ## Strava and deployment
 

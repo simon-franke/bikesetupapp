@@ -82,8 +82,13 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
               const AppSheetHandle(),
               const SizedBox(height: 18),
               Center(
-                  child: Text('STILL GOOD FOR',
-                      style: AppTextStyles.eyebrow(color: p.inkDim))),
+                  child: Text('Defer service',
+                      style: AppTextStyles.inter(
+                          size: 22, weight: FontWeight.w600, color: p.ink))),
+              const SizedBox(height: 12),
+              Text(
+                  'How much further is ${widget.component.name.toLowerCase()} good for?',
+                  style: AppTextStyles.inter(size: 16, color: p.inkMuted)),
               const SizedBox(height: 8),
               IgnorePointer(
                   ignoring: _controller.saving,
@@ -107,7 +112,7 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
               SizedBox(
                   width: double.infinity,
                   child: AppActionButton(
-                      label: _controller.saving ? 'Saving…' : 'Save',
+                      label: _controller.saving ? 'Saving…' : 'Defer service',
                       onPressed: _controller.saving ? null : _save)),
             ]));
   }

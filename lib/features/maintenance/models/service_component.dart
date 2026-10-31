@@ -1,3 +1,4 @@
+import 'service_icon.dart';
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 
@@ -6,6 +7,7 @@ class ServiceComponent {
   final String bikeId;
   final ComponentType type;
   final String name;
+  final ServiceIcon? customIcon;
   final int serviceIntervalKm;
   final double? serviceIntervalHours;
   final bool includeIndoorRides;
@@ -22,6 +24,7 @@ class ServiceComponent {
     required this.serviceIntervalKm,
     required this.createdAt,
     this.serviceIntervalHours,
+    this.customIcon,
     this.includeIndoorRides = false,
   });
 
@@ -31,6 +34,7 @@ class ServiceComponent {
       bikeId: data[FirestoreKeys.bikeId] as String? ?? '',
       type: ComponentType.fromString(
           data[FirestoreKeys.componentType] as String? ?? ''),
+      customIcon: ServiceIcon.fromName(data['customIcon'] as String?),
       name: data[FirestoreKeys.componentName] as String? ?? '',
       serviceIntervalKm:
           (data[FirestoreKeys.serviceIntervalKm] as num?)?.toInt() ?? 0,
@@ -42,6 +46,7 @@ class ServiceComponent {
 
   Map<String, dynamic> toMap() {
     return {
+      if (customIcon != null) 'customIcon': customIcon!.name,
       FirestoreKeys.bikeId: bikeId,
       FirestoreKeys.componentType: type.name,
       FirestoreKeys.componentName: name,

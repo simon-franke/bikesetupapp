@@ -31,7 +31,7 @@ void main() {
       final inset = tester
           .widget<Padding>(find.byKey(const ValueKey('navigation-inset')));
       expect((inset.padding as EdgeInsets).bottom, 22);
-      await tester.tap(find.text('Tests'));
+      await tester.tap(find.text('Experiments'));
       await tester.pumpAndSettle();
       expect(selected, ActiveView.tests);
       await tester.tap(find.text('Service'));

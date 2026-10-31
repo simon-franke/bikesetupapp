@@ -1,3 +1,6 @@
+import 'package:bikesetupapp/common/ui/app_date_sheet.dart';
+import 'package:bikesetupapp/common/ui/app_value_button.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -40,42 +43,37 @@ class _HourServiceSheetState extends State<HourServiceSheet> {
                   children: [
                     const AppSheetHandle(),
                     const SizedBox(height: 20),
-                    Text('Service for ${widget.component.name}',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    Text('Log service',
+                        style: AppTextStyles.inter(
+                            size: 22,
+                            weight: FontWeight.w600,
+                            color: context.palette.ink)),
+                    const SizedBox(height: 8),
+                    Text(widget.component.name,
+                        style: AppTextStyles.inter(
+                            size: 16, color: context.palette.inkMuted)),
                     const SizedBox(height: 12),
-                    const Text(
-                        'Ride hours restart from the time this service was completed. Earlier rides stay in your ride log.'),
+                    Text('Ride hours restart from this service.',
+                        style: AppTextStyles.inter(
+                            size: 14, color: context.palette.inkMuted)),
                     const SizedBox(height: 12),
-                    TextButton(
-                        onPressed: saving
+                    const AppFieldLabel('Date & time'),
+                    const SizedBox(height: 8),
+                    AppValueButton(
+                        label: DateFormat.yMMMd().add_Hm().format(date),
+                        onTap: saving
                             ? null
                             : () async {
-                                final day = await showDatePicker(
-                                    context: context,
-                                    initialDate: date,
-                                    firstDate: DateTime(2000),
-                                    lastDate: DateTime.now());
-                                if (day == null || !context.mounted) return;
-                                final time = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(date));
-                                if (time == null || !context.mounted) return;
-                                final selected = DateTime(day.year, day.month,
-                                    day.day, time.hour, time.minute);
-                                if (selected.isAfter(DateTime.now())) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Choose a service time in the past.')));
-                                  return;
-                                }
+                                final selected = await pickAppDate(context,
+                                    initial: date, includeTime: true);
+                                if (selected == null || !mounted) return;
                                 setState(() => date = selected);
-                              },
-                        child: Text(DateFormat.yMMMd().add_Hm().format(date))),
+                              }),
+                    const SizedBox(height: 24),
+                    const AppFieldLabel('Note (optional)'),
+                    const SizedBox(height: 8),
                     AppTextField(
-                        controller: note,
-                        hint: 'Service note (optional)',
-                        maxLines: 3),
+                        controller: note, hint: 'What was done?', maxLines: 3),
                     const SizedBox(height: 20),
                     AppActionButton(
                         label: saving ? 'Saving…' : 'Log service',

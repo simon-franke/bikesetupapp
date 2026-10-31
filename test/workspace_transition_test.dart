@@ -42,4 +42,33 @@ void main() {
     expect(tester.getTopLeft(find.text('Service')).dy, top.dy);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('returning to a tab retains scroll and inactive tabs ignore taps',
+      (tester) async {
+    var service = false;
+    late StateSetter update;
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: StatefulBuilder(builder: (context, setState) {
+      update = setState;
+      return WorkspaceTransition(
+          child: service
+              ? const Center(key: ValueKey('service'), child: Text('Service'))
+              : ListView(
+                  key: const ValueKey('setup'),
+                  controller: scroll,
+                  children: List.generate(30,
+                      (i) => SizedBox(height: 60, child: Text('Setting $i')))));
+    }))));
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    final offset = scroll.offset;
+    update(() => service = true);
+    await tester.pumpAndSettle();
+    expect(find.text('Setting 8').hitTestable(), findsNothing);
+    update(() => service = false);
+    await tester.pumpAndSettle();
+    expect(scroll.offset, offset);
+    expect(tester.takeException(), isNull);
+  });
 }

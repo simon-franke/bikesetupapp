@@ -17,7 +17,10 @@ class RidesController extends OperationController {
                 rides.any((r) =>
                     r.bikeId.isEmpty ||
                     r.id.isEmpty ||
-                    r.durationSeconds <= 0 ||
+                    r.durationSeconds < 0 ||
+                    (r.durationSeconds == 0 && (r.distanceKm ?? 0) <= 0) ||
+                    (r.distanceKm != null &&
+                        (!r.distanceKm!.isFinite || r.distanceKm! <= 0)) ||
                     r.durationSeconds > 7 * 24 * 3600 ||
                     r.startedAt.isAfter(DateTime.now().toUtc()))) {
               throw const AppFailure(FailureCode.invalidInput);

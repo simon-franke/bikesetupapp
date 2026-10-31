@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/app_load_error.dart';
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import '../../rides/models/ride.dart';
 import '../controllers/service_entries_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -11,24 +13,22 @@ import 'package:bikesetupapp/features/maintenance/ui/service_status.dart';
 import 'package:flutter/material.dart';
 
 class ServiceComponentsList extends StatefulWidget {
+  final VoidCallback? onAdd;
   final String userID;
   final String bikeId;
   final double currentMileageKm;
   final bool mileageAvailable;
   final void Function(ServiceComponent component)? onComponentTap;
-  final void Function(ServiceComponent component)? onComponentLog;
-  final void Function(ServiceComponent component)? onComponentDefer;
   final void Function(bool hasAlert)? onAlertChanged;
 
   const ServiceComponentsList({
     super.key,
     required this.userID,
+    this.onAdd,
     required this.bikeId,
     required this.currentMileageKm,
     this.mileageAvailable = true,
     this.onComponentTap,
-    this.onComponentLog,
-    this.onComponentDefer,
     this.onAlertChanged,
   });
 
@@ -39,6 +39,7 @@ class ServiceComponentsList extends StatefulWidget {
 class _ServiceComponentsListState extends State<ServiceComponentsList> {
   late MaintenanceController _db;
   late Stream<List<ServiceComponent>> _componentsStream;
+  Stream<List<Ride>>? _ridesStream;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
   void _resetStream() {
     _db = AppDependencies.of(context).forUser(widget.userID).maintenance;
     _componentsStream = _db.getComponentsForBike(widget.bikeId);
+    _ridesStream = null;
   }
 
   @override
@@ -67,7 +69,7 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _LoadError(
-            message: 'Could not load components.',
+            message: 'Your components couldn’t load. Give it another try.',
             onRetry: () => setState(_resetStream),
           );
         }
@@ -79,19 +81,16 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
         }
         return _ComponentListWithEntries(
           key: ValueKey('${widget.userID}_${widget.bikeId}'),
+          onAdd: widget.onAdd,
           db: _db,
-          rides: snapshot.data!.any((c) => c.usesHours)
-              ? AppDependencies.of(context)
-                  .forUser(widget.userID)
-                  .rides
-                  .watch(widget.bikeId)
-              : null,
+          rides: (_ridesStream ??= AppDependencies.of(context)
+              .forUser(widget.userID)
+              .rides
+              .watch(widget.bikeId)),
           components: snapshot.data!,
           currentMileageKm: widget.currentMileageKm,
           mileageAvailable: widget.mileageAvailable,
           onComponentTap: widget.onComponentTap,
-          onComponentLog: widget.onComponentLog,
-          onComponentDefer: widget.onComponentDefer,
           onAlertChanged: widget.onAlertChanged,
         );
       },
@@ -101,25 +100,23 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
 
 class _ComponentListWithEntries extends StatefulWidget {
   final Stream<List<Ride>>? rides;
+  final VoidCallback? onAdd;
   final MaintenanceController db;
   final List<ServiceComponent> components;
   final double currentMileageKm;
   final bool mileageAvailable;
   final void Function(ServiceComponent)? onComponentTap;
-  final void Function(ServiceComponent)? onComponentLog;
-  final void Function(ServiceComponent)? onComponentDefer;
   final void Function(bool)? onAlertChanged;
 
   const _ComponentListWithEntries({
     super.key,
     required this.db,
+    this.onAdd,
     this.rides,
     required this.components,
     required this.currentMileageKm,
     required this.mileageAvailable,
     this.onComponentTap,
-    this.onComponentLog,
-    this.onComponentDefer,
     this.onAlertChanged,
   });
 
@@ -166,8 +163,13 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
             if (snapshot.hasError) {
               return const Padding(
                   padding: EdgeInsets.all(20),
-                  child: Text(
-                      'Could not load ride hours. Reopen Service to retry.'));
+                  child:
+                      Text('Could not load rides. Reopen Service to retry.'));
+            }
+            if (!snapshot.hasData) {
+              return const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator.adaptive()));
             }
             return _content(context, snapshot.data);
           });
@@ -202,6 +204,7 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
     }
     return ServiceSchedule(
       services: services,
+      onAdd: widget.onAdd,
       cardBuilder: (service) => ServiceComponentCard(
         key: ValueKey(service.component.id),
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -213,152 +216,98 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
         onTap: widget.onComponentTap == null
             ? null
             : () => widget.onComponentTap!(service.component),
-        onLog: widget.onComponentLog == null
-            ? null
-            : () => widget.onComponentLog!(service.component),
-        onDefer: service.component.usesHours || widget.onComponentDefer == null
-            ? null
-            : () => widget.onComponentDefer!(service.component),
       ),
     );
   }
 }
 
-/// Presents an already loaded schedule, keeping filtering independent of Firestore.
+/// Presents the loaded schedule in urgency order.
 class ServiceSchedule extends StatefulWidget {
+  final VoidCallback? onAdd;
   final List<AnnotatedService> services;
   final Widget Function(AnnotatedService) cardBuilder;
 
   const ServiceSchedule(
-      {super.key, required this.services, required this.cardBuilder});
+      {super.key,
+      required this.services,
+      required this.cardBuilder,
+      this.onAdd});
 
   @override
   State<ServiceSchedule> createState() => _ServiceScheduleState();
 }
 
 class _ServiceScheduleState extends State<ServiceSchedule> {
-  bool _attentionOnly = false;
-
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final attention =
-        widget.services.where((s) => s.status != ServiceStatus.green).length;
-    final groups = [
-      (ServiceStatus.red, 'Needs attention'),
-      (ServiceStatus.amber, 'Upcoming'),
-      (ServiceStatus.green, 'Later'),
-      (ServiceStatus.unknown, 'Missing service data'),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Service schedule',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 6),
-              Text(
-                  '${widget.services.length} components, $attention need attention',
-                  style: TextStyle(fontSize: 13, color: p.inkMuted)),
-              if (widget.services.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
+    if (widget.services.isEmpty) {
+      return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                  color: p.surface, borderRadius: BorderRadius.circular(20)),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ChoiceChip(
-                      label: Text('All (${widget.services.length})'),
-                      selected: !_attentionOnly,
-                      onSelected: (_) => setState(() => _attentionOnly = false),
-                      selectedColor: p.surface2,
-                      showCheckmark: false,
-                      labelStyle: TextStyle(
-                          color: p.ink,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    ChoiceChip(
-                      label: Text('Needs attention ($attention)'),
-                      selected: _attentionOnly,
-                      onSelected: (_) => setState(() => _attentionOnly = true),
-                      selectedColor: p.surface2,
-                      showCheckmark: false,
-                      labelStyle: TextStyle(
-                          color: p.ink,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-        if (widget.services.isEmpty)
-          _Message(
-              title: 'No components yet',
-              text: 'Use Add component to start a maintenance schedule.')
-        else if (_attentionOnly && attention == 0)
-          _Message(
-              title: 'Nothing needs attention',
-              text:
-                  'Switch to All to see every component and its service history.'),
-        for (final group in groups)
-          if (!_attentionOnly ||
-              group.$1 == ServiceStatus.red ||
-              group.$1 == ServiceStatus.amber ||
-              group.$1 == ServiceStatus.unknown)
-            ..._group(group.$1, group.$2),
-      ],
-    );
+                    Text('Keep your bike ready',
+                        style: AppTextStyles.inter(
+                            size: 26, weight: FontWeight.w600, color: p.ink)),
+                    const SizedBox(height: 12),
+                    Text(
+                        'Track service intervals and keep a history of the work you do.',
+                        style:
+                            AppTextStyles.inter(size: 16, color: p.inkMuted)),
+                    const SizedBox(height: 24),
+                    AppActionButton(label: 'Add component', onPressed: widget.onAdd),
+                  ])));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
+          child: Row(children: [
+            Expanded(
+                child: Text('Service schedule',
+                    style: AppTextStyles.inter(
+                        size: 22, weight: FontWeight.w600, color: p.ink))),
+            IconButton(
+                tooltip: 'Add component',
+                onPressed: widget.onAdd,
+                icon: const Icon(Icons.add)),
+          ])),
+      ..._group(context, {ServiceStatus.red}, 'Needs attention'),
+      ..._group(
+          context, {ServiceStatus.amber, ServiceStatus.green}, 'Upcoming'),
+      ..._group(context, {ServiceStatus.unknown}, 'Needs a starting point'),
+    ]);
   }
 
-  List<Widget> _group(ServiceStatus status, String label) {
-    final services = widget.services.where((s) => s.status == status).toList()
+  List<Widget> _group(
+      BuildContext context, Set<ServiceStatus> statuses, String label) {
+    final entries = widget.services.where((s) => statuses.contains(s.status)).toList()
       ..sort((a, b) {
         final remaining = b.progress.compareTo(a.progress);
         if (remaining != 0) return remaining;
         final overdue = b.usage.compareTo(a.usage);
         if (overdue != 0) return overdue;
-        return a.component.id.compareTo(b.component.id);
+        return a.component.name
+            .toLowerCase()
+            .compareTo(b.component.name.toLowerCase());
       });
-    if (services.isEmpty) return [];
+    if (entries.isEmpty) return [];
     return [
       Padding(
         padding: EdgeInsets.fromLTRB(20, 14, 20, 12),
-        child: Text('$label (${services.length})',
+        child: Text(label,
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: context.palette.inkMuted)),
       ),
-      Column(children: services.map(widget.cardBuilder).toList()),
+      Column(children: entries.map(widget.cardBuilder).toList()),
     ];
   }
-}
-
-class _Message extends StatelessWidget {
-  final String title;
-  final String text;
-  const _Message({required this.title, required this.text});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(text,
-                style:
-                    TextStyle(fontSize: 14, color: context.palette.inkMuted)),
-          ],
-        ),
-      );
 }
 
 class _LoadError extends StatelessWidget {
@@ -369,9 +318,6 @@ class _LoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(children: [
-          Text(message),
-          TextButton(onPressed: onRetry, child: const Text('Try again')),
-        ]),
+        child: AppLoadError(message: message, onRetry: onRetry),
       );
 }

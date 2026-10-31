@@ -13,14 +13,38 @@ class TestsController extends OperationController {
   final TestsRepository _repository;
   final SetupsRepository _setups;
   final WriteQueue _writes = WriteQueue();
+  // A successful write can precede its watch snapshot. Keep only those saved
+  // fields until the stream acknowledges them, without hiding unrelated edits.
+  final _savedFields =
+      <(String, String, String), Map<(String, String), String>>{};
+
+  SetupTest withSavedValues(String bike, String setup, SetupTest test) {
+    final key = (bike, setup, test.id);
+    final pending = _savedFields[key];
+    if (pending == null) return test;
+    if (test.stage != TestStage.draft) {
+      _savedFields.remove(key);
+      return test;
+    }
+    pending.removeWhere(
+        (field, value) => test.values[field.$1]?[field.$2] == value);
+    if (pending.isEmpty) {
+      _savedFields.remove(key);
+      return test;
+    }
+    final values = readValues(test.values);
+    for (final entry in pending.entries) {
+      values[entry.key.$1]?[entry.key.$2] = entry.value;
+    }
+    return test.copyWith(values: values);
+  }
+
   Stream<List<SetupTest>> watch(String bike, String setup) =>
       _repository.watch(bike, setup);
-  Future<CommandResult<void>> create(
+  Future<CommandResult<SetupTest>> create(
           String bike, String setup, String name, List<String> categories) =>
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
-            final existing = await _repository.watch(bike, setup).first;
-            if (existing.any((t) => t.stage != TestStage.finished)) return;
             final values = <String, Map<String, String>>{};
             final information = await _setups.getSetupInformation(bike, setup);
             final configuration =
@@ -43,30 +67,38 @@ class TestsController extends OperationController {
               }
             }
             if (isDisposed) throw const CommandAborted();
-            await _repository.create(
-                bike,
-                setup,
-                SetupTest(
-                    id: const Uuid().v4(),
-                    name: '$name test',
-                    before: readValues(values),
-                    values: readValues(values)));
+            final draft = SetupTest(
+                id: const Uuid().v4(),
+                name: '$name test',
+                before: readValues(values),
+                values: readValues(values));
+            await _repository.create(bike, setup, draft);
+            return draft;
           }));
   Future<CommandResult<void>> _update(String bike, String setup, String id,
-          TestStage stage, SetupTest Function(SetupTest) change) =>
-      command(() => _writes.enqueue(() {
+          TestStage stage, SetupTest Function(SetupTest) change,
+          {void Function()? onCommitted}) =>
+      command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
-            return _repository.update(bike, setup, id, expectedStage: stage,
+            await _repository.update(bike, setup, id, expectedStage: stage,
                 change: (current) {
               if (isDisposed) throw const CommandAborted();
               return change(current);
             });
+            if (!isDisposed) onCommitted?.call();
           }));
 
   Future<CommandResult<void>> renameDraft(
           String bike, String setup, String id, String name) =>
       _update(bike, setup, id, TestStage.draft,
           (latest) => latest.copyWith(name: name.trim()));
+
+  Future<CommandResult<void>> moveDraftStep(
+          String bike, String setup, String id, int step) =>
+      _update(bike, setup, id, TestStage.draft, (latest) {
+        if (step < 0) throw const AppFailure(FailureCode.invalidInput);
+        return latest.copyWith(draftStep: step);
+      });
 
   Future<CommandResult<void>> updateField(String bike, String setup, String id,
           String category, String field, String value) =>
@@ -78,6 +110,8 @@ class TestsController extends OperationController {
         final values = readValues(latest.values);
         values[category]![field] = value;
         return latest.copyWith(values: values);
+      }, onCommitted: () {
+        (_savedFields[(bike, setup, id)] ??= {})[(category, field)] = value;
       });
 
   Future<CommandResult<void>> startTest(
@@ -128,5 +162,19 @@ class TestsController extends OperationController {
                 apply: apply,
                 newSetupId: newSetupName == null ? null : id,
                 newSetupName: newSetupName?.trim());
+            _savedFields.remove((bike, setup, id));
           }));
+
+  Future<CommandResult<void>> discardUnchangedDraft(
+          String bike, String setup, String id) =>
+      command(() => _writes.enqueue(() async {
+            if (isDisposed) throw const CommandAborted();
+            await _repository.finish(bike, setup, id, onlyIfUnchanged: true);
+          }));
+
+  @override
+  void dispose() {
+    _savedFields.clear();
+    super.dispose();
+  }
 }

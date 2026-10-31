@@ -22,17 +22,24 @@ bool sameSettingValue(String? a, String? b) {
 enum TestStage { draft, ride, review, finished }
 
 class RideFeedback {
+  static const feelings = [
+    'Much worse',
+    'Worse',
+    'Same',
+    'Better',
+    'Much better'
+  ];
   const RideFeedback({this.feeling, this.note = '', this.time = ''});
   final String? feeling;
   final String note, time;
 
   String? get validationError {
-    if (!const ['Better', 'Same', 'Worse'].contains(feeling)) {
-      return 'Choose Better, Same or Worse.';
+    if (!feelings.contains(feeling)) {
+      return 'Choose how the ride felt.';
     }
     if (time.trim().isNotEmpty &&
-        !RegExp(r'^\d{1,3}:[0-5]\d$').hasMatch(time.trim())) {
-      return 'Use minutes:seconds, e.g. 03:42.';
+        !RegExp(r'^\d{1,3}:[0-5]\d(?:\.\d{3})?$').hasMatch(time.trim())) {
+      return 'Use mm:ss or mm:ss.SSS, e.g. 03:42.156.';
     }
     return null;
   }
@@ -64,11 +71,13 @@ class SetupTest {
       required this.before,
       required this.values,
       this.stage = TestStage.draft,
+      this.draftStep = 0,
       this.rides = const [],
       this.result = '',
       this.feedback = const RideFeedback()});
   final String id, name, result;
   final TestStage stage;
+  final int draftStep;
   final SetupValues before, values;
   final List<RideFeedback> rides;
   final RideFeedback feedback;
@@ -82,6 +91,7 @@ class SetupTest {
       ];
   SetupTest copyWith(
           {String? name,
+          int? draftStep,
           SetupValues? values,
           TestStage? stage,
           List<RideFeedback>? rides,
@@ -90,6 +100,7 @@ class SetupTest {
       SetupTest(
           id: id,
           name: name ?? this.name,
+          draftStep: draftStep ?? this.draftStep,
           before: before,
           values: values ?? this.values,
           stage: stage ?? this.stage,
@@ -102,6 +113,7 @@ class SetupTest {
         'before': before,
         'values': values,
         'stage': stage.name,
+        'draftStep': draftStep,
         'rides': rides.map((ride) => ride.toMap()).toList(),
         'feedback': feedback.toMap(),
         'result': result
@@ -112,6 +124,7 @@ class SetupTest {
       before: readValues(data['before'] as Map),
       values: readValues(data['values'] as Map),
       stage: TestStage.values.byName(data['stage'] as String),
+      draftStep: (data['draftStep'] as num?)?.toInt() ?? 0,
       rides: (data['rides'] as List)
           .map((r) => RideFeedback.fromMap(r as Map))
           .toList(),

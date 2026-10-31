@@ -23,37 +23,43 @@ class SetupChoiceTile extends StatelessWidget {
     final p = context.palette;
     return Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         child: Semantics(
-        selected: isSelected,
-        child: ListTile(
-          selected: isSelected,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-          title: Text(name, style: TextStyle(fontSize: 14,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: isSelected ? p.accentText : p.ink)),
-          onTap: onSelect,
-          onLongPress: () => showModalBottomSheet<void>(
-              context: context,
-              builder: (sheet) => SafeArea(
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    ListTile(
-                        title: const Text('Setup details'),
-                        onTap: () {
-                          Navigator.pop(sheet);
-                          onDetails();
-                        }),
-                    ListTile(
-                        title: const Text('Edit setup'),
-                        onTap: () {
-                          Navigator.pop(sheet);
-                          onEdit();
-                        })
-                  ]))),
-          trailing: isSelected
-              ? Icon(CupertinoIcons.check_mark, size: 20, color: p.accentText)
-              : null,
-        )));
+            selected: isSelected,
+            child: ListTile(
+              selected: isSelected,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              title: Text(name,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: p.ink)),
+              onTap: onSelect,
+              onLongPress: () => showModalBottomSheet<void>(
+                  context: context,
+                  builder: (sheet) => SafeArea(
+                          child:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                        ListTile(
+                            title: const Text('Setup details'),
+                            onTap: () {
+                              Navigator.pop(sheet);
+                              onDetails();
+                            }),
+                        ListTile(
+                            title: const Text('Edit setup'),
+                            onTap: () {
+                              Navigator.pop(sheet);
+                              onEdit();
+                            })
+                      ]))),
+              trailing: isSelected
+                  ? Icon(CupertinoIcons.check_mark,
+                      size: 20, color: p.accentText)
+                  : null,
+            )));
   }
 }

@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
+import 'setting_unit_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -65,6 +67,7 @@ Future<void> showSettingStepperSheet(
   required String currentValue,
   required bool isDefault,
   UnitFamily? familyOverride,
+  String? saveLabel,
 }) {
   final knownMeta = kFieldMeta[settingKey];
   final rawForParse = currentValue == '--' ? '' : currentValue;
@@ -118,6 +121,7 @@ Future<void> showSettingStepperSheet(
     builder: (ctx) => _StepperSheetContent(
       user: user,
       onSave: onSave,
+      saveLabel: saveLabel,
       uBikeID: uBikeID,
       category: category,
       uSetupID: uSetupID,
@@ -136,6 +140,7 @@ Future<void> showSettingStepperSheet(
 }
 
 class _StepperSheetContent extends StatefulWidget {
+  final String? saveLabel;
   final User? user;
   final Future<CommandResult<void>> Function(String)? onSave;
   final String uBikeID;
@@ -155,6 +160,7 @@ class _StepperSheetContent extends StatefulWidget {
   const _StepperSheetContent({
     required this.user,
     this.onSave,
+    this.saveLabel,
     required this.uBikeID,
     required this.category,
     required this.uSetupID,
@@ -243,23 +249,10 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   }
 
   Future<void> _onDelete() async {
-    final p = context.palette;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dlgCtx) => AlertDialog(
-        title: const Text('Delete Field'),
-        content: Text('Delete "${widget.settingKey}"? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dlgCtx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dlgCtx).pop(true),
-            child: Text('Delete', style: TextStyle(color: p.red)),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmationSheet(
+      context,
+      title: 'Delete ${widget.settingKey}?',
+      message: 'This permanently removes this setting.',
     );
     if (confirmed == true && mounted && !_saving) {
       setState(() => _saving = true);
@@ -280,7 +273,6 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final units = kUnitFamilies[widget.family] ?? const <UnitDef>[];
 
     return Padding(
       padding: EdgeInsets.only(
@@ -304,10 +296,6 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
                         color: p.inkMuted,
                         letterSpacing: 0))),
           ]),
-          if (!widget.isFreeText && units.length > 1) ...[
-            const SizedBox(height: 14),
-            _UnitChipRow(units: units, selected: _unit, onTap: _onChipTap),
-          ],
           const SizedBox(height: 22),
           if (widget.isFreeText)
             _FreeTextField(controller: _textController)
@@ -323,7 +311,8 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _saving ? null : _onSave,
-              child: Text(widget.onSave == null ? 'Save' : 'Save to test'),
+              child: Text(widget.saveLabel ??
+                  (widget.onSave == null ? 'Save' : 'Save to test')),
             ),
           ),
           if (!widget.isDefault) ...[
@@ -357,7 +346,8 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
               size: 44, weight: FontWeight.w400, color: context.palette.ink),
           decoration: InputDecoration(
               labelText: widget.settingKey,
-              suffixText: _unit.label,
+              suffixIcon: SettingUnitSelector(
+                  family: widget.family, unit: _unit, onChanged: _onChipTap),
               errorText: _numberError),
           onSubmitted: (_) {
             if (_readNumber()) setState(() => _editingNumber = false);
@@ -379,6 +369,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     return SettingValueEditor(
       key: ValueKey('${widget.settingKey}-${_unit.id}'),
       initialValue: _value,
+      centerValueAccessory: true,
       onValueTap: () => setState(() {
         _numberController.text = formatNumber(_value, _unit.decimals);
         _numberController.selection = TextSelection(
@@ -391,53 +382,9 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       step: step,
       decimals: _unit.decimals,
       unitLabel: _unit.label,
+      valueAccessory: SettingUnitSelector(
+          family: widget.family, unit: _unit, onChanged: _onChipTap),
       onChanged: (v) => _value = v,
-    );
-  }
-}
-
-class _UnitChipRow extends StatelessWidget {
-  final List<UnitDef> units;
-  final UnitDef selected;
-  final ValueChanged<UnitDef> onTap;
-
-  const _UnitChipRow({
-    required this.units,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      alignment: WrapAlignment.center,
-      children: units.map((u) {
-        final isSelected = u.id == selected.id;
-        return GestureDetector(
-          onTap: () => onTap(u),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? p.accent : p.surface2,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isSelected ? p.accentText : p.border),
-            ),
-            child: Text(
-              u.label.isEmpty ? u.id : u.label,
-              style: AppTextStyles.inter(
-                size: 11,
-                weight: FontWeight.w700,
-                color: isSelected ? p.accentInk : p.inkMuted,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }

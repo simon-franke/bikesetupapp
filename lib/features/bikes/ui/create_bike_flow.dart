@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_flow.dart';
 import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
@@ -334,11 +335,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
     ]);
   }
 
-  Widget note(String text) => Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Text(text,
-          style: AppTextStyles.inter(
-              size: 26, weight: FontWeight.w600, color: context.palette.ink)));
+  Widget note(String text) => AppFlowHeading(text);
 
   Widget ruler(String category, String key) => KeyedSubtree(
       key: ValueKey('$category/$key'),
@@ -508,30 +505,13 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                 child: Column(children: [
                   const SizedBox(height: 12),
                   const AppSheetHandle(),
-                  Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 20, 16),
-                      child: Row(children: [
-                        SizedBox(
-                            width: 48,
-                            child: flow.step > 0
-                                ? IconButton(
-                                    tooltip: 'Back',
-                                    onPressed:
-                                        saving ? null : () => go(flow.step - 1),
-                                    icon: const Icon(
-                                        CupertinoIcons.chevron_left,
-                                        size: 20))
-                                : null),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: LinearProgressIndicator(
-                                value: flow.progress,
-                                semanticsLabel: 'Bike setup progress',
-                                minHeight: 14,
-                                borderRadius: BorderRadius.circular(20),
-                                color: context.palette.accent,
-                                backgroundColor: context.palette.bg)),
-                      ])),
+                  AppFlowHeader(
+                    progress: flow.progress,
+                    progressLabel: 'Bike setup progress',
+                    onBack: flow.step > 0 && !saving
+                        ? () => go(flow.step - 1)
+                        : null,
+                  ),
                   Expanded(
                       child: SingleChildScrollView(
                           controller: scroll,
@@ -540,31 +520,19 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                           child:
                               IgnorePointer(ignoring: saving, child: page()))),
-                  Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                      child: Column(children: [
-                        if (flow.error != null)
-                          Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Text(flow.error!,
-                                  style: TextStyle(
-                                      color: context.palette.red,
-                                      fontSize: 13))),
-                        Row(children: [
-                          Expanded(
-                              child: AppActionButton(
-                                  label: saving
-                                      ? 'Adding bike…'
-                                      : flow.step == flow.steps.length - 1
-                                          ? 'Create bike'
-                                          : 'Continue',
-                                  onPressed: saving
-                                      ? null
-                                      : flow.step == flow.steps.length - 1
-                                          ? create
-                                          : next)),
-                        ]),
-                      ])),
+                  AppFlowFooter(
+                    error: flow.error,
+                    label: saving
+                        ? 'Adding bike…'
+                        : flow.step == flow.steps.length - 1
+                            ? 'Create bike'
+                            : 'Continue',
+                    onPressed: saving
+                        ? null
+                        : flow.step == flow.steps.length - 1
+                            ? create
+                            : next,
+                  ),
                 ])),
           ),
         ));

@@ -60,16 +60,25 @@ AnnotatedService annotateService({
       available: rides != null && latestEntry != null && component.interval > 0,
     );
   } else {
+    final hasStravaBaseline =
+        mileageAvailable && latestEntry?.mileageAtServiceKm != null;
+    final loggedDistance = latestEntry != null && rides != null
+        ? distanceSince(rides, latestEntry.date,
+            hasStravaBaseline: hasStravaBaseline,
+            includeIndoor: component.includeIndoorRides)
+        : 0.0;
     measurement = ServiceUsage(
       unit: ServiceUnit.kilometres,
-      used: latestEntry?.mileageAtServiceKm != null
-          ? (currentMileageKm - latestEntry!.mileageAtServiceKm!)
-              .clamp(0, double.infinity)
-          : currentMileageKm,
+      used: (latestEntry?.initialDistanceKm ?? 0) +
+          loggedDistance +
+          (hasStravaBaseline
+              ? (currentMileageKm - latestEntry!.mileageAtServiceKm!)
+                  .clamp(0, double.infinity)
+              : 0),
       interval: component.interval,
-      available: mileageAvailable &&
-          component.interval > 0 &&
-          latestEntry?.mileageAtServiceKm != null,
+      available: component.interval > 0 &&
+          latestEntry != null &&
+          (hasStravaBaseline || rides != null),
     );
   }
   return AnnotatedService(

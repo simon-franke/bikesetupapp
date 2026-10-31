@@ -38,9 +38,15 @@ class PausedUpdate implements TestsRepository {
 
   @override
   Future<void> finish(String bike, String setup, String id,
-          {bool apply = false, String? newSetupId, String? newSetupName}) =>
+          {bool apply = false,
+          String? newSetupId,
+          String? newSetupName,
+          bool onlyIfUnchanged = false}) =>
       delegate.finish(bike, setup, id,
-          apply: apply, newSetupId: newSetupId, newSetupName: newSetupName);
+          apply: apply,
+          newSetupId: newSetupId,
+          newSetupName: newSetupName,
+          onlyIfUnchanged: onlyIfUnchanged);
 }
 
 void main() {
@@ -172,15 +178,42 @@ void main() {
     expect(stored.values['Fork']!['Rebound'], '6 clicks');
   });
 
-  test(
-      'creation cannot replace an existing test or create a second active test',
+  test('creation permits concurrent tests but never replaces an existing ID',
       () async {
     final repo = await seed();
+    await expectLater(repo.create('bike', 'setup', draft('test')),
+        throwsA(isA<AppFailure>()));
+    await repo.create('bike', 'setup', draft('another'));
+    expect(await serverTests(repo.uid), hasLength(2));
+  });
+
+  test('independent tests apply only their changes and preserve other tests',
+      () async {
+    final repo = await seed();
+    await repo.create('bike', 'setup', draft('another'));
+    final edits = controller(repo);
+    await edits.updateField(
+        'bike', 'setup', 'test', 'Fork', 'Rebound', '8 clicks');
+    await edits.updateField(
+        'bike', 'setup', 'another', 'Fork', 'Compression', '2 clicks');
     for (final id in ['test', 'another']) {
-      await expectLater(
-          repo.create('bike', 'setup', draft(id)), throwsA(isA<AppFailure>()));
+      await edits.startTest('bike', 'setup', id, id);
+      await edits.logRide(
+          'bike', 'setup', id, const RideFeedback(feeling: 'Better'));
     }
-    expect(await serverTests(repo.uid), hasLength(1));
+    expect((await edits.finish('bike', 'setup', 'test', apply: true)).isSuccess,
+        isTrue);
+    final ongoing = (await serverTests(repo.uid))
+        .singleWhere((test) => test.id == 'another');
+    expect(ongoing.stage, TestStage.review);
+    expect(ongoing.before['Fork']!['Rebound'], '6 clicks');
+    expect(
+        (await edits.finish('bike', 'setup', 'another', apply: true)).isSuccess,
+        isTrue);
+    final baseline = await FirebaseFirestore.instance
+        .doc('UserBikeSetup/${repo.uid}/Bikes/bike/setup/Fork')
+        .get(const GetOptions(source: Source.server));
+    expect(baseline.data(), {'Rebound': '8 clicks', 'Compression': '2 clicks'});
   });
 
   test('finish checks the stored stage and applies the latest test values',
@@ -226,7 +259,7 @@ void main() {
     final parent = await FirebaseFirestore.instance
         .doc(parentPath(repo.uid))
         .get(const GetOptions(source: Source.server));
-    expect(parent.data()!['activeTestId'], 'test');
+    expect(parent.data()!.containsKey('activeTestId'), isFalse);
   });
 
   test('disposing a controller cancels its delayed mutation without writing',

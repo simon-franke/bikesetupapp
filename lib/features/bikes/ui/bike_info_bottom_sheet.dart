@@ -1,5 +1,5 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -14,10 +14,8 @@ Future<void> showBikeInfoSheet(
   String uBikeID,
   String uSetupID,
   String setupName,
-  String bikeName,
-  {
-  required void Function(String, String, String, String)
-      onBikeSelected,
+  String bikeName, {
+  required void Function(String, String, String, String) onBikeSelected,
 }) {
   return showAppSheet<void>(
     context: context,
@@ -27,7 +25,6 @@ Future<void> showBikeInfoSheet(
       uSetupID: uSetupID,
       setupName: setupName,
       bikeName: bikeName,
-
       onBikeSelected: onBikeSelected,
     ),
   );
@@ -48,31 +45,37 @@ class _BikeInfoSheetContent extends StatelessWidget {
     required this.uSetupID,
     required this.setupName,
     required this.bikeName,
-
     required this.onBikeSelected,
   });
 
   List<(String, String)> _buildRows(Map<String, dynamic> data) {
     final config = SetupConfiguration.fromInformation(data);
-    final fork = config?.fields.containsKey('Fork') ?? (data['fork'] != null && data['fork'] != 'None');
-    final shock = config?.fields.containsKey('Shock') ?? (data['shock'] != null && data['shock'] != 'None');
+    final fork = config?.fields.containsKey('Fork') ??
+        (data['fork'] != null && data['fork'] != 'None');
+    final shock = config?.fields.containsKey('Shock') ??
+        (data['shock'] != null && data['shock'] != 'None');
     String value(String key, [String unit = '']) {
       final raw = data[key]?.toString().trim() ?? '';
       return raw.isEmpty ? '' : '$raw$unit';
     }
+
     return [
       if (fork) ...[
-        ('Fork', value('fork')), ('Fork model', value('fork_model')),
+        ('Fork', value('fork')),
+        ('Fork model', value('fork_model')),
         ('Fork travel', value('front_travel', ' mm')),
       ],
       if (shock) ...[
-        ('Shock', value('shock')), ('Shock model', value('shock_model')),
+        ('Shock', value('shock')),
+        ('Shock model', value('shock_model')),
         ('Rear wheel travel', value('rear_travel', ' mm')),
       ],
       ('Front wheel', value('front_wheel_size')),
       ('Rear wheel', value('rear_wheel_size')),
-      if (data['frame_reach']?.toString().isNotEmpty == true) ('Frame reach', value('frame_reach', ' mm')),
-      if (data['frame_stack']?.toString().isNotEmpty == true) ('Frame stack', value('frame_stack', ' mm')),
+      if (data['frame_reach']?.toString().isNotEmpty == true)
+        ('Frame reach', value('frame_reach', ' mm')),
+      if (data['frame_stack']?.toString().isNotEmpty == true)
+        ('Frame stack', value('frame_stack', ' mm')),
     ].where((row) => row.$2.isNotEmpty).toList();
   }
 
@@ -114,15 +117,15 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(CupertinoIcons.pencil, color: p.ink),
-                onPressed: () {
+              AppObjectMenu(
+                tooltip: 'Setup options',
+                title: setupName,
+                onRename: () {
                   Navigator.of(context).pop();
                   showNewBikeSheet(
                     context,
                     user,
                     NewBikeMode.editSetup,
-
                     uBikeID: uBikeID,
                     bikeName: bikeName,
                     uSetupID: uSetupID,

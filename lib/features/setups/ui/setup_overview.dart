@@ -4,16 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'control_panel_grid.dart';
 import 'field_meta.dart';
 import '../models/unit_system.dart';
 
-List<String> setupCategories() => [
-      'FrontTire',
-      'RearTire',
-      'Fork', 'Shock',
-      'GeneralSettings'
-    ];
+List<String> setupCategories() =>
+    ['FrontTire', 'RearTire', 'Fork', 'Shock', 'GeneralSettings'];
 String categoryLabel(String category) => switch (category) {
       'FrontTire' => 'Front tire',
       'RearTire' => 'Rear tire',
@@ -22,18 +17,22 @@ String categoryLabel(String category) => switch (category) {
     };
 
 class SetupCard extends StatelessWidget {
-  const SetupCard({super.key, required this.child, this.padding = 20});
+  const SetupCard(
+      {super.key, required this.child, this.padding = 20, this.onTap});
   final double padding;
   final Widget child;
+  final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
+      child: Material(
           color: context.palette.surface,
-          borderRadius: BorderRadius.circular(19)),
-      child: child);
+          borderRadius: BorderRadius.circular(19),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+              onTap: onTap,
+              child: Padding(padding: EdgeInsets.all(padding), child: child))));
 }
 
 class SetupOverview extends StatelessWidget {
@@ -42,85 +41,108 @@ class SetupOverview extends StatelessWidget {
       required this.user,
       required this.bike,
       required this.setup,
-
       this.configuration,
+      this.onAddCategory,
       required this.onCategory});
   final User user;
   final String bike, setup;
 
   final SetupConfiguration? configuration;
   final ValueChanged<String> onCategory;
+  final VoidCallback? onAddCategory;
   @override
   Widget build(BuildContext context) => ListView(
           padding: EdgeInsets.fromLTRB(
-              20, 12, 20, MediaQuery.paddingOf(context).bottom + 24),
+              20,
+              MediaQuery.paddingOf(context).top + 12,
+              20,
+              MediaQuery.paddingOf(context).bottom + 24),
           children: [
-            SetupCard(
-                padding: 17,
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      InkWell(
-                          onTap: () => onCategory('Tires'),
-                          child: const Row(children: [
-                            Expanded(
-                                child: Text('Tires',
-                                    style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600))),
-                            Icon(CupertinoIcons.chevron_right, size: 19)
-                          ])),
-                      const SizedBox(height: 16),
-                      IntrinsicHeight(
-                          child: Row(children: [
-                        for (final c in ['FrontTire', 'RearTire']) ...[
-                          if (c == 'RearTire') ...[
-                            VerticalDivider(
-                                width: 38,
-                                thickness: 1,
-                                color: context.palette.border),
-                          ],
-                          Expanded(
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                Text(c == 'FrontTire' ? 'Front' : 'Rear',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: context.palette.inkMuted)),
-                                _Values(
-                                    user: user,
-                                    bike: bike,
-                                    setup: setup,
-                                    category: c,
-                                    pressureOnly: true),
-                              ])),
-                        ],
-                      ])),
-                    ])),
-            for (final category in (configuration?.fields.keys.toList() ?? setupCategories()).where((category) => !category.endsWith('Tire')))
+            if (configuration == null ||
+                configuration!.fields.keys
+                    .any((key) => ['FrontTire', 'RearTire'].contains(key)))
               SetupCard(
                   padding: 17,
-                  child: InkWell(
-                      onTap: () => onCategory(category),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [
-                              Expanded(
-                                  child: Text(categoryLabel(category),
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600))),
-                              const Icon(CupertinoIcons.chevron_right, size: 19)
-                            ]),
-                            const SizedBox(height: 16),
-                            _Values(
-                                user: user,
-                                bike: bike,
-                                setup: setup,
-                                category: category),
-                          ]))),
+                  onTap: () => onCategory('Tires'),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(children: [
+                          Expanded(
+                              child: Text('Tires',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600))),
+                          Icon(CupertinoIcons.chevron_right, size: 19)
+                        ]),
+                        const SizedBox(height: 16),
+                        IntrinsicHeight(
+                            child: Row(children: [
+                          for (final c in ['FrontTire', 'RearTire'].where((c) =>
+                              configuration == null ||
+                              configuration!.fields.containsKey(c))) ...[
+                            if (c == 'RearTire' &&
+                                (configuration == null ||
+                                    configuration!.fields
+                                        .containsKey('FrontTire'))) ...[
+                              VerticalDivider(
+                                  width: 38,
+                                  thickness: 1,
+                                  color: context.palette.border),
+                            ],
+                            Expanded(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                  Text(c == 'FrontTire' ? 'Front' : 'Rear',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: context.palette.inkMuted)),
+                                  _Values(
+                                      user: user,
+                                      bike: bike,
+                                      setup: setup,
+                                      category: c,
+                                      pressureOnly: true),
+                                ])),
+                          ],
+                        ])),
+                      ])),
+            for (final category
+                in (configuration?.fields.keys.toList() ?? setupCategories())
+                    .where((category) =>
+                        !['FrontTire', 'RearTire'].contains(category)))
+              SetupCard(
+                  padding: 17,
+                  onTap: () => onCategory(category),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Expanded(
+                              child: Text(categoryLabel(category),
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600))),
+                          const Icon(CupertinoIcons.chevron_right, size: 19)
+                        ]),
+                        const SizedBox(height: 16),
+                        _Values(
+                            user: user,
+                            bike: bike,
+                            setup: setup,
+                            category: category),
+                      ])),
+            if (onAddCategory != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onAddCategory,
+                  icon: const Icon(CupertinoIcons.plus, size: 18),
+                  label: const Text('Add category'),
+                ),
+              ),
           ]);
 }
 
@@ -148,15 +170,17 @@ class _ValuesState extends State<_Values> {
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.hasError) return const Text('Could not load settings');
-        if (!snapshot.hasData) return const LinearProgressIndicator();
+        if (!snapshot.hasData) return const SizedBox(height: 48);
         final values = snapshot.data!;
-        bool hasValue(String key) => values[key]?.toString().trim().isNotEmpty == true;
+        bool hasValue(String key) =>
+            values[key]?.toString().trim().isNotEmpty == true;
         if (!widget.pressureOnly && !values.keys.any(hasValue)) {
           return Text(
               widget.category == 'GeneralSettings'
                   ? 'Add fit measurements'
                   : 'Add ${widget.category.toLowerCase()} settings',
-              style: TextStyle(fontSize: 13, color: context.palette.accentText));
+              style:
+                  TextStyle(fontSize: 13, color: context.palette.accentText));
         }
         Widget value(String key, {bool large = false}) {
           final meta = kFieldMeta[key];
@@ -199,25 +223,16 @@ class _ValuesState extends State<_Values> {
 
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (widget.pressureOnly)
-            InkWell(
-                onTap: () => showSettingStepperSheet(context,
-                    user: widget.user,
-                    uBikeID: widget.bike,
-                    category: widget.category,
-                    uSetupID: widget.setup,
-                    settingKey: 'Pressure',
-                    currentValue: values['Pressure']?.toString() ?? '',
-                    isDefault: true),
-                child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(minHeight: 48, minWidth: 80),
-                    child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: hasValue('Pressure')
-                            ? value('Pressure', large: true)
-                            : Text('Set pressure',
-                                style: TextStyle(fontSize: 13,
-                                    color: context.palette.accentText)))))
+            ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48, minWidth: 80),
+                child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: hasValue('Pressure')
+                        ? value('Pressure', large: true)
+                        : Text('Set pressure',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: context.palette.accentText))))
           else if (hasValue('Pressure') || hasValue('Sag'))
             Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -225,19 +240,19 @@ class _ValuesState extends State<_Values> {
                 children: [
                   if (hasValue('Pressure')) value('Pressure', large: true),
                   if (hasValue('Sag'))
-                    Text(
-                        '${values['Sag']} sag',
+                    Text('${values['Sag']} sag',
                         style: TextStyle(
                             fontSize: 12, color: context.palette.inkMuted)),
                 ]),
-          if (!widget.pressureOnly) ...[
-            if (hasValue('Pressure') || hasValue('Sag')) const SizedBox(height: 9),
+          if (!widget.pressureOnly &&
+              !hasValue('Pressure') &&
+              !hasValue('Sag')) ...[
             Wrap(spacing: 16, runSpacing: 12, children: [
               for (final key in [
                 ...?kDefaultFieldKeys[widget.category],
                 ...values.keys.where((k) =>
                     !(kDefaultFieldKeys[widget.category] ?? []).contains(k))
-              ].where((k) => k != 'Pressure' && k != 'Sag' && hasValue(k)))
+              ].where(hasValue).take(2))
                 value(key)
             ]),
           ]

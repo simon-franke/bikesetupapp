@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -7,6 +8,7 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/tests/controllers/tests_controller.dart';
 import 'package:bikesetupapp/features/tests/models/setup_test.dart';
 import 'support/fake_tests_repository.dart';
+import 'package:bikesetupapp/features/tests/ui/track_time_sheet.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
 import 'support/fake_repositories.dart';
 
@@ -20,6 +22,60 @@ SetupTest sample({TestStage stage = TestStage.draft}) =>
     });
 
 void main() {
+  test('track times accept legacy seconds and exact milliseconds', () {
+    for (final time in ['03:42', '03:42.156', '00:00.000', '999:59.999']) {
+      final feedback = RideFeedback(feeling: 'Same', time: time);
+      expect(feedback.validationError, isNull);
+      expect(RideFeedback.fromMap(feedback.toMap()).time, time);
+    }
+    for (final time in ['03:60.000', '03:42.1', '03:42.1234']) {
+      expect(
+          RideFeedback(feeling: 'Same', time: time).validationError, isNotNull);
+    }
+  });
+
+  testWidgets(
+      'duration segments preserve long times with enlarged text and keyboard',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 850);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.darkTheme,
+      home: const MediaQuery(
+        data: MediaQueryData(
+            textScaler: TextScaler.linear(2),
+            viewInsets: EdgeInsets.only(bottom: 300)),
+        child: Scaffold(
+            body: SingleChildScrollView(
+                child: TrackTimeSheet(initial: '120:59.987'))),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final fields =
+        tester.widgetList<TextField>(find.byType(TextField)).toList();
+    expect(fields[0].controller!.text, '120');
+    expect(fields[1].controller!.text, '59');
+    expect(fields[2].controller!.text, '987');
+    await tester.ensureVisible(find.byKey(const ValueKey('ms')));
+    await tester.enterText(find.byKey(const ValueKey('ms')), '');
+    await tester.enterText(find.byKey(const ValueKey('ms')), 'a1234');
+    expect(fields[2].controller!.text, '123');
+    await tester.ensureVisible(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  test('all five feedback ratings validate and round trip', () {
+    for (final feeling in RideFeedback.feelings) {
+      final feedback = RideFeedback(feeling: feeling);
+      expect(feedback.validationError, isNull);
+      expect(RideFeedback.fromMap(feedback.toMap()).feeling, feeling);
+    }
+  });
+
   test(
       'configured tests preserve selected parts without adding air fields to a coil fork',
       () async {
@@ -72,7 +128,7 @@ void main() {
     expect(restored.before['FrontTire']!['Pressure'], '22 psi');
     expect(setups.settings['bike/setup/FrontTire/Pressure'], '22 psi');
     await controller.create('bike', 'setup', 'Duplicate', ['FrontTire']);
-    expect(repo.records, hasLength(1));
+    expect(repo.records, hasLength(2));
     await controller.startTest('bike', 'setup', restored.id, restored.name);
     await controller.logRide(
         'bike', 'setup', restored.id, const RideFeedback(feeling: 'Better'));
@@ -81,7 +137,7 @@ void main() {
         (await controller.finish('bike', 'setup', restored.id, apply: true))
             .isSuccess,
         isFalse);
-    expect(repo.records.values.single.stage, TestStage.review);
+    expect(repo.records[restored.id]!.stage, TestStage.review);
     repo.fail = false;
     expect((await controller.finish('bike', 'setup', restored.id)).isSuccess,
         isTrue);
@@ -156,7 +212,7 @@ void main() {
   });
 
   testWidgets(
-      'ride feedback validates time, records multiple rides and finishes safely',
+      'ride feedback picks, cancels and clears duration, records rides and finishes safely',
       (tester) async {
     tester.view.physicalSize = const Size(404, 1300);
     tester.view.devicePixelRatio = 1;
@@ -179,32 +235,283 @@ void main() {
               setupName: 'Dry trails',
             )))));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Roots and braking'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
-    expect(find.text('Choose Better, Same or Worse.'), findsOneWidget);
-    await tester.tap(find.text('Better'));
-    await tester.enterText(find.byType(TextField).last, '03:99');
-    await tester.tap(find.text('Log ride'));
+    expect(find.text('Choose how the ride felt.'), findsOneWidget);
+    final haptics = <String>[];
+    tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') {
+        haptics.add(call.arguments as String);
+      }
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    for (var step = 0; step < 5; step++) {
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.divisions, 4);
+      slider.onChanged!(step.toDouble());
+      slider.onChanged!(step.toDouble());
+      slider.onChangeEnd!(step.toDouble());
+      await tester.pumpAndSettle();
+      expect(
+          repo.records['test']!.feedback.feeling, RideFeedback.feelings[step]);
+    }
+    expect(haptics, List.filled(5, 'HapticFeedbackType.selectionClick'));
+
+    tester.widget<Slider>(find.byType(Slider)).onChanged!(3);
+    tester.widget<Slider>(find.byType(Slider)).onChangeEnd!(3);
     await tester.pumpAndSettle();
-    expect(find.text('Use minutes:seconds, e.g. 03:42.'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'More grip on roots.');
-    await tester.enterText(find.byType(TextField).last, '03:42');
+    await tester.tap(find.text('Add time (optional)'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('min')), '03');
+    await tester.enterText(find.byKey(const ValueKey('sec')), '99');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('Seconds must be between 00 and 59.'), findsOneWidget);
+    await tester.enterText(find.byKey(const ValueKey('sec')), '42');
+    await tester.pump();
+    expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('ms')))
+            .focusNode!
+            .hasFocus,
+        isTrue);
+    await tester.enterText(find.byKey(const ValueKey('ms')), '156');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.feedback.time, '03:42.156');
+    await tester.tap(find.text('03:42.156'));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('min')))
+            .controller!
+            .text,
+        '03');
+    await tester.enterText(find.byKey(const ValueKey('min')), '09');
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.feedback.time, '03:42.156');
+    await tester.tap(find.text('03:42.156'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.feedback.time, '');
+    await tester.tap(find.text('Add time (optional)'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('min')), '03');
+    await tester.enterText(find.byKey(const ValueKey('sec')), '42');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.stage, TestStage.review);
     expect(find.text('More grip on roots.'), findsOneWidget);
-    expect(repo.records['test']!.rides.single.time, '03:42');
+    expect(repo.records['test']!.rides.single.time, '03:42.000');
     await tester.tap(find.text('Log another ride'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Same'));
+    tester.widget<Slider>(find.byType(Slider)).onChangeEnd!(2);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.rides, hasLength(2));
-    await tester.ensureVisible(find.text('Finish without changes'));
-    await tester.tap(find.text('Finish without changes'));
+    await tester.ensureVisible(find.text('Finish test'));
+    await tester.tap(find.text('Finish test'));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.stage, TestStage.review);
+    await tester.tap(find.text('Save as new setup'));
+    await tester.pumpAndSettle();
+    expect(find.text('Create setup'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.stage, TestStage.review);
+    await tester.tap(find.text('Finish test'));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.stage, TestStage.review);
+    await tester.tap(find.text('Finish test'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keep current settings'));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.stage, TestStage.finished);
     expect(repo.applied, isFalse);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    deps.dispose();
+    await repo.updates.close();
+  });
+
+  testWidgets('new test opens directly and untouched exit removes draft',
+      (tester) async {
+    final repo = MemoryTests();
+    final deps = AppDependencies(
+        testsRepository: (_) => repo,
+        setupsRepository: (_) => FakeSetupsRepository());
+    await tester.pumpWidget(Provider.value(
+        value: deps,
+        child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const Scaffold(
+                body: TestsView(
+                    uid: 'user',
+                    bike: 'bike',
+                    setup: 'setup',
+                    setupName: 'Dry trails')))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create test'));
+    for (var frame = 0; frame < 30; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.text('Continue test', skipOffstage: false), findsNothing);
+    }
+    expect(find.byTooltip('Close test'), findsOneWidget);
+    expect(repo.records, hasLength(1));
+    await tester.tap(find.byTooltip('Close test'));
+    await tester.pumpAndSettle();
+    expect(repo.records, isEmpty);
+    expect(find.text('Create test'), findsOneWidget);
+    expect(find.text('Continue test'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    deps.dispose();
+    await repo.updates.close();
+  });
+
+  test('draft cleanup waits for queued edits and preserves changed drafts',
+      () async {
+    final repo = MemoryTests();
+    final draft = sample().copyWith(values: sample().before);
+    repo.records['test'] = draft;
+    final controller = TestsController(repo, FakeSetupsRepository());
+    final edit = controller.updateField(
+        'bike', 'setup', 'test', 'Fork', 'Compression', '8 clicks');
+    final cleanup = controller.discardUnchangedDraft('bike', 'setup', 'test');
+    await edit;
+    await cleanup;
+    expect(repo.records['test']!.values['Fork']!['Compression'], '8 clicks');
+    repo.records['test'] = draft;
+    await controller.discardUnchangedDraft('bike', 'setup', 'test');
+    expect(repo.records, isEmpty);
+    controller.dispose();
+    await repo.updates.close();
+  });
+
+  testWidgets('ongoing tests keep feedback separate and return to the overview',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repo = MemoryTests();
+    repo.records['test'] = sample(stage: TestStage.ride);
+    repo.records['second'] = SetupTest(
+        id: 'second',
+        name: 'Softer tires',
+        stage: TestStage.ride,
+        before: sample().before,
+        values: sample().values);
+    final deps = AppDependencies(
+        testsRepository: (_) => repo,
+        setupsRepository: (_) => FakeSetupsRepository());
+    await tester.pumpWidget(Provider.value(
+        value: deps,
+        child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const Scaffold(
+                body: TestsView(
+                    uid: 'user',
+                    bike: 'bike',
+                    setup: 'setup',
+                    setupName: 'Default')))));
+    await tester.pumpAndSettle();
+    expect(find.text('Ongoing tests'), findsOneWidget);
+    await tester.tap(find.text('Roots and braking'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'First test feedback');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Softer tires'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        isEmpty);
+    await tester.enterText(find.byType(TextField), 'Second test feedback');
+    final slider = tester.widget<Slider>(find.byType(Slider));
+    slider.onChanged!(3);
+    slider.onChangeEnd!(3);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Log ride'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log ride'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Finish test'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Finish test'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keep current settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ongoing tests'), findsOneWidget);
+    expect(find.text('Previous tests'), findsOneWidget);
+    expect(repo.records['test']!.stage, TestStage.ride);
+    expect(repo.records['second']!.stage, TestStage.finished);
+    expect(repo.records['second']!.rides.single.note, 'Second test feedback');
+    await tester.tap(find.text('Roots and braking'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'First test feedback');
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create test'));
+    await tester.pumpAndSettle();
+    expect(repo.records, hasLength(3));
+    await tester.tap(find.byTooltip('Close test'));
+    await tester.pumpAndSettle();
+    expect(repo.records, hasLength(2));
+    expect(repo.records['test']!.feedback.note, 'First test feedback');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    deps.dispose();
+    await repo.updates.close();
+  });
+
+  testWidgets('previous tests reveal details without changing saved history',
+      (tester) async {
+    final repo = MemoryTests();
+    final saved = sample(stage: TestStage.finished).copyWith(
+        result: 'Applied to baseline',
+        rides: [const RideFeedback(feeling: 'Better', note: 'More grip')]);
+    repo.records['test'] = saved;
+    final deps = AppDependencies(
+        testsRepository: (_) => repo,
+        setupsRepository: (_) => FakeSetupsRepository());
+    await tester.pumpWidget(Provider.value(
+        value: deps,
+        child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const Scaffold(
+                body: TestsView(
+                    uid: 'user',
+                    bike: 'bike',
+                    setup: 'setup',
+                    setupName: 'Dry trails')))));
+    await tester.pumpAndSettle();
+    expect(find.text('Applied to baseline'), findsOneWidget);
+    expect(find.text('21 psi'), findsNothing);
+    expect(find.text('More grip'), findsNothing);
+    await tester.tap(find.text('Roots and braking'));
+    await tester.pumpAndSettle();
+    expect(find.text('21 psi'), findsOneWidget);
+    await tester.ensureVisible(find.text('More grip'));
+    expect(find.text('More grip'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('21 psi'), findsNothing);
+    expect(repo.records['test'], same(saved));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     deps.dispose();
@@ -237,6 +544,11 @@ void main() {
                     setupName: 'Dry trails',
                   ))))));
       await tester.pumpAndSettle();
+      if (stage != TestStage.draft) {
+        await tester.scrollUntilVisible(find.text('Roots and braking'), 300);
+        await tester.tap(find.text('Roots and braking'));
+        await tester.pumpAndSettle();
+      }
       await tester.drag(find.byType(ListView), const Offset(0, -600));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

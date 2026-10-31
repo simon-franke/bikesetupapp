@@ -1,3 +1,9 @@
+import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
+import '../../setups/models/unit_system.dart';
+import 'bike_mileage_panel.dart';
+import '../../setups/ui/setting_unit_selector.dart';
+import 'package:bikesetupapp/common/ui/app_date_sheet.dart';
+import 'package:bikesetupapp/common/ui/app_value_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -69,10 +75,14 @@ class _RideLogPageState extends State<RideLogPage> {
                                   title: Text(DateFormat.yMMMd()
                                       .add_Hm()
                                       .format(ride.startedAt.toLocal())),
-                                  subtitle: Text(
-                                      '${ride.hours.toStringAsFixed(2)} hours, ${ride.indoor ? 'Indoor' : 'Outdoor'}')),
+                                  subtitle: Text('${[
+                                    if (ride.distanceKm != null)
+                                      '${ride.distanceKm!.toStringAsFixed(1)} km',
+                                    if (ride.durationSeconds > 0)
+                                      '${ride.hours.toStringAsFixed(2)} hours'
+                                  ].join(' · ')}, ${ride.indoor ? 'Indoor' : 'Outdoor'}')),
                             const Text(
-                                'Uses active timer time, excluding recorded pauses. Existing sessions are skipped, even if previously assigned to another bike.'),
+                                'Active riding time only. Previously imported rides are skipped.'),
                             const SizedBox(height: 20),
                             AppActionButton(
                                 label: 'Import ${rides.length} rides',
@@ -108,17 +118,19 @@ class _RideLogPageState extends State<RideLogPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('Ride log')),
+      appBar: AppBar(title: const Text('Ride activity')),
       body: ListenableBuilder(
           listenable: controller,
           builder: (context, _) =>
               ListView(padding: const EdgeInsets.all(20), children: [
                 Text(widget.bikeName,
                     style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                const Text(
-                    'Rides are assigned to this bike. Switch bikes from the main chooser to log or import for another bike.'),
                 const SizedBox(height: 16),
+                BikeMileagePanel(
+                    key: ValueKey(widget.bikeId),
+                    uid: widget.uid,
+                    bikeId: widget.bikeId),
+                const SizedBox(height: 20),
                 Wrap(spacing: 10, runSpacing: 10, children: [
                   AppActionButton(
                       label: 'Log ride',
@@ -162,12 +174,24 @@ class _RideLogPageState extends State<RideLogPage> {
                       return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                                '${rides.length} rides, ${rides.fold<double>(0, (sum, r) => sum + r.hours).toStringAsFixed(1)} total hours'),
+                            if (rides.isNotEmpty)
+                              Text(
+                                  [
+                                    '${rides.length} ${rides.length == 1 ? 'ride' : 'rides'}',
+                                    if (rides.any((r) => r.distanceKm != null))
+                                      '${rides.fold<double>(0, (sum, r) => sum + (r.distanceKm ?? 0)).toStringAsFixed(1)} km',
+                                    if (rides.any((r) => r.durationSeconds > 0))
+                                      '${rides.fold<double>(0, (sum, r) => sum + r.hours).toStringAsFixed(1)} h',
+                                  ].join('   '),
+                                  style: AppTextStyles.inter(
+                                      size: 16,
+                                      color: context.palette.inkMuted)),
                             const SizedBox(height: 12),
                             if (rides.isEmpty)
-                              const Text(
-                                  'No rides yet. Add riding time manually or import a FIT activity from your device.'),
+                              Text('Add rides to track service intervals.',
+                                  style: AppTextStyles.inter(
+                                      size: 16,
+                                      color: context.palette.inkMuted)),
                             for (final ride in rides)
                               Card(
                                   child: ListTile(
@@ -175,7 +199,12 @@ class _RideLogPageState extends State<RideLogPage> {
                                           ? 'Ride'
                                           : ride.name),
                                       subtitle: Text(
-                                          '${DateFormat.yMMMd().add_Hm().format(ride.startedAt.toLocal())}\n${ride.hours.toStringAsFixed(2)} hours, ${ride.indoor ? 'Indoor' : 'Outdoor'}, ${ride.source == 'fit' ? 'FIT import' : 'Manual'}'),
+                                          '${DateFormat.yMMMd().add_Hm().format(ride.startedAt.toLocal())}\n${[
+                                        if (ride.distanceKm != null)
+                                          '${ride.distanceKm!.toStringAsFixed(1)} km',
+                                        if (ride.durationSeconds > 0)
+                                          '${ride.hours.toStringAsFixed(2)} hours'
+                                      ].join(' · ')}, ${ride.indoor ? 'Indoor' : 'Outdoor'}, ${ride.source == 'fit' ? 'FIT import' : 'Manual'}'),
                                       trailing: IconButton(
                                           tooltip: 'Delete ride',
                                           icon:
@@ -183,31 +212,13 @@ class _RideLogPageState extends State<RideLogPage> {
                                           onPressed: controller.isBusy
                                               ? null
                                               : () async {
-                                                  final remove = await showDialog<
-                                                          bool>(
-                                                      context: context,
-                                                      builder: (ctx) =>
-                                                          AlertDialog(
-                                                              title: const Text(
-                                                                  'Delete ride?'),
-                                                              content: const Text(
-                                                                  'Service-hour totals will be recalculated.'),
-                                                              actions: [
-                                                                TextButton(
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                            ctx,
-                                                                            false),
-                                                                    child: const Text(
-                                                                        'Cancel')),
-                                                                TextButton(
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                            ctx,
-                                                                            true),
-                                                                    child: const Text(
-                                                                        'Delete'))
-                                                              ]));
+                                                  final remove =
+                                                      await showDeleteConfirmationSheet(
+                                                    context,
+                                                    title: 'Delete ride?',
+                                                    message:
+                                                        'Service totals will be recalculated.',
+                                                  );
                                                   if (remove == true &&
                                                       context.mounted) {
                                                     await presentCommand(
@@ -236,8 +247,12 @@ class ManualRideForm extends StatefulWidget {
 class _ManualRideFormState extends State<ManualRideForm> {
   final id = const Uuid().v4();
   final name = TextEditingController();
-  final hours = TextEditingController(text: '1');
-  final minutes = TextEditingController(text: '0');
+  final hours = TextEditingController();
+  final minutes = TextEditingController();
+  final distance = TextEditingController();
+  UnitDef distanceUnit = unitDefById(UnitFamily.distance, 'km');
+  double? distanceKm;
+  bool distanceInStrava = false;
   DateTime date = DateTime.now();
   bool indoor = false, saving = false;
   String? error;
@@ -246,20 +261,31 @@ class _ManualRideFormState extends State<ManualRideForm> {
     name.dispose();
     hours.dispose();
     minutes.dispose();
+    distance.dispose();
     super.dispose();
   }
 
   Future<void> save() async {
-    final h = int.tryParse(hours.text), m = int.tryParse(minutes.text);
+    if (saving) return;
+    final h = int.tryParse(hours.text.trim().isEmpty ? '0' : hours.text);
+    final m = int.tryParse(minutes.text.trim().isEmpty ? '0' : minutes.text);
     if (h == null ||
         m == null ||
         h < 0 ||
         h > 168 ||
         m < 0 ||
         m > 59 ||
-        h * 60 + m <= 0 ||
         h * 60 + m > 10080) {
       setState(() => error = 'Enter hours and minutes (0–59), up to 7 days.');
+      return;
+    }
+    if (distance.text.trim().isNotEmpty &&
+        (distanceKm == null || !distanceKm!.isFinite || distanceKm! <= 0)) {
+      setState(() => error = 'Enter a positive distance.');
+      return;
+    }
+    if (h * 60 + m == 0 && distanceKm == null) {
+      setState(() => error = 'Enter distance, riding time, or both.');
       return;
     }
     setState(() => saving = true);
@@ -272,6 +298,8 @@ class _ManualRideFormState extends State<ManualRideForm> {
                   startedAt: date.toUtc(),
                   durationSeconds: h * 3600 + m * 60,
                   source: 'manual',
+                  distanceKm: distanceKm,
+                  distanceInStrava: distanceInStrava,
                   name: name.text.trim(),
                   indoor: indoor)
             ]));
@@ -296,44 +324,87 @@ class _ManualRideFormState extends State<ManualRideForm> {
                   children: [
                     const AppSheetHandle(),
                     const SizedBox(height: 20),
-                    Text('Log ride for ${widget.bikeName}',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    Text('Log ride',
+                        style: AppTextStyles.inter(
+                            size: 22,
+                            weight: FontWeight.w600,
+                            color: context.palette.ink)),
+                    const SizedBox(height: 8),
+                    Text(widget.bikeName,
+                        style: AppTextStyles.inter(
+                            size: 16, color: context.palette.inkMuted)),
                     const SizedBox(height: 20),
                     AppTextField(
                         controller: name, hint: 'Ride name (optional)'),
                     const SizedBox(height: 12),
-                    TextButton(
-                        onPressed: saving
+                    const AppFieldLabel('Date & time'),
+                    const SizedBox(height: 8),
+                    AppValueButton(
+                        label: DateFormat.yMMMd().add_Hm().format(date),
+                        onTap: saving
                             ? null
                             : () async {
-                                final day = await showDatePicker(
-                                    context: context,
-                                    initialDate: date,
-                                    firstDate: DateTime(2000),
-                                    lastDate: DateTime.now());
-                                if (day == null || !context.mounted) return;
-                                final time = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(date));
-                                if (time == null || !mounted) return;
-                                final selected = DateTime(day.year, day.month,
-                                    day.day, time.hour, time.minute);
-                                setState(() {
-                                  if (selected.isAfter(DateTime.now())) {
-                                    error = 'Choose a time in the past.';
-                                  } else {
+                                final selected = await pickAppDate(context,
+                                    initial: date, includeTime: true);
+                                if (selected != null && mounted) {
+                                  setState(() {
                                     date = selected;
                                     error = null;
-                                  }
-                                });
-                              },
-                        child: Text(DateFormat.yMMMd().add_Hm().format(date))),
+                                  });
+                                }
+                              }),
                     const SizedBox(height: 12),
-                    const Text('Active riding time (exclude breaks)'),
+                    const AppFieldLabel('Distance'),
+                    const SizedBox(height: 8),
+                    AppTextField(
+                        key: const ValueKey('ride-distance'),
+                        controller: distance,
+                        hint: '0',
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        onChanged: (text) => setState(() {
+                              final value =
+                                  double.tryParse(text.replaceAll(',', '.'));
+                              distanceKm = value == null
+                                  ? null
+                                  : value * distanceUnit.toCanonical;
+                            }),
+                        suffixWidget: SettingUnitSelector(
+                            family: UnitFamily.distance,
+                            unit: distanceUnit,
+                            onChanged: (unit) {
+                              if (distance.text.trim().isNotEmpty &&
+                                  (distanceKm == null ||
+                                      !distanceKm!.isFinite)) {
+                                setState(
+                                    () => error = 'Enter a positive distance.');
+                                return;
+                              }
+                              setState(() {
+                                distanceUnit = unit;
+                                if (distanceKm != null) {
+                                  distance.text =
+                                      (distanceKm! / unit.toCanonical)
+                                          .toStringAsFixed(2);
+                                }
+                              });
+                            })),
+                    if (distance.text.trim().isNotEmpty)
+                      SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Already included in Strava'),
+                          value: distanceInStrava,
+                          onChanged: saving
+                              ? null
+                              : (value) =>
+                                  setState(() => distanceInStrava = value)),
+                    const SizedBox(height: 12),
+                    const AppFieldLabel('Riding time'),
                     const SizedBox(height: 8),
                     Row(children: [
                       Expanded(
                           child: AppTextField(
+                              key: const ValueKey('ride-hours'),
                               controller: hours,
                               hint: 'Hours',
                               suffix: 'h',
@@ -341,12 +412,13 @@ class _ManualRideFormState extends State<ManualRideForm> {
                       const SizedBox(width: 12),
                       Expanded(
                           child: AppTextField(
+                              key: const ValueKey('ride-minutes'),
                               controller: minutes,
                               hint: 'Minutes',
                               suffix: 'min',
                               keyboardType: TextInputType.number))
                     ]),
-                    SwitchListTile(
+                    SwitchListTile.adaptive(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Indoor ride'),
                         value: indoor,

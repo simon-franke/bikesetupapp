@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:bikesetupapp/common/ui/app_scroll_edge.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_info_bottom_sheet.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_list.dart';
@@ -10,6 +12,7 @@ typedef BikeSelectionCallback = void Function(String, String, String, String);
 
 Future<void> showBikeChooserSheet({
   required BuildContext context,
+  bool bikesOnly = false,
   required User user,
   required String selectedBikeId,
   required String selectedSetupId,
@@ -18,14 +21,17 @@ Future<void> showBikeChooserSheet({
   Widget content(BuildContext chooserContext) => BikeChooserContent(
         bikeList: BikeList(
           user: user,
+          bikesOnly: bikesOnly,
           selectedBikeId: selectedBikeId,
           selectedSetupId: selectedSetupId,
           onBikeSelected: (name, bikeID, setupName, setupID) {
-            if (!chooserContext.mounted ||
-                ModalRoute.of(chooserContext)?.isCurrent != true) {
-              return;
+            if (!context.mounted) return;
+            // A confirmed deletion can finish after the chooser is dismissed.
+            // Its replacement selection still belongs to the workspace.
+            if (chooserContext.mounted &&
+                ModalRoute.of(chooserContext)?.isCurrent == true) {
+              Navigator.of(chooserContext).pop();
             }
-            Navigator.of(chooserContext).pop();
             onBikeSelected(name, bikeID, setupName, setupID);
           },
           onSetupDetails: (name, bikeID, setupName, setupID) {
@@ -82,13 +88,18 @@ class BikeChooserContent extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: Theme.of(context).dividerColor,
                           borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 8),
+              Flexible(
+                  fit: FlexFit.loose, child: AppScrollEdge(child: bikeList)),
               const SizedBox(height: 20),
-              Text('Bike & setup',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              Flexible(fit: FlexFit.loose, child: bikeList),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
+              FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: context.palette.surface2,
+                    foregroundColor: context.palette.ink,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
+                  ),
                   onPressed: onAddBike,
                   icon: const Icon(CupertinoIcons.plus, size: 20),
                   label: const Text('Add bike')),

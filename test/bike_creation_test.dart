@@ -68,7 +68,7 @@ void main() {
   test('invalid configuration is rejected before writing any values', () async {
     final setups = FakeSetupsRepository();
     await expectLater(SetupCreationService(setups).create('bike', 'setup', 'Default',
-        {SetupConfiguration.metadataKey: '{"Invalid": ["Pressure"]}'}), throwsFormatException);
+        {SetupConfiguration.metadataKey: '{"Invalid/path": ["Pressure"]}'}), throwsFormatException);
     expect(setups.settings, isEmpty);
     expect(setups.names, isEmpty);
   });

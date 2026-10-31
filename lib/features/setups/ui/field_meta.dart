@@ -207,9 +207,7 @@ const cockpitFields = ['Stem length', 'Spacer height', 'Handlebar roll', 'Lever 
 const saddleFields = ['Seat Height', 'Saddle setback', 'Saddle tilt'];
 const geometryFields = ['Reach', 'Stack Height'];
 
-String fitGroupFor(String field) => cockpitFields.contains(field) ? 'Cockpit'
-    : saddleFields.contains(field) ? 'Saddle'
-    : geometryFields.contains(field) ? 'Frame geometry' : 'Other settings';
+
 
 List<String> suspensionFields(String spring, Iterable<String> adjusters) => [
   if (spring == 'Air') ...['Pressure', 'Tokens']

@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 Future<T?> showAppSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  bool fullHeight = false,
 }) {
   return showModalBottomSheet<T>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
         ? AnimationStyle.noAnimation
@@ -16,10 +18,14 @@ Future<T?> showAppSheet<T>({
             reverseDuration: Duration(milliseconds: 220)),
     useSafeArea: true,
     backgroundColor: context.palette.surface,
+    clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-    builder: (context) =>
-        SingleChildScrollView(child: Builder(builder: builder)),
+    builder: (context) => fullHeight
+        ? LayoutBuilder(
+            builder: (context, constraints) => SizedBox(
+                height: constraints.maxHeight, child: builder(context)))
+        : SingleChildScrollView(child: Builder(builder: builder)),
   );
 }
 

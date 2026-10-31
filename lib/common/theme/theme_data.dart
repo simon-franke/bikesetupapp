@@ -9,7 +9,7 @@ class AppColors {
 
   static const Color darkBg = Color(0xFF242E36);
   static const Color darkSurface = Color(0xFF303E48);
-  static const Color darkSurface2 = Color(0xFF3B4D53);
+  static const Color darkSurface2 = Color(0xFF3D4A56);
   static const Color darkCard = Color(0xFFEDF3F8);
   static const Color darkCardInk = Color(0xFF233749);
   static const Color darkInk = Color(0xFFF0F4F2);
@@ -34,6 +34,7 @@ class AppColors {
   static const Color green = Color(0xFF5BB97A);
   static const Color amber = Color(0xFFD9A23A);
   static const Color red = Color(0xFFE0654C);
+  static const Color destructiveFill = Color(0xFFB43B35);
 
   /// Foreground for a solid fill; choose the higher-contrast neutral.
   static Color onColor(Color color) {
@@ -194,7 +195,7 @@ class AppTextStyles {
     double letterSpacing = 0,
     double? height,
   }) =>
-      GoogleFonts.jetBrainsMono(
+      GoogleFonts.sora(
         fontSize: size,
         fontWeight: weight,
         color: color,
@@ -209,7 +210,7 @@ class AppTextStyles {
     double letterSpacing = 0,
     double? height,
   }) =>
-      GoogleFonts.inter(
+      GoogleFonts.sora(
         fontSize: size,
         fontWeight: weight,
         color: color,
@@ -219,7 +220,7 @@ class AppTextStyles {
 
   static TextStyle eyebrow(
           {Color? color, double size = 10, double letterSpacing = 1.6}) =>
-      GoogleFonts.inter(
+      GoogleFonts.sora(
         fontSize: size,
         fontWeight: FontWeight.w700,
         color: color,
@@ -234,24 +235,24 @@ class AppTheme {
       {required Brightness brightness, required AppPalette p}) {
     final base =
         brightness == Brightness.dark ? ThemeData.dark() : ThemeData.light();
-    final textTheme = GoogleFonts.interTextTheme(base.textTheme).copyWith(
-      titleLarge: GoogleFonts.inter(
+    final textTheme = GoogleFonts.soraTextTheme(base.textTheme).copyWith(
+      titleLarge: GoogleFonts.sora(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: p.ink,
           letterSpacing: -0.3),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: GoogleFonts.sora(
           fontSize: 16, fontWeight: FontWeight.w700, color: p.ink),
-      titleSmall: GoogleFonts.inter(
+      titleSmall: GoogleFonts.sora(
           fontSize: 13, fontWeight: FontWeight.w600, color: p.ink),
-      bodyLarge: GoogleFonts.inter(fontSize: 15, color: p.ink),
-      bodyMedium: GoogleFonts.inter(fontSize: 13, color: p.ink),
-      bodySmall: GoogleFonts.inter(fontSize: 12, color: p.inkMuted),
-      labelLarge: GoogleFonts.inter(
+      bodyLarge: GoogleFonts.sora(fontSize: 15, color: p.ink),
+      bodyMedium: GoogleFonts.sora(fontSize: 13, color: p.ink),
+      bodySmall: GoogleFonts.sora(fontSize: 12, color: p.inkMuted),
+      labelLarge: GoogleFonts.sora(
           fontSize: 14, fontWeight: FontWeight.w600, color: p.ink),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: GoogleFonts.sora(
           fontSize: 13, fontWeight: FontWeight.w600, color: p.inkMuted),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: GoogleFonts.sora(
           fontSize: 12, fontWeight: FontWeight.w600, color: p.inkDim),
       displayLarge: AppTextStyles.mono(
           size: 64, color: p.ink, letterSpacing: -3, height: 1),
@@ -300,7 +301,7 @@ class AppTheme {
         backgroundColor: p.bg,
         foregroundColor: p.ink,
         iconTheme: IconThemeData(color: p.ink),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.sora(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: p.ink,
@@ -322,14 +323,24 @@ class AppTheme {
         labelStyle: TextStyle(color: p.inkMuted, fontSize: 14),
         floatingLabelStyle: TextStyle(color: p.accentText, fontSize: 14),
         suffixStyle: TextStyle(color: p.inkMuted, fontSize: 14),
-        errorStyle: TextStyle(color: p.red, fontSize: 12),
+        errorStyle: TextStyle(color: p.red, fontSize: 13, height: 1.35),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: UnderlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: UnderlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        focusedBorder: UnderlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.accentText, width: 2)),
-        errorBorder: UnderlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.red)),
-        focusedErrorBorder: UnderlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.red, width: 2)),
+        border: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        enabledBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        focusedBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: p.accentText, width: 2)),
+        errorBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: p.red)),
+        focusedErrorBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: p.red, width: 2)),
       ),
       filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
@@ -427,9 +438,9 @@ class AppTheme {
     );
   }
 
-  static final ThemeData lightTheme =
+  static ThemeData get lightTheme =>
       _build(brightness: Brightness.light, p: AppPalette.light);
-  static final ThemeData darkTheme =
+  static ThemeData get darkTheme =>
       _build(brightness: Brightness.dark, p: AppPalette.dark);
 }
 

@@ -1,4 +1,4 @@
-import 'package:cupertino_liquid_glass/cupertino_liquid_glass.dart';
+import 'package:bikesetupapp/common/ui/app_glass_surface.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -20,8 +20,7 @@ class ViewToggle extends StatefulWidget {
   State<ViewToggle> createState() => _ViewToggleState();
 }
 
-class _ViewToggleState extends State<ViewToggle>
-    with TickerProviderStateMixin {
+class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
   TabController? _controller;
   bool _reducedMotion = false;
   @override
@@ -57,63 +56,53 @@ class _ViewToggleState extends State<ViewToggle>
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final bottom =
         (MediaQuery.viewPaddingOf(context).bottom - 12).clamp(8.0, 24.0);
     return Padding(
         key: const ValueKey('navigation-inset'),
         padding: EdgeInsets.fromLTRB(20, 8, 20, bottom),
-        child: CupertinoLiquidGlass(
-            theme: (dark
-                    ? LiquidGlassThemeData.dark()
-                    : LiquidGlassThemeData.light())
-                .copyWith(tintColor: p.surface, tintOpacity: .78),
-            borderRadius: BorderRadius.circular(30),
-            padding: const EdgeInsets.all(5),
-            effectIntensity: .25,
-            child: Material(
-                color: Colors.transparent,
-                child: TabBar(
-                    controller: _controller,
-                    onTap: (index) =>
-                        widget.onChanged(ActiveView.values[index]),
-                    dividerColor: Colors.transparent,
-                    labelColor: p.accentText,
-                    unselectedLabelColor: p.inkMuted,
-                    labelStyle:
-                        AppTextStyles.inter(size: 11, weight: FontWeight.w600),
-                    unselectedLabelStyle:
-                        AppTextStyles.inter(size: 11, weight: FontWeight.w500),
-                    labelPadding: EdgeInsets.zero,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicator: BoxDecoration(
-                        color: p.ink.withValues(alpha: .07),
-                        borderRadius: BorderRadius.circular(25)),
-                    splashFactory: NoSplash.splashFactory,
-                    overlayColor: WidgetStateProperty.resolveWith((states) =>
-                        states.contains(WidgetState.pressed)
-                            ? Colors.transparent
-                            : null),
-                    tabs: [
-                      const Tab(
-                          height: 64,
-                          iconMargin: EdgeInsets.only(bottom: 5),
-                          icon: Icon(CupertinoIcons.slider_horizontal_3,
-                              size: 23),
-                          text: 'Setup'),
-                      const Tab(
-                          height: 64,
-                          iconMargin: EdgeInsets.only(bottom: 5),
-                          icon: Icon(CupertinoIcons.lab_flask, size: 23),
-                          text: 'Tests'),
-                      Tab(
-                          height: 64,
-                          iconMargin: const EdgeInsets.only(bottom: 5),
-                          icon: const Icon(CupertinoIcons.wrench, size: 23),
-                          child: Text('Service', maxLines: 1, overflow: TextOverflow.ellipsis,
-                              semanticsLabel: widget.showServiceAlert
-                                  ? 'Service, maintenance due'
-                                  : 'Service')),
-                    ]))));
+        child: AppGlassSurface(
+            child: TabBar(
+                controller: _controller,
+                onTap: (index) => widget.onChanged(ActiveView.values[index]),
+                dividerColor: Colors.transparent,
+                labelColor: p.accentText,
+                unselectedLabelColor: p.inkMuted,
+                labelStyle:
+                    AppTextStyles.inter(size: 11, weight: FontWeight.w600),
+                unselectedLabelStyle:
+                    AppTextStyles.inter(size: 11, weight: FontWeight.w500),
+                labelPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                    color: p.ink.withValues(alpha: .07),
+                    borderRadius: BorderRadius.circular(25)),
+                splashFactory: NoSplash.splashFactory,
+                overlayColor: WidgetStateProperty.resolveWith((states) =>
+                    states.contains(WidgetState.pressed)
+                        ? Colors.transparent
+                        : null),
+                tabs: [
+              const Tab(
+                  height: 64,
+                  iconMargin: EdgeInsets.only(bottom: 5),
+                  icon: Icon(CupertinoIcons.slider_horizontal_3, size: 23),
+                  text: 'Setup'),
+              const Tab(
+                  height: 64,
+                  iconMargin: EdgeInsets.only(bottom: 5),
+                  icon: Icon(CupertinoIcons.lab_flask, size: 23),
+                  text: 'Experiments'),
+              Tab(
+                  height: 64,
+                  iconMargin: const EdgeInsets.only(bottom: 5),
+                  icon: const Icon(CupertinoIcons.wrench, size: 23),
+                  child: Text('Service',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      semanticsLabel: widget.showServiceAlert
+                          ? 'Service, maintenance due'
+                          : 'Service')),
+            ])));
   }
 }

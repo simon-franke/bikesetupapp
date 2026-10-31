@@ -3,7 +3,7 @@ import '../models/setup_test.dart';
 abstract interface class TestsRepository {
   Stream<List<SetupTest>> watch(String bike, String setup);
 
-  /// Creates a new draft only if the ID is unused and no test is active.
+  /// Creates an independent draft only if its ID is unused.
   Future<void> create(String bike, String setup, SetupTest test);
 
   /// Reads, validates and changes an existing active test atomically.
@@ -13,8 +13,12 @@ abstract interface class TestsRepository {
       {required TestStage expectedStage,
       required SetupTest Function(SetupTest current) change});
 
+  /// When onlyIfUnchanged is true, only an unchanged draft may be deleted.
   /// Atomically finishes the current stored test, optionally applying its
   /// changes or creating a setup. A draft finished without applying is deleted.
   Future<void> finish(String bike, String setup, String id,
-      {bool apply = false, String? newSetupId, String? newSetupName});
+      {bool apply = false,
+      String? newSetupId,
+      String? newSetupName,
+      bool onlyIfUnchanged = false});
 }

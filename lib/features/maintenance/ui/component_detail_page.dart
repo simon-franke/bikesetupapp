@@ -1,604 +1,341 @@
+import 'service_component_icon.dart';
+import 'package:bikesetupapp/common/ui/app_value_button.dart';
 import 'package:flutter/cupertino.dart';
-import 'hour_component_detail.dart';
-import 'package:bikesetupapp/common/ui/command_feedback.dart';
-import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
-import 'package:bikesetupapp/common/ui/dialog_helpers.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
-import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
-import 'package:bikesetupapp/features/maintenance/ui/log_service_sheet.dart';
-import 'package:bikesetupapp/features/maintenance/ui/service_component_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:bikesetupapp/app/app_dependencies.dart';
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/common/ui/app_components.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
+import 'package:bikesetupapp/common/ui/command_feedback.dart';
+import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
+import '../../rides/models/ride.dart';
+import '../models/service_component.dart';
+import '../models/service_entry.dart';
+import 'service_status.dart';
+import 'service_controls.dart';
+import 'log_service_sheet.dart';
+import 'defer_service_sheet.dart';
 
 class ComponentDetailPage extends StatefulWidget {
+  const ComponentDetailPage(
+      {super.key,
+      required this.user,
+      required this.component,
+      required this.currentMileageKm,
+      this.mileageAvailable = true,
+      this.stravaGearId});
   final User user;
   final ServiceComponent component;
   final double currentMileageKm;
   final bool mileageAvailable;
-
-  /// Strava gear ID linked to this bike, or null if Strava isn't connected /
-  /// the bike isn't linked. Used to estimate historical mileage.
   final String? stravaGearId;
-
-  const ComponentDetailPage({
-    super.key,
-    required this.user,
-    required this.component,
-    required this.currentMileageKm,
-    this.mileageAvailable = true,
-    this.stravaGearId,
-  });
-
   @override
   State<ComponentDetailPage> createState() => _ComponentDetailPageState();
 }
 
 class _ComponentDetailPageState extends State<ComponentDetailPage> {
-  late MaintenanceController _db;
-  late int _intervalKm;
-  late Stream<List<ServiceEntry>> _entriesStream;
-  static final NumberFormat _kmFormat = NumberFormat('#,###');
+  late final db = AppDependencies.of(context).forUser(widget.user.uid);
+  late ServiceComponent component = widget.component;
+  late Stream<List<ServiceEntry>> entries =
+      db.maintenance.getEntriesForComponent(component.id);
+  late Stream<List<Ride>> rides = db.rides.watch(component.bikeId);
 
-  @override
-  void initState() {
-    super.initState();
-    _db = AppDependencies.of(context).forUser(widget.user.uid).maintenance;
-    _intervalKm = widget.component.serviceIntervalKm;
-    _entriesStream = _db.getEntriesForComponent(widget.component.id);
+  Future<void> editInterval() async {
+    final value = await showAppSheet<double>(
+        context: context,
+        builder: (_) => ServiceIntervalSheet(
+            initial: component.interval, hours: component.usesHours));
+    if (value == null || !mounted || value == component.interval) return;
+    final saved = await presentCommand(
+        context,
+        () => db.maintenance.updateComponent(component.id,
+            serviceIntervalKm: component.usesHours ? null : value.toInt(),
+            serviceIntervalHours: component.usesHours ? value : null));
+    if (!mounted || !saved) return;
+    setState(() => component = ServiceComponent(
+        id: component.id,
+        bikeId: component.bikeId,
+        type: component.type,
+        name: component.name,
+        customIcon: component.customIcon,
+        createdAt: component.createdAt,
+        serviceIntervalKm:
+            component.usesHours ? component.serviceIntervalKm : value.toInt(),
+        serviceIntervalHours: component.usesHours ? value : null,
+        includeIndoorRides: component.includeIndoorRides));
   }
 
-  ServiceComponent get _component =>
-      _intervalKm == widget.component.serviceIntervalKm
-          ? widget.component
-          : ServiceComponent(
-              id: widget.component.id,
-              bikeId: widget.component.bikeId,
-              type: widget.component.type,
-              name: widget.component.name,
-              serviceIntervalKm: _intervalKm,
-              createdAt: widget.component.createdAt,
-            );
+  Future<bool> confirmDelete(String title, String message) =>
+      showDeleteConfirmationSheet(context, title: title, message: message);
 
-  Future<void> _editInterval() async {
-    final controller = TextEditingController(
-      text: _intervalKm.toString(),
-    );
-    final saved = await showDialog<int>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => WorkshopDialog(
-        title: 'Edit service interval',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'How many kilometers between services for '
-              '${widget.component.type.label.toLowerCase()}?',
-            ),
-            const SizedBox(height: 12),
-            DialogTextField(
-              controller: controller,
-              hint: 'Service interval (km)',
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          DialogSecondaryButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.of(ctx).pop(),
-          ),
-          DialogPrimaryButton(
-            label: 'Save',
-            onPressed: () {
-              final parsed = int.tryParse(controller.text.trim());
-              if (parsed == null || parsed <= 0) return;
-              Navigator.of(ctx).pop(parsed);
-            },
-          ),
-        ],
-      ),
-    );
-    if (saved != null && saved != _intervalKm && mounted) {
-      final updated = await presentCommand(
-          context,
-          () => _db.updateComponent(
-                widget.component.id,
-                serviceIntervalKm: saved,
-              ));
-      if (mounted && updated) {
-        setState(() => _intervalKm = saved);
-        HapticFeedback.lightImpact();
-      }
+  Future<void> deleteComponent() async {
+    if (!await confirmDelete('Delete component?',
+            'This permanently removes ${component.name} and its service history.') ||
+        !mounted) {
+      return;
+    }
+    if (await presentCommand(
+            context, () => db.maintenance.deleteComponent(component.id)) &&
+        mounted) {
+      Navigator.pop(context);
     }
   }
 
-  Future<void> _confirmDeleteComponent() async {
-    final p = context.palette;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => WorkshopDialog(
-        title: 'Delete component?',
-        content: Text(
-          'This permanently removes ${widget.component.type.label} and all its '
-          'service history. This cannot be undone.',
-        ),
-        actions: [
-          DialogSecondaryButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.of(ctx).pop(false),
-          ),
-          DialogPrimaryButton(
-            label: 'Delete',
-            color: p.red,
-            onPressed: () => Navigator.of(ctx).pop(true),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) {
-      final deleted = await presentCommand(
-          context, () => _db.deleteComponent(widget.component.id));
-      if (!deleted) return;
-      HapticFeedback.mediumImpact();
-      if (mounted) Navigator.of(context).pop();
+  Future<void> deleteEntry(ServiceEntry entry) async {
+    if (!await confirmDelete('Delete service entry?',
+            'Service progress will be recalculated using the preceding entry.') ||
+        !mounted) {
+      return;
     }
+    await presentCommand(context,
+        () => db.maintenance.deleteServiceEntry(component.id, entry.id));
   }
 
-  Future<void> _confirmDeleteEntry(ServiceEntry entry) async {
-    final p = context.palette;
-    final mileageText = entry.mileageAtServiceKm != null
-        ? '${_kmFormat.format(entry.mileageAtServiceKm!.round())} km'
-        : 'this';
-    final dateText = DateFormat('MMM d, yyyy').format(entry.date);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => WorkshopDialog(
-        title: 'Delete entry?',
-        content: Text(
-          'This permanently removes the $mileageText service from $dateText.',
-        ),
-        actions: [
-          DialogSecondaryButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.of(ctx).pop(false),
-          ),
-          DialogPrimaryButton(
-            label: 'Delete',
-            color: p.red,
-            onPressed: () => Navigator.of(ctx).pop(true),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) {
-      final deleted = await presentCommand(
-          context, () => _db.deleteServiceEntry(widget.component.id, entry.id));
-      if (!deleted) return;
-      HapticFeedback.mediumImpact();
+  Future<void> options(BuildContext anchor) async {
+    final action = await showAppOptionsSheet(
+        context: anchor,
+        title: component.name,
+        entries: const [
+          AppSheetOption(
+              value: 'interval',
+              label: 'Edit interval',
+              icon: CupertinoIcons.slider_horizontal_3),
+          AppSheetOption(
+              value: 'delete',
+              label: 'Delete component',
+              icon: CupertinoIcons.trash,
+              destructive: true),
+        ]);
+    if (!mounted) {
+      return;
     }
-  }
-
-  Future<void> _showEntryContextMenu(
-    Offset globalPosition,
-    ServiceEntry entry,
-  ) async {
-    final p = context.palette;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final result = await showMenu<String>(
-      context: context,
-      color: p.surface,
-      position: RelativeRect.fromLTRB(
-        globalPosition.dx,
-        globalPosition.dy,
-        overlay.size.width - globalPosition.dx,
-        overlay.size.height - globalPosition.dy,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: p.border),
-      ),
-      items: [
-        PopupMenuItem<String>(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(CupertinoIcons.trash, size: 16, color: p.red),
-              const SizedBox(width: 10),
-              Text(
-                'Delete entry',
-                style: AppTextStyles.inter(
-                  size: 13,
-                  weight: FontWeight.w600,
-                  color: p.ink,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-    if (result == 'delete') {
-      await _confirmDeleteEntry(entry);
-    }
+    if (action == 'interval') await editInterval();
+    if (action == 'delete') await deleteComponent();
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.component.usesHours) {
-      return HourComponentDetail(
-          uid: widget.user.uid, component: widget.component);
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(component.name), actions: [
+          Builder(
+              builder: (anchor) => IconButton(
+                  tooltip: 'Component options',
+                  icon: const Icon(CupertinoIcons.ellipsis),
+                  onPressed: () => options(anchor))),
+        ]),
+        body: StreamBuilder<List<ServiceEntry>>(
+            stream: entries,
+            builder: (context, history) {
+              return StreamBuilder<List<Ride>>(
+                  stream: rides,
+                  builder: (_, rideSnapshot) => content(history, rideSnapshot));
+            }),
+      );
+
+  void _logService() => showLogServiceSheet(
+      context: context,
+      userID: widget.user.uid,
+      component: component,
+      currentMileageKm: widget.currentMileageKm,
+      stravaGearId: widget.mileageAvailable ? widget.stravaGearId : null);
+
+  Widget content(AsyncSnapshot<List<ServiceEntry>> history,
+      AsyncSnapshot<List<Ride>>? rideSnapshot) {
+    if (history.hasError || (rideSnapshot?.hasError ?? false)) {
+      return Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Text('Could not load service data.'),
+        TextButton(
+            onPressed: () => setState(() {
+                  entries = db.maintenance.getEntriesForComponent(component.id);
+                  rides = db.rides.watch(component.bikeId);
+                }),
+            child: const Text('Try again')),
+      ]));
+    }
+    if (!history.hasData || !(rideSnapshot?.hasData ?? false)) {
+      return const Center(child: CircularProgressIndicator.adaptive());
     }
     final p = context.palette;
-    return Scaffold(
-      appBar: AppBar(
-        scrolledUnderElevation: 0,
-        title: Text(
-          widget.component.type.label,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            color: p.surface,
-            tooltip: 'Component options',
-            icon: Icon(CupertinoIcons.ellipsis, color: p.ink),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: p.border),
-            ),
-            onSelected: (value) {
-              if (value == 'edit_interval') {
-                _editInterval();
-              } else if (value == 'delete') {
-                _confirmDeleteComponent();
-              }
-            },
-            itemBuilder: (ctx) => [
-              PopupMenuItem<String>(
-                value: 'edit_interval',
-                child: Row(
-                  children: [
-                    Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: p.ink),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Edit interval',
-                      style: AppTextStyles.inter(
-                        size: 13,
-                        weight: FontWeight.w600,
-                        color: p.ink,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(CupertinoIcons.trash, size: 16, color: p.red),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Delete component',
-                      style: AppTextStyles.inter(
-                        size: 13,
-                        weight: FontWeight.w600,
-                        color: p.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: StreamBuilder<List<ServiceEntry>>(
-        stream: _entriesStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('Could not load service history.'),
-                TextButton(
-                  onPressed: () => setState(() {
-                    _entriesStream =
-                        _db.getEntriesForComponent(widget.component.id);
-                  }),
-                  child: const Text('Try again'),
-                ),
-              ]),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator.adaptive());
-          }
-          final entries = snapshot.data ?? const <ServiceEntry>[];
-          final latest = entries.isEmpty ? null : entries.first;
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: ServiceComponentCard(
-                  component: _component,
-                  currentMileageKm: widget.currentMileageKm,
-                  latestEntry: latest,
-                  mileageAvailable: widget.mileageAvailable,
-                ),
-              ),
-              _HistoryHeader(count: entries.length),
-              Expanded(
-                child: entries.isEmpty
-                    ? const _EmptyHistory()
-                    : _HistoryList(
-                        entries: entries,
-                        onDelete: _confirmDeleteEntry,
-                        onContextMenu: _showEntryContextMenu,
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showLogServiceSheet(
-          context: context,
-          userID: widget.user.uid,
-          component: widget.component,
-          currentMileageKm: widget.currentMileageKm,
-          stravaGearId: widget.mileageAvailable ? widget.stravaGearId : null,
-        ),
-        icon: const Icon(CupertinoIcons.check_mark),
-        label: const Text('Log service'),
-      ),
-    );
-  }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// History
-// ──────────────────────────────────────────────────────────────────────────────
-
-class _HistoryHeader extends StatelessWidget {
-  final int count;
-  const _HistoryHeader({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-      child: Row(
+    final items = history.data!;
+    final service = annotateService(
+        component: component,
+        currentMileageKm: widget.currentMileageKm,
+        latestEntry: items.firstOrNull,
+        mileageAvailable: widget.mileageAvailable,
+        rides: rideSnapshot?.data);
+    final color = service.status == ServiceStatus.green
+        ? p.accentText
+        : service.status.color(p);
+    String amount(double value) => component.usesHours
+        ? value.toStringAsFixed(1)
+        : NumberFormat('#,###').format(value.round());
+    return ListView(
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, MediaQuery.paddingOf(context).bottom + 24),
         children: [
-          Text(
-            'Service history',
-            style: AppTextStyles.inter(
-              size: 14,
-              weight: FontWeight.w600,
-              color: p.ink,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: AppTextStyles.inter(
-              size: 10,
-              weight: FontWeight.w700,
-              color: p.inkDim,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Container(height: 1, color: p.border)),
-        ],
-      ),
-    );
-  }
-}
-
-class _HistoryList extends StatelessWidget {
-  final List<ServiceEntry> entries;
-  final Future<void> Function(ServiceEntry) onDelete;
-  final Future<void> Function(Offset, ServiceEntry) onContextMenu;
-
-  const _HistoryList({
-    required this.entries,
-    required this.onDelete,
-    required this.onContextMenu,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 96),
-      itemCount: entries.length,
-      separatorBuilder: (_, __) => Divider(
-        height: 1,
-        thickness: 1,
-        color: p.border,
-        indent: 18,
-        endIndent: 18,
-      ),
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        final prior = index + 1 < entries.length ? entries[index + 1] : null;
-        return Dismissible(
-          key: Key(entry.id),
-          direction: DismissDirection.endToStart,
-          confirmDismiss: (_) async {
-            await onDelete(entry);
-            return false;
-          },
-          background: Container(
-            color: p.red,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 22),
-            child: Icon(CupertinoIcons.trash,
-                color: AppColors.onColor(p.red), size: 20),
-          ),
-          child: _HistoryRow(
-            entry: entry,
-            prior: prior,
-            ordinal: entries.length - index,
-            onContextMenu: onContextMenu,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _HistoryRow extends StatelessWidget {
-  final ServiceEntry entry;
-  final ServiceEntry? prior;
-  final int ordinal;
-  final Future<void> Function(Offset, ServiceEntry) onContextMenu;
-
-  const _HistoryRow({
-    required this.entry,
-    required this.prior,
-    required this.ordinal,
-    required this.onContextMenu,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final formatter = NumberFormat('#,###');
-    final mileageText = entry.mileageAtServiceKm != null
-        ? '${formatter.format(entry.mileageAtServiceKm!.round())} km'
-        : 'No mileage';
-
-    String? deltaText;
-    if (entry.mileageAtServiceKm != null && prior?.mileageAtServiceKm != null) {
-      final delta =
-          (entry.mileageAtServiceKm! - prior!.mileageAtServiceKm!).round();
-      if (delta > 0) {
-        deltaText = '+${formatter.format(delta)} km since prior';
-      }
-    }
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPressStart: (details) =>
-          onContextMenu(details.globalPosition, entry),
-      onSecondaryTapDown: (details) =>
-          onContextMenu(details.globalPosition, entry),
-      child: Container(
-        color: p.bg,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 28,
-              child: Text(
-                '#$ordinal',
-                style: AppTextStyles.mono(
-                  size: 10,
-                  weight: FontWeight.w600,
-                  color: p.inkDim,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
+          if (items.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                  color: p.surface, borderRadius: BorderRadius.circular(20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    mileageText,
-                    style: AppTextStyles.mono(
-                      size: 14,
-                      weight: FontWeight.w700,
-                      color: p.ink,
-                    ),
-                  ),
-                  if (deltaText != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        deltaText,
-                        style: AppTextStyles.mono(
-                          size: 10,
-                          weight: FontWeight.w500,
-                          color: p.inkDim,
-                        ),
-                      ),
-                    ),
-                  if (entry.note != null && entry.note!.trim().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        entry.note!,
-                        style: AppTextStyles.inter(
-                          size: 11.5,
-                          color: p.inkMuted,
-                        ),
-                      ),
-                    ),
+                  ServiceComponentIcon(
+                      type: component.type,
+                      customIcon: component.customIcon,
+                      color: p.accentText,
+                      size: 44),
+                  const SizedBox(height: 24),
+                  Text('Start your service history',
+                      style: AppTextStyles.inter(
+                          size: 22, weight: FontWeight.w600, color: p.ink)),
+                  const SizedBox(height: 12),
+                  Text('Log the last service to see when the next one is due.',
+                      style: AppTextStyles.inter(size: 14, color: p.inkMuted)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                      width: double.infinity,
+                      child: AppActionButton(
+                          label: 'Log service', onPressed: _logService)),
                 ],
               ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              DateFormat('MMM d, yyyy').format(entry.date),
-              style: AppTextStyles.inter(
-                size: 11,
-                weight: FontWeight.w600,
-                color: p.inkMuted,
-              ),
-            ),
+            )
+          else
+            Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                    color: p.surface, borderRadius: BorderRadius.circular(20)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(serviceDistanceLabel(service),
+                          style: AppTextStyles.inter(
+                              size: 22, weight: FontWeight.w600, color: color)),
+                      if (!service.usageUnknown) ...[
+                        const SizedBox(height: 20),
+                        LinearProgressIndicator(
+                            value: service.progress.clamp(0, 1),
+                            minHeight: 8,
+                            borderRadius: BorderRadius.circular(8),
+                            color: service.status == ServiceStatus.green
+                                ? p.accent
+                                : color,
+                            backgroundColor: p.surface2),
+                        const SizedBox(height: 12),
+                        Text(
+                            '${amount(service.usage)} of ${amount(component.interval)} ${component.unitLabel} used',
+                            style: AppTextStyles.inter(
+                                size: 14, color: p.inkMuted)),
+                      ],
+                      if (!component.usesHours &&
+                          widget.mileageAvailable &&
+                          service.status == ServiceStatus.red) ...[
+                        const SizedBox(height: 12),
+                        TextButton(
+                            onPressed: () => showDeferServiceSheet(
+                                context: context,
+                                userID: widget.user.uid,
+                                component: component,
+                                currentMileageKm: widget.currentMileageKm),
+                            child: const Text('Defer service')),
+                      ],
+                    ])),
+          const SizedBox(height: 16),
+          AppValueButton(
+              label: 'Service interval',
+              value:
+                  'Every ${amount(component.interval)} ${component.unitLabel}',
+              onTap: editInterval),
+          if (component.usesHours)
+            Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                    component.includeIndoorRides
+                        ? 'Indoor and outdoor rides count.'
+                        : 'Outdoor rides count.',
+                    style: AppTextStyles.inter(size: 14, color: p.inkMuted))),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            AppActionButton(label: 'Log service', onPressed: _logService),
+            const SizedBox(height: 32),
+            Text('Service history',
+                style: AppTextStyles.inter(
+                    size: 18, weight: FontWeight.w600, color: p.ink)),
+            const SizedBox(height: 16),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: p.surface,
-              border: Border.all(color: p.border),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(CupertinoIcons.clock, size: 24, color: p.inkDim),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'No service logged yet',
-            style: AppTextStyles.inter(
-              size: 13,
-              weight: FontWeight.w700,
-              color: p.ink,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Use Log service to record the first service',
-            style: AppTextStyles.inter(size: 11.5, color: p.inkDim),
-          ),
-        ],
-      ),
-    );
+          for (final entry in items) ...[
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                  child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                component.usesHours
+                                    ? DateFormat.yMMMd()
+                                        .add_Hm()
+                                        .format(entry.date.toLocal())
+                                    : DateFormat.yMMMd()
+                                        .format(entry.date.toLocal()),
+                                style: AppTextStyles.inter(
+                                    size: 16,
+                                    weight: FontWeight.w600,
+                                    color: p.ink)),
+                            if (entry.mileageAtServiceKm != null &&
+                                !component.usesHours) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                  '${NumberFormat('#,###').format(entry.mileageAtServiceKm!.round())} km',
+                                  style: AppTextStyles.inter(
+                                      size: 14, color: p.inkMuted)),
+                            ],
+                            if ((entry.initialDistanceKm ?? 0) > 0) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                  '${NumberFormat('#,###.#').format(entry.initialDistanceKm)} km already used',
+                                  style: TextStyle(
+                                      color: p.inkMuted, fontSize: 14)),
+                            ],
+                            if ((entry.initialRideHours ?? 0) > 0) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                  '${entry.initialRideHours} hours already used',
+                                  style: AppTextStyles.inter(
+                                      size: 14, color: p.inkMuted)),
+                            ],
+                            if (entry.note?.trim().isNotEmpty ?? false) ...[
+                              const SizedBox(height: 6),
+                              Text(entry.note!,
+                                  style: AppTextStyles.inter(
+                                      size: 16, color: p.inkMuted)),
+                            ],
+                          ]))),
+              Builder(
+                  builder: (anchor) => IconButton(
+                      tooltip: 'Service entry options',
+                      icon: const Icon(CupertinoIcons.ellipsis),
+                      onPressed: () async {
+                        final action = await showAppOptionsSheet(
+                            context: anchor,
+                            title: 'Service entry',
+                            entries: const [
+                              AppSheetOption(
+                                  value: 'delete',
+                                  label: 'Delete entry',
+                                  icon: CupertinoIcons.trash,
+                                  destructive: true)
+                            ]);
+                        if (action == 'delete' && mounted) {
+                          await deleteEntry(entry);
+                        }
+                      })),
+            ]),
+            Divider(height: 1, color: p.border),
+          ],
+        ]);
   }
 }

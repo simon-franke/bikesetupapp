@@ -281,12 +281,11 @@ class _RulerPainter extends CustomPainter {
         final tp = TextPainter(
           text: TextSpan(
             text: formatNumber(value, decimals),
-            style: TextStyle(
+            style: AppTextStyles.inter(
               color: labelColor,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+              size: 10,
+              weight: FontWeight.w600,
+            ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
