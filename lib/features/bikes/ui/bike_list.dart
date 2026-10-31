@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
 import 'package:bikesetupapp/common/ui/bike_icon.dart';
@@ -132,6 +133,7 @@ class _BikeListState extends State<BikeList> {
                           color: p.accentText, size: 20)
                       : null,
                   onTap: () async {
+                    AppHaptics.selection();
                     final controller = AppDependencies.of(context)
                         .forUser(widget.user!.uid)
                         .bikes;
@@ -236,7 +238,7 @@ class _BikeCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         InkWell(
-          onTap: onToggleExpand,
+          onTap: AppHaptics.wrap(onToggleExpand, selection: true),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
             child: Row(children: [
@@ -515,7 +517,7 @@ class _NewSetupRow extends StatelessWidget {
     return Align(
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
-            onPressed: onTap,
+            onPressed: AppHaptics.wrap(onTap),
             style: TextButton.styleFrom(
                 foregroundColor: context.palette.inkMuted,
                 textStyle:

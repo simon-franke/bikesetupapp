@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'app_error_banner.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class AppFlowHeader extends StatelessWidget {
                   ? null
                   : IconButton(
                       tooltip: backTooltip,
-                      onPressed: onBack,
+                      onPressed: AppHaptics.wrap(onBack, selection: true),
                       icon: const Icon(CupertinoIcons.chevron_left, size: 20))),
           const SizedBox(width: 8),
           Expanded(
@@ -45,7 +46,7 @@ class AppFlowHeader extends StatelessWidget {
             const SizedBox(width: 8),
             IconButton(
                 tooltip: closeTooltip,
-                onPressed: onClose,
+                onPressed: AppHaptics.wrap(onClose, selection: true),
                 icon: const Icon(CupertinoIcons.xmark, size: 20)),
           ],
         ]),
