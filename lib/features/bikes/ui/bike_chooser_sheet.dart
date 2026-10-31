@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/app_scroll_edge.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -100,7 +101,7 @@ class BikeChooserContent extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18)),
                   ),
-                  onPressed: onAddBike,
+                  onPressed: AppHaptics.wrap(onAddBike),
                   icon: const Icon(CupertinoIcons.plus, size: 20),
                   label: const Text('Add bike')),
             ],

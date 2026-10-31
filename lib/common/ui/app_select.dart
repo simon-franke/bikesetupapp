@@ -1,3 +1,4 @@
+import 'app_haptics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme_data.dart';
@@ -39,6 +40,7 @@ class AppSelect<T> extends StatelessWidget {
                       trailing: selected ? Icon(CupertinoIcons.checkmark, size: 20, color: sheet.palette.accentText) : null,
                       enabled: item.enabled,
                       onTap: item.enabled ? () {
+                        if (!selected) AppHaptics.selection();
                         Navigator.of(sheet).pop();
                         if (context.mounted) onChanged?.call(item.value);
                       } : null)));
@@ -55,7 +57,7 @@ class AppSelect<T> extends StatelessWidget {
       child: Material(color: compact ? Colors.transparent : context.palette.surface2,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(borderRadius: BorderRadius.circular(12),
-          onTap: onChanged == null ? null : () => open(context),
+          onTap: onChanged == null ? null : AppHaptics.wrap(() => open(context)),
           child: Padding(padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 16, vertical: 14),
             child: Row(mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max, children: [
               Flexible(fit: compact ? FlexFit.loose : FlexFit.tight,

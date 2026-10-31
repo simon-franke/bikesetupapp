@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ class SetupCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(19),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-              onTap: onTap,
+              onTap: AppHaptics.wrap(onTap),
               child: Padding(padding: EdgeInsets.all(padding), child: child))));
 }
 
@@ -138,7 +139,7 @@ class SetupOverview extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: onAddCategory,
+                  onPressed: AppHaptics.wrap(onAddCategory),
                   icon: const Icon(CupertinoIcons.plus, size: 18),
                   label: const Text('Add category'),
                 ),

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'app_components.dart';
@@ -37,6 +38,7 @@ class AppUnitSelector extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
         onPressed: () async {
+          AppHaptics.action();
           final result = await showAppOptionsSheet(
               context: context,
               title: 'Unit',

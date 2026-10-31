@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
 import 'setting_unit_selector.dart';
 import 'package:flutter/cupertino.dart';
@@ -615,7 +616,7 @@ class _ControlCard extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: onTap,
+            onTap: AppHaptics.wrap(onTap),
             child: Stack(
               children: [
                 Padding(

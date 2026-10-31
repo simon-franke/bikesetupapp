@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/app_glass_surface.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,10 @@ class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
         child: AppGlassSurface(
             child: TabBar(
                 controller: _controller,
-                onTap: (index) => widget.onChanged(ActiveView.values[index]),
+                onTap: (index) {
+                  if (index != widget.activeView.index) AppHaptics.selection();
+                  widget.onChanged(ActiveView.values[index]);
+                },
                 dividerColor: Colors.transparent,
                 labelColor: p.accentText,
                 unselectedLabelColor: p.inkMuted,

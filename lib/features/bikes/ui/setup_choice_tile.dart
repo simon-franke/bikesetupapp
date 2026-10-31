@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,9 @@ class SetupChoiceTile extends StatelessWidget {
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: p.ink)),
-              onTap: onSelect,
+              onTap: isSelected
+                  ? onSelect
+                  : AppHaptics.wrap(onSelect, selection: true),
               onLongPress: () => showModalBottomSheet<void>(
                   context: context,
                   builder: (sheet) => SafeArea(

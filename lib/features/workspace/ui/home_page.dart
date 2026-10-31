@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/features/setups/ui/add_category_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
@@ -217,7 +218,8 @@ class _MyHomePageState extends State<MyHomePage> {
             IconButton(
               tooltip: 'Category options',
               icon: const Icon(CupertinoIcons.ellipsis),
-              onPressed: () => _categoryOptions(context, category),
+              onPressed:
+                  AppHaptics.wrap(() => _categoryOptions(context, category)),
             )
           ],
           toolbarHeight:
@@ -285,7 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       borderRadius: BorderRadius.circular(25),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(25),
-                        onTap: _showBikeSelector,
+                        onTap: AppHaptics.wrap(_showBikeSelector),
                         child: Semantics(
                           button: true,
                           label: _activeView == ActiveView.services
