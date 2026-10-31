@@ -130,7 +130,7 @@ Future<void> showSettingStepperSheet(
       family: family,
       initialUnit: unit,
       initialNumeric: parsed.number ?? 0,
-      initialText: parsed.text ?? '',
+      initialText: isFreeText ? rawForParse : parsed.text ?? '',
       savedValue: currentValue,
       knownMeta: knownMeta,
       isFreeText: isFreeText,

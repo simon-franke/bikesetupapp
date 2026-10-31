@@ -1,3 +1,4 @@
+import '../../setups/models/setup_configuration.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firebase_operation.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -82,17 +83,11 @@ class FirestoreTestsRepository implements TestsRepository {
           throw const AppFailure(FailureCode.invalidInput);
         }
         final categories = <String, Map<String, dynamic>>{};
-        final metadata = <String, Map<String, dynamic>>{};
-        if (apply || newSetupId != null) {
+        if (apply) {
           for (final category in test.values.keys) {
             final doc =
                 await tx.get(_bike(bike).collection(setup).doc(category));
             categories[category] = doc.data() ?? {};
-            if (newSetupId != null) {
-              final meta = await tx
-                  .get(_bike(bike).collection(setup).doc('${category}_meta'));
-              metadata[category] = meta.data() ?? {};
-            }
           }
         }
         if (apply) {
@@ -113,8 +108,14 @@ class FirestoreTestsRepository implements TestsRepository {
           }
           if (newSetupId != null) {
             tx.set(_bike(bike).collection('SetupList').doc(newSetupId), {
-              for (final e in baseline.data()!.entries)
-                if (e.key != 'activeTestId') e.key: e.value,
+              ...?test.setupInformation,
+              // Older experiments have no captured configuration. Reconstruct
+              // their selected fields from the saved values, never today's setup.
+              if (test.setupInformation == null)
+                SetupConfiguration.metadataKey: SetupConfiguration({
+                  for (final entry in test.values.entries)
+                    entry.key: entry.value.keys.toList(),
+                }).encode(),
               'setup_name': newSetupName
             });
             for (final entry in test.values.entries) {
@@ -122,7 +123,7 @@ class FirestoreTestsRepository implements TestsRepository {
                   entry.value);
               tx.set(
                   _bike(bike).collection(newSetupId).doc('${entry.key}_meta'),
-                  metadata[entry.key]!);
+                  test.fieldMetadata[entry.key] ?? <String, String>{});
             }
           }
           // Remove the legacy single-test pointer only for its own test.

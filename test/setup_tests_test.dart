@@ -91,11 +91,16 @@ void main() {
       SetupConfiguration.metadataKey: configuration.encode()
     };
     setups.settings['bike/setup/Fork/Spring Rate'] = '65 N/mm';
+    setups.metadata['bike/setup/Fork/Serial'] = 'freeText';
     final controller = TestsController(repo, setups);
     final result = await controller.create('bike', 'setup', 'Coil',
         ['FrontTire', 'RearTire', 'Fork', 'Shock', 'GeneralSettings']);
     expect(result.isSuccess, isTrue);
     final draft = repo.records.values.single;
+    final restored = SetupTest.fromMap(draft.copyWith(name: 'Renamed').toMap());
+    expect(restored.setupInformation![SetupConfiguration.metadataKey],
+        configuration.encode());
+    expect(restored.fieldMetadata['Fork']!['Serial'], 'freeText');
     expect(draft.values.keys.toSet(), configuration.fields.keys.toSet());
     expect(draft.values['Fork']!['Spring Rate'], '65 N/mm');
     expect(draft.values['Fork']!.containsKey('Pressure'), isFalse);

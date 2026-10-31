@@ -46,6 +46,7 @@ class TestsController extends OperationController {
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
             final values = <String, Map<String, String>>{};
+            final metadata = <String, Map<String, String>>{};
             final information = await _setups.getSetupInformation(bike, setup);
             final configuration =
                 SetupConfiguration.fromInformation(information);
@@ -54,6 +55,9 @@ class TestsController extends OperationController {
             for (final category in configuration?.fields.keys ?? categories) {
               values[category] =
                   (await _setups.getSettings(bike, category, setup).first)
+                      .map((k, v) => MapEntry(k, v.toString()));
+              metadata[category] =
+                  (await _setups.getSettingsMeta(bike, category, setup).first)
                       .map((k, v) => MapEntry(k, v.toString()));
               final fields = configuration?.fields[category] ??
                   defaults.entries
@@ -70,6 +74,18 @@ class TestsController extends OperationController {
             final draft = SetupTest(
                 id: const Uuid().v4(),
                 name: '$name test',
+                setupInformation: {
+                  for (final entry in information.entries)
+                    if (entry.value is String && entry.key != 'activeTestId')
+                      entry.key: entry.value as String,
+                  SetupConfiguration.metadataKey: (configuration ??
+                          SetupConfiguration({
+                            for (final entry in values.entries)
+                              entry.key: entry.value.keys.toList(),
+                          }))
+                      .encode(),
+                },
+                fieldMetadata: readValues(metadata),
                 before: readValues(values),
                 values: readValues(values));
             await _repository.create(bike, setup, draft);

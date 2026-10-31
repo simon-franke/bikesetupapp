@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/features/tests/ui/test_draft_flow.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/layout/phone_viewport.dart';
@@ -11,7 +13,65 @@ import 'package:provider/provider.dart';
 import 'support/fake_repositories.dart';
 import 'support/fake_tests_repository.dart';
 
+class MetadataUser extends Fake implements User {
+  @override
+  String get uid => 'user';
+}
+
 void main() {
+  for (final experiment in [false, true]) {
+    testWidgets('numeric free text retains its type in experiment=$experiment',
+        (tester) async {
+      final setups = FakeSetupsRepository()
+        ..settings['bike/setup/Custom/Serial'] = '123'
+        ..metadata['bike/setup/Custom/Serial'] = 'freeText';
+      final draft = SetupTest(id: 'test', name: 'Test', before: {
+        'Custom': {'Serial': '123'}
+      }, values: {
+        'Custom': {'Serial': '123'}
+      }, fieldMetadata: {
+        'Custom': {'Serial': 'freeText'}
+      });
+      final tests = MemoryTests()..records['test'] = draft;
+      final deps = AppDependencies(
+          testsRepository: (_) => tests, setupsRepository: (_) => setups);
+      await tester.pumpWidget(Provider.value(
+          value: deps,
+          child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              home: Scaffold(
+                  body: experiment
+                      ? TestDraftFlow(
+                          uid: 'user',
+                          bike: 'bike',
+                          setup: 'setup',
+                          initial: draft,
+                          nameFor: (test) => test.name)
+                      : SetupCategoryView(
+                          user: MetadataUser(),
+                          bike: 'bike',
+                          setup: 'setup',
+                          category: 'Custom')))));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Serial'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingValueEditor), findsNothing);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          '123');
+      await tester.enterText(find.byType(TextField), 'ABC-123');
+      await tester.tap(find.text(experiment ? 'Save to test' : 'Save'));
+      await tester.pumpAndSettle();
+      expect(
+          experiment
+              ? tests.records['test']!.values['Custom']!['Serial']
+              : setups.settings['bike/setup/Custom/Serial'],
+          'ABC-123');
+      await tester.pumpWidget(const SizedBox());
+      deps.dispose();
+      await tests.updates.close();
+    });
+  }
+
   for (final width in [320.0, 390.0, 1440.0]) {
     testWidgets('test settings use a sheet and preserve edits at width $width',
         (tester) async {

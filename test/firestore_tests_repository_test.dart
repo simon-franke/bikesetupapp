@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:firebase_core_web/firebase_core_web.dart';
 import 'package:cloud_firestore_web/cloud_firestore_web.dart';
@@ -97,6 +98,64 @@ void main() {
     final result = TestsController(repo, FakeSetupsRepository());
     addTearDown(result.dispose);
     return result;
+  }
+
+  for (final legacy in [false, true]) {
+    test('saving a test preserves captured configuration, legacy=$legacy',
+        () async {
+      final repo = await seed();
+      final db = FirebaseFirestore.instance;
+      final config = SetupConfiguration({
+        'Fork': ['Rebound', 'Serial']
+      });
+      final test = SetupTest(
+          id: 'snapshot',
+          name: 'Snapshot',
+          before: {
+            'Fork': {'Rebound': '6 clicks', 'Serial': '123'}
+          },
+          values: {
+            'Fork': {'Rebound': '8 clicks', 'Serial': '123'}
+          },
+          setupInformation: legacy
+              ? null
+              : {
+                  SetupConfiguration.metadataKey: config.encode(),
+                  'fork': 'Coil'
+                },
+          fieldMetadata: legacy
+              ? {}
+              : {
+                  'Fork': {'Serial': 'freeText'}
+                });
+      await repo.create('bike', 'setup', test);
+      final edits = controller(repo);
+      await edits.startTest('bike', 'setup', test.id, test.name);
+      await edits.logRide(
+          'bike', 'setup', test.id, const RideFeedback(feeling: 'Better'));
+      await db.doc(parentPath(repo.uid)).update({
+        SetupConfiguration.metadataKey: SetupConfiguration({}).encode(),
+        'fork': 'Air',
+      });
+      await db
+          .doc('UserBikeSetup/${repo.uid}/Bikes/bike/setup/Fork_meta')
+          .set({'Serial': 'count'});
+      await repo.finish('bike', 'setup', test.id,
+          newSetupId: 'copy', newSetupName: 'Test result');
+      final copied = (await db
+              .doc('UserBikeSetup/${repo.uid}/Bikes/bike/SetupList/copy')
+              .get())
+          .data()!;
+      expect(SetupConfiguration.fromInformation(copied)!.fields, config.fields);
+      expect(copied['fork'], legacy ? isNull : 'Coil');
+      final values =
+          await db.doc('UserBikeSetup/${repo.uid}/Bikes/bike/copy/Fork').get();
+      expect(values.data(), test.values['Fork']);
+      final meta = await db
+          .doc('UserBikeSetup/${repo.uid}/Bikes/bike/copy/Fork_meta')
+          .get();
+      expect(meta.data(), legacy ? isEmpty : {'Serial': 'freeText'});
+    });
   }
 
   test('a delayed edit preserves another session\'s different field edit',

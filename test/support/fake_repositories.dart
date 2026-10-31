@@ -38,11 +38,21 @@ class FakeBikesRepository implements BikesRepository {
 
 class FakeSetupsRepository implements SetupsRepository {
   final Map<String, String> settings = {};
+  final Map<String, String> metadata = {};
+  @override
+  Stream<Map<String, dynamic>> getSettingsMeta(
+          String bike, String category, String setup) =>
+      Stream.value({
+        for (final entry in metadata.entries)
+          if (entry.key.startsWith('$bike/$setup/$category/'))
+            entry.key.split('/').last: entry.value,
+      });
   final Map<String, String> defaults = {};
   final Map<String, String> names = {};
   final information = <String, Map<String, dynamic>>{};
   @override
-  Future<Map<String, dynamic>> getSetupInformation(String bike, String setup) async =>
+  Future<Map<String, dynamic>> getSetupInformation(
+          String bike, String setup) async =>
       Map.of(information[setup] ?? {});
   Future<void> Function(
           String key, String value, String bike, String category, String setup)?

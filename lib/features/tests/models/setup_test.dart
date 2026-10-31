@@ -70,6 +70,8 @@ class SetupTest {
       required this.name,
       required this.before,
       required this.values,
+      this.setupInformation,
+      this.fieldMetadata = const {},
       this.stage = TestStage.draft,
       this.draftStep = 0,
       this.rides = const [],
@@ -79,6 +81,9 @@ class SetupTest {
   final TestStage stage;
   final int draftStep;
   final SetupValues before, values;
+  // Null identifies experiments saved before configuration snapshots existed.
+  final Map<String, String>? setupInformation;
+  final SetupValues fieldMetadata;
   final List<RideFeedback> rides;
   final RideFeedback feedback;
   List<TestChange> get changes => [
@@ -102,6 +107,8 @@ class SetupTest {
           name: name ?? this.name,
           draftStep: draftStep ?? this.draftStep,
           before: before,
+          setupInformation: setupInformation,
+          fieldMetadata: fieldMetadata,
           values: values ?? this.values,
           stage: stage ?? this.stage,
           rides: rides ?? this.rides,
@@ -111,6 +118,8 @@ class SetupTest {
         'id': id,
         'name': name,
         'before': before,
+        if (setupInformation != null) 'setupInformation': setupInformation,
+        'fieldMetadata': fieldMetadata,
         'values': values,
         'stage': stage.name,
         'draftStep': draftStep,
@@ -122,6 +131,10 @@ class SetupTest {
       id: data['id'] as String,
       name: data['name'] as String,
       before: readValues(data['before'] as Map),
+      setupInformation: data['setupInformation'] == null
+          ? null
+          : Map<String, String>.from(data['setupInformation'] as Map),
+      fieldMetadata: readValues(data['fieldMetadata'] as Map? ?? {}),
       values: readValues(data['values'] as Map),
       stage: TestStage.values.byName(data['stage'] as String),
       draftStep: (data['draftStep'] as num?)?.toInt() ?? 0,

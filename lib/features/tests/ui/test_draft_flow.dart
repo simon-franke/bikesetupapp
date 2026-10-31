@@ -1,3 +1,4 @@
+import '../../setups/models/unit_system.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -386,6 +387,8 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
         uSetupID: widget.setup,
         settingKey: field,
         currentValue: value,
+        familyOverride:
+            unitFamilyFromName(t.fieldMetadata[category]?[field] ?? ''),
         isDefault: true, onSave: (v) {
       return controller.updateField(
           widget.bike, widget.setup, t.id, category, field, v);

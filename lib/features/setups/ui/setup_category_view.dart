@@ -1,3 +1,4 @@
+import '../models/unit_system.dart';
 import '../models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +58,7 @@ class SetupCategoryView extends StatelessWidget {
                         setup: setup,
                         category: category,
                         configuredFields: configuration?.fields[category],
-                        onEdit: (key, value) {
+                        onEdit: (key, value, family) {
                           showSettingStepperSheet(context,
                               user: user,
                               uBikeID: bike,
@@ -65,6 +66,7 @@ class SetupCategoryView extends StatelessWidget {
                               category: category,
                               settingKey: key,
                               currentValue: value,
+                              familyOverride: family,
                               isDefault: isDefaultField(category, key));
                         }),
                   ],
@@ -89,7 +91,7 @@ class _CategoryRows extends StatefulWidget {
       required this.onEdit,
       this.configuredFields});
   final String uid, bike, setup, category;
-  final void Function(String, String) onEdit;
+  final void Function(String, String, UnitFamily?) onEdit;
   final List<String>? configuredFields;
   @override
   State<_CategoryRows> createState() => _CategoryRowsState();
@@ -100,55 +102,77 @@ class _CategoryRowsState extends State<_CategoryRows> {
       .forUser(widget.uid)
       .setups
       .getSettings(widget.bike, widget.category, widget.setup);
+  late final metadataStream = AppDependencies.of(context)
+      .forUser(widget.uid)
+      .setups
+      .getSettingsMeta(widget.bike, widget.category, widget.setup);
   @override
   Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
-      stream: stream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) return const Text('Could not load settings.');
-        final values = snapshot.data ?? <String, dynamic>{};
-        final keys = [
-          ...?(widget.configuredFields ?? kDefaultFieldKeys[widget.category]),
-          ...values.keys.where((key) => !(widget.configuredFields ??
-                  kDefaultFieldKeys[widget.category] ??
-                  [])
-              .contains(key))
-        ];
-        return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final key in keys) ...[
-                if (key != keys.first)
-                  Divider(height: 1, color: context.palette.border),
-                InkWell(
-                    onTap: () =>
-                        widget.onEdit(key, values[key]?.toString() ?? ''),
-                    child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 17),
-                        child: Row(children: [
-                          Expanded(
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                Text(key, style: const TextStyle(fontSize: 13)),
-                              ])),
-                          const SizedBox(width: 12),
-                          ConstrainedBox(
-                              constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.sizeOf(context).width * .3),
-                              child: Text(
-                                  values[key]?.toString().isNotEmpty == true
-                                      ? values[key].toString()
-                                      : snapshot.hasData
-                                          ? 'Add'
-                                          : '…',
-                                  textAlign: TextAlign.end,
-                                  style: AppTextStyles.mono(
-                                      size: 14,
-                                      weight: FontWeight.w500,
-                                      color: context.palette.ink))),
-                        ]))),
-              ],
-            ]);
+      stream: metadataStream,
+      builder: (context, metadata) {
+        if (metadata.hasError) return const Text('Could not load settings.');
+        if (!metadata.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return StreamBuilder<Map<String, dynamic>>(
+            stream: stream,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Text('Could not load settings.');
+              }
+              final values = snapshot.data ?? <String, dynamic>{};
+              final keys = [
+                ...?(widget.configuredFields ??
+                    kDefaultFieldKeys[widget.category]),
+                ...values.keys.where((key) => !(widget.configuredFields ??
+                        kDefaultFieldKeys[widget.category] ??
+                        [])
+                    .contains(key))
+              ];
+              return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final key in keys) ...[
+                      if (key != keys.first)
+                        Divider(height: 1, color: context.palette.border),
+                      InkWell(
+                          onTap: () => widget.onEdit(
+                              key,
+                              values[key]?.toString() ?? '',
+                              unitFamilyFromName(
+                                  metadata.data![key]?.toString() ?? '')),
+                          child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 17),
+                              child: Row(children: [
+                                Expanded(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Text(key,
+                                          style: const TextStyle(fontSize: 13)),
+                                    ])),
+                                const SizedBox(width: 12),
+                                ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                        maxWidth:
+                                            MediaQuery.sizeOf(context).width *
+                                                .3),
+                                    child: Text(
+                                        values[key]?.toString().isNotEmpty ==
+                                                true
+                                            ? values[key].toString()
+                                            : snapshot.hasData
+                                                ? 'Add'
+                                                : '…',
+                                        textAlign: TextAlign.end,
+                                        style: AppTextStyles.mono(
+                                            size: 14,
+                                            weight: FontWeight.w500,
+                                            color: context.palette.ink))),
+                              ]))),
+                    ],
+                  ]);
+            });
       });
 }
