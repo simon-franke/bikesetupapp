@@ -1,3 +1,9 @@
+import '../features/rides/controllers/rides_controller.dart';
+import '../features/rides/repositories/rides_repository.dart';
+import '../features/rides/repositories/firestore_rides_repository.dart';
+import '../features/tests/controllers/tests_controller.dart';
+import '../features/tests/repositories/tests_repository.dart';
+import '../features/tests/repositories/firestore_tests_repository.dart';
 import '../features/settings/repositories/theme_preferences_repository.dart';
 import '../features/settings/repositories/shared_preferences_theme_repository.dart';
 import 'startup/startup_controller.dart';
@@ -25,6 +31,8 @@ import '../features/strava/repositories/strava_repository.dart';
 /// Composition root. Tests can provide this with in-memory repository factories.
 class AppDependencies {
   AppDependencies({
+    RidesRepository Function(String)? ridesRepository,
+    TestsRepository Function(String)? testsRepository,
     ThemePreferencesRepository? themePreferences,
     AuthRepository? authRepository,
     StravaRepository? stravaRepository,
@@ -34,6 +42,8 @@ class AppDependencies {
     StravaBikesRepository Function(String)? stravaBikesRepository,
   })  : themePreferences =
             themePreferences ?? SharedPreferencesThemeRepository(),
+        _rides = ridesRepository ?? ((id) => FirestoreRidesRepository(id)),
+        _tests = testsRepository ?? ((id) => FirestoreTestsRepository(id)),
         _authRepository = authRepository,
         _stravaRepository = stravaRepository,
         _bikes = bikesRepository ?? ((id) => FirestoreBikesRepository(id)),
@@ -52,6 +62,8 @@ class AppDependencies {
     }
   }
 
+  final RidesRepository Function(String) _rides;
+  final TestsRepository Function(String) _tests;
   final ThemePreferencesRepository themePreferences;
   final AuthRepository? _authRepository;
   final StravaRepository? _stravaRepository;
@@ -72,6 +84,8 @@ class AppDependencies {
   UserControllers forUser(String id) => _users.putIfAbsent(
       id,
       () => UserControllers(
+            ridesRepository: () => _rides(id),
+            testsRepository: () => _tests(id),
             bikesRepository: () => _bikes(id),
             setupsRepository: () => _setups(id),
             maintenanceRepository: () => _maintenance(id),
@@ -103,16 +117,24 @@ class AppDependencies {
 
 class UserControllers {
   UserControllers({
+    required RidesRepository Function() ridesRepository,
+    required TestsRepository Function() testsRepository,
     required BikesRepository Function() bikesRepository,
     required SetupsRepository Function() setupsRepository,
     required MaintenanceRepository Function() maintenanceRepository,
     required StravaBikesRepository Function() stravaBikesRepository,
     required StravaRepository Function() stravaRepository,
-  })  : _bikes = bikesRepository,
+  })  : _rides = ridesRepository,
+        _tests = testsRepository,
+        _bikes = bikesRepository,
         _setups = setupsRepository,
         _maintenance = maintenanceRepository,
         _stravaBikes = stravaBikesRepository,
         _connection = stravaRepository;
+  final RidesRepository Function() _rides;
+  late final RidesController rides = _own(RidesController(_rides()));
+  final TestsRepository Function() _tests;
+  late final TestsController tests = _own(TestsController(_tests(), _setups()));
   final BikesRepository Function() _bikes;
   final SetupsRepository Function() _setups;
   final MaintenanceRepository Function() _maintenance;

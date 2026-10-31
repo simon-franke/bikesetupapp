@@ -2,6 +2,8 @@ enum FailureCode {
   permissionDenied,
   unavailable,
   saveFailed,
+  baselineChanged,
+  duplicateName,
   loadFailed,
   authenticationFailed,
   invalidCredentials,

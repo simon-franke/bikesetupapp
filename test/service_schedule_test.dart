@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/features/rides/models/ride.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
@@ -88,13 +89,59 @@ void main() {
         component: component('chain'),
         currentMileageKm: 1200,
         latestEntry: entry);
-    expect(result.kmSinceService, 700);
-    expect(result.remainingKm, 300);
+    expect(result.usage, 700);
+    expect(result.remaining, 300);
     expect(result.status, ServiceStatus.amber);
   });
 
-  testWidgets(
-      'attention filter prioritizes overdue components and preserves All',
+  test(
+      'hour service uses only ride hours and distinguishes missing from empty logs',
+      () {
+    final date = DateTime(2026);
+    final part = ServiceComponent(
+        id: 'fork',
+        bikeId: 'bike',
+        type: ComponentType.forkServiceLower,
+        name: 'Fork',
+        serviceIntervalKm: 1000,
+        serviceIntervalHours: 10,
+        createdAt: date);
+    final entry = ServiceEntry(
+        id: 'service',
+        componentId: 'fork',
+        date: date,
+        mileageAtServiceKm: 500,
+        initialRideHours: 2);
+    AnnotatedService annotate(List<Ride>? rides) => annotateService(
+        component: part,
+        currentMileageKm: 99999,
+        mileageAvailable: false,
+        latestEntry: entry,
+        rides: rides);
+    final unknown = annotate(null);
+    expect(unknown.usageUnknown, isTrue);
+    expect(unknown.status, ServiceStatus.unknown);
+    final empty = annotate([]);
+    expect(empty.measurement.unit, ServiceUnit.hours);
+    expect(empty.usageUnknown, isFalse);
+    expect(empty.usage, 2);
+    expect(empty.remaining, 8);
+    final used = annotate([
+      Ride(
+          id: 'ride',
+          bikeId: 'bike',
+          startedAt: date,
+          durationSeconds: 27000,
+          source: 'manual')
+    ]);
+    expect(used.usage, 9.5);
+    expect(used.remaining, .5);
+    expect(used.progress, .95);
+    expect(used.status, ServiceStatus.red);
+    expect(serviceDistanceLabel(used), 'Service in 0.5 ride hours');
+  });
+
+  testWidgets('schedule groups urgency without hiding any components',
       (tester) async {
     final services = [
       service('later', 200),
@@ -109,49 +156,31 @@ void main() {
     )));
     expect(tester.getTopLeft(find.text('overdue')).dy,
         lessThan(tester.getTopLeft(find.text('warning')).dy));
-    await tester.tap(find.text('Needs attention (4)'));
-    await tester.pumpAndSettle();
-    expect(find.text('later'), findsNothing);
-    expect(find.text('unknown'), findsOneWidget);
-    expect(find.text('soon'), findsOneWidget);
-    await tester.tap(find.text('All (5)'));
-    await tester.pumpAndSettle();
+    expect(find.text('Needs attention'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
+    expect(find.text('Needs a starting point'), findsOneWidget);
+    expect(find.text('All (5)'), findsNothing);
     expect(find.text('later'), findsOneWidget);
     expect(find.text('unknown'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('soon')).dy,
+        lessThan(tester.getTopLeft(find.text('later')).dy));
   });
 
-  testWidgets('every card can log service and urgent cards can defer',
-      (tester) async {
-    var logged = 0;
-    var deferred = 0;
+  testWidgets('the whole service card opens its details', (tester) async {
+    var opened = 0;
     await tester.pumpWidget(harness(ServiceComponentCard(
-      component: component('chain'),
+      component: component('Chain'),
       currentMileageKm: 950,
       latestEntry: ServiceEntry(
           id: 'entry',
-          componentId: 'chain',
+          componentId: 'Chain',
           date: DateTime(2026),
           mileageAtServiceKm: 0),
-      onLog: () => logged++,
-      onDefer: () => deferred++,
+      onTap: () => opened++,
     )));
-    await tester.tap(find.text('Log service'));
-    await tester.tap(find.text('Defer service'));
-    expect(logged, 1);
-    expect(deferred, 1);
-    await tester.pumpWidget(harness(ServiceComponentCard(
-      component: component('chain'),
-      currentMileageKm: 100,
-      latestEntry: ServiceEntry(
-          id: 'entry',
-          componentId: 'chain',
-          date: DateTime(2026),
-          mileageAtServiceKm: 0),
-      onLog: () => logged++,
-      onDefer: () => deferred++,
-    )));
-    expect(find.text('Log service'), findsOneWidget);
-    expect(find.text('Defer service'), findsNothing);
+    await tester.tap(find.text('Service in 50 km'));
+    expect(opened, 1);
+    expect(find.text('Log service'), findsNothing);
   });
 
   testWidgets('unknown mileage hides progress and deferral; enlarged text fits',
@@ -161,13 +190,12 @@ void main() {
           component: component('A long component model name'),
           currentMileageKm: 0,
           mileageAvailable: false,
-          onLog: () {},
-          onDefer: () {},
+          onTap: () {},
         ),
         scale: 2));
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.text('Defer service'), findsNothing);
-    expect(find.text('Log service'), findsOneWidget);
+    expect(find.text('Log service'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

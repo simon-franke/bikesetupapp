@@ -19,7 +19,6 @@ import 'package:bikesetupapp/features/strava/controllers/strava_connection_contr
 import 'package:bikesetupapp/features/strava/controllers/strava_controller.dart';
 import 'package:bikesetupapp/features/bikes/controllers/bikes_controller.dart';
 import 'package:bikesetupapp/features/workspace/controllers/workspace_controller.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -311,13 +310,13 @@ void main() {
     final workspace = WorkspaceController(
         bikeName: 'Old',
         bikeId: 'old',
-        bikeType: BikeType.road,
+
         setupName: 'Default',
         setupId: 'setup',
         strava: strava);
     final old = workspace.loadMileage();
     final current =
-        workspace.selectBike('New', 'new', BikeType.road, 'Default', 'setup');
+        workspace.selectBike('New', 'new', 'Default', 'setup');
     repository.mileage['new']!.complete(200);
     expect((await current).isSuccess, isTrue);
     repository.mileage['old']!.complete(100);

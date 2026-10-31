@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -34,40 +35,43 @@ class MileageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = AppColors.darkInk;
+    final ink = context.palette.ink;
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Bike mileage', style: TextStyle(fontSize: 13, color: ink)),
+        Text('Bike mileage', style: TextStyle(fontSize: 16, color: ink)),
         const SizedBox(height: 4),
         Text(
           mileageKm == null
               ? 'Not available'
               : '${NumberFormat('#,###').format(mileageKm!.round())} km',
-          style: TextStyle(
-              fontSize: mileageKm == null ? 22 : 28,
-              fontWeight: FontWeight.w600,
-              color: ink),
+          style:
+              TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: ink),
         ),
         const SizedBox(height: 4),
-        Text(_syncLabel(), style: const TextStyle(fontSize: 12, color: ink)),
+        Text(_syncLabel(),
+            style: TextStyle(fontSize: 14, color: context.palette.inkMuted)),
       ],
     );
     final action = TextButton.icon(
       onPressed: isLoading ? null : (isConnected ? onSync : onConnect),
       style: TextButton.styleFrom(
-        foregroundColor: AppPalette.dark.accentText,
+        foregroundColor: context.palette.accentText,
         disabledForegroundColor: ink,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         minimumSize: const Size(0, 44),
-        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
       icon: isLoading
-          ? const SizedBox(
+          ? SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2, color: ink))
-          : Icon(isConnected ? Icons.sync : Icons.link, size: 18),
+          : Icon(
+              isConnected
+                  ? CupertinoIcons.arrow_2_circlepath
+                  : CupertinoIcons.link,
+              size: 18),
       label: Text(isLoading
           ? 'Syncing'
           : isConnected
@@ -79,20 +83,13 @@ class MileageBanner extends StatelessWidget {
       margin: margin,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: AppColors.blueDeep, borderRadius: BorderRadius.circular(12)),
-      child: LayoutBuilder(builder: (context, constraints) {
-        if (constraints.maxWidth < 300 ||
-            MediaQuery.textScalerOf(context).scale(14) > 20) {
-          return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [details, const SizedBox(height: 8), action]);
-        }
-        return Row(children: [
-          Expanded(child: details),
-          const SizedBox(width: 12),
-          action
-        ]);
-      }),
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        details,
+        const SizedBox(height: 16),
+        action,
+      ]),
     );
   }
 }

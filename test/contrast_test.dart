@@ -53,7 +53,8 @@ void main() {
     for (final color in [
       AppPalette.dark.red,
       AppPalette.light.red,
-      AppColors.blueDeep
+      AppColors.blueDeep,
+      AppColors.destructiveFill
     ]) {
       expect(
           contrast(AppColors.onColor(color), color), greaterThanOrEqualTo(4.5));

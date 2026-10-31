@@ -51,6 +51,24 @@ function createStravaHandlers({ clientSecret, fetchToken = fetch }) {
         redirect(res, state, 'error');
       }
     },
+    async nativeExchange(req, res) {
+      res.set('Cache-Control', 'no-store');
+      if (req.method !== 'POST') return res.status(405).send('Method not allowed');
+      const code = req.body?.code;
+      if (typeof code !== 'string' || !code.trim() || code.length > 2048) {
+        return res.status(400).json({ error: 'Invalid authorization code' });
+      }
+      try {
+        const json = await exchange({ code, grant_type: 'authorization_code' });
+        if (!Number.isInteger(json.athlete?.id) || json.athlete.id <= 0) {
+          throw new Error('Invalid athlete');
+        }
+        res.json({ access_token: json.access_token, refresh_token: json.refresh_token,
+          expires_at: json.expires_at, athlete: { id: json.athlete.id } });
+      } catch (_) {
+        res.status(502).json({ error: 'Could not connect to Strava' });
+      }
+    },
     async refresh(req, res) {
       res.set('Cache-Control', 'no-store');
       if (req.method !== 'POST') return res.status(405).send('Method not allowed');

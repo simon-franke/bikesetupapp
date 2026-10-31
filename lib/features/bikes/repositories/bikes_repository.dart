@@ -7,6 +7,5 @@ abstract interface class BikesRepository {
   Stream<List<Bike>> getBikes();
   Future<String> getDefaultBike();
   Future<String> getBikeNameFromID(String uBikeID);
-  Future<String> getBikeType(String uBikeID);
-  Future<void> createBikeRecord(String id, String name, String type);
+  Future<void> createBikeRecord(String id, String name);
 }
