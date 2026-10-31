@@ -3,10 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:bikesetupapp/features/strava/models/strava_auth.dart';
 import 'package:bikesetupapp/features/strava/models/strava_exception.dart';
 import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.dart';
@@ -15,17 +13,24 @@ import 'package:bikesetupapp/features/strava/platform/strava_web_callback_stub.d
 
 class StravaAuthService {
   StravaAuthService(
-      {required String? Function() userId, http.Client? client, bool? web})
+      {required String? Function() userId,
+      http.Client? client,
+      Future<String> Function(
+              {required String url, required String callbackUrlScheme})?
+          authenticate,
+      DateTime Function()? now})
       : _userId = userId,
         _client = client,
-        _web = web ?? kIsWeb;
+        _authenticate = authenticate ?? FlutterWebAuth2.authenticate,
+        _now = now ?? DateTime.now;
   final String? Function() _userId;
   final http.Client? _client;
-  final bool _web;
+  final Future<String> Function(
+      {required String url, required String callbackUrlScheme}) _authenticate;
+  final DateTime Function() _now;
   int _generation = 0;
   final Map<String, Future<StravaAuth?>> _refreshes = {};
   static const _authorizeUrl = 'https://www.strava.com/oauth/authorize';
-  static const _tokenUrl = 'https://www.strava.com/oauth/token';
   static const _deauthorizeUrl = 'https://www.strava.com/oauth/deauthorize';
   static const _redirectUri = 'bikesetup://localhost';
   static const _callbackScheme = 'bikesetup';
@@ -33,8 +38,8 @@ class StravaAuthService {
       'https://us-central1-bikesetupapp-bd22a.cloudfunctions.net';
   static const _requestedScopes = 'read,profile:read_all,activity:read_all';
 
-  String get _clientId => dotenv.env['STRAVA_CLIENT_ID'] ?? '';
-  String get _clientSecret => dotenv.env['STRAVA_CLIENT_SECRET'] ?? '';
+  static const _clientId =
+      String.fromEnvironment('STRAVA_CLIENT_ID', defaultValue: '214695');
 
   Future<http.Response> _post(Uri uri, Map<String, String> body) async {
     try {
@@ -68,20 +73,25 @@ class StravaAuthService {
     if (owner == null) return null;
     final generation = ++_generation;
     final state = _newState();
+    final startedAt = _now();
     try {
-      final result = await FlutterWebAuth2.authenticate(
+      final result = await _authenticate(
           url: _authUrl(_redirectUri, state),
           callbackUrlScheme: _callbackScheme);
       final callback = Uri.parse(result);
-      if (callback.queryParameters['state'] != state) return null;
+      if (_userId() != owner ||
+          generation != _generation ||
+          _now().difference(startedAt) >= const Duration(minutes: 10) ||
+          callback.scheme != _callbackScheme ||
+          callback.host != 'localhost' ||
+          callback.queryParameters['state'] != state) {
+        return null;
+      }
+      if (callback.queryParameters.containsKey('error')) return null;
       final code = callback.queryParameters['code'];
-      if (code == null) return null;
-      final response = await _post(Uri.parse(_tokenUrl), {
-        'client_id': _clientId,
-        'client_secret': _clientSecret,
-        'code': code,
-        'grant_type': 'authorization_code',
-      });
+      if (code == null || code.isEmpty) return null;
+      final response = await _post(
+          Uri.parse('$_functionBase/stravaExchange'), {'code': code});
       if (response.statusCode != 200) {
         throw AppFailure(FailureCode.connectionExpired,
             statusCode: response.statusCode);
@@ -118,13 +128,7 @@ class StravaAuthService {
   Future<StravaAuth?> _refreshToken(
       StravaAuth current, String owner, int generation) async {
     try {
-      final response = await _post(
-          Uri.parse(_web ? '$_functionBase/stravaRefresh' : _tokenUrl), {
-        if (!_web) ...{
-          'client_id': _clientId,
-          'client_secret': _clientSecret,
-          'grant_type': 'refresh_token'
-        },
+      final response = await _post(Uri.parse('$_functionBase/stravaRefresh'), {
         'refresh_token': current.refreshToken,
       });
       if (response.statusCode != 200) {

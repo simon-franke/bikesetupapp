@@ -35,6 +35,15 @@ class FirestoreBikesRepository implements BikesRepository {
   @override
   Future<void> deleteBike(String uBikeID) async {
     return firebaseOperation(() async {
+      final rides = await userBikeSetup
+          .doc(userID)
+          .collection('RideLog')
+          .where('bikeId', isEqualTo: uBikeID)
+          .get();
+      for (final ride in rides.docs) {
+        await ride.reference.delete();
+      }
+
       final wasDefault = (await getDefaultBike()) == uBikeID;
 
       var setups = await userBikeSetup
@@ -70,6 +79,18 @@ class FirestoreBikesRepository implements BikesRepository {
   }
 
   Future<void> _deleteSetupData(String uBikeID, String uSetupID) async {
+    final tests = await userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.bikes)
+        .doc(uBikeID)
+        .collection(FirestoreKeys.setupList)
+        .doc(uSetupID)
+        .collection('Tests')
+        .get();
+    for (final test in tests.docs) {
+      await test.reference.delete();
+    }
+
     var setups = await userBikeSetup
         .doc(userID)
         .collection(FirestoreKeys.bikes)
@@ -142,35 +163,13 @@ class FirestoreBikesRepository implements BikesRepository {
   }
 
   @override
-  Future<String> getBikeType(String uBikeID) async {
-    return firebaseOperation(() async {
-      DocumentSnapshot<Map<String, dynamic>> snapshot;
-      dynamic value;
-      snapshot = await userBikeSetup
-          .doc(userID)
-          .collection(FirestoreKeys.bikes)
-          .doc(uBikeID)
-          .get();
-      if (!snapshot.exists) {
-        return "";
-      }
-      value = snapshot.data()?[FirestoreKeys.bikeType];
-
-      if (value == null) {
-        return "";
-      }
-      return value?.toString() ?? "";
-    });
-  }
-
-  @override
-  Future<void> createBikeRecord(String id, String name, String type) {
+  Future<void> createBikeRecord(String id, String name) {
     return firebaseOperation(() async {
       return userBikeSetup
           .doc(userID)
           .collection(FirestoreKeys.bikes)
           .doc(id)
-          .set({FirestoreKeys.bikeName: name, FirestoreKeys.bikeType: type},
+          .set({FirestoreKeys.bikeName: name},
               SetOptions(merge: true));
     }, fallback: FailureCode.saveFailed);
   }

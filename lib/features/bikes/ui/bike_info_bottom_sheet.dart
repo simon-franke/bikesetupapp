@@ -1,7 +1,8 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
+import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/new_bike_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,12 +14,10 @@ Future<void> showBikeInfoSheet(
   String uBikeID,
   String uSetupID,
   String setupName,
-  String bikeName,
-  BikeType bikeType, {
-  required void Function(String, String, BikeType, String, String)
-      onBikeSelected,
+  String bikeName, {
+  required void Function(String, String, String, String) onBikeSelected,
 }) {
-  return showAdaptiveModal<void>(
+  return showAppSheet<void>(
     context: context,
     builder: (_) => _BikeInfoSheetContent(
       user: user,
@@ -26,7 +25,6 @@ Future<void> showBikeInfoSheet(
       uSetupID: uSetupID,
       setupName: setupName,
       bikeName: bikeName,
-      bikeType: bikeType,
       onBikeSelected: onBikeSelected,
     ),
   );
@@ -38,8 +36,8 @@ class _BikeInfoSheetContent extends StatelessWidget {
   final String uSetupID;
   final String setupName;
   final String bikeName;
-  final BikeType bikeType;
-  final void Function(String, String, BikeType, String, String) onBikeSelected;
+
+  final void Function(String, String, String, String) onBikeSelected;
 
   const _BikeInfoSheetContent({
     required this.user,
@@ -47,21 +45,38 @@ class _BikeInfoSheetContent extends StatelessWidget {
     required this.uSetupID,
     required this.setupName,
     required this.bikeName,
-    required this.bikeType,
     required this.onBikeSelected,
   });
 
   List<(String, String)> _buildRows(Map<String, dynamic> data) {
+    final config = SetupConfiguration.fromInformation(data);
+    final fork = config?.fields.containsKey('Fork') ??
+        (data['fork'] != null && data['fork'] != 'None');
+    final shock = config?.fields.containsKey('Shock') ??
+        (data['shock'] != null && data['shock'] != 'None');
+    String value(String key, [String unit = '']) {
+      final raw = data[key]?.toString().trim() ?? '';
+      return raw.isEmpty ? '' : '$raw$unit';
+    }
+
     return [
-      if (bikeType.hasFork) ('Fork', data['fork']?.toString() ?? '—'),
-      if (bikeType.hasShock) ('Shock', data['shock']?.toString() ?? '—'),
-      if (bikeType.hasFork)
-        ('Front travel', '${data['front_travel']?.toString() ?? '—'} mm'),
-      if (bikeType.hasShock)
-        ('Rear travel', '${data['rear_travel']?.toString() ?? '—'} mm'),
-      ('Front wheel', '${data['front_wheel_size']?.toString() ?? '—'}"'),
-      ('Rear wheel', '${data['rear_wheel_size']?.toString() ?? '—'}"'),
-    ];
+      if (fork) ...[
+        ('Fork', value('fork')),
+        ('Fork model', value('fork_model')),
+        ('Fork travel', value('front_travel', ' mm')),
+      ],
+      if (shock) ...[
+        ('Shock', value('shock')),
+        ('Shock model', value('shock_model')),
+        ('Rear wheel travel', value('rear_travel', ' mm')),
+      ],
+      ('Front wheel', value('front_wheel_size')),
+      ('Rear wheel', value('rear_wheel_size')),
+      if (data['frame_reach']?.toString().isNotEmpty == true)
+        ('Frame reach', value('frame_reach', ' mm')),
+      if (data['frame_stack']?.toString().isNotEmpty == true)
+        ('Frame stack', value('frame_stack', ' mm')),
+    ].where((row) => row.$2.isNotEmpty).toList();
   }
 
   @override
@@ -82,7 +97,7 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      bikeType.bikeType,
+                      bikeName,
                       style: AppTextStyles.inter(
                         size: 12,
                         weight: FontWeight.w700,
@@ -102,15 +117,15 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.edit_outlined, color: p.ink),
-                onPressed: () {
+              AppObjectMenu(
+                tooltip: 'Setup options',
+                title: setupName,
+                onRename: () {
                   Navigator.of(context).pop();
                   showNewBikeSheet(
                     context,
                     user,
                     NewBikeMode.editSetup,
-                    bikeType: bikeType,
                     uBikeID: uBikeID,
                     bikeName: bikeName,
                     uSetupID: uSetupID,

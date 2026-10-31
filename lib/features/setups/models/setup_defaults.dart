@@ -5,8 +5,10 @@ class SetupDefaults {
   static Map<Category, Map<String, String>> forShock(String shockType) => {
         Category.fork: const {
           'Pressure': '90',
-          'Rebound': '5',
-          'Compression': '8',
+          'Low Speed Rebound': '',
+          'High Speed Rebound': '',
+          'Low Speed Compression': '',
+          'High Speed Compression': '',
           'Tokens': '2'
         },
         Category.shock: {

@@ -10,3 +10,5 @@ exports.stravaCallback = onRequest(options, handlers.callback);
 exports.stravaRefresh = onRequest({ ...options,
   cors: ['https://simon-franke.github.io'],
 }, handlers.refresh);
+
+exports.stravaExchange = onRequest(options, handlers.nativeExchange);

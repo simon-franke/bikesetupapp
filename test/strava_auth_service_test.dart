@@ -6,7 +6,6 @@ import 'package:bikesetupapp/features/strava/repositories/strava_auth_service.da
 import 'package:bikesetupapp/features/strava/repositories/platform_strava_repository.dart';
 import 'package:bikesetupapp/features/strava/repositories/strava_api_service.dart';
 import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -32,16 +31,116 @@ void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
-    dotenv.testLoad(fileInput: 'STRAVA_CLIENT_ID=client-id');
+  });
+
+  test('native code exchange uses backend and preserves identity and scopes',
+      () async {
+    final auth = StravaAuthService(
+      userId: () => 'user',
+      authenticate: ({required url, required callbackUrlScheme}) async {
+        final request = Uri.parse(url);
+        expect(
+            request.queryParameters['redirect_uri'], 'bikesetup://localhost');
+        expect(request.queryParameters['scope'], contains('activity:read_all'));
+        expect(callbackUrlScheme, 'bikesetup');
+        return Uri.parse('bikesetup://localhost').replace(queryParameters: {
+          'state': request.queryParameters['state']!,
+          'code': 'one-use-code',
+          'scope': 'read,activity:read_all',
+        }).toString();
+      },
+      client: MockClient((request) async {
+        expect(request.url.path, '/stravaExchange');
+        expect(request.url.scheme, 'https');
+        expect(request.method, 'POST');
+        expect(request.bodyFields, {'code': 'one-use-code'});
+        return http.Response(
+            jsonEncode({
+              ...jsonDecode(renewed().body) as Map<String, dynamic>,
+              'athlete': {'id': 42},
+            }),
+            200);
+      }),
+    );
+    expect((await auth.authorize())?.athleteId, 42);
+    expect((await auth.getAuth())?.scopes, ['read', 'activity:read_all']);
+  });
+
+  for (final scenario in [
+    'state',
+    'expired',
+    'denied',
+    'owner',
+    'signout',
+    'scheme'
+  ]) {
+    test('native authorization rejects $scenario before code exchange',
+        () async {
+      var time = DateTime.utc(2026);
+      String? owner = 'user';
+      var exchanges = 0;
+      late StravaAuthService auth;
+      auth = StravaAuthService(
+        userId: () => owner,
+        now: () => time,
+        authenticate: ({required url, required callbackUrlScheme}) async {
+          final state = Uri.parse(url).queryParameters['state']!;
+          if (scenario == 'expired') {
+            time = time.add(const Duration(minutes: 10));
+          }
+          if (scenario == 'owner') owner = 'other';
+          if (scenario == 'signout') await auth.clearAuth();
+          return Uri.parse(scenario == 'scheme'
+                  ? 'wrong://localhost'
+                  : 'bikesetup://localhost')
+              .replace(queryParameters: {
+            'state': scenario == 'state' ? 'wrong-state' : state,
+            'code': 'code',
+            if (scenario == 'denied') 'error': 'access_denied',
+          }).toString();
+        },
+        client: MockClient((_) async {
+          exchanges++;
+          return renewed();
+        }),
+      );
+      expect(await auth.authorize(), isNull);
+      expect(exchanges, 0);
+      expect(await auth.getAuth(), isNull);
+    });
+  }
+
+  test('signout during native exchange cannot restore credentials', () async {
+    final started = Completer<void>();
+    final response = Completer<http.Response>();
+    final auth = StravaAuthService(
+      userId: () => 'user',
+      authenticate: ({required url, required callbackUrlScheme}) async =>
+          'bikesetup://localhost?code=code&state=${Uri.parse(url).queryParameters['state']}',
+      client: MockClient((_) {
+        started.complete();
+        return response.future;
+      }),
+    );
+    final pending = auth.authorize();
+    await started.future;
+    await auth.clearAuth();
+    response.complete(http.Response(
+        jsonEncode({
+          ...jsonDecode(renewed().body) as Map<String, dynamic>,
+          'athlete': {'id': 42},
+        }),
+        200));
+    expect(await pending, isNull);
+    expect(await auth.getAuth(), isNull);
   });
 
   test(
-      'web refresh uses server proxy without a client secret and persists rotation',
+      'refresh uses server proxy without a client secret and persists rotation',
       () async {
     await StravaTokenStorage.saveAuth(expired, userId: 'user');
     final auth = StravaAuthService(
         userId: () => 'user',
-        web: true,
         client: MockClient((request) async {
           expect(request.url.path, '/stravaRefresh');
           expect(request.method, 'POST');
@@ -61,7 +160,6 @@ void main() {
     var calls = 0;
     final auth = StravaAuthService(
         userId: () => 'user',
-        web: true,
         client: MockClient((_) {
           calls++;
           return response.future;
@@ -108,7 +206,6 @@ void main() {
     var calls = 0;
     final auth = StravaAuthService(
         userId: () => 'user',
-        web: true,
         client: MockClient(
             (_) async => ++calls == 1 ? http.Response('{}', 502) : renewed()));
     await expectLater(
@@ -129,9 +226,7 @@ void main() {
     String? owner = 'a';
     final response = Completer<http.Response>();
     final auth = StravaAuthService(
-        userId: () => owner,
-        web: true,
-        client: MockClient((_) => response.future));
+        userId: () => owner, client: MockClient((_) => response.future));
     final refresh = auth.refreshToken(expired);
     owner = 'b';
     response.complete(renewed());

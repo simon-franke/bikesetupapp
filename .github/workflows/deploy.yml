@@ -38,17 +38,13 @@ jobs:
         env:
           FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
 
-      - name: Create .env file
-        run: |
-          # Only the client ID is needed on web — the secret lives in the
-          # Firebase Function environment and is never bundled in the JS output.
-          echo "STRAVA_CLIENT_ID=${{ secrets.STRAVA_CLIENT_ID }}" > .env
-
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --base-href /bikesetupapp/ --release
+        run: flutter build web --base-href /bikesetupapp/ --release --dart-define="STRAVA_CLIENT_ID=$STRAVA_CLIENT_ID"
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -76,7 +72,7 @@ jobs:
         run: npm install
         working-directory: functions
 
-      - name: Deploy Firebase Functions
-        run: firebase deploy --only functions --project bikesetupapp-bd22a --token "$FIREBASE_TOKEN"
+      - name: Deploy Firebase Functions and rules
+        run: firebase deploy --only functions,firestore:rules --project bikesetupapp-bd22a --token "$FIREBASE_TOKEN"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

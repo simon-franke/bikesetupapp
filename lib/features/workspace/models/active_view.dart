@@ -1,1 +1,1 @@
-enum ActiveView { setup, services }
+enum ActiveView { setup, tests, services }

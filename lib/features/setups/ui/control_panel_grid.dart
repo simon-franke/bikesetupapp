@@ -1,10 +1,10 @@
+import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
+import 'setting_unit_selector.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
-import '../controllers/setting_save_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
-import 'package:bikesetupapp/features/setups/ui/inline_setting_editor.dart';
-import 'package:bikesetupapp/common/layout/responsive_layout.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'dart:math' as math;
 
@@ -58,7 +58,8 @@ class ControlPanelGrid extends StatefulWidget {
 
 Future<void> showSettingStepperSheet(
   BuildContext context, {
-  required User user,
+  User? user,
+  Future<CommandResult<void>> Function(String)? onSave,
   required String uBikeID,
   required String category,
   required String uSetupID,
@@ -66,6 +67,7 @@ Future<void> showSettingStepperSheet(
   required String currentValue,
   required bool isDefault,
   UnitFamily? familyOverride,
+  String? saveLabel,
 }) {
   final knownMeta = kFieldMeta[settingKey];
   final rawForParse = currentValue == '--' ? '' : currentValue;
@@ -114,10 +116,12 @@ Future<void> showSettingStepperSheet(
     isFreeText = false;
   }
 
-  return showAdaptiveModal<void>(
+  return showAppSheet<void>(
     context: context,
     builder: (ctx) => _StepperSheetContent(
       user: user,
+      onSave: onSave,
+      saveLabel: saveLabel,
       uBikeID: uBikeID,
       category: category,
       uSetupID: uSetupID,
@@ -126,7 +130,8 @@ Future<void> showSettingStepperSheet(
       family: family,
       initialUnit: unit,
       initialNumeric: parsed.number ?? 0,
-      initialText: parsed.text ?? '',
+      initialText: isFreeText ? rawForParse : parsed.text ?? '',
+      savedValue: currentValue,
       knownMeta: knownMeta,
       isFreeText: isFreeText,
       isDefault: isDefault,
@@ -135,7 +140,9 @@ Future<void> showSettingStepperSheet(
 }
 
 class _StepperSheetContent extends StatefulWidget {
-  final User user;
+  final String? saveLabel;
+  final User? user;
+  final Future<CommandResult<void>> Function(String)? onSave;
   final String uBikeID;
   final String category;
   final String uSetupID;
@@ -145,12 +152,15 @@ class _StepperSheetContent extends StatefulWidget {
   final UnitDef initialUnit;
   final double initialNumeric;
   final String initialText;
+  final String savedValue;
   final FieldMeta? knownMeta;
   final bool isFreeText;
   final bool isDefault;
 
   const _StepperSheetContent({
     required this.user,
+    this.onSave,
+    this.saveLabel,
     required this.uBikeID,
     required this.category,
     required this.uSetupID,
@@ -160,6 +170,7 @@ class _StepperSheetContent extends StatefulWidget {
     required this.initialUnit,
     required this.initialNumeric,
     required this.initialText,
+    required this.savedValue,
     required this.knownMeta,
     required this.isFreeText,
     required this.isDefault,
@@ -173,6 +184,9 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   late UnitDef _unit;
   late double _value;
   late TextEditingController _textController;
+  final _numberController = TextEditingController();
+  bool _editingNumber = false;
+  String? _numberError;
 
   @override
   void initState() {
@@ -184,32 +198,48 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
 
   @override
   void dispose() {
+    _numberController.dispose();
     _textController.dispose();
     super.dispose();
   }
 
   void _onChipTap(UnitDef target) {
     if (target.id == _unit.id) return;
+    if (_editingNumber && !_readNumber()) return;
+    _editingNumber = false;
     setState(() {
       _value = convertValue(_value, _unit, target);
       _unit = target;
     });
   }
 
+  bool _readNumber() {
+    final number = double.tryParse(_numberController.text.replaceAll(',', '.'));
+    if (number == null || !number.isFinite || number < 0 || number > 10000) {
+      setState(() => _numberError = 'Enter a number between 0 and 10000.');
+      return false;
+    }
+    _value = number;
+    return true;
+  }
+
   bool _saving = false;
   Future<void> _onSave() async {
     if (_saving) return;
+    if (_editingNumber && !_readNumber()) return;
     setState(() => _saving = true);
     final stored = widget.isFreeText
         ? _textController.text.trim()
         : SettingValue.numeric(_value, widget.family, _unit).format();
     final saved = await presentCommand(
         context,
-        () => AppDependencies.of(context)
-            .forUser(widget.user.uid)
-            .setups
-            .setSetting(widget.settingKey, stored, widget.uBikeID,
-                widget.category, widget.uSetupID));
+        () => widget.onSave != null
+            ? widget.onSave!(stored)
+            : AppDependencies.of(context)
+                .forUser(widget.user!.uid)
+                .setups
+                .setSetting(widget.settingKey, stored, widget.uBikeID,
+                    widget.category, widget.uSetupID));
     if (!mounted) return;
     if (saved) {
       Navigator.of(context).pop();
@@ -219,27 +249,14 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   }
 
   Future<void> _onDelete() async {
-    final p = context.palette;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dlgCtx) => AlertDialog(
-        title: const Text('Delete Field'),
-        content: Text('Delete "${widget.settingKey}"? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dlgCtx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dlgCtx).pop(true),
-            child: Text('Delete', style: TextStyle(color: p.red)),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmationSheet(
+      context,
+      title: 'Delete ${widget.settingKey}?',
+      message: 'This permanently removes this setting.',
     );
     if (confirmed == true && mounted && !_saving) {
       setState(() => _saving = true);
-      final db = AppDependencies.of(context).forUser(widget.user.uid);
+      final db = AppDependencies.of(context).forUser(widget.user!.uid);
       final deleted = await presentCommand(
           context,
           () => db.setups.deleteField(widget.settingKey, widget.uBikeID,
@@ -256,7 +273,6 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final units = kUnitFamilies[widget.family] ?? const <UnitDef>[];
 
     return Padding(
       padding: EdgeInsets.only(
@@ -270,37 +286,33 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
         children: [
           const AppSheetHandle(),
           const SizedBox(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FieldIcon(asset: widget.iconAsset, size: 15, color: p.inkMuted),
-              const SizedBox(width: 8),
-              Text(
-                widget.settingKey.toUpperCase(),
-                style: AppTextStyles.inter(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: p.inkMuted,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
-          ),
-          if (!widget.isFreeText && units.length > 1) ...[
-            const SizedBox(height: 14),
-            _UnitChipRow(units: units, selected: _unit, onTap: _onChipTap),
-          ],
+          Row(children: [
+            Expanded(
+                child: Text(
+                    '${widget.category == 'FrontTire' ? 'Front tire' : widget.category == 'RearTire' ? 'Rear tire' : widget.category == 'GeneralSettings' ? 'General' : widget.category} ${widget.settingKey.toLowerCase()}',
+                    style: AppTextStyles.inter(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: p.inkMuted,
+                        letterSpacing: 0))),
+          ]),
           const SizedBox(height: 22),
           if (widget.isFreeText)
             _FreeTextField(controller: _textController)
           else
             _buildEditor(),
-          const SizedBox(height: 28),
+          if (widget.savedValue.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text('Saved: ${widget.savedValue}',
+                style: TextStyle(fontSize: 12, color: p.inkMuted)),
+          ],
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _saving ? null : _onSave,
-              child: Text('Save'),
+              child: Text(widget.saveLabel ??
+                  (widget.onSave == null ? 'Save' : 'Save to test')),
             ),
           ),
           if (!widget.isDefault) ...[
@@ -324,6 +336,23 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   }
 
   Widget _buildEditor() {
+    if (_editingNumber) {
+      return TextField(
+          controller: _numberController,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textAlign: TextAlign.center,
+          style: AppTextStyles.mono(
+              size: 44, weight: FontWeight.w400, color: context.palette.ink),
+          decoration: InputDecoration(
+              labelText: widget.settingKey,
+              suffixIcon: SettingUnitSelector(
+                  family: widget.family, unit: _unit, onChanged: _onChipTap),
+              errorText: _numberError),
+          onSubmitted: (_) {
+            if (_readNumber()) setState(() => _editingNumber = false);
+          });
+    }
     final knownMeta = widget.knownMeta;
     double minInActive;
     double maxInActive;
@@ -340,58 +369,22 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     return SettingValueEditor(
       key: ValueKey('${widget.settingKey}-${_unit.id}'),
       initialValue: _value,
+      centerValueAccessory: true,
+      onValueTap: () => setState(() {
+        _numberController.text = formatNumber(_value, _unit.decimals);
+        _numberController.selection = TextSelection(
+            baseOffset: 0, extentOffset: _numberController.text.length);
+        _editingNumber = true;
+        _numberError = null;
+      }),
       min: minInActive,
       max: maxInActive,
       step: step,
       decimals: _unit.decimals,
       unitLabel: _unit.label,
+      valueAccessory: SettingUnitSelector(
+          family: widget.family, unit: _unit, onChanged: _onChipTap),
       onChanged: (v) => _value = v,
-    );
-  }
-}
-
-class _UnitChipRow extends StatelessWidget {
-  final List<UnitDef> units;
-  final UnitDef selected;
-  final ValueChanged<UnitDef> onTap;
-
-  const _UnitChipRow({
-    required this.units,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      alignment: WrapAlignment.center,
-      children: units.map((u) {
-        final isSelected = u.id == selected.id;
-        return GestureDetector(
-          onTap: () => onTap(u),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? p.accent : p.surface2,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isSelected ? p.accentText : p.border),
-            ),
-            child: Text(
-              u.label.isEmpty ? u.id : u.label,
-              style: AppTextStyles.inter(
-                size: 11,
-                weight: FontWeight.w700,
-                color: isSelected ? p.accentInk : p.inkMuted,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }
@@ -473,9 +466,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                     child: const Text('Retry')),
               ]));
             }
-            return _buildGrid(allKeys, settings, metaMap,
-                loading: snapshot.connectionState != ConnectionState.active ||
-                    metaSnap.connectionState != ConnectionState.active);
+            return _buildGrid(allKeys, settings, metaMap);
           },
         );
       },
@@ -485,54 +476,8 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
   Widget _buildGrid(
     List<String> allKeys,
     Map<String, dynamic> settings,
-    Map<String, String> metaMap, {
-    bool loading = false,
-  }) {
-    final wide = ResponsiveLayout.isWide(context);
-    if (wide) {
-      final bikeId = widget.uBikeID;
-      final setupId = widget.uSetupID;
-      final category = widget.category;
-      final userId = widget.user.uid;
-      return TabletSettingsPanel(
-        scope: '$userId/$bikeId/$setupId/$category',
-        title: widget.sectionLabel ?? 'Settings',
-        loading: loading,
-        settings: {
-          for (final key in allKeys) key: settings[key]?.toString() ?? '--'
-        },
-        metadata: metaMap,
-        onAdd: () => showAddFieldSheet(context,
-            user: widget.user,
-            uBikeID: bikeId,
-            category: category,
-            uSetupID: setupId),
-        onManage: (key) => showSettingStepperSheet(context,
-            user: widget.user,
-            uBikeID: bikeId,
-            category: category,
-            uSetupID: setupId,
-            settingKey: key,
-            currentValue: settings[key]?.toString() ?? '--',
-            isDefault: isRequiredField(category, key),
-            familyOverride: unitFamilyFromName(metaMap[key] ?? '')),
-        onSave: (key, value) async {
-          try {
-            await AppDependencies.of(context)
-                .forUser(userId)
-                .setups
-                .setSetting(key, value, bikeId, category, setupId)
-                .orThrow();
-          } catch (_) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Could not save $key. Try again.')));
-            }
-            rethrow;
-          }
-        },
-      );
-    }
+    Map<String, String> metaMap,
+  ) {
     final delegate = SliverChildBuilderDelegate(
       (context, index) {
         final key = allKeys[index];
@@ -584,29 +529,25 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                   category: widget.category,
                   uSetupID: widget.uSetupID,
                 ),
-                icon: const Icon(Icons.add, size: 18),
+                icon: const Icon(CupertinoIcons.plus, size: 18),
                 label: const Text('Add setting'),
               ),
             ),
           ),
         ),
         SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-              20, 4, 20, ResponsiveLayout.isWide(context) ? 20 : 100),
-          sliver: wide
-              ? SliverList(delegate: delegate)
-              : SliverGrid(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent:
-                        220 * (MediaQuery.textScalerOf(context).scale(14) / 14),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    mainAxisExtent: 112 +
-                        (MediaQuery.textScalerOf(context).scale(14) / 14 - 1) *
-                            80,
-                  ),
-                  delegate: delegate,
-                ),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent:
+                  220 * (MediaQuery.textScalerOf(context).scale(14) / 14),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              mainAxisExtent: 112 +
+                  (MediaQuery.textScalerOf(context).scale(14) / 14 - 1) * 80,
+            ),
+            delegate: delegate,
+          ),
         ),
       ],
     );
@@ -635,28 +576,21 @@ class _ControlCard extends StatelessWidget {
   final _CardDef config;
   final String value;
   final VoidCallback onTap;
-  final bool selected;
-  final bool forceText;
 
   const _ControlCard({
-    super.key,
     required this.config,
     required this.value,
     required this.onTap,
-    this.selected = false,
-    this.forceText = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final parsed = forceText
-        ? SettingValue.freeText(value)
-        : SettingValue.parse(
-            value == '--' ? '' : value,
-            fallbackFamily: config.fallbackFamily,
-            fallbackUnit: config.fallbackUnit,
-          );
+    final parsed = SettingValue.parse(
+      value == '--' ? '' : value,
+      fallbackFamily: config.fallbackFamily,
+      fallbackUnit: config.fallbackUnit,
+    );
     String displayValue;
     String displayUnit;
     if (value == '--' || parsed.isEmpty) {
@@ -672,15 +606,12 @@ class _ControlCard extends StatelessWidget {
     final isText = parsed.isText;
 
     return Semantics(
-        selected: selected,
         button: true,
         child: Material(
-          color: selected ? p.surface2 : p.surface,
+          color: p.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-                color: selected ? p.accentText : p.border,
-                width: selected ? 2 : 1),
+            side: BorderSide(color: p.border, width: 1),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -754,54 +685,6 @@ class _ControlCard extends StatelessWidget {
   }
 }
 
-/// Tablet settings stay compact and align names and values for scanning.
-class SettingRow extends StatelessWidget {
-  final String name;
-  final String value;
-  final String unit;
-  final String iconAsset;
-  final VoidCallback onTap;
-  const SettingRow(
-      {super.key,
-      required this.name,
-      required this.value,
-      required this.unit,
-      required this.iconAsset,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.surface,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 72),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: p.border))),
-          child: Row(children: [
-            FieldIcon(asset: iconAsset, size: 20, color: p.inkMuted),
-            const SizedBox(width: 12),
-            Expanded(
-                child:
-                    Text(name, style: Theme.of(context).textTheme.bodyLarge)),
-            const SizedBox(width: 16),
-            Expanded(
-                child: Text(unit.isEmpty ? value : '$value $unit',
-                    textAlign: TextAlign.right,
-                    style: AppTextStyles.mono(
-                        size: 20, weight: FontWeight.w600, color: p.ink))),
-            const SizedBox(width: 12),
-            Icon(Icons.chevron_right, size: 18, color: p.inkMuted),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
 class _AnimatedTile extends StatefulWidget {
   final Widget child;
   const _AnimatedTile({super.key, required this.child});
@@ -842,137 +725,5 @@ class _AnimatedTileState extends State<_AnimatedTile>
       opacity: _opacity,
       child: ScaleTransition(scale: _scale, child: widget.child),
     );
-  }
-}
-
-/// Persistent tablet inspector with the same setting tiles used on phones.
-class TabletSettingsPanel extends StatefulWidget {
-  final String scope;
-  final String title;
-  final Map<String, String> settings;
-  final Map<String, String> metadata;
-  final Future<void> Function(String key, String value) onSave;
-  final VoidCallback onAdd;
-  final ValueChanged<String>? onManage;
-  final bool loading;
-
-  const TabletSettingsPanel(
-      {super.key,
-      required this.scope,
-      required this.title,
-      required this.settings,
-      this.metadata = const {},
-      required this.onSave,
-      required this.onAdd,
-      this.onManage,
-      this.loading = false});
-
-  @override
-  State<TabletSettingsPanel> createState() => _TabletSettingsPanelState();
-}
-
-class _TabletSettingsPanelState extends State<TabletSettingsPanel> {
-  final Map<String, String> _selectedByScope = {};
-  final Map<String, SettingWriteQueue> _writesByField = {};
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.loading) {
-      return const Center(child: CircularProgressIndicator.adaptive());
-    }
-    final keys = widget.settings.keys.toList();
-    var selected = _selectedByScope[widget.scope];
-    if (!keys.contains(selected)) selected = keys.isEmpty ? null : keys.first;
-    if (selected != null) _selectedByScope[widget.scope] = selected;
-    final selectedKey = selected;
-    final onSave = widget.onSave;
-    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    return LayoutBuilder(builder: (context, constraints) {
-      final editor = selectedKey == null
-          ? Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text('Add a setting to start adjusting this part.',
-                  style: Theme.of(context).textTheme.bodyLarge))
-          : InlineSettingEditor(
-              key: ValueKey('${widget.scope}/$selectedKey'),
-              writes: _writesByField.putIfAbsent(
-                  '${widget.scope}/$selectedKey', SettingWriteQueue.new),
-              name: selectedKey,
-              value: widget.settings[selectedKey]!,
-              familyOverride:
-                  unitFamilyFromName(widget.metadata[selectedKey] ?? ''),
-              onSave: (value) => onSave(selectedKey, value),
-              onManage: widget.onManage == null
-                  ? null
-                  : () => widget.onManage!(selectedKey),
-            );
-      final tiles = GridView.builder(
-        primary: false,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: constraints.maxWidth >= 330 * scale ? 2 : 1,
-            mainAxisExtent: 112 + (scale - 1) * 80,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12),
-        itemCount: keys.length,
-        itemBuilder: (context, index) {
-          final key = keys[index];
-          return _ControlCard(
-              key: ValueKey('tablet-tile-$key'),
-              config: _CardDef.fromKey(key),
-              value: widget.settings[key]!,
-              selected: selectedKey == key,
-              forceText: widget.metadata[key] == UnitFamily.freeText.name,
-              onTap: () =>
-                  setState(() => _selectedByScope[widget.scope] = key));
-        },
-      );
-      final content = Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            editor,
-            const SizedBox(height: 24),
-            Row(children: [
-              Expanded(
-                  child: Text('Settings',
-                      style: Theme.of(context).textTheme.titleMedium)),
-              TextButton.icon(
-                  onPressed: widget.onAdd,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add setting')),
-            ]),
-            const SizedBox(height: 12),
-            tiles,
-            const SizedBox(height: 24),
-          ]);
-      // Long lists scroll below a pinned editor. Short windows and enlarged text
-      // scroll the complete inspector so no controls become unreachable.
-      if (!constraints.hasBoundedHeight ||
-          constraints.maxHeight < 680 ||
-          scale >= 1.6) {
-        return SingleChildScrollView(primary: false, child: content);
-      }
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        editor,
-        const SizedBox(height: 24),
-        Row(children: [
-          Expanded(
-              child: Text('Settings',
-                  style: Theme.of(context).textTheme.titleMedium)),
-          TextButton.icon(
-              onPressed: widget.onAdd,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add setting')),
-        ]),
-        const SizedBox(height: 12),
-        Expanded(child: SingleChildScrollView(primary: false, child: tiles)),
-      ]);
-    });
   }
 }

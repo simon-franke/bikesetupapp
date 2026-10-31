@@ -4,6 +4,10 @@ String failureMessage(AppFailure failure) => switch (failure.code) {
       FailureCode.permissionDenied =>
         'You do not have permission to make this change.',
       FailureCode.unavailable => 'Check your connection and try again.',
+      FailureCode.baselineChanged =>
+        'The baseline changed during this test. Save as a separate setup to keep your test values.',
+      FailureCode.duplicateName =>
+        'That name is already in use. Choose a different name.',
       FailureCode.saveFailed => 'Could not save your changes. Try again.',
       FailureCode.loadFailed => 'Could not load data. Try again.',
       FailureCode.authenticationFailed => 'Could not sign in. Try again.',

@@ -1,5 +1,5 @@
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/ui/adaptive_modal.dart';
+import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -16,7 +16,7 @@ Future<void> showDeferServiceSheet(
         required String userID,
         required ServiceComponent component,
         required double currentMileageKm}) =>
-    showAdaptiveModal<void>(
+    showAppSheet<void>(
         context: context,
         builder: (_) => _DeferServiceForm(
             userId: userID, component: component, mileageKm: currentMileageKm));
@@ -82,8 +82,13 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
               const AppSheetHandle(),
               const SizedBox(height: 18),
               Center(
-                  child: Text('STILL GOOD FOR',
-                      style: AppTextStyles.eyebrow(color: p.inkDim))),
+                  child: Text('Defer service',
+                      style: AppTextStyles.inter(
+                          size: 22, weight: FontWeight.w600, color: p.ink))),
+              const SizedBox(height: 12),
+              Text(
+                  'How much further is ${widget.component.name.toLowerCase()} good for?',
+                  style: AppTextStyles.inter(size: 16, color: p.inkMuted)),
               const SizedBox(height: 8),
               IgnorePointer(
                   ignoring: _controller.saving,
@@ -107,7 +112,7 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
               SizedBox(
                   width: double.infinity,
                   child: AppActionButton(
-                      label: _controller.saving ? 'Saving…' : 'Save',
+                      label: _controller.saving ? 'Saving…' : 'Defer service',
                       onPressed: _controller.saving ? null : _save)),
             ]));
   }

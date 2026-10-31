@@ -6,23 +6,32 @@ import 'failure_message.dart';
 /// retain their exception/stack in Flutter's error reporting and controller state.
 Future<bool> presentCommand<T>(
     BuildContext context, Future<CommandResult<T>> Function() action,
-    {String fallback = 'Something went wrong. Try again.'}) async {
+    {String fallback = 'Something went wrong. Try again.',
+    ValueChanged<String>? onFailure}) async {
   try {
     final result = await action();
     if (!context.mounted) return false;
     final failure = result.failure;
     if (failure != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(failureMessage(failure)),
-          duration: const Duration(seconds: 8)));
+      if (onFailure != null) {
+        onFailure(failureMessage(failure));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(failureMessage(failure)),
+            duration: const Duration(seconds: 8)));
+      }
     }
     return result.isSuccess;
   } catch (error, stack) {
     FlutterError.reportError(FlutterErrorDetails(
         exception: error, stack: stack, library: 'controller command'));
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(fallback)));
+      if (onFailure != null) {
+        onFailure(fallback);
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(fallback)));
+      }
     }
     return false;
   }

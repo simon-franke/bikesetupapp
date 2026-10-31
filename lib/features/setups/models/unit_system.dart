@@ -1,5 +1,6 @@
 enum UnitFamily {
   pressure,
+  percent,
   length,
   weight,
   angle,
@@ -24,6 +25,7 @@ class UnitDef {
 }
 
 const Map<UnitFamily, List<UnitDef>> kUnitFamilies = {
+  UnitFamily.percent: [UnitDef(id: '%', label: '%', toCanonical: 1)],
   UnitFamily.pressure: [
     UnitDef(id: 'psi', label: 'psi', toCanonical: 1.0, decimals: 0),
     UnitDef(id: 'bar', label: 'bar', toCanonical: 14.5038, decimals: 1),
@@ -131,6 +133,9 @@ class SettingValue {
     UnitDef? fallbackUnit,
   }) {
     final trimmed = raw.trim();
+    if (fallbackFamily == UnitFamily.freeText) {
+      return SettingValue.freeText(trimmed);
+    }
     if (trimmed.isEmpty) {
       if (fallbackFamily == UnitFamily.freeText) {
         return SettingValue.freeText('');

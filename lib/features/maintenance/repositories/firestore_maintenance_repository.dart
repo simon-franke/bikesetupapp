@@ -45,9 +45,12 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
 
   @override
   Future<void> updateComponent(String componentId,
-      {String? name, int? serviceIntervalKm}) {
+      {String? name, int? serviceIntervalKm, double? serviceIntervalHours}) {
     return firebaseOperation(() async {
       final Map<String, dynamic> updates = {};
+      if (serviceIntervalHours != null) {
+        updates['serviceIntervalHours'] = serviceIntervalHours;
+      }
       if (name != null) updates[FirestoreKeys.componentName] = name;
       if (serviceIntervalKm != null) {
         updates[FirestoreKeys.serviceIntervalKm] = serviceIntervalKm;

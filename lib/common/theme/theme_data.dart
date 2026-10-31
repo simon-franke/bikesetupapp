@@ -5,22 +5,22 @@ class AppColors {
   AppColors._();
 
   static const Color blue = Color(0xFF4D7EA8);
-  static const Color blueDeep = Color(0xFF3A546D);
+  static const Color blueDeep = Color(0xFF3B4D53);
 
-  static const Color darkBg = Color(0xFF272932);
-  static const Color darkSurface = Color(0xFF303B49);
-  static const Color darkSurface2 = Color(0xFF3A546D);
+  static const Color darkBg = Color(0xFF242E36);
+  static const Color darkSurface = Color(0xFF303E48);
+  static const Color darkSurface2 = Color(0xFF3D4A56);
   static const Color darkCard = Color(0xFFEDF3F8);
   static const Color darkCardInk = Color(0xFF233749);
-  static const Color darkInk = Color(0xFFF2F3F5);
-  static const Color darkInkMuted = Color(0xFFD5DDE6);
-  static const Color darkInkDim = Color(0xFFD5DDE6);
-  static const Color darkBorder = Color(0xFF45576A);
+  static const Color darkInk = Color(0xFFF0F4F2);
+  static const Color darkInkMuted = Color(0xFFC8D5DA);
+  static const Color darkInkDim = Color(0xFFC8D5DA);
+  static const Color darkBorder = Color(0xFF465963);
   static const Color darkBorderStrong = Color(0xFFA4B7C9);
 
-  static const Color lightBg = Color(0xFFE7EEEB);
-  static const Color lightSurface = Color(0xFFF8FAFB);
-  static const Color lightSurface2 = Color(0xFFDDE7ED);
+  static const Color lightBg = Color(0xFFEDF1EE);
+  static const Color lightSurface = Color(0xFFFAFCFA);
+  static const Color lightSurface2 = Color(0xFFE3EBE6);
   static const Color lightCard = Color(0xFF233749);
   static const Color lightCardInk = Color(0xFFEDF3F8);
   static const Color lightInk = Color(0xFF233749);
@@ -29,11 +29,12 @@ class AppColors {
   static const Color lightBorder = Color(0xFFCDD9E0);
   static const Color lightBorderStrong = Color(0xFF6B7C8B);
 
-  static const Color accent = Color(0xFFF4A259);
+  static const Color accent = Color(0xFFF4AA6B);
   static const Color accentInk = Color(0xFF362313);
   static const Color green = Color(0xFF5BB97A);
   static const Color amber = Color(0xFFD9A23A);
   static const Color red = Color(0xFFE0654C);
+  static const Color destructiveFill = Color(0xFFB43B35);
 
   /// Foreground for a solid fill; choose the higher-contrast neutral.
   static Color onColor(Color color) {
@@ -102,7 +103,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     borderStrong: AppColors.darkBorderStrong,
     accent: AppColors.accent,
     accentInk: AppColors.accentInk,
-    green: Color(0xFFA2E9BF),
+    green: Color(0xFFA8EFC5),
     amber: Color(0xFFFFD989),
     red: Color(0xFFFFD5CD),
   );
@@ -194,7 +195,7 @@ class AppTextStyles {
     double letterSpacing = 0,
     double? height,
   }) =>
-      GoogleFonts.jetBrainsMono(
+      GoogleFonts.sora(
         fontSize: size,
         fontWeight: weight,
         color: color,
@@ -209,7 +210,7 @@ class AppTextStyles {
     double letterSpacing = 0,
     double? height,
   }) =>
-      GoogleFonts.inter(
+      GoogleFonts.sora(
         fontSize: size,
         fontWeight: weight,
         color: color,
@@ -219,7 +220,7 @@ class AppTextStyles {
 
   static TextStyle eyebrow(
           {Color? color, double size = 10, double letterSpacing = 1.6}) =>
-      GoogleFonts.inter(
+      GoogleFonts.sora(
         fontSize: size,
         fontWeight: FontWeight.w700,
         color: color,
@@ -234,24 +235,24 @@ class AppTheme {
       {required Brightness brightness, required AppPalette p}) {
     final base =
         brightness == Brightness.dark ? ThemeData.dark() : ThemeData.light();
-    final textTheme = GoogleFonts.interTextTheme(base.textTheme).copyWith(
-      titleLarge: GoogleFonts.inter(
+    final textTheme = GoogleFonts.soraTextTheme(base.textTheme).copyWith(
+      titleLarge: GoogleFonts.sora(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: p.ink,
           letterSpacing: -0.3),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: GoogleFonts.sora(
           fontSize: 16, fontWeight: FontWeight.w700, color: p.ink),
-      titleSmall: GoogleFonts.inter(
+      titleSmall: GoogleFonts.sora(
           fontSize: 13, fontWeight: FontWeight.w600, color: p.ink),
-      bodyLarge: GoogleFonts.inter(fontSize: 15, color: p.ink),
-      bodyMedium: GoogleFonts.inter(fontSize: 13, color: p.ink),
-      bodySmall: GoogleFonts.inter(fontSize: 12, color: p.inkMuted),
-      labelLarge: GoogleFonts.inter(
+      bodyLarge: GoogleFonts.sora(fontSize: 15, color: p.ink),
+      bodyMedium: GoogleFonts.sora(fontSize: 13, color: p.ink),
+      bodySmall: GoogleFonts.sora(fontSize: 12, color: p.inkMuted),
+      labelLarge: GoogleFonts.sora(
           fontSize: 14, fontWeight: FontWeight.w600, color: p.ink),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: GoogleFonts.sora(
           fontSize: 13, fontWeight: FontWeight.w600, color: p.inkMuted),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: GoogleFonts.sora(
           fontSize: 12, fontWeight: FontWeight.w600, color: p.inkDim),
       displayLarge: AppTextStyles.mono(
           size: 64, color: p.ink, letterSpacing: -3, height: 1),
@@ -263,6 +264,9 @@ class AppTheme {
 
     return ThemeData(
       brightness: brightness,
+      splashFactory: NoSplash.splashFactory,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
       primaryColor: brightness == Brightness.dark
           ? const Color(0xFFA9CBE8)
           : AppColors.blueDeep,
@@ -297,7 +301,7 @@ class AppTheme {
         backgroundColor: p.bg,
         foregroundColor: p.ink,
         iconTheme: IconThemeData(color: p.ink),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.sora(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: p.ink,
@@ -319,21 +323,23 @@ class AppTheme {
         labelStyle: TextStyle(color: p.inkMuted, fontSize: 14),
         floatingLabelStyle: TextStyle(color: p.accentText, fontSize: 14),
         suffixStyle: TextStyle(color: p.inkMuted, fontSize: 14),
-        errorStyle: TextStyle(color: p.red, fontSize: 12),
+        errorStyle: TextStyle(color: p.red, fontSize: 13, height: 1.35),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: p.borderStrong)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+        border: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        enabledBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        focusedBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: p.accentText, width: 2)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+        errorBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: p.red)),
-        focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+        focusedErrorBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: p.red, width: 2)),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -345,7 +351,7 @@ class AppTheme {
         minimumSize: const Size(48, 48),
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      )),
+      ).copyWith(overlayColor: _pressOverlay)),
       elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
         backgroundColor: p.accent,
@@ -354,7 +360,7 @@ class AppTheme {
         minimumSize: const Size(48, 48),
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      )),
+      ).copyWith(overlayColor: _pressOverlay)),
       outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
         foregroundColor: p.ink,
@@ -362,13 +368,13 @@ class AppTheme {
         minimumSize: const Size(48, 48),
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      )),
+      ).copyWith(overlayColor: _pressOverlay)),
       textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
         foregroundColor: p.accentText,
         minimumSize: const Size(48, 48),
         textStyle: textTheme.labelLarge,
-      )),
+      ).copyWith(overlayColor: _pressOverlay)),
       chipTheme: ChipThemeData(
         backgroundColor: p.surface,
         selectedColor: p.surface2,
@@ -379,6 +385,7 @@ class AppTheme {
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
           style: ButtonStyle(
+        overlayColor: _pressOverlay,
         minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
         side: WidgetStatePropertyAll(BorderSide(color: p.borderStrong)),
         shape: WidgetStatePropertyAll(
@@ -395,9 +402,11 @@ class AppTheme {
           style: IconButton.styleFrom(
         foregroundColor: p.inkMuted,
         minimumSize: const Size(48, 48),
-      )),
+      ).copyWith(overlayColor: _pressOverlay)),
       iconTheme: IconThemeData(color: p.ink),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
+        splashColor: Colors.transparent,
+        highlightElevation: 0,
         backgroundColor: p.accent,
         foregroundColor: p.accentInk,
         elevation: 0,
@@ -429,8 +438,12 @@ class AppTheme {
     );
   }
 
-  static final ThemeData lightTheme =
+  static ThemeData get lightTheme =>
       _build(brightness: Brightness.light, p: AppPalette.light);
-  static final ThemeData darkTheme =
+  static ThemeData get darkTheme =>
       _build(brightness: Brightness.dark, p: AppPalette.dark);
 }
+
+// Suppress touch overlays while retaining the default keyboard focus feedback.
+final _pressOverlay = WidgetStateProperty.resolveWith<Color?>((states) =>
+    states.contains(WidgetState.pressed) ? Colors.transparent : null);

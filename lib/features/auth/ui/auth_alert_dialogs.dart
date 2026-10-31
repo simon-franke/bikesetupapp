@@ -17,12 +17,12 @@ class AuthAlerts {
         userCredential.additionalUserInfo!.isNewUser) {
       if (!context.mounted) return;
       showNewBikeSheet(context, user, NewBikeMode.newBike,
-          onBikeSelected: (bikeName, uBikeID, bikeType, setupName, uSetupID) {
+          onBikeSelected: (bikeName, uBikeID, setupName, uSetupID) {
         Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
           user: user,
           bikeName: bikeName,
           uBikeID: uBikeID,
-          bikeType: bikeType,
+
           setupName: setupName,
           uSetupID: uSetupID,
         )));
@@ -41,12 +41,12 @@ class AuthAlerts {
     if (selection == null) {
       if (!context.mounted) return;
       showNewBikeSheet(context, user, NewBikeMode.newBike,
-          onBikeSelected: (bikeName, uBikeID, bikeType, setupName, uSetupID) {
+          onBikeSelected: (bikeName, uBikeID, setupName, uSetupID) {
         Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
           user: user,
           bikeName: bikeName,
           uBikeID: uBikeID,
-          bikeType: bikeType,
+
           setupName: setupName,
           uSetupID: uSetupID,
         )));
@@ -58,7 +58,7 @@ class AuthAlerts {
       user: user,
       bikeName: selection.bikeName,
       uBikeID: selection.bikeId,
-      bikeType: selection.bikeType,
+
       setupName: selection.setupName,
       uSetupID: selection.setupId,
     )));

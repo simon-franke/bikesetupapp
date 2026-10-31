@@ -3,6 +3,9 @@ enum Category {
   frontTire(category: 'FrontTire'),
   shock(category: 'Shock'),
   generalSettings(category: 'GeneralSettings'),
+  frame(category: 'Frame'),
+  cockpit(category: 'Cockpit'),
+  saddle(category: 'Saddle'),
   fork(category: 'Fork');
 
   final String category;

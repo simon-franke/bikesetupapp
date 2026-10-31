@@ -1,124 +1,108 @@
-import '../models/active_view.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
+import 'package:bikesetupapp/common/ui/app_glass_surface.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:bikesetupapp/common/theme/theme_data.dart';
+import '../models/active_view.dart';
 export '../models/active_view.dart';
 
-class ViewToggle extends StatelessWidget {
+/// Standard Flutter tabs on the package's glass surface. Selection, focus,
+/// keyboard interaction and semantics remain owned by TabBar.
+class ViewToggle extends StatefulWidget {
+  const ViewToggle(
+      {super.key,
+      required this.activeView,
+      required this.onChanged,
+      this.showServiceAlert = false});
   final ActiveView activeView;
   final ValueChanged<ActiveView> onChanged;
   final bool showServiceAlert;
-
-  const ViewToggle({
-    super.key,
-    required this.activeView,
-    required this.onChanged,
-    this.showServiceAlert = false,
-  });
-
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Material(
-      color: p.surface2,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.all(3),
-        child: Row(
-          children: [
-            Expanded(
-              child: _Tab(
-                label: 'Setup',
-                icon: Icons.tune_rounded,
-                isActive: activeView == ActiveView.setup,
-                onTap: () => onChanged(ActiveView.setup),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: _Tab(
-                label: 'Service',
-                icon: Icons.build_outlined,
-                isActive: activeView == ActiveView.services,
-                showAlert: showServiceAlert,
-                onTap: () => onChanged(ActiveView.services),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<ViewToggle> createState() => _ViewToggleState();
 }
 
-class _Tab extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final bool showAlert;
-  final VoidCallback onTap;
+class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
+  TabController? _controller;
+  bool _reducedMotion = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    if (_controller == null || reduced != _reducedMotion) {
+      _controller?.dispose();
+      _reducedMotion = reduced;
+      _controller = TabController(
+          length: ActiveView.values.length,
+          vsync: this,
+          initialIndex: widget.activeView.index,
+          animationDuration:
+              reduced ? Duration.zero : const Duration(milliseconds: 220));
+    }
+  }
 
-  const _Tab({
-    required this.label,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-    this.showAlert = false,
-  });
+  @override
+  void didUpdateWidget(ViewToggle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_controller!.index != widget.activeView.index) {
+      _controller!.animateTo(widget.activeView.index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final fg = isActive ? p.cardInk : p.inkMuted;
-    return Semantics(
-      button: true,
-      selected: isActive,
-      label: showAlert ? '$label, maintenance due' : label,
-      onTap: onTap,
-      excludeSemantics: true,
-      child: Material(
-        color: isActive ? p.card : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 17, color: fg),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            fontSize: 14,
-                            fontWeight:
-                                isActive ? FontWeight.w600 : FontWeight.w500,
-                            color: fg,
-                          ),
-                    ),
-                  ),
-                  if (showAlert) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: p.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    final bottom =
+        (MediaQuery.viewPaddingOf(context).bottom - 12).clamp(8.0, 24.0);
+    return Padding(
+        key: const ValueKey('navigation-inset'),
+        padding: EdgeInsets.fromLTRB(20, 8, 20, bottom),
+        child: AppGlassSurface(
+            child: TabBar(
+                controller: _controller,
+                onTap: (index) => widget.onChanged(ActiveView.values[index]),
+                dividerColor: Colors.transparent,
+                labelColor: p.accentText,
+                unselectedLabelColor: p.inkMuted,
+                labelStyle:
+                    AppTextStyles.inter(size: 11, weight: FontWeight.w600),
+                unselectedLabelStyle:
+                    AppTextStyles.inter(size: 11, weight: FontWeight.w500),
+                labelPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                    color: p.ink.withValues(alpha: .07),
+                    borderRadius: BorderRadius.circular(25)),
+                splashFactory: NoSplash.splashFactory,
+                overlayColor: WidgetStateProperty.resolveWith((states) =>
+                    states.contains(WidgetState.pressed)
+                        ? Colors.transparent
+                        : null),
+                tabs: [
+              const Tab(
+                  height: 64,
+                  iconMargin: EdgeInsets.only(bottom: 5),
+                  icon: Icon(CupertinoIcons.slider_horizontal_3, size: 23),
+                  text: 'Setup'),
+              const Tab(
+                  height: 64,
+                  iconMargin: EdgeInsets.only(bottom: 5),
+                  icon: Icon(CupertinoIcons.lab_flask, size: 23),
+                  text: 'Experiments'),
+              Tab(
+                  height: 64,
+                  iconMargin: const EdgeInsets.only(bottom: 5),
+                  icon: const Icon(CupertinoIcons.wrench, size: 23),
+                  child: Text('Service',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      semanticsLabel: widget.showServiceAlert
+                          ? 'Service, maintenance due'
+                          : 'Service')),
+            ])));
   }
 }

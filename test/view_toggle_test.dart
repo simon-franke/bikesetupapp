@@ -29,7 +29,7 @@ void main() {
     expect(find.text('Service'), findsOneWidget);
     expect(
         tester
-            .getSemantics(find.bySemanticsLabel('Setup'))
+            .getSemantics(find.bySemanticsLabel(RegExp(r'^Setup')))
             .getSemanticsData()
             .flagsCollection
             .isSelected,
@@ -37,7 +37,7 @@ void main() {
 
     expect(
         tester
-            .getSemantics(find.bySemanticsLabel('Service, maintenance due'))
+            .getSemantics(find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
             .getSemanticsData()
             .hasAction(SemanticsAction.tap),
         isTrue);
@@ -47,14 +47,14 @@ void main() {
     expect(activeView, ActiveView.services);
     expect(
         tester
-            .getSemantics(find.bySemanticsLabel('Service, maintenance due'))
+            .getSemantics(find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
             .getSemanticsData()
             .flagsCollection
             .isSelected,
         Tristate.isTrue);
     expect(
         tester
-            .getSemantics(find.bySemanticsLabel('Setup'))
+            .getSemantics(find.bySemanticsLabel(RegExp(r'^Setup')))
             .getSemanticsData()
             .flagsCollection
             .isSelected,

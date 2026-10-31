@@ -9,7 +9,6 @@ abstract class FirestoreKeys {
 
   // Bike document fields
   static const String bikeName = 'bike_name';
-  static const String bikeType = 'bike_type';
   static const String defaultSetup = 'defaultSetup';
 
   // Setup document fields

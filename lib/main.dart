@@ -1,9 +1,9 @@
+import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
 import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
-import 'package:bikesetupapp/features/bikes/models/bike_type.dart';
 import 'package:bikesetupapp/features/strava/platform/strava_web_callback_stub.dart'
     if (dart.library.js_interop) 'package:bikesetupapp/features/strava/platform/strava_web_callback.dart';
 
@@ -11,12 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env").catchError((_) {});
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -47,7 +45,6 @@ void main() async {
             defaultBike: selection?.bikeName ?? '',
             defaultSetupID: selection?.setupId ?? '',
             defaultSetup: selection?.setupName ?? '',
-            bikeType: selection?.bikeType ?? BikeType.error,
           ))));
 }
 
@@ -58,7 +55,7 @@ class MyApp extends StatelessWidget {
   final String defaultBike;
   final String defaultSetupID;
   final String defaultSetup;
-  final BikeType bikeType;
+
   const MyApp(
       {super.key,
       required this.isSignedIn,
@@ -66,8 +63,7 @@ class MyApp extends StatelessWidget {
       required this.defaultBikeID,
       required this.defaultBike,
       required this.defaultSetupID,
-      required this.defaultSetup,
-      required this.bikeType});
+      required this.defaultSetup});
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +71,7 @@ class MyApp extends StatelessWidget {
       builder: (context, appState, child) {
         return MaterialApp(
             debugShowCheckedModeBanner: false,
+            builder: (context, child) => PhoneViewport(child: child!),
             title: "Bike Setup",
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
@@ -86,7 +83,6 @@ class MyApp extends StatelessWidget {
                     user: user,
                     bikeName: defaultBike,
                     uBikeID: defaultBikeID,
-                    bikeType: bikeType,
                     setupName: defaultSetup,
                     uSetupID: defaultSetupID,
                   )
