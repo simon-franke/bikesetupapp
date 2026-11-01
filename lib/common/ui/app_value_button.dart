@@ -29,23 +29,23 @@ class AppValueButton extends StatelessWidget {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       child: Row(children: [
         if (leading != null || icon != null) ...[
-          leading ?? Icon(icon, size: 20),
+          leading ?? Icon(icon, size: AppIconSizes.control),
           const SizedBox(width: 12)
         ],
         Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label,
-              style: AppTextStyles.inter(size: 16, color: context.palette.ink)),
+              style: AppTextStyles.body.copyWith(color: context.palette.ink)),
           if (value != null) ...[
             const SizedBox(height: 4),
             Text(value!,
-                style: AppTextStyles.inter(
-                    size: 14, color: context.palette.inkMuted))
+                style: AppTextStyles.body
+                    .copyWith(color: context.palette.inkMuted))
           ],
         ])),
         const SizedBox(width: 12),
         Icon(CupertinoIcons.chevron_right,
-            size: 16, color: context.palette.inkMuted),
+            size: AppIconSizes.compact, color: context.palette.inkMuted),
       ]));
 }

@@ -118,7 +118,7 @@ class _RideLogPageState extends State<RideLogPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('Ride activity')),
+      appBar: buildDetailAppBar(context, title: 'Ride activity'),
       body: ListenableBuilder(
           listenable: controller,
           builder: (context, _) =>
@@ -183,14 +183,12 @@ class _RideLogPageState extends State<RideLogPage> {
                                     if (rides.any((r) => r.durationSeconds > 0))
                                       '${rides.fold<double>(0, (sum, r) => sum + r.hours).toStringAsFixed(1)} h',
                                   ].join('   '),
-                                  style: AppTextStyles.inter(
-                                      size: 16,
+                                  style: AppTextStyles.body.copyWith(
                                       color: context.palette.inkMuted)),
                             const SizedBox(height: 12),
                             if (rides.isEmpty)
                               Text('Add rides to track service intervals.',
-                                  style: AppTextStyles.inter(
-                                      size: 16,
+                                  style: AppTextStyles.body.copyWith(
                                       color: context.palette.inkMuted)),
                             for (final ride in rides)
                               Card(
@@ -325,14 +323,12 @@ class _ManualRideFormState extends State<ManualRideForm> {
                     const AppSheetHandle(),
                     const SizedBox(height: 20),
                     Text('Log ride',
-                        style: AppTextStyles.inter(
-                            size: 22,
-                            weight: FontWeight.w600,
-                            color: context.palette.ink)),
+                        style: AppTextStyles.heading
+                            .copyWith(color: context.palette.ink)),
                     const SizedBox(height: 8),
                     Text(widget.bikeName,
-                        style: AppTextStyles.inter(
-                            size: 16, color: context.palette.inkMuted)),
+                        style: AppTextStyles.body
+                            .copyWith(color: context.palette.inkMuted)),
                     const SizedBox(height: 20),
                     AppTextField(
                         controller: name, hint: 'Ride name (optional)'),

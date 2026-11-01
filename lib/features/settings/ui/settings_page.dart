@@ -24,7 +24,6 @@ class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
     required this.bikeName,
-
     required this.chosenSetup,
   });
 
@@ -97,13 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const SizedBox(width: 12),
-            Text('Settings',
-                style: AppTextStyles.inter(
-                  size: 18,
-                  weight: FontWeight.w700,
-                  color: p.ink,
-                  letterSpacing: -0.3,
-                )),
+            Text('Settings', style: AppTextStyles.label.copyWith(color: p.ink)),
           ]),
         ),
       ),
@@ -248,11 +241,7 @@ class _AccountRow extends StatelessWidget {
           child: (u?.photoURL == null)
               ? Text(
                   u == null ? '?' : _initials(u),
-                  style: AppTextStyles.inter(
-                    size: 13,
-                    weight: FontWeight.w800,
-                    color: p.accentInk,
-                  ),
+                  style: AppTextStyles.label.copyWith(color: p.accentInk),
                 )
               : null,
         ),
@@ -264,14 +253,13 @@ class _AccountRow extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: AppTextStyles.inter(
-                    size: 13, weight: FontWeight.w700, color: p.ink),
+                style: AppTextStyles.label.copyWith(color: p.ink),
                 overflow: TextOverflow.ellipsis,
               ),
               if (email.isNotEmpty)
                 Text(
                   email,
-                  style: AppTextStyles.inter(size: 11, color: p.inkMuted),
+                  style: AppTextStyles.caption.copyWith(color: p.inkMuted),
                   overflow: TextOverflow.ellipsis,
                 ),
             ],
@@ -328,7 +316,7 @@ class _StravaCard extends StatelessWidget {
                 color: p.accent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: BikeIcon(size: 18, color: p.accentInk),
+              child: BikeIcon(size: AppIconSizes.compact, color: p.accentInk),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -337,11 +325,7 @@ class _StravaCard extends StatelessWidget {
                 children: [
                   Text(
                     'Strava',
-                    style: AppTextStyles.inter(
-                      size: 13,
-                      weight: FontWeight.w700,
-                      color: p.ink,
-                    ),
+                    style: AppTextStyles.label.copyWith(color: p.ink),
                   ),
                   Text(
                     isConnected
@@ -349,7 +333,7 @@ class _StravaCard extends StatelessWidget {
                             ? 'Connected with $bikeCount bike${bikeCount == 1 ? '' : 's'} synced'
                             : 'Connected')
                         : 'Not connected',
-                    style: AppTextStyles.inter(size: 10.5, color: p.inkMuted),
+                    style: AppTextStyles.caption.copyWith(color: p.inkMuted),
                   ),
                 ],
               ),
@@ -378,12 +362,7 @@ class _StravaCard extends StatelessWidget {
               onPressed: onDisconnect,
               child: Text(
                 'Disconnect',
-                style: AppTextStyles.inter(
-                  size: 11,
-                  weight: FontWeight.w700,
-                  color: p.red,
-                  letterSpacing: 0.5,
-                ),
+                style: AppTextStyles.caption.copyWith(color: p.red),
               ),
             ),
           ),

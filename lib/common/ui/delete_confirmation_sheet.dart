@@ -24,14 +24,13 @@ Future<bool> showDeleteConfirmationSheet(
               Text(title, style: Theme.of(ctx).textTheme.titleLarge),
               const SizedBox(height: 12),
               Text(message,
-                  style: AppTextStyles.inter(
-                      size: 14, color: ctx.palette.inkMuted)),
+                  style:
+                      AppTextStyles.body.copyWith(color: ctx.palette.inkMuted)),
               const SizedBox(height: 28),
               AppActionButton(
                 label: actionLabel,
-                textStyle:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                color: AppColors.destructiveFill,
+                textStyle: AppTextStyles.label,
+                destructive: true,
                 onPressed: () => Navigator.pop(ctx, true),
               ),
               const SizedBox(height: 8),
@@ -39,10 +38,7 @@ Future<bool> showDeleteConfirmationSheet(
                 onPressed: () => Navigator.pop(ctx, false),
                 style: TextButton.styleFrom(
                   foregroundColor: ctx.palette.ink,
-                  textStyle: Theme.of(ctx)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+                  textStyle: AppTextStyles.label,
                 ),
                 child: const Text('Cancel'),
               ),

@@ -22,18 +22,15 @@ class WorkspaceTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final value = bikeOnly ? activitySummary ?? 'No rides yet' : setupName;
-    final titleStyle =
-        AppTextStyles.inter(size: 24, weight: FontWeight.w600, color: p.ink)
-            .copyWith(
-                height: 1.4,
-                fontFeatures: const [FontFeature.tabularFigures()]);
+    final titleStyle = AppTextStyles.heading
+        .copyWith(color: p.ink)
+        .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(bikeName,
-            style: AppTextStyles.inter(size: 12, color: p.inkMuted)
-                .copyWith(height: 1.4),
+            style: AppTextStyles.caption.copyWith(color: p.inkMuted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),

@@ -22,6 +22,71 @@ SetupTest sample({TestStage stage = TestStage.draft}) =>
     });
 
 void main() {
+  test('editing an experiment preserves baseline and protects logged rides',
+      () async {
+    final repo = MemoryTests()..records['test'] = sample(stage: TestStage.ride);
+    final controller = TestsController(repo, FakeSetupsRepository());
+    expect((await controller.editExperiment('bike', 'setup', 'test')).isSuccess,
+        isTrue);
+    expect(repo.records['test']!.stage, TestStage.draft);
+    expect(repo.records['test']!.before, sample().before);
+    expect(repo.records['test']!.values, sample().values);
+    repo.records['test'] = sample(stage: TestStage.ride)
+        .copyWith(rides: [const RideFeedback(feeling: 'Better')]);
+    expect((await controller.editExperiment('bike', 'setup', 'test')).isSuccess,
+        isFalse);
+    expect(repo.records['test']!.stage, TestStage.ride);
+    expect(repo.records['test']!.rides, hasLength(1));
+    controller.dispose();
+    await repo.updates.close();
+  });
+
+  testWidgets('detail menu edits, renames and discards an experiment',
+      (tester) async {
+    final repo = MemoryTests()..records['test'] = sample(stage: TestStage.ride);
+    final deps = AppDependencies(
+        testsRepository: (_) => repo,
+        setupsRepository: (_) => FakeSetupsRepository());
+    await tester.pumpWidget(Provider.value(
+        value: deps,
+        child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: TestsView(
+                uid: 'user',
+                bike: 'bike',
+                setup: 'setup',
+                setupName: 'Default',
+                initialTest: repo.records['test']))));
+    await tester.pumpAndSettle();
+    expect(find.text('Discard experiment'), findsNothing);
+    await tester.tap(find.byTooltip('Experiment options'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.text('Edit settings'));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.stage, TestStage.draft);
+    expect(find.text('Front pressure'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close experiment'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Experiment options').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'More grip');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(repo.records['test']!.name, 'More grip');
+    expect(find.text('More grip'), findsWidgets);
+    await tester.tap(find.byTooltip('Experiment options').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard experiment'));
+    await tester.pumpAndSettle();
+    expect(repo.records.containsKey('test'), isFalse);
+    await tester.pumpWidget(const SizedBox());
+    deps.dispose();
+    await repo.updates.close();
+  });
+
   test('track times accept legacy seconds and exact milliseconds', () {
     for (final time in ['03:42', '03:42.156', '00:00.000', '999:59.999']) {
       final feedback = RideFeedback(feeling: 'Same', time: time);
@@ -325,8 +390,8 @@ void main() {
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.rides, hasLength(2));
-    await tester.ensureVisible(find.text('Finish test'));
-    await tester.tap(find.text('Finish test'));
+    await tester.ensureVisible(find.text('Finish experiment'));
+    await tester.tap(find.text('Finish experiment'));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.stage, TestStage.review);
     await tester.tap(find.text('Save as new setup'));
@@ -335,12 +400,12 @@ void main() {
     await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.stage, TestStage.review);
-    await tester.tap(find.text('Finish test'));
+    await tester.tap(find.text('Finish experiment'));
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
     expect(repo.records['test']!.stage, TestStage.review);
-    await tester.tap(find.text('Finish test'));
+    await tester.tap(find.text('Finish experiment'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Keep current settings'));
     await tester.pumpAndSettle();
@@ -369,18 +434,19 @@ void main() {
                     setup: 'setup',
                     setupName: 'Dry trails')))));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create test'));
+    await tester.tap(find.text('Create experiment'));
     for (var frame = 0; frame < 30; frame++) {
       await tester.pump(const Duration(milliseconds: 16));
-      expect(find.text('Continue test', skipOffstage: false), findsNothing);
+      expect(
+          find.text('Continue experiment', skipOffstage: false), findsNothing);
     }
-    expect(find.byTooltip('Close test'), findsOneWidget);
+    expect(find.byTooltip('Close experiment'), findsOneWidget);
     expect(repo.records, hasLength(1));
-    await tester.tap(find.byTooltip('Close test'));
+    await tester.tap(find.byTooltip('Close experiment'));
     await tester.pumpAndSettle();
     expect(repo.records, isEmpty);
-    expect(find.text('Create test'), findsOneWidget);
-    expect(find.text('Continue test'), findsNothing);
+    expect(find.text('Create experiment'), findsOneWidget);
+    expect(find.text('Continue experiment'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     deps.dispose();
@@ -434,12 +500,12 @@ void main() {
                     setup: 'setup',
                     setupName: 'Default')))));
     await tester.pumpAndSettle();
-    expect(find.text('Ongoing tests'), findsOneWidget);
+    expect(find.text('Ongoing experiments'), findsOneWidget);
     await tester.tap(find.text('Roots and braking'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'First test feedback');
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(BackButton));
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Softer tires'));
     await tester.pumpAndSettle();
@@ -454,14 +520,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log ride'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Finish test'));
+    await tester.ensureVisible(find.text('Finish experiment'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Finish test'));
+    await tester.tap(find.text('Finish experiment'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Keep current settings'));
     await tester.pumpAndSettle();
-    expect(find.text('Ongoing tests'), findsOneWidget);
-    expect(find.text('Previous tests'), findsOneWidget);
+    expect(find.text('Ongoing experiments'), findsOneWidget);
+    expect(find.text('Previous experiments'), findsOneWidget);
     expect(repo.records['test']!.stage, TestStage.ride);
     expect(repo.records['second']!.stage, TestStage.finished);
     expect(repo.records['second']!.rides.single.note, 'Second test feedback');
@@ -469,12 +535,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         'First test feedback');
-    await tester.tap(find.byType(BackButton));
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create test'));
+    await tester.tap(find.text('Create experiment'));
     await tester.pumpAndSettle();
     expect(repo.records, hasLength(3));
-    await tester.tap(find.byTooltip('Close test'));
+    await tester.tap(find.byTooltip('Close experiment'));
     await tester.pumpAndSettle();
     expect(repo.records, hasLength(2));
     expect(repo.records['test']!.feedback.note, 'First test feedback');
@@ -513,7 +579,7 @@ void main() {
     expect(find.text('21 psi'), findsOneWidget);
     await tester.ensureVisible(find.text('More grip'));
     expect(find.text('More grip'), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(find.text('21 psi'), findsNothing);
     expect(repo.records['test'], same(saved));

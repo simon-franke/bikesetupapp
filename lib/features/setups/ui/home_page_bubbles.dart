@@ -373,18 +373,14 @@ class _SchematicBubbleState extends State<SchematicBubble>
                             children: [
                               Text(
                                 label,
-                                style: TextStyle(
-                                  color: chipInk,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0,
-                                  height: 1.2,
-                                ),
+                                style: AppTextStyles.caption
+                                    .copyWith(color: chipInk),
                               ),
                               const SizedBox(height: 1),
                               hasError
                                   ? Icon(CupertinoIcons.exclamationmark_circle,
-                                      size: 14, color: chipInk)
+                                      size: AppIconSizes.compact,
+                                      color: chipInk)
                                   : Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.baseline,
@@ -395,12 +391,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                             display.value,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: AppTextStyles.mono(
-                                              size: 13,
-                                              weight: FontWeight.w700,
-                                              color: chipInk,
-                                              height: 1,
-                                            ),
+                                            style: AppTextStyles.label
+                                                .copyWith(color: chipInk),
                                           ),
                                         ),
                                         const SizedBox(width: 2),
@@ -409,11 +401,8 @@ class _SchematicBubbleState extends State<SchematicBubble>
                                             display.unit,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: chipInk,
-                                              fontSize: 8.5,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            style: AppTextStyles.caption
+                                                .copyWith(color: chipInk),
                                           ),
                                         ),
                                       ],

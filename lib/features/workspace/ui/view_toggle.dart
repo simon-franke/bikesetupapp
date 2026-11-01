@@ -72,14 +72,12 @@ class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
                 dividerColor: Colors.transparent,
                 labelColor: p.accentText,
                 unselectedLabelColor: p.inkMuted,
-                labelStyle:
-                    AppTextStyles.inter(size: 11, weight: FontWeight.w600),
-                unselectedLabelStyle:
-                    AppTextStyles.inter(size: 11, weight: FontWeight.w500),
+                labelStyle: AppTextStyles.caption,
+                unselectedLabelStyle: AppTextStyles.caption,
                 labelPadding: EdgeInsets.zero,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
-                    color: p.ink.withValues(alpha: .07),
+                    color: p.accentText.withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(25)),
                 splashFactory: NoSplash.splashFactory,
                 overlayColor: WidgetStateProperty.resolveWith((states) =>
@@ -90,17 +88,20 @@ class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
               const Tab(
                   height: 64,
                   iconMargin: EdgeInsets.only(bottom: 5),
-                  icon: Icon(CupertinoIcons.slider_horizontal_3, size: 23),
+                  icon: Icon(CupertinoIcons.slider_horizontal_3,
+                      size: AppIconSizes.navigation),
                   text: 'Setup'),
               const Tab(
                   height: 64,
                   iconMargin: EdgeInsets.only(bottom: 5),
-                  icon: Icon(CupertinoIcons.lab_flask, size: 23),
+                  icon: Icon(CupertinoIcons.lab_flask,
+                      size: AppIconSizes.navigation),
                   text: 'Experiments'),
               Tab(
                   height: 64,
                   iconMargin: const EdgeInsets.only(bottom: 5),
-                  icon: const Icon(CupertinoIcons.wrench, size: 23),
+                  icon: const Icon(CupertinoIcons.wrench,
+                      size: AppIconSizes.navigation),
                   child: Text('Service',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

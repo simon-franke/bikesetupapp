@@ -122,11 +122,10 @@ class _LogServiceFormState extends State<_LogServiceForm> {
               const AppSheetHandle(),
               const SizedBox(height: 18),
               Text('Log service',
-                  style: AppTextStyles.inter(
-                      size: 22, weight: FontWeight.w600, color: p.ink)),
+                  style: AppTextStyles.heading.copyWith(color: p.ink)),
               const SizedBox(height: 8),
               Text(widget.component.name,
-                  style: AppTextStyles.inter(size: 16, color: p.inkMuted)),
+                  style: AppTextStyles.body.copyWith(color: p.inkMuted)),
               const SizedBox(height: 14),
               const AppFieldLabel('Date'),
               const SizedBox(height: 6),
@@ -193,7 +192,7 @@ Widget _buildMileageStatus(
         const SizedBox(width: 8),
         Text(
           'Fetching from Strava…',
-          style: AppTextStyles.inter(size: 14, color: p.inkMuted),
+          style: AppTextStyles.body.copyWith(color: p.inkMuted),
         ),
       ],
     );
@@ -202,16 +201,13 @@ Widget _buildMileageStatus(
   if (mileageError == 'scope') {
     return Row(
       children: [
-        Icon(CupertinoIcons.exclamationmark_triangle, size: 14, color: p.red),
+        Icon(CupertinoIcons.exclamationmark_triangle,
+            size: AppIconSizes.compact, color: p.red),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             'Re-connect Strava in settings to fetch mileage',
-            style: AppTextStyles.inter(
-              size: 14,
-              weight: FontWeight.w600,
-              color: p.red,
-            ),
+            style: AppTextStyles.label.copyWith(color: p.red),
           ),
         ),
       ],
@@ -221,16 +217,12 @@ Widget _buildMileageStatus(
   if (mileageError == 'error') {
     return Row(
       children: [
-        Icon(CupertinoIcons.xmark, size: 14, color: p.red),
+        Icon(CupertinoIcons.xmark, size: AppIconSizes.compact, color: p.red),
         const SizedBox(width: 6),
         Expanded(
             child: Text(
           'Could not fetch mileage from Strava',
-          style: AppTextStyles.inter(
-            size: 14,
-            weight: FontWeight.w600,
-            color: p.red,
-          ),
+          style: AppTextStyles.label.copyWith(color: p.red),
         )),
       ],
     );
@@ -239,15 +231,11 @@ Widget _buildMileageStatus(
   if (fetchedMileage != null) {
     return Row(
       children: [
-        Icon(CupertinoIcons.map, size: 14, color: p.amber),
+        Icon(CupertinoIcons.map, size: AppIconSizes.compact, color: p.amber),
         const SizedBox(width: 6),
         Text(
           '${_kmFormat.format(fetchedMileage.round())} km at service',
-          style: AppTextStyles.mono(
-            size: 14,
-            weight: FontWeight.w700,
-            color: p.amber,
-          ),
+          style: AppTextStyles.label.copyWith(color: p.amber),
         ),
       ],
     );

@@ -9,7 +9,7 @@ enum OnboardingStepKind { name, parts, controls, settings }
 typedef OnboardingStep = ({OnboardingStepKind kind, String category});
 
 /// Form state and navigation, independent of the onboarding widget tree.
-/// Defaults are initialized on entry to a step; reading a field never resets it.
+/// Fields are initialized on entry to a step; reading a field never resets it.
 class BikeOnboardingState {
   final BikeCreationDraft? initialDraft;
   final name = TextEditingController();
@@ -44,18 +44,10 @@ class BikeOnboardingState {
       currentStep.kind == OnboardingStepKind.settings
           ? configuredFields[currentCategory] ?? []
           : [];
-  double get progress {
-    if (step == 0) return .06;
-    if (step == 1) return .14;
-    if (currentCategory == 'FrontTire') return .24;
-    if (currentCategory == 'RearTire') return .34;
-    final parts =
-        configuredFields.keys.where((key) => !key.endsWith('Tire')).toList();
-    final index = parts.indexOf(currentCategory);
-    if (index < 0 || parts.isEmpty) return 1;
-    final fraction = currentStep.kind == OnboardingStepKind.controls ? .2 : 1.0;
-    return .34 + .66 * (index + fraction) / parts.length;
-  }
+  // Keep the name and parts stages fixed while choices change the later steps.
+  // Once parts are chosen, distribute the remaining progress across their pages.
+  double get progress =>
+      step < 2 ? (step + 1) * .1 : .2 + .8 * (step - 1) / (steps.length - 2);
 
   Map<String, List<String>> get configuredFields => {
         'FrontTire': ['Pressure'],
@@ -72,9 +64,7 @@ class BikeOnboardingState {
   void _initializeFields(String category, Iterable<String> fields) {
     for (final field in fields) {
       settings.putIfAbsent(
-          '$category/$field',
-          () => TextEditingController(
-              text: initialSettingValue(category, field)));
+          '$category/$field', () => TextEditingController(text: ''));
     }
   }
 
@@ -168,44 +158,15 @@ class BikeOnboardingState {
 
   void go(int next) {
     final destination = steps[next];
-    if (seededSteps.add(destination)) {
-      if (destination.category == 'RearTire') {
-        if (!settings.containsKey('RearTire/Pressure')) {
-          settings['RearTire/Pressure'] = TextEditingController(
-              text: setting('FrontTire', 'Pressure').text);
-        }
-        if (rearWheel.isEmpty) rearWheel = frontWheel;
-      } else if (destination.category == 'Shock' &&
-          destination.kind == OnboardingStepKind.controls &&
-          fork != 'None') {
-        if (!(initialDraft?.configuration.fields.containsKey('Shock') ??
-            false)) {
-          shockAdjusters
-            ..clear()
-            ..addAll(forkAdjusters);
-        }
-        if (shockTravel.text.isEmpty) shockTravel.text = forkTravel.text;
-      } else if (destination.category == 'Shock' &&
-          destination.kind == OnboardingStepKind.settings &&
-          fork != 'None') {
-        // Pressure and spring rate are component-specific, not interchangeable.
-        for (final field in configuredFields['Shock'] ?? <String>[]) {
-          if (field.contains('Rebound') || field.contains('Compression')) {
-            final source = settings['Fork/$field'];
-            if (source != null && !settings.containsKey('Shock/$field')) {
-              settings['Shock/$field'] =
-                  TextEditingController(text: source.text);
-            }
-          }
-        }
-      }
+    if (seededSteps.add(destination) && destination.category == 'RearTire') {
+      settings.putIfAbsent(
+          'RearTire/Pressure',
+          () => TextEditingController(
+              text: settings['FrontTire/Pressure']?.text ?? ''));
+      if (rearWheel.isEmpty) rearWheel = frontWheel;
     }
     step = next;
     error = null;
-    if (currentStep.kind == OnboardingStepKind.controls) {
-      final travel = currentCategory == 'Fork' ? forkTravel : shockTravel;
-      if (travel.text.isEmpty) travel.text = '150';
-    }
     _initializeFields(currentCategory, currentFields);
   }
 
@@ -219,10 +180,8 @@ class BikeOnboardingState {
       final travel =
           (currentCategory == 'Fork' ? forkTravel : shockTravel).text.trim();
       final number = double.tryParse(travel);
-      if (travel.isNotEmpty &&
-          (number == null || !number.isFinite || number <= 0 || number > 300)) {
-        error =
-            'Travel: enter a value between 0 and 300 mm, or leave it blank.';
+      if (travel.isNotEmpty && (number == null || !number.isFinite)) {
+        error = 'Travel: enter a number, or leave it blank.';
         return false;
       }
     }
@@ -236,12 +195,8 @@ class BikeOnboardingState {
             ? null
             : convertValue(parsed.number!, parsed.unit ?? meta.defaultUnit,
                 meta.defaultUnit);
-        if (value == null ||
-            !value.isFinite ||
-            value < meta.min ||
-            value > meta.max) {
-          error =
-              '$field: enter ${meta.min.toStringAsFixed(0)} to ${meta.max.toStringAsFixed(0)} ${meta.defaultUnitLabel}.';
+        if (value == null || !value.isFinite) {
+          error = '$field: enter a number, or leave it blank.';
           return false;
         }
       }

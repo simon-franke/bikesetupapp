@@ -195,14 +195,6 @@ final Map<String, List<String>> kSuggestedFieldKeys = {
   for (final e in _kCategoryConfigs.entries) e.key: e.value.suggestedKeys,
 };
 
-bool isDefaultField(String category, String key) =>
-    _kCategoryConfigs[category]?.defaultKeys.contains(key) ?? false;
-
-/// A required field cannot be deleted. Currently identical to [isDefaultField].
-bool isRequiredField(String category, String key) =>
-    isDefaultField(category, key);
-
-
 const cockpitFields = ['Stem length', 'Spacer height', 'Handlebar roll', 'Lever angle'];
 const saddleFields = ['Seat Height', 'Saddle setback', 'Saddle tilt'];
 const geometryFields = ['Reach', 'Stack Height'];

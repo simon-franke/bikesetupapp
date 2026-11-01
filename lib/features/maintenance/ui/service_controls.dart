@@ -40,10 +40,8 @@ class _ServiceIntervalSheetState extends State<ServiceIntervalSheet> {
             const AppSheetHandle(),
             const SizedBox(height: 24),
             Text('Service interval',
-                style: AppTextStyles.inter(
-                    size: 22,
-                    weight: FontWeight.w600,
-                    color: context.palette.ink)),
+                style:
+                    AppTextStyles.heading.copyWith(color: context.palette.ink)),
             const SizedBox(height: 24),
             AppTextField(
                 controller: text,

@@ -212,8 +212,8 @@ class _MyHomePageState extends State<MyHomePage> {
   PreferredSizeWidget _buildAppBar(BuildContext context, {String? category}) {
     final p = context.palette;
     if (category != null) {
-      return AppBar(
-          automaticallyImplyLeading: false,
+      return buildDetailAppBar(context,
+          title: categoryLabel(category),
           actions: [
             IconButton(
               tooltip: 'Category options',
@@ -221,33 +221,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed:
                   AppHaptics.wrap(() => _categoryOptions(context, category)),
             )
-          ],
-          toolbarHeight:
-              math.max(112, MediaQuery.textScalerOf(context).scale(32) * 3),
-          centerTitle: false,
-          titleSpacing: 20,
-          title: SizedBox(
-              width: double.infinity,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextButton.icon(
-                        style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            alignment: Alignment.centerLeft),
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(CupertinoIcons.chevron_left, size: 18),
-                        label: const Text('Setup')),
-                    Text(categoryLabel(category),
-                        style: AppTextStyles.inter(
-                            size: 30, weight: FontWeight.w700, color: p.ink)),
-                    const SizedBox(height: 8),
-                    Text(_setupName,
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: p.inkMuted))
-                  ])));
+          ]);
     }
     return PreferredSize(
       preferredSize: Size.fromHeight(
@@ -320,7 +294,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                   )),
                                   const SizedBox(width: 8),
                                   Icon(CupertinoIcons.chevron_down,
-                                      color: p.inkMuted, size: 15),
+                                      color: p.inkMuted,
+                                      size: AppIconSizes.compact),
                                 ])),
                           ),
                         ),
@@ -352,7 +327,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: IconButton(
                         tooltip: 'Ride activity',
                         icon: Icon(Icons.auto_stories_outlined,
-                            size: 22, color: p.inkMuted),
+                            size: AppIconSizes.control, color: p.inkMuted),
                         onPressed: () async {
                           await Navigator.of(context).push(AppRoutes.fadeSlide(
                               RideLogPage(
@@ -369,7 +344,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: IconButton(
                           tooltip: 'Settings',
-                          icon: const Icon(CupertinoIcons.gear_alt, size: 22),
+                          icon: const Icon(CupertinoIcons.gear_alt,
+                              size: AppIconSizes.control),
                           onPressed: () => Navigator.of(context).push(
                               AppRoutes.fadeSlide(SettingsPage(
                                   bikeName: _bikeName,

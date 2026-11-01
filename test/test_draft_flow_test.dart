@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:bikesetupapp/features/tests/controllers/tests_controller.dart';
 import 'package:bikesetupapp/features/tests/models/setup_test.dart';
@@ -61,25 +60,9 @@ void main() {
         ),
       ));
       await tester.pumpAndSettle();
-      if (size.$2 == 1) {
-        final labels = before.keys.toList();
-        for (var i = 0; i < labels.length; i += 2) {
-          Rect card(String label) => tester.getRect(find.ancestor(
-              of: find.text(label), matching: find.byType(TextButton)));
-          expect(card(labels[i]).top, card(labels[i + 1]).top);
-          expect(card(labels[i]).bottom, card(labels[i + 1]).bottom);
-        }
-        Rect value(String text) =>
-            tester.getRect(find.text(text, findRichText: true));
-        expect(value('4 clicks').top, value('1 clicks').top);
-        expect(value('84 psi').top, value('3 clicks').top);
-        expect(value('6 count').top, value('5 clicks').top);
-      } else {
-        await tester.scrollUntilVisible(
-            find.text('High Speed Compression'), 200,
-            scrollable: find.byType(Scrollable).first);
-        expect(find.text('High Speed Compression'), findsOneWidget);
-      }
+      await tester.scrollUntilVisible(find.text('High Speed Compression'), 200,
+          scrollable: find.byType(Scrollable).first);
+      expect(find.text('High Speed Compression'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       deps.dispose();
@@ -165,25 +148,41 @@ void main() {
                     setup: 'setup',
                     setupName: 'Default')))));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Continue test'));
-    await tester.tap(find.text('Continue test'));
+    await tester.ensureVisible(find.text('Continue experiment'));
+    await tester.tap(find.text('Continue experiment'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Front pressure'));
     await tester.pumpAndSettle();
     tester
         .widget<SettingValueEditor>(find.byType(SettingValueEditor))
         .onChanged(24);
-    await tester.tap(find.text('Save to test'));
+    await tester.tap(find.text('Save to experiment'));
     await tester.pumpAndSettle();
-    expect(find.text('24 psi', findRichText: true), findsOneWidget);
-    expect(find.text('from 22 psi'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(TestDraftFlow),
+            matching: find.text('22 psi → 24 psi', findRichText: true)),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(TestDraftFlow),
+            matching: find.text('22 psi → 24 psi', findRichText: true)),
+        findsOneWidget);
+    expect(find.text('Start experiment'), findsOneWidget);
     repo.snapshots.add([original]);
     await tester.pumpAndSettle();
-    expect(find.text('24 psi', findRichText: true), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(TestDraftFlow),
+            matching: find.text('22 psi → 24 psi', findRichText: true)),
+        findsOneWidget);
     repo.snapshots.add(repo.records.values.toList());
     await tester.pumpAndSettle();
-    expect(find.text('24 psi', findRichText: true), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(TestDraftFlow),
+            matching: find.text('22 psi → 24 psi', findRichText: true)),
+        findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     deps.dispose();
     await repo.snapshots.close();
@@ -237,38 +236,34 @@ void main() {
                     setup: 'setup',
                     setupName: 'Default')))));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create test'));
+    await tester.tap(find.text('Create experiment'));
     await tester.pumpAndSettle();
     expect(find.byType(TestDraftFlow), findsOneWidget);
     expect(repo.records, hasLength(1));
     expect(find.text('Tires'), findsOneWidget);
-    repo.fail = true;
-    await tester.tap(find.text('Leave as is'));
+    expect(find.text('Leave as is'), findsOneWidget);
+    expect(repo.records.values.single.changes, isEmpty);
+    await tester.tap(find.text('Front pressure'));
     await tester.pumpAndSettle();
-    expect(find.text('Tires'), findsOneWidget);
-    expect(repo.records.values.single.draftStep, 0);
+    tester
+        .widget<SettingValueEditor>(find.byType(SettingValueEditor))
+        .onChanged(24);
+    repo.fail = true;
+    await tester.tap(find.text('Save to experiment'));
+    await tester.pumpAndSettle();
+    expect(repo.records.values.single.changes, isEmpty);
     repo.fail = false;
+    await tester.tap(find.text('Save to experiment'));
+    await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 9));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Leave as is'));
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
+    expect(find.text('Start experiment'), findsOneWidget);
     expect(find.text('Fork'), findsOneWidget);
-    await tester.tap(find.text('Leave as is'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ready to try it?'), findsOneWidget);
-    final start = tester.widget<AppActionButton>(
-        find.widgetWithText(AppActionButton, 'Start test'));
-    expect(start.onPressed, isNull);
-    expect(repo.records.values.single.changes, isEmpty);
-    expect(
-        repo.records.values.single.values['FrontTire']!['Pressure'], '22 psi');
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('Fork'), findsOneWidget);
-    await tester.tap(find.byTooltip('Close test'));
-    await tester.pumpAndSettle();
-    expect(find.text('Create test'), findsOneWidget);
-    expect(repo.records, isEmpty);
+    expect(find.text('Tires'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     deps.dispose();

@@ -28,11 +28,10 @@ class WorkshopDialog extends StatelessWidget {
       actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       title: Text(
         title,
-        style: AppTextStyles.inter(
-            size: 16, weight: FontWeight.w700, color: p.ink),
+        style: AppTextStyles.label.copyWith(color: p.ink),
       ),
       content: DefaultTextStyle(
-        style: AppTextStyles.inter(size: 13, color: p.inkMuted, height: 1.4),
+        style: AppTextStyles.body.copyWith(color: p.inkMuted),
         child: content,
       ),
       actions: actions,

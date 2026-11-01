@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'dart:async';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
@@ -17,11 +19,14 @@ import 'package:bikesetupapp/features/bikes/ui/setup_choice_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget harness(Widget child, {double scale = 1}) => MaterialApp(
+Widget harness(Widget child, {double scale = 1, bool reducedMotion = false}) =>
+    MaterialApp(
       theme: ThemeData(extensions: const [AppPalette.dark]),
       home: Scaffold(
           body: MediaQuery(
-        data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+        data: MediaQueryData(
+            textScaler: TextScaler.linear(scale),
+            disableAnimations: reducedMotion),
         child: Align(
             alignment: Alignment.topLeft,
             child: SizedBox(width: 320, height: 500, child: child)),
@@ -76,6 +81,34 @@ class ChooserSetups extends Fake implements SetupsRepository {
 }
 
 void main() {
+  testWidgets(
+      'chooser supports reduced motion and enlarged bundled text without decorative bikes',
+      (tester) async {
+    await (FontLoader('Sora')
+          ..addFont(rootBundle.load('assets/fonts/Sora.ttf')))
+        .load();
+    final dependencies = AppDependencies(
+        bikesRepository: (_) => ChooserBikes(),
+        setupsRepository: (_) => ChooserSetups());
+    addTearDown(dependencies.dispose);
+    await tester.pumpWidget(Provider.value(
+        value: dependencies,
+        child: harness(
+            BikeList(
+                user: ChooserUser(),
+                selectedBikeId: 'current',
+                selectedSetupId: 'default',
+                onSetupDetails: (_, __, ___, ____) {},
+                onBikeSelected: (_, __, ___, ____) {}),
+            scale: 2,
+            reducedMotion: true)));
+    await tester.pumpAndSettle();
+    expect(find.byType(BikeIcon), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Current bike'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   testWidgets(
       'deleting the selected bike uses a sheet and selects its replacement',

@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
             debugShowCheckedModeBanner: false,
             builder: (context, child) => PhoneViewport(child: child!),
-            title: "Bike Setup",
+            title: "Clickwise",
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: appState.themeMode,

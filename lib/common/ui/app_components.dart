@@ -5,6 +5,56 @@ import 'package:flutter/services.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 
+/// A compact detail header with room for long titles and larger system text.
+AppBar buildDetailAppBar(
+  BuildContext context, {
+  required String title,
+  List<Widget> actions = const [],
+}) {
+  final style = AppTextStyles.heading.copyWith(
+    color: context.palette.ink,
+    fontFamily: Theme.of(context).textTheme.titleLarge?.fontFamily,
+  );
+  // Match the toolbar's leading space, title gaps, and 48px action targets.
+  final titleWidth =
+      (MediaQuery.sizeOf(context).width - 68 - 16 - 20 - actions.length * 48)
+          .clamp(1.0, double.infinity);
+  final painter = TextPainter(
+    text: TextSpan(text: title, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+  )..layout(maxWidth: titleWidth);
+  final height = (painter.height + 24).clamp(64.0, double.infinity);
+  painter.dispose();
+  return AppBar(
+    automaticallyImplyLeading: false,
+    centerTitle: false,
+    toolbarHeight: height,
+    leadingWidth: 68,
+    leading: Padding(
+      padding: const EdgeInsets.only(left: 20),
+      child: Builder(
+          builder: (routeContext) => IconButton(
+                tooltip:
+                    MaterialLocalizations.of(routeContext).backButtonTooltip,
+                icon: const Icon(CupertinoIcons.chevron_left,
+                    size: AppIconSizes.compact),
+                onPressed: AppHaptics.wrap(
+                    () => Navigator.of(routeContext).maybePop()),
+              )),
+    ),
+    titleSpacing: 8,
+    title: Text(title,
+        style: style,
+        textScaler: MediaQuery.textScalerOf(context),
+        softWrap: true,
+        overflow: TextOverflow.visible),
+    actionsPadding: const EdgeInsets.only(right: 20),
+    actions:
+        actions.map((action) => SizedBox(width: 48, child: action)).toList(),
+  );
+}
+
 /// App-specific compositions of Material controls. Visual defaults live in
 /// AppTheme so focus, disabled states, sizing and semantics stay consistent.
 class AppActionButton extends StatelessWidget {
@@ -12,6 +62,7 @@ class AppActionButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool outlined;
+  final bool destructive;
   final Color? color;
   final TextStyle? textStyle;
 
@@ -21,6 +72,7 @@ class AppActionButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.outlined = false,
+    this.destructive = false,
     this.color,
     this.textStyle,
   });
@@ -36,22 +88,31 @@ class AppActionButton extends StatelessWidget {
               icon: Icon(icon),
               label: child);
     }
-    final style = color == null
-        ? null
-        : FilledButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: AppColors.onColor(color!),
+    final content = icon == null
+        ? child
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: AppIconSizes.control),
+              const SizedBox(width: 8),
+              Flexible(child: child)
+            ],
           );
-    return icon == null
-        ? FilledButton(
-            onPressed: AppHaptics.wrap(onPressed, emphasized: true),
-            style: style,
-            child: child)
-        : FilledButton.icon(
-            onPressed: AppHaptics.wrap(onPressed, emphasized: true),
-            style: style,
-            icon: Icon(icon),
-            label: child);
+    if (destructive || color == context.palette.red) {
+      return TextButton(
+        onPressed: AppHaptics.wrap(onPressed),
+        style: TextButton.styleFrom(
+          foregroundColor: context.palette.red,
+          backgroundColor: context.palette.red.withValues(alpha: .10),
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: content,
+      );
+    }
+    return AppTactileButton(onPressed: onPressed, color: color, child: content);
   }
 }
 
@@ -157,51 +218,51 @@ Future<String?> showAppOptionsSheet({
                   style: Theme.of(sheetContext).textTheme.titleLarge),
               const SizedBox(height: 24),
               for (final (index, entry) in entries.indexed) ...[
-                TextButton(
-                  autofocus: entries.any((item) => item.selected)
-                      ? entry.selected
-                      : index == 0,
-                  onPressed: () {
-                    if (!entry.selected) AppHaptics.selection();
-                    Navigator.pop(sheetContext, entry.value);
-                  },
-                  style: TextButton.styleFrom(
-                    alignment: Alignment.centerLeft,
-                    minimumSize:
-                        Size(double.infinity, entry.icon == null ? 56 : 64),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
-                    foregroundColor: p.ink,
-                    backgroundColor:
-                        entry.selected ? p.surface2 : Colors.transparent,
-                    textStyle: AppTextStyles.inter(
-                        size: entry.icon == null ? 16 : 17,
-                        weight: entry.icon == null
-                            ? FontWeight.w500
-                            : FontWeight.w600),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: Semantics(
-                    selected: entry.selected,
-                    child: Row(children: [
-                      if (entry.icon != null) ...[
-                        Icon(entry.icon,
-                            size: 25,
-                            color: entry.destructive ? p.red : p.accentText),
-                        const SizedBox(width: 20),
-                      ],
-                      Expanded(child: Text(entry.label)),
-                      if (entry.count > 0) ...[
-                        const SizedBox(width: 12),
-                        Text('${entry.count}'),
-                      ],
-                      if (entry.selected) ...[
-                        const SizedBox(width: 12),
-                        Icon(Icons.check_rounded,
-                            size: 20, color: p.accentText),
-                      ],
-                    ]),
+                AppSelectionSurface(
+                  selected: entry.selected,
+                  child: TextButton(
+                    autofocus: entries.any((item) => item.selected)
+                        ? entry.selected
+                        : index == 0,
+                    onPressed: () {
+                      if (!entry.selected) AppHaptics.selection();
+                      Navigator.pop(sheetContext, entry.value);
+                    },
+                    style: TextButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      minimumSize:
+                          Size(double.infinity, entry.icon == null ? 56 : 64),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                      foregroundColor: entry.destructive ? p.red : p.ink,
+                      backgroundColor: entry.destructive
+                          ? p.red.withValues(alpha: .10)
+                          : Colors.transparent,
+                      textStyle: AppTextStyles.label,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Semantics(
+                      selected: entry.selected,
+                      child: Row(children: [
+                        if (entry.icon != null) ...[
+                          Icon(entry.icon,
+                              size: AppIconSizes.control,
+                              color: entry.destructive ? p.red : p.accentText),
+                          const SizedBox(width: 20),
+                        ],
+                        Expanded(child: Text(entry.label)),
+                        if (entry.count > 0) ...[
+                          const SizedBox(width: 12),
+                          Text('${entry.count}'),
+                        ],
+                        if (entry.selected) ...[
+                          const SizedBox(width: 12),
+                          Icon(Icons.check_rounded,
+                              size: AppIconSizes.control, color: p.accentText),
+                        ],
+                      ]),
+                    ),
                   ),
                 ),
               ],
@@ -236,10 +297,7 @@ class AppEditButton extends StatelessWidget {
         foregroundColor: context.palette.inkMuted,
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        textStyle: AppTextStyles.inter(
-          size: 13,
-          weight: FontWeight.w500,
-        ),
+        textStyle: AppTextStyles.label,
       ),
       child: Text(label),
     );
@@ -388,16 +446,179 @@ class AppSuggestionTile extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 child: Row(children: [
                   if (isNew) ...[
-                    const Icon(CupertinoIcons.plus, size: 18),
+                    const Icon(CupertinoIcons.plus, size: AppIconSizes.compact),
                     const SizedBox(width: 12)
                   ],
-                  Expanded(
-                      child: Text(label, style: const TextStyle(fontSize: 16))),
+                  Expanded(child: Text(label, style: AppTextStyles.body)),
                   const SizedBox(width: 12),
                   Icon(CupertinoIcons.chevron_right,
-                      size: 16, color: context.palette.inkMuted),
+                      size: AppIconSizes.compact,
+                      color: context.palette.inkMuted),
                 ]),
               )),
         ),
       );
+}
+
+/// A button face that depresses onto a solid base while retaining native
+/// keyboard, focus, cancellation, and disabled-button behavior.
+class AppTactileButton extends StatefulWidget {
+  const AppTactileButton(
+      {super.key,
+      required this.onPressed,
+      required this.child,
+      this.tooltip,
+      this.color,
+      this.compact = false});
+  final VoidCallback? onPressed;
+  final Widget child;
+  final String? tooltip;
+  final Color? color;
+  final bool compact;
+
+  @override
+  State<AppTactileButton> createState() => _AppTactileButtonState();
+}
+
+class _AppTactileButtonState extends State<AppTactileButton> {
+  final _states = WidgetStatesController();
+  bool _activating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _states.addListener(_update);
+  }
+
+  void _update() {
+    // ButtonStyleButton can update disabled/focus states during its own build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  Future<void> _activate() async {
+    if (_activating || widget.onPressed == null) return;
+    final action = widget.onPressed!;
+    setState(() => _activating = true);
+    AppHaptics.action();
+    // Keep a quick tap visibly depressed before navigation or a save replaces it.
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+    setState(() => _activating = false);
+    if (widget.onPressed != null) action();
+  }
+
+  @override
+  void dispose() {
+    _states.removeListener(_update);
+    _states.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final face = widget.color ?? p.accent;
+    final ink = widget.color == null ? p.accentInk : AppColors.onColor(face);
+    final enabled = widget.onPressed != null;
+    final pressed =
+        _activating || (enabled && _states.value.contains(WidgetState.pressed));
+    final radius = BorderRadius.circular(10);
+    final button = Stack(fit: StackFit.passthrough, children: [
+      Positioned.fill(
+        top: 6,
+        child: DecoratedBox(
+            decoration: BoxDecoration(
+          color: enabled ? Color.lerp(face, Colors.black, .4) : p.surface2,
+          borderRadius: radius,
+        )),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: AnimatedContainer(
+          duration: pressed || MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 120),
+          transform: Matrix4.translationValues(0, pressed ? 6 : 0, 0),
+          child: ElevatedButton(
+            statesController: _states,
+            onPressed: enabled ? _activate : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: face,
+              foregroundColor: ink,
+              disabledBackgroundColor: p.surface2,
+              disabledForegroundColor: p.inkDim,
+              minimumSize: const Size(48, 48),
+              padding: widget.compact
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: radius),
+            ).copyWith(
+              elevation: const WidgetStatePropertyAll(0),
+              overlayColor: WidgetStateProperty.resolveWith((states) =>
+                  states.contains(WidgetState.pressed)
+                      ? Colors.transparent
+                      : null),
+              splashFactory: NoSplash.splashFactory,
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    ]);
+    return widget.tooltip == null
+        ? button
+        : Tooltip(
+            message: widget.tooltip!,
+            child: Semantics(label: widget.tooltip, child: button),
+          );
+  }
+}
+
+/// A quiet, flat selection highlight shared by option controls.
+class AppSelectionSurface extends StatelessWidget {
+  const AppSelectionSurface(
+      {super.key, required this.selected, required this.child});
+  final bool selected;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: selected ? p.surface2 : Colors.transparent,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// A consistent, quiet entry point below a list; confirmation stays in the form.
+class AppAddButton extends StatelessWidget {
+  const AppAddButton(
+      {super.key, required this.label, required this.onPressed, this.tooltip});
+  final String label;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  @override
+  Widget build(BuildContext context) {
+    final button = Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: AppHaptics.wrap(onPressed),
+        style: TextButton.styleFrom(
+          foregroundColor: context.palette.accentText,
+          textStyle: AppTextStyles.label,
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+        ),
+        icon: const Icon(CupertinoIcons.plus, size: AppIconSizes.compact),
+        label: Text(label),
+      ),
+    );
+    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
+  }
 }

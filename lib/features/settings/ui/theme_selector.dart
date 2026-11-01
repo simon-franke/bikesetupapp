@@ -71,11 +71,10 @@ class _ThemeOption extends StatelessWidget {
                                       : AppPalette.light)))),
                   const SizedBox(height: 10),
                   Text(label,
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w400,
-                          color: selected ? p.accentText : p.ink)),
+                      style: (selected
+                              ? AppTextStyles.label
+                              : AppTextStyles.body)
+                          .copyWith(color: selected ? p.accentText : p.ink)),
                 ]))));
   }
 }

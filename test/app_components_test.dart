@@ -30,9 +30,10 @@ void main() {
       expect(changes, 'Trail bike');
       expect(find.text('Name required'), findsOneWidget);
       await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
       expect(saves, 1);
-      final disabled = tester.widget<FilledButton>(find.ancestor(
-          of: find.text('Unavailable'), matching: find.byType(FilledButton)));
+      final disabled = tester.widget<ElevatedButton>(find.ancestor(
+          of: find.text('Unavailable'), matching: find.byType(ElevatedButton)));
       expect(disabled.onPressed, isNull);
       expect(tester.takeException(), isNull);
     });

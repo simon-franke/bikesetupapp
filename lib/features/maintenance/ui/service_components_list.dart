@@ -252,58 +252,52 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('Keep your bike ready',
-                        style: AppTextStyles.inter(
-                            size: 26, weight: FontWeight.w600, color: p.ink)),
+                        style: AppTextStyles.heading.copyWith(color: p.ink)),
                     const SizedBox(height: 12),
                     Text(
                         'Track service intervals and keep a history of the work you do.',
-                        style:
-                            AppTextStyles.inter(size: 16, color: p.inkMuted)),
+                        style: AppTextStyles.body.copyWith(color: p.inkMuted)),
                     const SizedBox(height: 24),
-                    AppActionButton(label: 'Add component', onPressed: widget.onAdd),
+                    AppAddButton(
+                        label: 'Add component', onPressed: widget.onAdd),
                   ])));
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
-          child: Row(children: [
-            Expanded(
-                child: Text('Service schedule',
-                    style: AppTextStyles.inter(
-                        size: 22, weight: FontWeight.w600, color: p.ink))),
-            IconButton(
-                tooltip: 'Add component',
-                onPressed: widget.onAdd,
-                icon: const Icon(Icons.add)),
-          ])),
+          child: Text('Service schedule',
+              style: AppTextStyles.label.copyWith(color: p.ink))),
       ..._group(context, {ServiceStatus.red}, 'Needs attention'),
       ..._group(
           context, {ServiceStatus.amber, ServiceStatus.green}, 'Upcoming'),
       ..._group(context, {ServiceStatus.unknown}, 'Needs a starting point'),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: AppAddButton(label: 'Add component', onPressed: widget.onAdd),
+      ),
     ]);
   }
 
   List<Widget> _group(
       BuildContext context, Set<ServiceStatus> statuses, String label) {
-    final entries = widget.services.where((s) => statuses.contains(s.status)).toList()
-      ..sort((a, b) {
-        final remaining = b.progress.compareTo(a.progress);
-        if (remaining != 0) return remaining;
-        final overdue = b.usage.compareTo(a.usage);
-        if (overdue != 0) return overdue;
-        return a.component.name
-            .toLowerCase()
-            .compareTo(b.component.name.toLowerCase());
-      });
+    final entries =
+        widget.services.where((s) => statuses.contains(s.status)).toList()
+          ..sort((a, b) {
+            final remaining = b.progress.compareTo(a.progress);
+            if (remaining != 0) return remaining;
+            final overdue = b.usage.compareTo(a.usage);
+            if (overdue != 0) return overdue;
+            return a.component.name
+                .toLowerCase()
+                .compareTo(b.component.name.toLowerCase());
+          });
     if (entries.isEmpty) return [];
     return [
       Padding(
         padding: EdgeInsets.fromLTRB(20, 14, 20, 12),
         child: Text(label,
-            style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.palette.inkMuted)),
+            style:
+                AppTextStyles.label.copyWith(color: context.palette.inkMuted)),
       ),
       Column(children: entries.map(widget.cardBuilder).toList()),
     ];

@@ -3,6 +3,18 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('UI typography uses the shared five roles', () {
+    for (final file in Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) =>
+            file.path.endsWith('.dart') &&
+            !file.path.endsWith('/theme_data.dart'))) {
+      expect(file.readAsStringSync(),
+          isNot(matches(r'\b(fontSize|fontWeight|letterSpacing)\s*:')),
+          reason: '${file.path}: choose an AppTextStyles role instead');
+    }
+  });
   test('feature boundaries keep persistence and UI implementations separate',
       () {
     for (final file in Directory('lib/features')

@@ -56,7 +56,7 @@ class ServiceComponentCard extends StatelessWidget {
                           ServiceComponentIcon(
                               type: component.type,
                               customIcon: component.customIcon,
-                              size: 22,
+                              size: AppIconSizes.control,
                               color: p.inkMuted),
                           const SizedBox(width: 12),
                           Expanded(
@@ -64,19 +64,17 @@ class ServiceComponentCard extends StatelessWidget {
                                   component.name.trim().isEmpty
                                       ? component.type.label
                                       : component.name,
-                                  style: AppTextStyles.inter(
-                                      size: 16,
-                                      weight: FontWeight.w600,
-                                      color: p.ink))),
+                                  style: AppTextStyles.label
+                                      .copyWith(color: p.ink))),
                           if (onTap != null) ...[
                             const SizedBox(width: 12),
                             Icon(CupertinoIcons.chevron_right,
-                                size: 16, color: p.inkMuted)
+                                size: AppIconSizes.compact, color: p.inkMuted)
                           ],
                         ]),
                         const SizedBox(height: 12),
                         Text(serviceDistanceLabel(s),
-                            style: AppTextStyles.inter(size: 16, color: color)),
+                            style: AppTextStyles.body.copyWith(color: color)),
                         if (!s.usageUnknown) ...[
                           const SizedBox(height: 12),
                           LinearProgressIndicator(

@@ -130,24 +130,18 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                         Text(
                           widget.valueLabel ??
                               formatNumber(_currentValue, widget.decimals),
-                          style: AppTextStyles.mono(
-                            size: widget.valueLabel != null ? 32 : 64,
-                            weight: FontWeight.w700,
-                            color: p.ink,
-                            letterSpacing: -3,
-                            height: 1,
-                          ),
+                          style: (widget.valueLabel != null
+                                  ? AppTextStyles.heading
+                                  : AppTextStyles.value)
+                              .copyWith(color: p.ink),
                         ),
                         if (widget.valueAccessory == null)
                           SizedBox(height: 4, width: 0),
                         if (widget.valueAccessory == null)
                           Text(
                             widget.unitLabel,
-                            style: AppTextStyles.inter(
-                              size: 12,
-                              weight: FontWeight.w600,
-                              color: p.inkMuted,
-                            ),
+                            style: AppTextStyles.caption
+                                .copyWith(color: p.inkMuted),
                           ),
                       ]),
                 ),
@@ -281,11 +275,9 @@ class _RulerPainter extends CustomPainter {
         final tp = TextPainter(
           text: TextSpan(
             text: formatNumber(value, decimals),
-            style: AppTextStyles.inter(
-              color: labelColor,
-              size: 10,
-              weight: FontWeight.w600,
-            ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+            style: AppTextStyles.caption
+                .copyWith(color: labelColor)
+                .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
           ),
           textDirection: TextDirection.ltr,
         )..layout();

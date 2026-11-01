@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import '../models/service_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -10,7 +11,7 @@ class ServiceComponentIcon extends StatelessWidget {
       required this.type,
       required this.color,
       this.customIcon,
-      this.size = 24});
+      this.size = AppIconSizes.control});
   final ComponentType type;
   final ServiceIcon? customIcon;
   final Color color;

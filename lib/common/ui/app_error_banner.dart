@@ -28,7 +28,7 @@ class AppErrorBanner extends StatelessWidget {
               Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Icon(CupertinoIcons.exclamationmark_circle,
-                      size: 20, color: p.red)),
+                      size: AppIconSizes.control, color: p.red)),
               const SizedBox(width: 10),
               Expanded(
                   child: Column(
@@ -36,8 +36,7 @@ class AppErrorBanner extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                     Text(message,
-                        style: AppTextStyles.inter(
-                            size: 14, color: p.ink, height: 1.4)),
+                        style: AppTextStyles.body.copyWith(color: p.ink)),
                     if (onRetry != null) ...[
                       const SizedBox(height: 6),
                       TextButton(
@@ -54,7 +53,8 @@ class AppErrorBanner extends StatelessWidget {
                 IconButton(
                     onPressed: onDismiss,
                     tooltip: 'Dismiss error',
-                    icon: const Icon(CupertinoIcons.xmark, size: 16)),
+                    icon: const Icon(CupertinoIcons.xmark,
+                        size: AppIconSizes.compact)),
             ])));
   }
 }

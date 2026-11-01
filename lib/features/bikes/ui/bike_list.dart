@@ -1,7 +1,6 @@
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
-import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -61,7 +60,7 @@ class _BikeListState extends State<BikeList> {
       return Center(
         child: Text(
           'No User',
-          style: AppTextStyles.inter(size: 12, color: p.inkMuted),
+          style: AppTextStyles.caption.copyWith(color: p.inkMuted),
         ),
       );
     }
@@ -79,7 +78,7 @@ class _BikeListState extends State<BikeList> {
           return Center(
             child: Text(
               'Error',
-              style: AppTextStyles.inter(size: 12, color: p.red),
+              style: AppTextStyles.caption.copyWith(color: p.red),
             ),
           );
         }
@@ -87,7 +86,7 @@ class _BikeListState extends State<BikeList> {
           return Center(
             child: Text(
               'No bikes',
-              style: AppTextStyles.inter(size: 12, color: p.inkMuted),
+              style: AppTextStyles.caption.copyWith(color: p.inkMuted),
             ),
           );
         }
@@ -123,14 +122,12 @@ class _BikeListState extends State<BikeList> {
                 child: ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  leading: BikeIcon(size: 24, color: p.inkMuted),
                   title: Text(bike.name,
-                      style: AppTextStyles.inter(
-                          size: 15, weight: FontWeight.w600, color: p.ink)),
+                      style: AppTextStyles.label.copyWith(color: p.ink)),
                   selected: active,
                   trailing: active
                       ? Icon(CupertinoIcons.check_mark,
-                          color: p.accentText, size: 20)
+                          color: p.accentText, size: AppIconSizes.control)
                       : null,
                   onTap: () async {
                     AppHaptics.selection();
@@ -157,7 +154,6 @@ class _BikeListState extends State<BikeList> {
             return _BikeCard(
               bike: bike,
               user: widget.user!,
-              active: active,
               expanded: expanded,
               onToggleExpand: () => setState(
                 () => _expandedBikeId = expanded ? null : bike.id,
@@ -210,7 +206,6 @@ class _BikeCard extends StatelessWidget {
   final User user;
   final String? selectedSetupId;
   final void Function(String, String, String, String) onSetupDetails;
-  final bool active;
   final bool expanded;
   final VoidCallback onToggleExpand;
   final void Function(String, String, String, String) onSelectSetup;
@@ -221,7 +216,6 @@ class _BikeCard extends StatelessWidget {
     required this.user,
     required this.selectedSetupId,
     required this.onSetupDetails,
-    required this.active,
     required this.expanded,
     required this.onToggleExpand,
     required this.onSelectSetup,
@@ -231,6 +225,17 @@ class _BikeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final details = Visibility(
+        visible: expanded,
+        maintainState: true,
+        child: Column(children: [
+          _SetupsList(
+              user: user,
+              bike: bike,
+              onSelectSetup: onSelectSetup,
+              selectedSetupId: selectedSetupId,
+              onSetupDetails: onSetupDetails),
+        ]));
     return Material(
       key: Key(bike.id),
       color: expanded ? p.bg : Colors.transparent,
@@ -242,20 +247,12 @@ class _BikeCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
             child: Row(children: [
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                child: BikeIcon(size: 24, color: active ? p.ink : p.inkMuted),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(bike.name,
-                        style: AppTextStyles.inter(
-                            size: 15, weight: FontWeight.w600, color: p.ink)),
+                        style: AppTextStyles.label.copyWith(color: p.ink)),
                   ],
                 ),
               ),
@@ -278,28 +275,19 @@ class _BikeCard extends StatelessWidget {
                           : const Duration(milliseconds: 240),
                       curve: Curves.easeInOutCubic,
                       child: Icon(CupertinoIcons.chevron_right,
-                          size: 15, color: p.inkMuted))),
+                          size: AppIconSizes.compact, color: p.inkMuted))),
             ]),
           ),
         ),
-        AnimatedSize(
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 240),
-          curve: Curves.easeInOutCubic,
-          alignment: Alignment.topCenter,
-          child: Visibility(
-              visible: expanded,
-              maintainState: true,
-              child: Column(children: [
-                _SetupsList(
-                    user: user,
-                    bike: bike,
-                    onSelectSetup: onSelectSetup,
-                    selectedSetupId: selectedSetupId,
-                    onSetupDetails: onSetupDetails),
-              ])),
-        ),
+        if (MediaQuery.disableAnimationsOf(context))
+          details
+        else
+          AnimatedSize(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: details,
+          ),
       ]),
     );
   }
@@ -514,15 +502,6 @@ class _NewSetupRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-            onPressed: AppHaptics.wrap(onTap),
-            style: TextButton.styleFrom(
-                foregroundColor: context.palette.inkMuted,
-                textStyle:
-                    AppTextStyles.inter(size: 14, weight: FontWeight.w500)),
-            icon: const Icon(CupertinoIcons.plus, size: 15),
-            label: const Text('Add setup')));
+    return AppAddButton(label: 'Add setup', onPressed: onTap);
   }
 }

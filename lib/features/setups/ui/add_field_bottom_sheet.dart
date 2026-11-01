@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -74,7 +75,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
           .first;
       if (mounted) {
         setState(() {
-          _existing = values.keys.toSet();
+          _existing = values.entries
+              .where(
+                  (entry) => entry.value?.toString().trim().isNotEmpty == true)
+              .map((entry) => entry.key)
+              .toSet();
           _loading = false;
         });
       }
@@ -115,7 +120,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
         uSetupID: widget.setup,
         settingKey: name,
         currentValue: '',
-        isDefault: true,
+        canDelete: false,
         familyOverride: family,
         saveLabel: 'Add setting', onSave: (value) async {
       if (value.trim().isEmpty) {
@@ -141,8 +146,10 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final suggestions = (kSuggestedFieldKeys[widget.category] ?? <String>[])
-        .where((key) => !_existing.contains(key));
+    final suggestions = {
+      ...?kDefaultFieldKeys[widget.category],
+      ...?kSuggestedFieldKeys[widget.category],
+    }.where((key) => !_existing.contains(key));
     final showNewSetting =
         _custom || (!_loading && !_failed && suggestions.isEmpty);
     return Padding(
@@ -159,11 +166,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                   IconButton(
                       tooltip: 'Back',
                       onPressed: () => setState(() => _custom = false),
-                      icon: const Icon(CupertinoIcons.chevron_left, size: 20)),
+                      icon: const Icon(CupertinoIcons.chevron_left,
+                          size: AppIconSizes.compact)),
                 Expanded(
                     child: Text(showNewSetting ? 'New setting' : 'Add setting',
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.w600))),
+                        style: AppTextStyles.heading)),
               ]),
               const SizedBox(height: 22),
               if (_loading)

@@ -25,7 +25,7 @@ class AppUnitSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = options.firstWhere((option) => option.id == value);
     final label = Text(selected.symbol,
-        style: TextStyle(fontSize: 16, color: context.palette.inkMuted));
+        style: AppTextStyles.body.copyWith(color: context.palette.inkMuted));
     if (options.length < 2) return label;
     return Semantics(
       label: 'Unit: ${selected.label}',
@@ -56,7 +56,8 @@ class AppUnitSelector extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           label,
           const SizedBox(width: 4),
-          const Icon(Icons.keyboard_arrow_down_rounded, size: 18)
+          const Icon(Icons.keyboard_arrow_down_rounded,
+              size: AppIconSizes.compact)
         ]),
       ),
     );

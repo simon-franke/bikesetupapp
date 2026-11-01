@@ -52,7 +52,7 @@ Future<ServiceIcon?> pickServiceIcon(
                                     child: ServiceComponentIcon(
                                         type: ComponentType.other,
                                         customIcon: icon,
-                                        size: 28,
+                                        size: AppIconSizes.navigation,
                                         color: icon == selected
                                             ? p.accentInk
                                             : p.ink),

@@ -44,18 +44,16 @@ class _HourServiceSheetState extends State<HourServiceSheet> {
                     const AppSheetHandle(),
                     const SizedBox(height: 20),
                     Text('Log service',
-                        style: AppTextStyles.inter(
-                            size: 22,
-                            weight: FontWeight.w600,
-                            color: context.palette.ink)),
+                        style: AppTextStyles.heading
+                            .copyWith(color: context.palette.ink)),
                     const SizedBox(height: 8),
                     Text(widget.component.name,
-                        style: AppTextStyles.inter(
-                            size: 16, color: context.palette.inkMuted)),
+                        style: AppTextStyles.body
+                            .copyWith(color: context.palette.inkMuted)),
                     const SizedBox(height: 12),
                     Text('Ride hours restart from this service.',
-                        style: AppTextStyles.inter(
-                            size: 14, color: context.palette.inkMuted)),
+                        style: AppTextStyles.body
+                            .copyWith(color: context.palette.inkMuted)),
                     const SizedBox(height: 12),
                     const AppFieldLabel('Date & time'),
                     const SizedBox(height: 8),
