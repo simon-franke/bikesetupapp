@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -74,7 +75,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
           .first;
       if (mounted) {
         setState(() {
-          _existing = values.keys.toSet();
+          _existing = values.entries
+              .where(
+                  (entry) => entry.value?.toString().trim().isNotEmpty == true)
+              .map((entry) => entry.key)
+              .toSet();
           _loading = false;
         });
       }
@@ -159,11 +164,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                   IconButton(
                       tooltip: 'Back',
                       onPressed: () => setState(() => _custom = false),
-                      icon: const Icon(CupertinoIcons.chevron_left, size: 20)),
+                      icon: const Icon(CupertinoIcons.chevron_left,
+                          size: AppIconSizes.compact)),
                 Expanded(
                     child: Text(showNewSetting ? 'New setting' : 'Add setting',
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.w600))),
+                        style: AppTextStyles.heading)),
               ]),
               const SizedBox(height: 22),
               if (_loading)

@@ -29,13 +29,11 @@ class AppLoadError extends StatelessWidget {
           const SizedBox(height: 20),
           Text('A little roadside trouble.',
               textAlign: TextAlign.center,
-              style: AppTextStyles.inter(
-                  size: 24, weight: FontWeight.w600, color: p.ink)),
+              style: AppTextStyles.heading.copyWith(color: p.ink)),
           const SizedBox(height: 10),
           Text(message,
               textAlign: TextAlign.center,
-              style: AppTextStyles.inter(
-                  size: 16, color: p.inkMuted, height: 1.4)),
+              style: AppTextStyles.body.copyWith(color: p.inkMuted)),
           const SizedBox(height: 24),
           AppActionButton(label: 'Try again', onPressed: onRetry),
         ]),

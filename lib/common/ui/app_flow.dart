@@ -31,7 +31,8 @@ class AppFlowHeader extends StatelessWidget {
                   : IconButton(
                       tooltip: backTooltip,
                       onPressed: AppHaptics.wrap(onBack, selection: true),
-                      icon: const Icon(CupertinoIcons.chevron_left, size: 20))),
+                      icon: const Icon(CupertinoIcons.chevron_left,
+                          size: AppIconSizes.compact))),
           const SizedBox(width: 8),
           Expanded(
               child: LinearProgressIndicator(
@@ -47,7 +48,8 @@ class AppFlowHeader extends StatelessWidget {
             IconButton(
                 tooltip: closeTooltip,
                 onPressed: AppHaptics.wrap(onClose, selection: true),
-                icon: const Icon(CupertinoIcons.xmark, size: 20)),
+                icon: const Icon(CupertinoIcons.xmark,
+                    size: AppIconSizes.control)),
           ],
         ]),
       );
@@ -63,10 +65,8 @@ class AppFlowHeading extends StatelessWidget {
         child: Semantics(
             header: true,
             child: Text(text,
-                style: AppTextStyles.inter(
-                    size: 26,
-                    weight: FontWeight.w600,
-                    color: context.palette.ink))),
+                style: AppTextStyles.heading
+                    .copyWith(color: context.palette.ink))),
       );
 }
 

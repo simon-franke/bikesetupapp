@@ -13,12 +13,12 @@ void main() {
       theme: AppTheme.darkTheme,
       home: Scaffold(
           body: AppObjectMenu(
-        tooltip: 'Test options',
+        tooltip: 'Experiment options',
         onRename: null,
         onDiscard: () => discarded = true,
       )),
     ));
-    await tester.tap(find.byTooltip('Test options'));
+    await tester.tap(find.byTooltip('Experiment options'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Discard draft'));
     await tester.pump();
@@ -53,13 +53,13 @@ void main() {
           body: Align(
             alignment: Alignment.bottomRight,
             child: AppObjectMenu(
-                tooltip: 'Test options',
+                tooltip: 'Experiment options',
                 onRename: () => renamed++,
                 onDiscard: () => discarded++),
           ),
         ),
       ));
-      await tester.tap(find.byTooltip('Test options'));
+      await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       final action = find.widgetWithText(TextButton, 'Rename');
       final bounds = tester.getRect(action);
@@ -73,20 +73,20 @@ void main() {
       expect(find.text('Rename'), findsNothing);
       expect(renamed, 0);
 
-      await tester.tap(find.byTooltip('Test options'));
+      await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(find.text('Rename'), findsNothing);
       expect(renamed, 0);
 
-      await tester.tap(find.byTooltip('Test options'));
+      await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(renamed, 1);
       expect(find.text('Rename'), findsNothing);
-      await tester.tap(find.byTooltip('Test options'));
+      await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Discard draft'));
       await tester.pumpAndSettle();

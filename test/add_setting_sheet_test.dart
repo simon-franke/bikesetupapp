@@ -19,7 +19,8 @@ void main() {
       (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     final repo = FakeSetupsRepository()
-      ..settings['bike/setup/Fork/High Speed Rebound'] = '2 clicks';
+      ..settings['bike/setup/Fork/High Speed Rebound'] = '2 clicks'
+      ..settings['bike/setup/Fork/Sag'] = '  ';
     await tester.pumpWidget(Provider.value(
       value: AppDependencies(setupsRepository: (_) => repo),
       child: MaterialApp(
@@ -40,11 +41,11 @@ void main() {
     expect(find.text('Suggested fields'), findsNothing);
     await tester.tap(find.text('Sag'));
     await tester.pumpAndSettle();
-    expect(repo.settings.length, 1);
-    expect(find.text('Save to test'), findsNothing);
+    expect(repo.settings['bike/setup/Fork/Sag'], '  ');
+    expect(find.text('Save to experiment'), findsNothing);
     await tester.tap(find.widgetWithText(ElevatedButton, 'Add setting'));
     await tester.pumpAndSettle();
-    expect(repo.settings['bike/setup/Fork/Sag'], isNotNull);
+    expect(repo.settings['bike/setup/Fork/Sag']!.trim(), isNotEmpty);
     expect(find.byType(BottomSheet), findsNothing);
     expect(tester.takeException(), isNull);
   });

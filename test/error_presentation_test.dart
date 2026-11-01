@@ -160,12 +160,10 @@ void main() {
                     children: [
               const Padding(
                   padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-                  child: Text('Service', style: TextStyle(fontSize: 14))),
+                  child: Text('Service', style: AppTextStyles.body)),
               Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                  child: Text('My bike',
-                      style: AppTextStyles.inter(
-                          size: 30, weight: FontWeight.w700))),
+                  child: Text('My bike', style: AppTextStyles.heading)),
               const ServiceComponentsList(
                   userID: 'user',
                   bikeId: 'bike',

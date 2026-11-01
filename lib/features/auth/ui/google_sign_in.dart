@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/failure_message.dart';
@@ -126,7 +127,7 @@ class LoginPage extends StatelessWidget {
                                           foregroundColor:
                                               theme.colorScheme.onPrimary,
                                           icon: Icon(CupertinoIcons.envelope,
-                                              size: 22,
+                                              size: AppIconSizes.control,
                                               color:
                                                   theme.colorScheme.onPrimary),
                                           label: 'Sign in with Email',
@@ -181,8 +182,8 @@ class _Header extends StatelessWidget {
           child: BikeIcon(size: 44, color: theme.colorScheme.onPrimary)),
       const SizedBox(height: 20),
       Text('Bike Setup',
-          style: theme.textTheme.headlineMedium?.copyWith(
-              color: theme.colorScheme.onSurface, fontWeight: FontWeight.w700)),
+          style: theme.textTheme.headlineMedium
+              ?.copyWith(color: theme.colorScheme.onSurface)),
       const SizedBox(height: 8),
       Text('Your bikes, settings and service history.',
           textAlign: TextAlign.center,
@@ -272,7 +273,6 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
           Text(
             _isSignUp ? 'Create Account' : 'Sign In',
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
             ),
           ),
@@ -303,15 +303,8 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
             Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
           ],
           const SizedBox(height: 20),
-          ElevatedButton(
+          AppTactileButton(
             onPressed: _loading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
             child: _loading
                 ? SizedBox(
                     height: 20,
@@ -320,8 +313,7 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
                         strokeWidth: 2, color: theme.colorScheme.onPrimary),
                   )
                 : Text(_isSignUp ? 'Create Account' : 'Sign In',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
+                    style: AppTextStyles.label),
           ),
           const SizedBox(height: 12),
           TextButton(
@@ -385,10 +377,7 @@ class _SignInButton extends StatelessWidget {
         Expanded(
             child: Text(label,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: foregroundColor))),
+                style: AppTextStyles.label.copyWith(color: foregroundColor))),
       ]),
     );
   }

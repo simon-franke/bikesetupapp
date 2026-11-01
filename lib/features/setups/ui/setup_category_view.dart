@@ -1,7 +1,7 @@
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/unit_system.dart';
 import '../models/setup_configuration.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -37,21 +37,8 @@ class SetupCategoryView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Expanded(
-                          child: Text(categoryLabel(category),
-                              style: const TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w600))),
-                      IconButton(
-                          tooltip:
-                              'Add ${categoryLabel(category).toLowerCase()} setting',
-                          icon: const Icon(CupertinoIcons.plus, size: 19),
-                          onPressed: () => showAddFieldSheet(context,
-                              user: user,
-                              uBikeID: bike,
-                              uSetupID: setup,
-                              category: category)),
-                    ]),
+                    Text(categoryLabel(category), style: AppTextStyles.label),
+                    const SizedBox(height: 8),
                     _CategoryRows(
                         key: ValueKey(category),
                         uid: user.uid,
@@ -70,14 +57,18 @@ class SetupCategoryView extends StatelessWidget {
                               familyOverride: family,
                               isDefault: isDefaultField(category, key));
                         }),
+                    AppAddButton(
+                      label: 'Add setting',
+                      tooltip:
+                          'Add ${categoryLabel(category).toLowerCase()} setting',
+                      onPressed: () => showAddFieldSheet(context,
+                          user: user,
+                          uBikeID: bike,
+                          uSetupID: setup,
+                          category: category),
+                    ),
                   ],
                 )),
-          if (category == 'Fork' || category == 'Shock')
-            Padding(
-                padding: const EdgeInsets.only(bottom: 18),
-                child: Text('Click counts are measured from fully closed.',
-                    style: TextStyle(
-                        fontSize: 12, color: context.palette.inkMuted))),
         ]);
   }
 }
@@ -121,7 +112,10 @@ class _CategoryRowsState extends State<_CategoryRows> {
               if (snapshot.hasError) {
                 return const Text('Could not load settings.');
               }
-              final values = snapshot.data ?? <String, dynamic>{};
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final values = snapshot.data!;
               final keys = [
                 ...?(widget.configuredFields ??
                     kDefaultFieldKeys[widget.category]),
@@ -129,51 +123,58 @@ class _CategoryRowsState extends State<_CategoryRows> {
                         kDefaultFieldKeys[widget.category] ??
                         [])
                     .contains(key))
-              ];
+              ].where(
+                  (key) => values[key]?.toString().trim().isNotEmpty == true);
               return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final key in keys) ...[
-                      if (key != keys.first)
-                        Divider(height: 1, color: context.palette.border),
-                      InkWell(
-                          onTap: AppHaptics.wrap(() => widget.onEdit(
-                              key,
-                              values[key]?.toString() ?? '',
-                              unitFamilyFromName(
-                                  metadata.data![key]?.toString() ?? ''))),
-                          child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 17),
-                              child: Row(children: [
-                                Expanded(
-                                    child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                      Text(key,
-                                          style: const TextStyle(fontSize: 13)),
-                                    ])),
-                                const SizedBox(width: 12),
-                                ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                        maxWidth:
-                                            MediaQuery.sizeOf(context).width *
-                                                .3),
-                                    child: Text(
-                                        values[key]?.toString().isNotEmpty ==
-                                                true
-                                            ? values[key].toString()
-                                            : snapshot.hasData
-                                                ? 'Add'
-                                                : '…',
-                                        textAlign: TextAlign.end,
-                                        style: AppTextStyles.mono(
-                                            size: 14,
-                                            weight: FontWeight.w500,
-                                            color: context.palette.ink))),
-                              ]))),
-                    ],
+                    for (final key in keys)
+                      _SettingRow(
+                        label: key,
+                        value: values[key]?.toString() ?? '',
+                        onTap: () => widget.onEdit(
+                            key,
+                            values[key]?.toString() ?? '',
+                            unitFamilyFromName(
+                                metadata.data![key]?.toString() ?? '')),
+                      ),
                   ]);
             });
       });
+}
+
+/// Every setting uses the same label/value hierarchy and full-width tap target.
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label, value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: AppHaptics.wrap(onTap),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTextStyles.label.copyWith(color: p.ink)),
+              const SizedBox(height: 6),
+              Text(value,
+                  style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

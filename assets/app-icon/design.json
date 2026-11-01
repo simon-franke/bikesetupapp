@@ -1,0 +1,20 @@
+{
+  "artwork": "../../ios/Runner/AppIcon.icon/Assets/top-cap.png",
+  "generator": "Built-in image_gen",
+  "prompt": "Extract and refine ONLY the blue top cap symbol from the LEFT icon labelled 01 Top cap in reference. Output a single square 1024x1024 transparent PNG foreground asset for Apple Icon Composer, with the symbol centered and occupying about 70 percent of canvas width and height. No navy square background, no labels, no other icons, no shadow outside the object. Preserve the exact six-lobed smoothly scalloped blue suspension-adjustment top-cap design, modest darker blue lower extrusion, dark navy centered hex socket, single white rounded vertical index mark at twelve o’clock. Glacier blue #7CCBFF top surface, matte softly raised finish, clean vector-like smooth edges. Transparent everywhere outside the symbol. This is a production icon foreground layer, straight-on view, crisp, balanced, minimal. Preserve the reference silhouette and proportions.",
+  "preview_renderer": "Apple Icon Composer ictool, Xcode 27",
+  "renditions": [
+    "Default",
+    "Dark",
+    "ClearLight",
+    "ClearDark",
+    "TintedLight",
+    "TintedDark"
+  ],
+  "preview_tint": {
+    "color": 0.58,
+    "strength": 0.65
+  },
+  "note": "Tint and clear appearances adapt to the user’s Home Screen settings and wallpaper. Previews are native renders, not separate icon sources. Icon changes require a native rebuild; Flutter hot reload cannot update them.",
+  "export_command": "\"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool\" ios/Runner/AppIcon.icon --export-image --output-file assets/app-icon/previews/{rendition}.png --platform iOS --rendition {rendition} --width 1024 --height 1024 --scale 1 --tint-color 0.58 --tint-strength 0.65"
+}

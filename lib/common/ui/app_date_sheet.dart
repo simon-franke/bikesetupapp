@@ -34,10 +34,8 @@ class _AppDateSheetState extends State<_AppDateSheet> {
             const AppSheetHandle(),
             const SizedBox(height: 24),
             Text(widget.includeTime ? 'Date & time' : 'Date',
-                style: AppTextStyles.inter(
-                    size: 22,
-                    weight: FontWeight.w600,
-                    color: context.palette.ink)),
+                style:
+                    AppTextStyles.heading.copyWith(color: context.palette.ink)),
             const SizedBox(height: 16),
             SizedBox(
                 height: 216,
@@ -46,8 +44,8 @@ class _AppDateSheetState extends State<_AppDateSheet> {
                         brightness: Theme.of(context).brightness,
                         primaryColor: context.palette.accentText,
                         textTheme: CupertinoTextThemeData(
-                            dateTimePickerTextStyle: AppTextStyles.inter(
-                                size: 18, color: context.palette.ink))),
+                            dateTimePickerTextStyle: AppTextStyles.body
+                                .copyWith(color: context.palette.ink))),
                     child: CupertinoDatePicker(
                         initialDateTime: widget.initial,
                         minimumDate: DateTime(2000),

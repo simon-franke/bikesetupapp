@@ -1,3 +1,6 @@
+import 'package:bikesetupapp/common/models/command_result.dart';
+import 'package:bikesetupapp/common/ui/app_value_button.dart';
+import '../../setups/ui/control_panel_grid.dart';
 import 'package:bikesetupapp/common/ui/app_flow.dart';
 import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'dart:math' as math;
@@ -9,14 +12,10 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
-import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import '../models/bike_creation_draft.dart';
 import 'bike_onboarding_state.dart';
-import 'draft_value_editor.dart';
-import 'draft_stepper.dart';
 import 'frame_settings.dart';
 import 'adjuster_dial.dart';
-import '../../setups/models/unit_system.dart';
 
 class CreateBikeFlow extends StatefulWidget {
   const CreateBikeFlow(
@@ -35,8 +34,6 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
   late final flow = BikeOnboardingState(initialDraft: widget.initialDraft);
   final scroll = ScrollController();
   bool saving = false;
-  final editors = <String, GlobalKey<DraftValueEditorState>>{};
-  final steppers = <String, GlobalKey<DraftStepperState>>{};
 
   @override
   void dispose() {
@@ -57,21 +54,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
     return valid;
   }
 
-  bool acceptCurrent() {
-    if (flow.currentStep.kind == OnboardingStepKind.controls &&
-        steppers['${flow.currentCategory}/Travel']?.currentState?.accept() ==
-            false) {
-      return false;
-    }
-    for (final field in flow.currentFields) {
-      final id = '${flow.currentCategory}/$field';
-      if (editors[id]?.currentState?.accept() == false ||
-          steppers[id]?.currentState?.accept() == false) {
-        return false;
-      }
-    }
-    return true;
-  }
+  bool acceptCurrent() => true;
 
   void next() {
     if (acceptCurrent() && validate()) go(flow.step + 1);
@@ -116,21 +99,8 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                 suffix: number ? 'mm' : null),
           ]));
 
-  Widget travelSelector(TextEditingController controller) {
-    return DraftStepper(
-      key: steppers.putIfAbsent('${flow.currentCategory}/Travel',
-          () => GlobalKey<DraftStepperState>()),
-      field: 'Travel',
-      value: '${controller.text} mm',
-      stepSize: 5,
-      onChanged: (value) => setState(() {
-        final parsed = SettingValue.parse(value,
-            fallbackFamily: UnitFamily.length,
-            fallbackUnit: kTravelFieldMeta.defaultUnit);
-        controller.text = formatNumber(parsed.number ?? 150, 0);
-      }),
-    );
-  }
+  Widget travelSelector(TextEditingController controller) =>
+      field('Travel', controller, hint: 'Optional', number: true);
 
   Widget wheel(String title, String value, ValueChanged<String> change) =>
       Padding(
@@ -166,54 +136,53 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
             : 'None';
     Widget choice(String value, String title, int count) => Semantics(
         selected: mode == value,
-        child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-                animationDuration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 220),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-                side: BorderSide(
-                    color: mode == value
+        child: AppSelectionSurface(
+            selected: mode == value,
+            child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                    animationDuration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 220),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    side: mode == value
+                        ? BorderSide(color: context.palette.accentText)
+                        : BorderSide.none,
+                    backgroundColor:
+                        mode == value ? Colors.transparent : context.palette.bg,
+                    foregroundColor: mode == value
                         ? context.palette.accentText
-                        : context.palette.borderStrong),
-                backgroundColor: context.palette.bg,
-                foregroundColor: mode == value
-                    ? context.palette.accentText
-                    : context.palette.ink,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14))),
-            onPressed: () => setState(() {
-                  selected.removeAll([label, low, high]);
-                  if (value == 'Single') selected.add(label);
-                  if (value == 'Low / high speed') selected.addAll([low, high]);
-                }),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              AdjusterDial(selected: mode == value, count: count),
-              const SizedBox(height: 10),
-              Text(title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Icon(
-                  mode == value
-                      ? CupertinoIcons.checkmark_circle_fill
-                      : CupertinoIcons.circle,
-                  size: 16,
-                  color: mode == value
-                      ? context.palette.accentText
-                      : context.palette.inkDim),
-            ])));
+                        : context.palette.ink,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14))),
+                onPressed: () => setState(() {
+                      selected.removeAll([label, low, high]);
+                      if (value == 'Single') selected.add(label);
+                      if (value == 'Low / high speed') {
+                        selected.addAll([low, high]);
+                      }
+                    }),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  AdjusterDial(selected: mode == value, count: count),
+                  const SizedBox(height: 6),
+                  Text(title,
+                      textAlign: TextAlign.center, style: AppTextStyles.label),
+                  const SizedBox(height: 8),
+                  Icon(
+                      mode == value
+                          ? CupertinoIcons.checkmark_circle_fill
+                          : CupertinoIcons.circle,
+                      size: AppIconSizes.compact,
+                      color: mode == value
+                          ? context.palette.accentText
+                          : context.palette.inkDim),
+                ]))));
     return Padding(
         padding: const EdgeInsets.only(bottom: 28),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(label,
-              style: AppTextStyles.inter(
-                  size: 18,
-                  weight: FontWeight.w600,
-                  color: context.palette.ink)),
+              style: AppTextStyles.label.copyWith(color: context.palette.ink)),
           const SizedBox(height: 14),
           LayoutBuilder(builder: (context, constraints) {
             final choices = [
@@ -262,30 +231,26 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                         Text(title,
-                            style: AppTextStyles.inter(
-                                size: 16,
-                                weight: FontWeight.w600,
-                                color: context.palette.ink)),
+                            style: AppTextStyles.label
+                                .copyWith(color: context.palette.ink)),
                         if (detail.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(detail,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  height: 1.4,
-                                  color: context.palette.inkMuted)),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: context.palette.inkMuted)),
                         ],
                       ])),
                   const SizedBox(width: 16),
                   if (onChanged == null)
                     Text('Included',
-                        style: TextStyle(
-                            fontSize: 12, color: context.palette.inkMuted))
+                        style: AppTextStyles.caption
+                            .copyWith(color: context.palette.inkMuted))
                   else
                     Icon(
                         selected
                             ? CupertinoIcons.checkmark_circle_fill
                             : CupertinoIcons.circle,
-                        size: 24,
+                        size: AppIconSizes.control,
                         color: selected
                             ? context.palette.accentText
                             : context.palette.inkDim),
@@ -321,8 +286,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 10, horizontal: 16),
                                 child: Text(type,
-                                    style: TextStyle(
-                                        fontSize: 14,
+                                    style: AppTextStyles.body.copyWith(
                                         color: spring == type
                                             ? context.palette.accentInk
                                             : context.palette.inkMuted)))
@@ -337,27 +301,37 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
 
   Widget note(String text) => AppFlowHeading(text);
 
-  Widget ruler(String category, String key) => KeyedSubtree(
-      key: ValueKey('$category/$key'),
-      child: DraftValueEditor(
-          key: editors.putIfAbsent(
-              '$category/$key', () => GlobalKey<DraftValueEditorState>()),
-          field: key,
-          value: flow.setting(category, key).text,
-          previewValue: key == 'Pressure'
-              ? (category.endsWith('Tire')
-                  ? 25
-                  : category == 'Fork'
-                      ? 80
-                      : 180)
-              : null,
-          onChanged: (value) =>
-              setState(() => flow.setting(category, key).text = value)));
+  Widget optionalValue(String category, String key) {
+    final value = flow.setting(category, key).text;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        AppValueButton(
+            label: key,
+            value: value.isEmpty ? 'Not set' : value,
+            onTap: () => showSettingStepperSheet(context,
+                    uBikeID: '',
+                    uSetupID: '',
+                    category: category,
+                    settingKey: key,
+                    currentValue: value,
+                    isDefault: true,
+                    onClear: value.isEmpty
+                        ? null
+                        : () =>
+                            setState(() => flow.setting(category, key).clear()),
+                    saveLabel: 'Use value', onSave: (value) async {
+                  setState(() => flow.setting(category, key).text = value);
+                  return const CommandSuccess<void>(null);
+                })),
+      ]),
+    );
+  }
 
   Widget tireSettings(String tire) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        ruler(tire, 'Pressure'),
-        const SizedBox(height: 24),
+        sectionHeading(tire == 'FrontTire' ? 'Front tire' : 'Rear tire'),
+        optionalValue(tire, 'Pressure'),
         wheel('${tire == 'FrontTire' ? 'Front' : 'Rear'} wheel size',
             tire == 'FrontTire' ? flow.frontWheel : flow.rearWheel, (value) {
           if (tire == 'FrontTire') {
@@ -366,35 +340,23 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
             flow.rearWheel = value;
           }
         }),
+        const SizedBox(height: 20),
       ]);
-
-  Widget compactValue(String field) => DraftStepper(
-      key: steppers.putIfAbsent('${flow.currentCategory}/$field',
-          () => GlobalKey<DraftStepperState>()),
-      field: field,
-      value: flow.setting(flow.currentCategory, field).text,
-      onChanged: (value) => setState(
-          () => flow.setting(flow.currentCategory, field).text = value));
 
   Widget groupedValues() =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        note('Set your ${flow.currentCategory.toLowerCase()}'),
+        note(flow.currentCategory),
         if (flow.currentCategory == 'Frame')
           FrameSettings(
               values: {
                 for (final key in flow.currentFields)
                   key: flow.setting('Frame', key).text
               },
-              onChanged: (key, value) => setState(() {
-                    flow.setting('Frame', key).text = value;
-                  }))
+              onChanged: (key, value) =>
+                  setState(() => flow.setting('Frame', key).text = value))
         else
           for (final key in flow.currentFields)
-            if (key == 'Pressure' || key == 'Spring Rate') ...[
-              ruler(flow.currentCategory, key),
-              const SizedBox(height: 24),
-            ] else
-              compactValue(key),
+            optionalValue(flow.currentCategory, key),
       ]);
 
   Widget page() {
@@ -459,7 +421,6 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
         note(title == 'Fork'
             ? 'Match your fork’s adjusters'
             : 'Match your shock’s adjusters'),
-        sectionHeading('Adjusters'),
         adjuster('Rebound',
             title == 'Fork' ? flow.forkAdjusters : flow.shockAdjusters),
         adjuster('Compression',
@@ -483,10 +444,8 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
         child: Semantics(
             header: true,
             child: Text(title,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: context.palette.inkMuted))),
+                style: AppTextStyles.label
+                    .copyWith(color: context.palette.inkMuted))),
       );
 
   @override
@@ -507,7 +466,10 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                   const AppSheetHandle(),
                   AppFlowHeader(
                     progress: flow.progress,
-                    progressLabel: 'Bike setup progress',
+                    progressLabel:
+                        'Bike setup, ${flow.step + 1} of ${flow.steps.length}',
+                    onClose: saving ? null : () => Navigator.of(context).pop(),
+                    closeTooltip: 'Close bike setup',
                     onBack: flow.step > 0 && !saving
                         ? () => go(flow.step - 1)
                         : null,

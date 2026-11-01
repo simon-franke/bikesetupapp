@@ -1,6 +1,6 @@
+import 'package:bikesetupapp/features/tests/ui/test_draft_flow.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bikesetupapp/features/tests/ui/test_draft_flow.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -19,6 +19,37 @@ class MetadataUser extends Fake implements User {
 }
 
 void main() {
+  testWidgets('category hides missing and blank values but keeps zero',
+      (tester) async {
+    final setups = FakeSetupsRepository()
+      ..settings['bike/setup/Fork/Pressure'] = '93'
+      ..settings['bike/setup/Fork/Tokens'] = '0'
+      ..settings['bike/setup/Fork/Low Speed Rebound'] = '  '
+      ..settings['bike/setup/Fork/High Speed Rebound'] = '';
+    final deps = AppDependencies(setupsRepository: (_) => setups);
+    await tester.pumpWidget(Provider.value(
+      value: deps,
+      child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: Scaffold(
+              body: SetupCategoryView(
+                  user: MetadataUser(),
+                  bike: 'bike',
+                  setup: 'setup',
+                  category: 'Fork'))),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Pressure'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('Low Speed Rebound'), findsNothing);
+    expect(find.text('High Speed Rebound'), findsNothing);
+    expect(find.text('Low Speed Compression'), findsNothing);
+    expect(find.text('Add'), findsNothing);
+    expect(find.byTooltip('Add fork setting'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    deps.dispose();
+  });
+
   for (final experiment in [false, true]) {
     testWidgets('numeric free text retains its type in experiment=$experiment',
         (tester) async {
@@ -59,7 +90,7 @@ void main() {
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
           '123');
       await tester.enterText(find.byType(TextField), 'ABC-123');
-      await tester.tap(find.text(experiment ? 'Save to test' : 'Save'));
+      await tester.tap(find.text(experiment ? 'Save to experiment' : 'Save'));
       await tester.pumpAndSettle();
       expect(
           experiment
@@ -109,10 +140,10 @@ void main() {
                       setupName: 'Default')))));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-          find.text('Continue test').hitTestable(), 300);
-      await tester.tap(find.text('Continue test'));
+          find.text('Continue experiment').hitTestable(), 300);
+      await tester.tap(find.text('Continue experiment'));
       await tester.pumpAndSettle();
-      expect(find.text('Tires'), findsOneWidget);
+      await tester.ensureVisible(find.text('Front pressure'));
       await tester.tap(find.text('Front pressure'));
       await tester.pumpAndSettle();
       expect(find.byType(BottomSheet), findsNWidgets(2));
@@ -122,49 +153,22 @@ void main() {
       tester
           .widget<SettingValueEditor>(find.byType(SettingValueEditor))
           .onChanged(24);
-      await tester.tap(find.text('Save to test'));
+      await tester.ensureVisible(find.text('Save to experiment'));
+      await tester.tap(find.text('Save to experiment'));
       await tester.pumpAndSettle();
-      expect(find.byType(BottomSheet), findsOneWidget);
       expect(repo.records['test']!.values['FrontTire']!['Pressure'], '24 psi');
       expect(repo.records['test']!.before['FrontTire']!['Pressure'], '22 psi');
-      expect(find.text('from 22 psi'), findsOneWidget);
       await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Compression'), findsOneWidget);
-      expect(repo.records['test']!.draftStep, 1);
-      await tester.tap(find.byTooltip('Close test'));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-          find.text('Continue test').hitTestable(), 300);
-      await tester.tap(find.text('Continue test'));
       await tester.pumpAndSettle();
       expect(find.text('Fork'), findsOneWidget);
-      await tester.tap(find.byTooltip('Back'));
-      await tester.pumpAndSettle();
-      expect(find.text('from 22 psi'), findsOneWidget);
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Leave as is'));
-      await tester.pumpAndSettle();
-      expect(find.text('Ready to try it?'), findsOneWidget);
-      expect(
-          find.descendant(
-              of: find.byType(TestDraftFlow),
-              matching: find.text('22 psi → 24 psi', findRichText: true)),
-          findsOneWidget);
-      expect(find.text('Tires'), findsOneWidget);
-      expect(find.byType(ListTile), findsNothing);
-      await tester.tap(find.text('Front pressure'));
-      await tester.pumpAndSettle();
-      expect(find.byType(BottomSheet), findsOneWidget);
-      expect(find.text('Ready to try it?'), findsOneWidget);
-      expect(repo.records['test']!.draftStep, 2);
-      await tester.tap(find.byTooltip('Close test'));
+      expect(find.text('Compression'), findsOneWidget);
+      expect(find.text('Start experiment'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close experiment'));
       await tester.pumpAndSettle();
       expect(find.text('Rename'), findsNothing);
       expect(find.text('Discard draft'), findsNothing);
-      await tester.ensureVisible(find.byTooltip('Test options'));
-      await tester.tap(find.byTooltip('Test options'));
+      await tester.ensureVisible(find.byTooltip('Experiment options'));
+      await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       expect(find.text('Discard draft'), findsOneWidget);
       await tester.tap(find.text('Rename'));
@@ -176,10 +180,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.records['test']!.name, 'More grip');
       await tester.scrollUntilVisible(
-          find.text('Continue test').hitTestable(), 300);
-      await tester.tap(find.text('Continue test'));
+          find.text('Continue experiment').hitTestable(), 300);
+      await tester.tap(find.text('Continue experiment'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Start test'));
+      await tester.tap(find.text('Start experiment'));
       await tester.pumpAndSettle();
       expect(repo.records['test']!.stage, TestStage.ride);
       expect(repo.records['test']!.name, 'More grip');

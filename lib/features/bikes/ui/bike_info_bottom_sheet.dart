@@ -98,21 +98,11 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   children: [
                     Text(
                       bikeName,
-                      style: AppTextStyles.inter(
-                        size: 12,
-                        weight: FontWeight.w700,
-                        color: p.inkDim,
-                        letterSpacing: 1.4,
-                      ),
+                      style: AppTextStyles.caption.copyWith(color: p.inkDim),
                     ),
                     Text(
                       setupName,
-                      style: AppTextStyles.inter(
-                        size: 20,
-                        weight: FontWeight.w700,
-                        color: p.ink,
-                        letterSpacing: -0.3,
-                      ),
+                      style: AppTextStyles.heading.copyWith(color: p.ink),
                     ),
                   ],
                 ),
@@ -157,7 +147,7 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   child: Center(
                     child: Text(
                       'Failed to load',
-                      style: AppTextStyles.inter(size: 13, color: p.red),
+                      style: AppTextStyles.body.copyWith(color: p.red),
                     ),
                   ),
                 );
@@ -205,20 +195,11 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTextStyles.inter(
-              size: 12,
-              weight: FontWeight.w700,
-              color: p.inkDim,
-              letterSpacing: 0,
-            ),
+            style: AppTextStyles.caption.copyWith(color: p.inkDim),
           ),
           Text(
             value,
-            style: AppTextStyles.inter(
-              size: 14,
-              weight: FontWeight.w600,
-              color: p.ink,
-            ),
+            style: AppTextStyles.label.copyWith(color: p.ink),
           ),
         ],
       ),

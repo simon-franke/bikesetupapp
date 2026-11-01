@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
+import '../../setups/ui/field_meta.dart';
 import '../../setups/models/unit_system.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -131,20 +133,21 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
                   .where((group) => group.value.any(
                       (category) => test.values[category]?.isNotEmpty ?? false))
                   .toList();
-              final step = test.draftStep.clamp(0, available.length);
-              final review = step == available.length;
-              final group = review ? null : available[step];
+              final step = test.draftStep
+                  .clamp(0, available.isEmpty ? 0 : available.length - 1);
+              final group = available.isEmpty ? null : available[step];
+              final last = step == available.length - 1;
               final changed = group != null &&
                   test.changes
                       .any((change) => group.value.contains(change.category));
               return Column(children: [
                 AppFlowHeader(
-                  progress: (step + 1) / (available.length + 1),
-                  progressLabel: review
-                      ? 'Review test changes'
-                      : 'Test setup, ${step + 1} of ${available.length}',
+                  progress:
+                      available.isEmpty ? 0 : (step + 1) / available.length,
+                  progressLabel:
+                      'Experiment setup, ${step + 1} of ${available.length}',
                   onClose: close,
-                  closeTooltip: 'Close test',
+                  closeTooltip: 'Close experiment',
                   onBack: controller.isBusy || step == 0
                       ? null
                       : () => move(test, step - 1),
@@ -156,26 +159,25 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
-                    AppFlowHeading(review ? 'Ready to try it?' : group!.key),
-                    if (!review)
-                      panel(test, group!.value)
-                    else if (test.changes.isEmpty)
-                      const Text(
-                          'Nothing changed yet. Go back and adjust a setting to start a test.')
-                    else
-                      overview(test),
+                    AppFlowHeading(group?.key ?? 'No settings yet'),
+                    if (group != null) panel(test, group.value),
+                    if (last && test.changes.isEmpty)
+                      Text('Adjust a setting to start an experiment.',
+                          style: AppTextStyles.body
+                              .copyWith(color: context.palette.inkMuted)),
                   ],
                 )),
                 AppFlowFooter(
-                  label: review
-                      ? 'Start test'
+                  label: last
+                      ? 'Start experiment'
                       : changed
                           ? 'Continue'
                           : 'Leave as is',
-                  onPressed:
-                      controller.isBusy || (review && test.changes.isEmpty)
-                          ? null
-                          : () => review ? start(test) : move(test, step + 1),
+                  onPressed: controller.isBusy ||
+                          group == null ||
+                          (last && test.changes.isEmpty)
+                      ? null
+                      : () => last ? start(test) : move(test, step + 1),
                 ),
               ]);
             },
@@ -186,196 +188,94 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
   Widget unavailable(String message) => Column(children: [
         AppFlowHeader(
             progress: 0,
-            progressLabel: 'Test setup',
+            progressLabel: 'Experiment setup',
             onClose: close,
-            closeTooltip: 'Close test'),
+            closeTooltip: 'Close experiment'),
         Expanded(
             child: Center(
                 child: Padding(
                     padding: const EdgeInsets.all(20), child: Text(message)))),
       ]);
 
-  Widget overview(SetupTest test) {
-    final p = context.palette;
-    final summaryStyle =
-        AppTextStyles.inter(size: 16, color: p.ink).copyWith(height: 1.4);
-    final changes = test.changes;
-    final sections = groupsFor(test).entries.where((group) =>
-        changes.any((change) => group.value.contains(change.category)));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final group in sections) ...[
-          Semantics(
-            header: true,
-            child: Text(group.key,
-                style: summaryStyle.copyWith(fontWeight: FontWeight.w600)),
-          ),
-          const SizedBox(height: 4),
-          for (final change in group.value.expand((category) =>
-              changes.where((change) => change.category == category)))
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(fieldLabel(change.category, change.field),
-                      style: summaryStyle.copyWith(color: p.inkMuted)),
-                  const SizedBox(height: 4),
-                  Text.rich(TextSpan(children: [
-                    if (change.before.isNotEmpty && change.before != '--')
-                      TextSpan(
-                        text: '${change.before} → ',
-                        style: summaryStyle.copyWith(color: p.inkDim),
-                      ),
-                    TextSpan(
-                      text: change.after,
-                      style: summaryStyle.copyWith(
-                          fontWeight: FontWeight.w600, color: p.accentText),
-                    ),
-                  ])),
-                ],
-              ),
-            ),
-          if (group.key != sections.last.key) ...[
-            const SizedBox(height: 8),
-            Divider(height: 1, color: p.border),
-            const SizedBox(height: 20),
+  Widget panel(SetupTest test, List<String> categories) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (final category in categories) ...[
+            for (final field
+                in (test.values[category] ?? <String, String>{}).entries)
+              if (field.value.trim().isNotEmpty)
+                draftField(test, category, field.key, field.value),
+            if (missingFields(test, category).isNotEmpty)
+              AppAddButton(
+                  label: categories.length > 1
+                      ? 'Add ${category == 'FrontTire' ? 'front' : 'rear'} setting'
+                      : 'Add setting',
+                  onPressed: controller.isBusy
+                      ? null
+                      : () => addSetting(test, category)),
           ],
-        ],
-      ],
-    );
-  }
+        ]),
+      );
 
-  Widget panel(SetupTest test, List<String> categories) {
-    final fields = [
-      for (final category in categories)
-        for (final field
-            in (test.values[category] ?? <String, String>{}).entries)
-          (category, field.key, field.value),
-    ];
-    return Material(
-      color: context.palette.surface,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: LayoutBuilder(builder: (context, constraints) {
-          final paired = constraints.maxWidth >= 300 &&
-              MediaQuery.textScalerOf(context).scale(14) <= 20;
-          final width =
-              paired ? (constraints.maxWidth - 8) / 2 : constraints.maxWidth;
-          final labelStyle = AppTextStyles.inter(
-                  size: 14,
-                  weight: FontWeight.w400,
-                  color: context.palette.inkMuted)
-              .copyWith(height: 1.3);
-          var labelHeight = 0.0;
-          for (final field in fields) {
-            final painter = TextPainter(
-              text: TextSpan(
-                  text: fieldLabel(field.$1, field.$2), style: labelStyle),
-              textDirection: Directionality.of(context),
-              textScaler: MediaQuery.textScalerOf(context),
-            )..layout(maxWidth: width - 24 - 8 - 18);
-            if (painter.height > labelHeight) labelHeight = painter.height;
-            painter.dispose();
-          }
-          final columns = paired ? 2 : 1;
-          return Column(children: [
-            for (var i = 0; i < fields.length; i += columns) ...[
-              if (i > 0) const SizedBox(height: 8),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (var j = 0; j < columns; j++) ...[
-                      if (j > 0) const SizedBox(width: 8),
-                      Expanded(
-                        child: i + j < fields.length
-                            ? draftField(test, fields[i + j].$1,
-                                fields[i + j].$2, fields[i + j].$3,
-                                labelHeight: labelHeight,
-                                labelStyle: labelStyle)
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ]);
-        }),
-      ),
-    );
+  Iterable<String> missingFields(SetupTest test, String category) => <String>{
+        ...?kSuggestedFieldKeys[category],
+        ...?kDefaultFieldKeys[category],
+        ...?test.values[category]?.keys,
+      }.where((key) => test.values[category]?[key]?.trim().isNotEmpty != true);
+
+  Future<void> addSetting(SetupTest test, String category) async {
+    final choices = missingFields(test, category);
+    final chosen = await showAppOptionsSheet(
+        context: context,
+        title: 'Add setting',
+        entries: [
+          for (final key in choices) AppSheetOption(value: key, label: key)
+        ]);
+    if (chosen != null && mounted) await edit(test, category, chosen, '');
   }
 
   String fieldLabel(String category, String field) => category.endsWith('Tire')
       ? '${category == 'FrontTire' ? 'Front' : 'Rear'} ${field.toLowerCase()}'
       : field;
 
-  Widget draftField(SetupTest test, String category, String field, String value,
-      {required double labelHeight, required TextStyle labelStyle}) {
+  Widget draftField(
+      SetupTest test, String category, String field, String value) {
     final before = test.before[category]?[field];
     final changed = !sameSettingValue(before, value);
-    final label = fieldLabel(category, field);
-    final numeric = RegExp(r'^(-?\d+(?:[.,]\d+)?)\s*(.*)$').firstMatch(value);
+    final meta = kFieldMeta[field];
+    String display(String raw) => SettingValue.parse(raw,
+            fallbackFamily: unitFamilyFromName(
+                    test.fieldMetadata[category]?[field] ?? '') ??
+                meta?.family,
+            fallbackUnit: meta?.defaultUnit)
+        .format();
     final p = context.palette;
-    final color = changed ? p.accentText : p.ink;
     return TextButton(
       style: TextButton.styleFrom(
-        alignment: Alignment.topLeft,
-        padding: const EdgeInsets.all(12),
-        foregroundColor: p.ink,
-        backgroundColor: p.bg,
-        side: BorderSide(color: changed ? p.accentText : p.borderStrong),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ).copyWith(splashFactory: NoSplash.splashFactory),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          foregroundColor: p.ink),
       onPressed:
           controller.isBusy ? null : () => edit(test, category, field, value),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-              height: labelHeight,
-              child:
-                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Text(label, style: labelStyle)),
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right_rounded, size: 18, color: p.inkMuted),
-              ])),
-          const SizedBox(height: 16),
-          if (numeric != null)
+      child: SizedBox(
+          width: double.infinity,
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(fieldLabel(category, field),
+                style: AppTextStyles.label.copyWith(color: p.ink)),
+            const SizedBox(height: 6),
             Text.rich(TextSpan(children: [
-              TextSpan(
-                  text: numeric.group(1),
-                  style: AppTextStyles.inter(
-                      size: 36,
-                      weight: FontWeight.w600,
-                      color: color,
-                      letterSpacing: -1)),
-              if (numeric.group(2)!.isNotEmpty)
+              if (changed && before?.isNotEmpty == true && before != '--')
                 TextSpan(
-                    text: ' ${numeric.group(2)}',
-                    style: AppTextStyles.inter(
-                        size: 14, weight: FontWeight.w400, color: color)),
-            ]))
-          else
-            Text(value.isEmpty ? 'Add' : value,
-                style: AppTextStyles.inter(size: 22, color: color)),
-          const SizedBox(height: 10),
-          Text(
-              changed
-                  ? (before != null && before.isNotEmpty
-                      ? 'from $before'
-                      : 'Added')
-                  : ' ',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: p.inkMuted)),
-        ],
-      ),
+                    text: '${display(before!)} → ',
+                    style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+              TextSpan(
+                  text: display(value),
+                  style: AppTextStyles.body
+                      .copyWith(color: changed ? p.accentText : p.inkMuted)),
+            ])),
+          ])),
     );
   }
 
@@ -389,7 +289,8 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
         currentValue: value,
         familyOverride:
             unitFamilyFromName(t.fieldMetadata[category]?[field] ?? ''),
-        isDefault: true, onSave: (v) {
+        isDefault: true,
+        saveLabel: 'Save to experiment', onSave: (v) {
       return controller.updateField(
           widget.bike, widget.setup, t.id, category, field, v);
     });

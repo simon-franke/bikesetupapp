@@ -69,6 +69,7 @@ Future<void> showSettingStepperSheet(
   required bool isDefault,
   UnitFamily? familyOverride,
   String? saveLabel,
+  VoidCallback? onClear,
 }) {
   final knownMeta = kFieldMeta[settingKey];
   final rawForParse = currentValue == '--' ? '' : currentValue;
@@ -123,6 +124,7 @@ Future<void> showSettingStepperSheet(
       user: user,
       onSave: onSave,
       saveLabel: saveLabel,
+      onClear: onClear,
       uBikeID: uBikeID,
       category: category,
       uSetupID: uSetupID,
@@ -132,7 +134,6 @@ Future<void> showSettingStepperSheet(
       initialUnit: unit,
       initialNumeric: parsed.number ?? 0,
       initialText: isFreeText ? rawForParse : parsed.text ?? '',
-      savedValue: currentValue,
       knownMeta: knownMeta,
       isFreeText: isFreeText,
       isDefault: isDefault,
@@ -142,6 +143,7 @@ Future<void> showSettingStepperSheet(
 
 class _StepperSheetContent extends StatefulWidget {
   final String? saveLabel;
+  final VoidCallback? onClear;
   final User? user;
   final Future<CommandResult<void>> Function(String)? onSave;
   final String uBikeID;
@@ -153,7 +155,6 @@ class _StepperSheetContent extends StatefulWidget {
   final UnitDef initialUnit;
   final double initialNumeric;
   final String initialText;
-  final String savedValue;
   final FieldMeta? knownMeta;
   final bool isFreeText;
   final bool isDefault;
@@ -162,6 +163,7 @@ class _StepperSheetContent extends StatefulWidget {
     required this.user,
     this.onSave,
     this.saveLabel,
+    this.onClear,
     required this.uBikeID,
     required this.category,
     required this.uSetupID,
@@ -171,7 +173,6 @@ class _StepperSheetContent extends StatefulWidget {
     required this.initialUnit,
     required this.initialNumeric,
     required this.initialText,
-    required this.savedValue,
     required this.knownMeta,
     required this.isFreeText,
     required this.isDefault,
@@ -291,43 +292,42 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
             Expanded(
                 child: Text(
                     '${widget.category == 'FrontTire' ? 'Front tire' : widget.category == 'RearTire' ? 'Rear tire' : widget.category == 'GeneralSettings' ? 'General' : widget.category} ${widget.settingKey.toLowerCase()}',
-                    style: AppTextStyles.inter(
-                        size: 11,
-                        weight: FontWeight.w700,
-                        color: p.inkMuted,
-                        letterSpacing: 0))),
+                    style: AppTextStyles.caption.copyWith(color: p.inkMuted))),
           ]),
           const SizedBox(height: 22),
           if (widget.isFreeText)
             _FreeTextField(controller: _textController)
           else
             _buildEditor(),
-          if (widget.savedValue.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            Text('Saved: ${widget.savedValue}',
-                style: TextStyle(fontSize: 12, color: p.inkMuted)),
-          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: AppTactileButton(
               onPressed: _saving ? null : _onSave,
               child: Text(widget.saveLabel ??
                   (widget.onSave == null ? 'Save' : 'Save to test')),
             ),
           ),
+          if (widget.onClear != null) ...[
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: _saving
+                  ? null
+                  : () {
+                      widget.onClear!();
+                      Navigator.of(context).pop();
+                    },
+              child: Text('Clear value',
+                  style: AppTextStyles.label.copyWith(color: p.red)),
+            ),
+          ],
           if (!widget.isDefault) ...[
             const SizedBox(height: 6),
             TextButton(
               onPressed: _saving ? null : _onDelete,
               child: Text(
                 'Delete field',
-                style: AppTextStyles.inter(
-                  size: 12,
-                  weight: FontWeight.w700,
-                  color: p.red,
-                  letterSpacing: 0.5,
-                ),
+                style: AppTextStyles.label.copyWith(color: p.red),
               ),
             ),
           ],
@@ -343,8 +343,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
-          style: AppTextStyles.mono(
-              size: 44, weight: FontWeight.w400, color: context.palette.ink),
+          style: AppTextStyles.value.copyWith(color: context.palette.ink),
           decoration: InputDecoration(
               labelText: widget.settingKey,
               suffixIcon: SettingUnitSelector(
@@ -530,7 +529,8 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                   category: widget.category,
                   uSetupID: widget.uSetupID,
                 ),
-                icon: const Icon(CupertinoIcons.plus, size: 18),
+                icon:
+                    const Icon(CupertinoIcons.plus, size: AppIconSizes.compact),
                 label: const Text('Add setting'),
               ),
             ),
@@ -564,11 +564,7 @@ class _SectionLabel extends StatelessWidget {
     final p = context.palette;
     return Text(
       text,
-      style: AppTextStyles.inter(
-        size: 14,
-        weight: FontWeight.w600,
-        color: p.inkMuted,
-      ),
+      style: AppTextStyles.label.copyWith(color: p.inkMuted),
     );
   }
 }
@@ -631,11 +627,8 @@ class _ControlCard extends StatelessWidget {
                             child: Text(
                               config.key,
                               overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.inter(
-                                size: 12,
-                                weight: FontWeight.w700,
-                                color: p.inkMuted,
-                              ),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: p.inkMuted),
                             ),
                           ),
                           FieldIcon(
@@ -654,24 +647,18 @@ class _ControlCard extends StatelessWidget {
                               displayValue,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.mono(
-                                size: isText ? 18 : 32,
-                                weight: FontWeight.w700,
-                                color: p.ink,
-                                letterSpacing: isText ? 0 : -1,
-                                height: 1,
-                              ),
+                              style: (isText
+                                      ? AppTextStyles.body
+                                      : AppTextStyles.heading)
+                                  .copyWith(color: p.ink),
                             ),
                           ),
                           if (displayUnit.isNotEmpty) ...[
                             const SizedBox(width: 4),
                             Text(
                               displayUnit,
-                              style: AppTextStyles.inter(
-                                size: 11,
-                                weight: FontWeight.w600,
-                                color: p.inkMuted,
-                              ),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: p.inkMuted),
                             ),
                           ],
                         ],

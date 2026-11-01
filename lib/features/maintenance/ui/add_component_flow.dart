@@ -83,7 +83,8 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
               child: AppValueButton(
                 label: type == ComponentType.other ? 'Add new' : type.label,
                 leading: type == ComponentType.other
-                    ? Icon(CupertinoIcons.plus, size: 24, color: p.ink)
+                    ? Icon(CupertinoIcons.plus,
+                        size: AppIconSizes.control, color: p.ink)
                     : ServiceComponentIcon(type: type, color: p.ink),
                 onTap: () => _onTypeSelected(type),
               ),
@@ -349,8 +350,8 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                                             decimal: true)),
                                 const SizedBox(height: 8),
                                 Text('Since the last service or installation.',
-                                    style: TextStyle(
-                                        color: p.inkMuted, fontSize: 14)),
+                                    style: AppTextStyles.body
+                                        .copyWith(color: p.inkMuted)),
                                 if (_hours)
                                   SwitchListTile.adaptive(
                                       contentPadding: EdgeInsets.zero,

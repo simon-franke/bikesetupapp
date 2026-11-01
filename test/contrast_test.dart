@@ -26,6 +26,7 @@ void main() {
           p.inkMuted,
           p.inkDim,
           p.accentText,
+          p.playfulText,
           p.green,
           p.amber,
           p.red
@@ -54,7 +55,6 @@ void main() {
       AppPalette.dark.red,
       AppPalette.light.red,
       AppColors.blueDeep,
-      AppColors.destructiveFill
     ]) {
       expect(
           contrast(AppColors.onColor(color), color), greaterThanOrEqualTo(4.5));

@@ -1,4 +1,3 @@
-import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:bikesetupapp/common/ui/app_value_button.dart';
 import 'package:flutter/cupertino.dart';
@@ -66,11 +65,7 @@ class _TestsViewState extends State<TestsView> {
   Widget title(String text) => Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 20),
       child: Text(text,
-          style: AppTextStyles.inter(
-              size: 28,
-              weight: FontWeight.w700,
-              color: context.palette.ink,
-              letterSpacing: -1)));
+          style: AppTextStyles.label.copyWith(color: context.palette.ink)));
   Widget action(String text, VoidCallback run,
           {bool primary = false, bool enabled = true}) =>
       Padding(
@@ -83,11 +78,65 @@ class _TestsViewState extends State<TestsView> {
                   onPressed: enabled && !controller.isBusy ? run : null,
                   child: Text(text)));
   @override
-  Widget build(BuildContext context) => widget.initialTest == null
-      ? content()
+  Widget build(BuildContext context) => content();
+
+  Widget detail(Widget body, [SetupTest? test]) => widget.initialTest == null
+      ? body
       : Scaffold(
-          appBar: AppBar(title: Text(widget.initialTest!.name)),
-          body: content());
+          appBar: buildDetailAppBar(context,
+              title: test?.name ?? widget.initialTest!.name,
+              actions: test == null || test.stage == TestStage.finished
+                  ? []
+                  : [
+                      IconButton(
+                        tooltip: 'Experiment options',
+                        icon: const Icon(CupertinoIcons.ellipsis),
+                        onPressed: controller.isBusy
+                            ? null
+                            : () => experimentOptions(test),
+                      ),
+                    ]),
+          body: body);
+
+  Future<void> experimentOptions(SetupTest test) async {
+    final selected =
+        await showAppOptionsSheet(context: context, title: test.name, entries: [
+      if (test.stage == TestStage.draft ||
+          (test.stage == TestStage.ride && test.rides.isEmpty))
+        const AppSheetOption(
+            value: 'edit',
+            label: 'Edit settings',
+            icon: CupertinoIcons.slider_horizontal_3),
+      const AppSheetOption(
+          value: 'rename', label: 'Rename', icon: CupertinoIcons.pencil),
+      const AppSheetOption(
+          value: 'discard',
+          label: 'Discard experiment',
+          icon: CupertinoIcons.trash,
+          destructive: true),
+    ]);
+    if (!mounted) return;
+    if (selected == 'rename') {
+      await rename(test);
+      return;
+    }
+    if (selected == 'discard') {
+      await finish(test);
+      return;
+    }
+    if (selected == 'edit') {
+      if (test.stage != TestStage.draft &&
+          !await presentCommand(
+              context,
+              () => controller.editExperiment(
+                  widget.bike, widget.setup, test.id))) {
+        return;
+      }
+      if (mounted) {
+        await openDraft(test.copyWith(stage: TestStage.draft, draftStep: 0));
+      }
+    }
+  }
 
   Widget content() => ListenableBuilder(
       listenable: controller,
@@ -97,11 +146,11 @@ class _TestsViewState extends State<TestsView> {
               widget.initialTest == null ? null : [widget.initialTest!],
           builder: (context, snapshot) {
             if (snapshot.hasError) {
-              return const Center(
-                  child: Text('Could not load tests. Reopen Tests to retry.'));
+              return detail(const Center(
+                  child: Text('Could not load tests. Reopen Tests to retry.')));
             }
             if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
+              return detail(const Center(child: CircularProgressIndicator()));
             }
             if (widget.initialTest != null) {
               final stored = snapshot.data!
@@ -118,28 +167,30 @@ class _TestsViewState extends State<TestsView> {
                 notes.text = active.feedback.note;
                 time.text = active.feedback.time;
               }
-              return active == null
-                  ? const Center(
-                      child: Text('This test is no longer available.'))
-                  : ListView(
-                      padding: EdgeInsets.fromLTRB(20, 12, 20,
-                          MediaQuery.paddingOf(context).bottom + 24),
-                      children: active.stage == TestStage.ride
-                          ? feedback(active)
-                          : active.stage == TestStage.review
-                              ? results(active)
-                              : active.stage == TestStage.draft
-                                  ? [testEntry(active)]
-                                  : [
-                                      comparison(active,
-                                          badge: active.result,
-                                          showName: false),
-                                      for (var i = 0;
-                                          i < active.rides.length;
-                                          i++)
-                                        rideCard(active.rides[i], i + 1)
-                                    ],
-                    );
+              return detail(
+                  active == null
+                      ? const Center(
+                          child: Text('This test is no longer available.'))
+                      : ListView(
+                          padding: EdgeInsets.fromLTRB(20, 12, 20,
+                              MediaQuery.paddingOf(context).bottom + 24),
+                          children: active.stage == TestStage.ride
+                              ? feedback(active)
+                              : active.stage == TestStage.review
+                                  ? results(active)
+                                  : active.stage == TestStage.draft
+                                      ? [testEntry(active)]
+                                      : [
+                                          comparison(active,
+                                              badge: active.result,
+                                              showName: false),
+                                          for (var i = 0;
+                                              i < active.rides.length;
+                                              i++)
+                                            rideCard(active.rides[i], i + 1)
+                                        ],
+                        ),
+                  active);
             }
             final ongoing = snapshot.data!
                 .where((test) => test.stage != TestStage.finished)
@@ -158,7 +209,7 @@ class _TestsViewState extends State<TestsView> {
                   MediaQuery.paddingOf(context).bottom + 24),
               children: [
                 testEntry(),
-                if (ongoing.isNotEmpty) title('Ongoing tests'),
+                if (ongoing.isNotEmpty) title('Ongoing experiments'),
                 for (final test in ongoing)
                   if (test.stage == TestStage.draft)
                     testEntry(test)
@@ -171,7 +222,7 @@ class _TestsViewState extends State<TestsView> {
                                 ? 'Ready to ride'
                                 : 'Results',
                             onTap: () => openTest(test))),
-                if (previous.isNotEmpty) title('Previous tests'),
+                if (previous.isNotEmpty) title('Previous experiments'),
                 for (final test in previous)
                   Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -195,10 +246,7 @@ class _TestsViewState extends State<TestsView> {
 
   Future<void> openHistory(SetupTest test) => Navigator.of(context).push<void>(
         AppRoutes.fadeSlide(Scaffold(
-          appBar: AppBar(
-            leading: const BackButton(),
-            title: Text(test.name),
-          ),
+          appBar: buildDetailAppBar(context, title: test.name),
           body: ListView(
             padding: EdgeInsets.fromLTRB(
                 20,
@@ -234,12 +282,14 @@ class _TestsViewState extends State<TestsView> {
     final updated = await showAppSheet<String>(
         context: context,
         builder: (_) => _SetupName(
-            initial: draftName(test), title: 'Test name', action: 'Done'));
+            initial: draftName(test),
+            title: 'Experiment name',
+            action: 'Done'));
     if (updated == null || !mounted) return;
     await presentCommand(
         context,
-        () => controller.renameDraft(
-            widget.bike, widget.setup, test.id, updated));
+        () => controller.renameExperiment(
+            widget.bike, widget.setup, test.id, test.stage, updated));
   }
 
   Future<void> openDraft(SetupTest test) async {
@@ -257,7 +307,9 @@ class _TestsViewState extends State<TestsView> {
               nameFor: draftName);
         });
     await route?.completed;
-    if (mounted && started != null) await openTest(started);
+    if (mounted && started != null && widget.initialTest == null) {
+      await openTest(started);
+    }
   }
 
   Future<void> createTest() async {
@@ -283,17 +335,13 @@ class _TestsViewState extends State<TestsView> {
     return SetupCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          BikeIcon(size: 40, color: context.palette.accentText),
-          const SizedBox(width: 14),
           Expanded(
               child: Text(test == null ? 'Try a new setup' : draftName(test),
-                  style: AppTextStyles.inter(
-                      size: 22,
-                      weight: FontWeight.w600,
-                      color: context.palette.ink))),
-          if (test != null)
+                  style: AppTextStyles.label
+                      .copyWith(color: context.palette.ink))),
+          if (test != null && widget.initialTest == null)
             AppObjectMenu(
-                tooltip: 'Test options',
+                tooltip: 'Experiment options',
                 title: draftName(test),
                 onRename: controller.isBusy ? null : () => rename(test),
                 onDiscard: controller.isBusy ? null : () => finish(test)),
@@ -304,7 +352,7 @@ class _TestsViewState extends State<TestsView> {
                 ? 'Tune your settings. See how it rides.'
                 : '${changes.length} ${changes.length == 1 ? 'change' : 'changes'} in your draft',
             style:
-                AppTextStyles.inter(size: 16, color: context.palette.inkMuted)),
+                AppTextStyles.body.copyWith(color: context.palette.inkMuted)),
         if (test != null) ...[
           const SizedBox(height: 16),
           for (final change in changes.take(2))
@@ -315,19 +363,20 @@ class _TestsViewState extends State<TestsView> {
                     children: [
                       Text(
                           '${categoryLabel(change.category)} ${change.field.toLowerCase()}',
-                          style: AppTextStyles.inter(
-                              size: 14, color: context.palette.inkMuted)),
+                          style: AppTextStyles.body
+                              .copyWith(color: context.palette.inkMuted)),
                       const SizedBox(height: 4),
                       Text('${change.before} → ${change.after}',
-                          style: AppTextStyles.inter(
-                              size: 16, color: context.palette.accentText)),
+                          style: AppTextStyles.body
+                              .copyWith(color: context.palette.playfulText)),
                     ])),
         ],
         const SizedBox(height: 24),
         SizedBox(
             width: double.infinity,
             child: AppActionButton(
-                label: test == null ? 'Create test' : 'Continue test',
+                label:
+                    test == null ? 'Create experiment' : 'Continue experiment',
                 onPressed: controller.isBusy || openingNewTest
                     ? null
                     : test == null
@@ -343,14 +392,10 @@ class _TestsViewState extends State<TestsView> {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(badge,
-            style: TextStyle(
-                color: context.palette.ink,
-                fontSize: 15,
-                fontWeight: FontWeight.w600)),
+            style: AppTextStyles.label.copyWith(color: context.palette.ink)),
         if (showName) ...[
           const SizedBox(height: 18),
-          Text(t.name,
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600))
+          Text(t.name, style: AppTextStyles.label)
         ],
         const SizedBox(height: 24),
         Table(
@@ -378,7 +423,7 @@ class _TestsViewState extends State<TestsView> {
                       textAlign: TextAlign.right),
                   Text(c.after.isEmpty ? 'Removed' : c.after,
                       textAlign: TextAlign.right,
-                      style: TextStyle(color: context.palette.accentText)),
+                      style: TextStyle(color: context.palette.playfulText)),
                 ])
             ]),
       ]));
@@ -406,16 +451,13 @@ class _TestsViewState extends State<TestsView> {
         comparison(t, badge: 'Ready to ride', showName: false),
         const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('Ride feedback',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600))),
+            child: Text('Ride feedback', style: AppTextStyles.label)),
         Text(feeling ?? 'How did it feel?',
             textAlign: TextAlign.center,
-            style: AppTextStyles.inter(
-                size: 18,
-                weight: FontWeight.w600,
+            style: AppTextStyles.label.copyWith(
                 color: feeling == null
                     ? context.palette.inkMuted
-                    : context.palette.accentText)),
+                    : context.palette.playfulText)),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 16,
@@ -423,9 +465,9 @@ class _TestsViewState extends State<TestsView> {
             thumbShape: const RoundSliderThumbShape(
                 enabledThumbRadius: 10, elevation: 1, pressedElevation: 2),
             tickMarkShape: SliderTickMarkShape.noTickMark,
-            activeTrackColor: context.palette.accent,
+            activeTrackColor: context.palette.playful,
             inactiveTrackColor: context.palette.surface2,
-            thumbColor: context.palette.accent,
+            thumbColor: context.palette.playful,
             showValueIndicator: ShowValueIndicator.never,
           ),
           child: Slider(
@@ -453,14 +495,14 @@ class _TestsViewState extends State<TestsView> {
           children: [
             Expanded(
                 child: Text('Much worse',
-                    style: AppTextStyles.inter(
-                        size: 14, color: context.palette.inkMuted))),
+                    style: AppTextStyles.body
+                        .copyWith(color: context.palette.inkMuted))),
             const SizedBox(width: 16),
             Expanded(
                 child: Text('Much better',
                     textAlign: TextAlign.end,
-                    style: AppTextStyles.inter(
-                        size: 14, color: context.palette.inkMuted))),
+                    style: AppTextStyles.body
+                        .copyWith(color: context.palette.inkMuted))),
           ],
         ),
         const SizedBox(height: 20),
@@ -498,7 +540,7 @@ class _TestsViewState extends State<TestsView> {
             Expanded(
                 child: Text(
                     time.text.isEmpty ? 'Add time (optional)' : time.text)),
-            const Icon(Icons.chevron_right, size: 20),
+            const Icon(Icons.chevron_right, size: AppIconSizes.compact),
           ]),
         ),
         if (error != null)
@@ -526,7 +568,6 @@ class _TestsViewState extends State<TestsView> {
             });
           }
         }, primary: true),
-        action('Discard test', () => finish(t)),
       ];
   Future<void> chooseOutcome(SetupTest test) async {
     ModalRoute<dynamic>? sheetRoute;
@@ -544,11 +585,9 @@ class _TestsViewState extends State<TestsView> {
                       children: [
                         const AppSheetHandle(),
                         const SizedBox(height: 24),
-                        Text('Finish test',
-                            style: AppTextStyles.inter(
-                                size: 24,
-                                weight: FontWeight.w600,
-                                color: sheet.palette.ink)),
+                        Text('Finish experiment',
+                            style: AppTextStyles.heading
+                                .copyWith(color: sheet.palette.ink)),
                         const SizedBox(height: 20),
                         AppValueButton(
                             label: 'Use tested settings',
@@ -590,27 +629,24 @@ class _TestsViewState extends State<TestsView> {
           runSpacing: 8,
           children: [
             Text('Ride $index',
-                style: AppTextStyles.inter(size: 14, color: p.inkMuted)),
+                style: AppTextStyles.body.copyWith(color: p.inkMuted)),
             if (ride.time.isNotEmpty)
               Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(CupertinoIcons.stopwatch, size: 16, color: p.inkMuted),
+                Icon(CupertinoIcons.stopwatch,
+                    size: AppIconSizes.compact, color: p.inkMuted),
                 const SizedBox(width: 6),
                 Text(ride.time,
-                    style: AppTextStyles.mono(
-                        size: 14, weight: FontWeight.w500, color: p.inkMuted)),
+                    style: AppTextStyles.body.copyWith(color: p.inkMuted)),
               ]),
           ]),
       if (ride.feeling != null) ...[
         const SizedBox(height: 14),
         Text(ride.feeling!,
-            style: AppTextStyles.inter(
-                size: 20, weight: FontWeight.w600, color: p.ink)),
+            style: AppTextStyles.heading.copyWith(color: p.ink)),
       ],
       if (ride.note.isNotEmpty) ...[
         const SizedBox(height: 8),
-        Text(ride.note,
-            style:
-                AppTextStyles.inter(size: 16, color: p.inkMuted, height: 1.4)),
+        Text(ride.note, style: AppTextStyles.body.copyWith(color: p.inkMuted)),
       ],
     ]));
   }
@@ -620,7 +656,7 @@ class _TestsViewState extends State<TestsView> {
         for (var i = 0; i < t.rides.length; i++) rideCard(t.rides[i], i + 1),
         const SizedBox(height: 8),
         AppActionButton(
-            label: 'Finish test',
+            label: 'Finish experiment',
             onPressed: controller.isBusy ? null : () => chooseOutcome(t)),
         const SizedBox(height: 10),
         AppActionButton(
@@ -673,13 +709,12 @@ class _SetupNameState extends State<_SetupName> {
           children: [
             const AppSheetHandle(),
             const SizedBox(height: 24),
-            Text(widget.title,
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+            Text(widget.title, style: AppTextStyles.heading),
             const SizedBox(height: 24),
             AppTextField(
                 controller: text,
-                hint: widget.action == 'Done' ? 'Test name' : 'Setup name',
+                hint:
+                    widget.action == 'Done' ? 'Experiment name' : 'Setup name',
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => submit(),
