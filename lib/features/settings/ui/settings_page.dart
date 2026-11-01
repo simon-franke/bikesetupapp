@@ -12,7 +12,6 @@ import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -60,10 +59,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _connectStrava() async {
     await presentCommand(context, _controller.connect);
-  }
-
-  Future<void> _connectStravaWeb() async {
-    await presentCommand(context, _controller.connectWeb);
   }
 
   Future<void> _disconnectStrava() async {
@@ -122,7 +117,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       isConnected: _isStravaConnected,
                       athleteId: _stravaAthleteId,
                       bikeCount: _stravaBikeCount,
-                      onConnect: kIsWeb ? _connectStravaWeb : _connectStrava,
+                      onConnect: _connectStrava,
                       onDisconnect: _disconnectStrava,
                       onManageBikes: () {
                         if (user != null) {

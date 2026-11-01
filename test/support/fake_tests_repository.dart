@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'dart:async';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/features/tests/models/setup_test.dart';
@@ -77,3 +78,34 @@ class MemoryTests implements TestsRepository {
     updates.add(null);
   }
 }
+
+SetupTest testExperiment({
+  required String id,
+  required String name,
+  required SetupValues before,
+  required SetupValues values,
+  SetupValues fieldMetadata = const {},
+  TestStage stage = TestStage.draft,
+  int draftStep = 0,
+  List<RideFeedback> rides = const [],
+  String result = '',
+  RideFeedback feedback = const RideFeedback(),
+}) =>
+    SetupTest(
+      id: id,
+      name: name,
+      before: before,
+      values: values,
+      fieldMetadata: fieldMetadata,
+      stage: stage,
+      draftStep: draftStep,
+      rides: rides,
+      result: result,
+      feedback: feedback,
+      setupInformation: {
+        SetupConfiguration.metadataKey: SetupConfiguration({
+          for (final entry in before.entries)
+            entry.key: entry.value.keys.toList(),
+        }).encode()
+      },
+    );

@@ -16,7 +16,6 @@ class FieldMeta {
   });
 
   UnitDef get defaultUnit => unitDefById(family, defaultUnitId);
-  String get defaultUnitLabel => defaultUnit.label;
 }
 
 const String _kIconBase = 'assets/icons';
@@ -197,7 +196,6 @@ final Map<String, List<String>> kSuggestedFieldKeys = {
 
 const cockpitFields = ['Stem length', 'Spacer height', 'Handlebar roll', 'Lever angle'];
 const saddleFields = ['Seat Height', 'Saddle setback', 'Saddle tilt'];
-const geometryFields = ['Reach', 'Stack Height'];
 
 
 
@@ -208,29 +206,3 @@ List<String> suspensionFields(String spring, Iterable<String> adjusters) => [
 ];
 
 const frameFields = ['Flip chip', 'Headset cups'];
-
-/// Editable starting values for new numeric settings, not measured bike specs.
-String initialSettingValue(String category, String field) {
-  if (category == 'Frame') {
-    return switch (field) {
-      'Flip chip' => 'Standard',
-      'Headset cups' => 'Neutral',
-      _ => '',
-    };
-  }
-  final meta = kFieldMeta[field] ?? kDefaultFieldMeta;
-  if (meta.family == UnitFamily.freeText) return '';
-  final value = switch (field) {
-    'Pressure' => category.endsWith('Tire') ? 25.0 : category == 'Fork' ? 80.0 : 180.0,
-    'Sag' => 25.0,
-    'Spring Rate' => 80.0,
-    'Stem length' => 50.0,
-    'Spacer height' => 10.0,
-    'Lever angle' => 30.0,
-    'Seat Height' => 750.0,
-    'Reach' => 450.0,
-    'Stack Height' => 620.0,
-    _ => 0.0,
-  };
-  return SettingValue.numeric(value.clamp(meta.min, meta.max), meta.family, meta.defaultUnit).format();
-}

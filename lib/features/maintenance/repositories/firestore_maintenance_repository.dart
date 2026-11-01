@@ -139,21 +139,4 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
             : ServiceEntry.fromMap(snap.docs.first.id,
                 decodeFirestoreMap(snap.docs.first.data()))));
   }
-
-  @override
-  Future<ServiceEntry?> getLatestEntryForComponent(String componentId) async {
-    return firebaseOperation(() async {
-      final snap = await userBikeSetup
-          .doc(userID)
-          .collection(FirestoreKeys.serviceComponents)
-          .doc(componentId)
-          .collection(FirestoreKeys.serviceEntries)
-          .orderBy(FirestoreKeys.serviceDate, descending: true)
-          .limit(1)
-          .get();
-      if (snap.docs.isEmpty) return null;
-      return ServiceEntry.fromMap(
-          snap.docs.first.id, decodeFirestoreMap(snap.docs.first.data()));
-    });
-  }
 }

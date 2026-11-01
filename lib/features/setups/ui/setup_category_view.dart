@@ -8,7 +8,6 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'control_panel_grid.dart';
 import 'add_field_bottom_sheet.dart';
-import 'field_meta.dart';
 import 'setup_overview.dart';
 
 /// Category content stays inside the workspace, preserving its bottom navigation.
@@ -19,10 +18,10 @@ class SetupCategoryView extends StatelessWidget {
       required this.bike,
       required this.setup,
       required this.category,
-      this.configuration});
+      required this.configuration});
   final User user;
   final String bike, setup, category;
-  final SetupConfiguration? configuration;
+  final SetupConfiguration configuration;
   @override
   Widget build(BuildContext context) {
     final categories =
@@ -45,7 +44,8 @@ class SetupCategoryView extends StatelessWidget {
                         bike: bike,
                         setup: setup,
                         category: category,
-                        configuredFields: configuration?.fields[category],
+                        configuredFields:
+                            configuration.fields[category] ?? const [],
                         onEdit: (key, value, family) {
                           showSettingStepperSheet(context,
                               user: user,
@@ -81,10 +81,10 @@ class _CategoryRows extends StatefulWidget {
       required this.setup,
       required this.category,
       required this.onEdit,
-      this.configuredFields});
+      required this.configuredFields});
   final String uid, bike, setup, category;
   final void Function(String, String, UnitFamily?) onEdit;
-  final List<String>? configuredFields;
+  final List<String> configuredFields;
   @override
   State<_CategoryRows> createState() => _CategoryRowsState();
 }
@@ -117,12 +117,9 @@ class _CategoryRowsState extends State<_CategoryRows> {
               }
               final values = snapshot.data!;
               final keys = [
-                ...?(widget.configuredFields ??
-                    kDefaultFieldKeys[widget.category]),
-                ...values.keys.where((key) => !(widget.configuredFields ??
-                        kDefaultFieldKeys[widget.category] ??
-                        [])
-                    .contains(key))
+                ...widget.configuredFields,
+                ...values.keys
+                    .where((key) => !widget.configuredFields.contains(key))
               ].where(
                   (key) => values[key]?.toString().trim().isNotEmpty == true);
               return Column(

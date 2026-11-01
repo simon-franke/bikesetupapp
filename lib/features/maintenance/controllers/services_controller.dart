@@ -85,14 +85,10 @@ class ServicesController extends OperationController {
     }
   }
 
-  Future<CommandResult<void>> connect({required bool web}) => share(
+  Future<CommandResult<void>> connect() => share(
       'connect',
       () => command(() async {
             final generation = beginRequest('load');
-            if (web) {
-              (await _connection.authorizeWeb()).requireValue();
-              return;
-            }
             final result = await _connection.authorize();
             _check(generation);
             result.requireValue();

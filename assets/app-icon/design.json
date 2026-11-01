@@ -16,5 +16,7 @@
     "strength": 0.65
   },
   "note": "Tint and clear appearances adapt to the user’s Home Screen settings and wallpaper. Previews are native renders, not separate icon sources. Icon changes require a native rebuild; Flutter hot reload cannot update them.",
-  "export_command": "\"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool\" ios/Runner/AppIcon.icon --export-image --output-file assets/app-icon/previews/{rendition}.png --platform iOS --rendition {rendition} --width 1024 --height 1024 --scale 1 --tint-color 0.58 --tint-strength 0.65"
+  "export_command": "\"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool\" ios/Runner/AppIcon.icon --export-image --output-file assets/app-icon/previews/{rendition}.png --platform iOS --rendition {rendition} --width 1024 --height 1024 --scale 1 --tint-color 0.58 --tint-strength 0.65",
+  "launcher_export_command": "\"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool\" ios/Runner/AppIcon.icon --export-image --output-file assets/app-icon/launcher.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1",
+  "launcher_generate_command": "dart run flutter_launcher_icons"
 }

@@ -17,10 +17,6 @@ class BikesController extends OperationController {
       command(() => _create(draft.name, draft.toSetupInformation(),
           values: draft.values));
 
-  Future<CommandResult<String>> createBike(
-          String bikeName, Map<String, String> setupInformation) =>
-      command(() async => (await _create(bikeName, setupInformation)).bikeId);
-
   Future<({String bikeId, String setupId})> _create(
       String bikeName, Map<String, String> setupInformation,
       {Map<String, Map<String, String>> values = const {}}) async {

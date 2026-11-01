@@ -69,7 +69,6 @@ void main() {
         File('ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage$suffix.png')
             .writeAsBytesSync(bytes);
         if (scale == 3) {
-          File('web/launch.png').writeAsBytesSync(bytes);
           final dir = Directory('android/app/src/main/res/drawable-xxhdpi')
             ..createSync(recursive: true);
           File('${dir.path}/launch_image.png').writeAsBytesSync(bytes);

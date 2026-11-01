@@ -174,9 +174,9 @@ void main() {
         ServiceComponent.fromMap('fork', component.toMap())
             .serviceIntervalHours,
         50);
-    final legacy = Map<String, dynamic>.from(component.toMap())
+    final withoutOptionalField = Map<String, dynamic>.from(component.toMap())
       ..remove('serviceIntervalHours');
-    expect(ServiceComponent.fromMap('old', legacy).usesHours, isFalse);
+    expect(ServiceComponent.fromMap('old', withoutOptionalField).usesHours, isFalse);
   });
   test(
       'FIT uses active timer rather than elapsed time, without duplicate sessions',
