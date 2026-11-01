@@ -289,7 +289,7 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
         currentValue: value,
         familyOverride:
             unitFamilyFromName(t.fieldMetadata[category]?[field] ?? ''),
-        isDefault: true,
+        canDelete: false,
         saveLabel: 'Save to experiment', onSave: (v) {
       return controller.updateField(
           widget.bike, widget.setup, t.id, category, field, v);

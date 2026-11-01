@@ -66,7 +66,7 @@ Future<void> showSettingStepperSheet(
   required String uSetupID,
   required String settingKey,
   required String currentValue,
-  required bool isDefault,
+  required bool canDelete,
   UnitFamily? familyOverride,
   String? saveLabel,
   VoidCallback? onClear,
@@ -136,7 +136,7 @@ Future<void> showSettingStepperSheet(
       initialText: isFreeText ? rawForParse : parsed.text ?? '',
       knownMeta: knownMeta,
       isFreeText: isFreeText,
-      isDefault: isDefault,
+      canDelete: canDelete,
     ),
   );
 }
@@ -157,7 +157,7 @@ class _StepperSheetContent extends StatefulWidget {
   final String initialText;
   final FieldMeta? knownMeta;
   final bool isFreeText;
-  final bool isDefault;
+  final bool canDelete;
 
   const _StepperSheetContent({
     required this.user,
@@ -175,7 +175,7 @@ class _StepperSheetContent extends StatefulWidget {
     required this.initialText,
     required this.knownMeta,
     required this.isFreeText,
-    required this.isDefault,
+    required this.canDelete,
   });
 
   @override
@@ -321,7 +321,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
                   style: AppTextStyles.label.copyWith(color: p.red)),
             ),
           ],
-          if (!widget.isDefault) ...[
+          if (widget.canDelete) ...[
             const SizedBox(height: 6),
             TextButton(
               onPressed: _saving ? null : _onDelete,
@@ -483,7 +483,6 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
         final key = allKeys[index];
         final card = _CardDef.fromKey(key);
         final value = settings[key]?.toString() ?? '--';
-        final isDefault = isRequiredField(widget.category, key);
         final familyOverride = unitFamilyFromName(metaMap[key] ?? '');
         return _AnimatedTile(
           key: ValueKey('tile_$key'),
@@ -498,7 +497,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
               uSetupID: widget.uSetupID,
               settingKey: key,
               currentValue: value,
-              isDefault: isDefault,
+              canDelete: true,
               familyOverride: familyOverride,
             ),
           ),

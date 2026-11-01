@@ -2,6 +2,7 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/ui/add_field_bottom_sheet.dart';
 import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
+import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +15,61 @@ class SheetUser extends Fake implements User {
   String get uid => 'user';
 }
 
+class DeletableSetupsRepository extends FakeSetupsRepository {
+  @override
+  Future<void> deleteSetting(
+      String key, String bike, String category, String setup) async {
+    settings.remove('$bike/$setup/$category/$key');
+  }
+
+  @override
+  Future<void> deleteSettingMeta(
+      String key, String bike, String category, String setup) async {
+    metadata.remove('$bike/$setup/$category/$key');
+  }
+}
+
 void main() {
+  testWidgets('default pressure can be deleted and added back from suggestions',
+      (tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final repo = DeletableSetupsRepository()
+      ..settings['bike/setup/FrontTire/Pressure'] = '24 psi'
+      ..settings['bike/other/FrontTire/Pressure'] = '30 psi';
+    await tester.pumpWidget(Provider.value(
+      value: AppDependencies(setupsRepository: (_) => repo),
+      child: MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
+            body: SetupCategoryView(
+          user: SheetUser(),
+          bike: 'bike',
+          setup: 'setup',
+          category: 'FrontTire',
+        )),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pressure'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Delete field'));
+    await tester.tap(find.text('Delete field'));
+    await tester.pumpAndSettle();
+    expect(repo.settings['bike/setup/FrontTire/Pressure'], '24 psi');
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(repo.settings.containsKey('bike/setup/FrontTire/Pressure'), isFalse);
+    expect(repo.settings['bike/other/FrontTire/Pressure'], '30 psi');
+    await tester.tap(find.text('Add setting'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pressure').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Delete field'), findsNothing);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add setting'));
+    await tester.pumpAndSettle();
+    expect(repo.settings['bike/setup/FrontTire/Pressure'], isNotNull);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('suggestions hide existing settings and save only from editor',
       (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -54,7 +109,10 @@ void main() {
         (tester) async {
       GoogleFonts.config.allowRuntimeFetching = false;
       final repo = FakeSetupsRepository();
-      for (final key in kSuggestedFieldKeys[category] ?? <String>[]) {
+      for (final key in {
+        ...?kDefaultFieldKeys[category],
+        ...?kSuggestedFieldKeys[category],
+      }) {
         repo.settings['bike/setup/$category/$key'] = '1';
       }
       await tester.pumpWidget(Provider.value(

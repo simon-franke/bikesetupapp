@@ -120,7 +120,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
         uSetupID: widget.setup,
         settingKey: name,
         currentValue: '',
-        isDefault: true,
+        canDelete: false,
         familyOverride: family,
         saveLabel: 'Add setting', onSave: (value) async {
       if (value.trim().isEmpty) {
@@ -146,8 +146,10 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final suggestions = (kSuggestedFieldKeys[widget.category] ?? <String>[])
-        .where((key) => !_existing.contains(key));
+    final suggestions = {
+      ...?kDefaultFieldKeys[widget.category],
+      ...?kSuggestedFieldKeys[widget.category],
+    }.where((key) => !_existing.contains(key));
     final showNewSetting =
         _custom || (!_loading && !_failed && suggestions.isEmpty);
     return Padding(

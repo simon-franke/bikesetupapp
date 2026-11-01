@@ -97,7 +97,7 @@ void main() {
               child: PhoneViewport(child: child!)),
           home: const LoginPage()));
       await tester.pumpAndSettle();
-      expect(find.text('Bike Setup'), findsOneWidget);
+      expect(find.text('Clickwise'), findsOneWidget);
       expect(tester.getSize(find.byType(Scaffold)).width,
           math.min(size.width, kPhoneMaxWidth));
       expect(tester.takeException(), isNull);

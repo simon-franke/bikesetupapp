@@ -181,7 +181,7 @@ class _Header extends StatelessWidget {
               borderRadius: BorderRadius.circular(20)),
           child: BikeIcon(size: 44, color: theme.colorScheme.onPrimary)),
       const SizedBox(height: 20),
-      Text('Bike Setup',
+      Text('Clickwise',
           style: theme.textTheme.headlineMedium
               ?.copyWith(color: theme.colorScheme.onSurface)),
       const SizedBox(height: 8),

@@ -21,20 +21,20 @@
   <meta name="description" content="Store and manage your bike suspension and tyre setup.">
   <meta name="google-signin-client_id" content="16764259281-o4b3bbv0ar4j6vps3d2gbkiujv1amgmo.apps.googleusercontent.com">
 
-  <!-- Theme colour: orange accent in light, dark bg in dark -->
-  <meta name="theme-color" content="#F39A4E" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1F2329" media="(prefers-color-scheme: dark)">
+  <!-- Match the native launch background. -->
+  <meta name="theme-color" content="#0D2035" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0D2035" media="(prefers-color-scheme: dark)">
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Bike Setup">
+  <meta name="apple-mobile-web-app-title" content="Clickwise">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Bike Setup</title>
+  <title>Clickwise</title>
   <link rel="manifest" href="manifest.json">
 
   <script>
@@ -43,8 +43,20 @@
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
+  <style>
+    body { margin: 0; background: #0D2035; }
+    #launch { position: fixed; inset: 0; display: grid; place-items: center; }
+  </style>
 </head>
 <body>
+  <div id="launch" role="status" aria-label="Starting Clickwise">
+    <img src="launch.png" width="240" height="192" alt="Clickwise">
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      document.getElementById('launch')?.remove();
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

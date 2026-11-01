@@ -126,12 +126,12 @@ class SetupOverview extends StatelessWidget {
                               size: AppIconSizes.compact)
                         ]),
                         if (category != 'GeneralSettings') ...[
-                          const SizedBox(height: 16),
                           _Values(
                               user: user,
                               bike: bike,
                               setup: setup,
                               category: category,
+                              topPadding: 16,
                               pressureOnly:
                                   category == 'Fork' || category == 'Shock'),
                         ],
@@ -147,10 +147,12 @@ class _Values extends StatefulWidget {
       required this.bike,
       required this.setup,
       required this.category,
-      this.pressureOnly = false});
+      this.pressureOnly = false,
+      this.topPadding = 0});
   final User user;
   final String bike, setup, category;
   final bool pressureOnly;
+  final double topPadding;
   @override
   State<_Values> createState() => _ValuesState();
 }
@@ -164,7 +166,12 @@ class _ValuesState extends State<_Values> {
   Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
       stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.hasError) return const Text('Could not load settings');
+        if (snapshot.hasError) {
+          return Padding(
+            padding: EdgeInsets.only(top: widget.topPadding),
+            child: const Text('Could not load settings'),
+          );
+        }
         if (!snapshot.hasData) return const SizedBox(height: 48);
         final values = snapshot.data!;
         bool hasValue(String key) =>
@@ -175,12 +182,14 @@ class _ValuesState extends State<_Values> {
           return const SizedBox.shrink();
         }
         if (!widget.pressureOnly && !values.keys.any(hasValue)) {
-          return Text(
-              widget.category == 'GeneralSettings'
-                  ? 'Add fit measurements'
-                  : 'Add ${widget.category.toLowerCase()} settings',
-              style: AppTextStyles.body
-                  .copyWith(color: context.palette.accentText));
+          return Padding(
+              padding: EdgeInsets.only(top: widget.topPadding),
+              child: Text(
+                  widget.category == 'GeneralSettings'
+                      ? 'Add fit measurements'
+                      : 'Add ${widget.category.toLowerCase()} settings',
+                  style: AppTextStyles.body
+                      .copyWith(color: context.palette.accentText)));
         }
         Widget value(String key, {bool large = false}) {
           final meta = kFieldMeta[key];
@@ -220,6 +229,7 @@ class _ValuesState extends State<_Values> {
         }
 
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(height: widget.topPadding),
           if (widget.pressureOnly)
             ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 48, minWidth: 80),

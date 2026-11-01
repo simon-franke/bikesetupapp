@@ -315,7 +315,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                     category: category,
                     settingKey: key,
                     currentValue: value,
-                    isDefault: true,
+                    canDelete: false,
                     onClear: value.isEmpty
                         ? null
                         : () =>

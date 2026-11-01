@@ -55,7 +55,7 @@ class SetupCategoryView extends StatelessWidget {
                               settingKey: key,
                               currentValue: value,
                               familyOverride: family,
-                              isDefault: isDefaultField(category, key));
+                              canDelete: true);
                         }),
                     AppAddButton(
                       label: 'Add setting',
