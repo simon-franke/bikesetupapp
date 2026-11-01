@@ -117,7 +117,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(component.name), actions: [
+        appBar: buildDetailAppBar(context, title: component.name, actions: [
           Builder(
               builder: (anchor) => IconButton(
                   tooltip: 'Component options',
@@ -190,11 +190,10 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                       size: 44),
                   const SizedBox(height: 24),
                   Text('Start your service history',
-                      style: AppTextStyles.inter(
-                          size: 22, weight: FontWeight.w600, color: p.ink)),
+                      style: AppTextStyles.heading.copyWith(color: p.ink)),
                   const SizedBox(height: 12),
                   Text('Log the last service to see when the next one is due.',
-                      style: AppTextStyles.inter(size: 14, color: p.inkMuted)),
+                      style: AppTextStyles.body.copyWith(color: p.inkMuted)),
                   const SizedBox(height: 24),
                   SizedBox(
                       width: double.infinity,
@@ -212,10 +211,9 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(serviceDistanceLabel(service),
-                          style: AppTextStyles.inter(
-                              size: 22, weight: FontWeight.w600, color: color)),
+                          style: AppTextStyles.heading.copyWith(color: color)),
                       if (!service.usageUnknown) ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         LinearProgressIndicator(
                             value: service.progress.clamp(0, 1),
                             minHeight: 8,
@@ -227,8 +225,8 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                         const SizedBox(height: 12),
                         Text(
                             '${amount(service.usage)} of ${amount(component.interval)} ${component.unitLabel} used',
-                            style: AppTextStyles.inter(
-                                size: 14, color: p.inkMuted)),
+                            style: AppTextStyles.caption
+                                .copyWith(color: p.inkMuted)),
                       ],
                       if (!component.usesHours &&
                           widget.mileageAvailable &&
@@ -256,14 +254,13 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                     component.includeIndoorRides
                         ? 'Indoor and outdoor rides count.'
                         : 'Outdoor rides count.',
-                    style: AppTextStyles.inter(size: 14, color: p.inkMuted))),
+                    style: AppTextStyles.body.copyWith(color: p.inkMuted))),
           if (items.isNotEmpty) ...[
             const SizedBox(height: 20),
             AppActionButton(label: 'Log service', onPressed: _logService),
             const SizedBox(height: 32),
             Text('Service history',
-                style: AppTextStyles.inter(
-                    size: 18, weight: FontWeight.w600, color: p.ink)),
+                style: AppTextStyles.label.copyWith(color: p.ink)),
             const SizedBox(height: 16),
           ],
           for (final entry in items) ...[
@@ -281,37 +278,35 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                                         .format(entry.date.toLocal())
                                     : DateFormat.yMMMd()
                                         .format(entry.date.toLocal()),
-                                style: AppTextStyles.inter(
-                                    size: 16,
-                                    weight: FontWeight.w600,
-                                    color: p.ink)),
+                                style:
+                                    AppTextStyles.label.copyWith(color: p.ink)),
                             if (entry.mileageAtServiceKm != null &&
                                 !component.usesHours) ...[
                               const SizedBox(height: 6),
                               Text(
                                   '${NumberFormat('#,###').format(entry.mileageAtServiceKm!.round())} km',
-                                  style: AppTextStyles.inter(
-                                      size: 14, color: p.inkMuted)),
+                                  style: AppTextStyles.body
+                                      .copyWith(color: p.inkMuted)),
                             ],
                             if ((entry.initialDistanceKm ?? 0) > 0) ...[
                               const SizedBox(height: 4),
                               Text(
                                   '${NumberFormat('#,###.#').format(entry.initialDistanceKm)} km already used',
-                                  style: TextStyle(
-                                      color: p.inkMuted, fontSize: 14)),
+                                  style: AppTextStyles.body
+                                      .copyWith(color: p.inkMuted)),
                             ],
                             if ((entry.initialRideHours ?? 0) > 0) ...[
                               const SizedBox(height: 6),
                               Text(
                                   '${entry.initialRideHours} hours already used',
-                                  style: AppTextStyles.inter(
-                                      size: 14, color: p.inkMuted)),
+                                  style: AppTextStyles.body
+                                      .copyWith(color: p.inkMuted)),
                             ],
                             if (entry.note?.trim().isNotEmpty ?? false) ...[
                               const SizedBox(height: 6),
                               Text(entry.note!,
-                                  style: AppTextStyles.inter(
-                                      size: 16, color: p.inkMuted)),
+                                  style: AppTextStyles.body
+                                      .copyWith(color: p.inkMuted)),
                             ],
                           ]))),
               Builder(

@@ -109,6 +109,20 @@ class TestsController extends OperationController {
       _update(bike, setup, id, TestStage.draft,
           (latest) => latest.copyWith(name: name.trim()));
 
+  Future<CommandResult<void>> renameExperiment(
+          String bike, String setup, String id, TestStage stage, String name) =>
+      _update(bike, setup, id, stage,
+          (latest) => latest.copyWith(name: name.trim()));
+
+  Future<CommandResult<void>> editExperiment(
+          String bike, String setup, String id) =>
+      _update(bike, setup, id, TestStage.ride, (latest) {
+        if (latest.rides.isNotEmpty) {
+          throw const AppFailure(FailureCode.invalidInput);
+        }
+        return latest.copyWith(stage: TestStage.draft, draftStep: 0);
+      });
+
   Future<CommandResult<void>> moveDraftStep(
           String bike, String setup, String id, int step) =>
       _update(bike, setup, id, TestStage.draft, (latest) {

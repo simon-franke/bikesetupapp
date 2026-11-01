@@ -72,14 +72,14 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
             LengthLimitingTextInputFormatter(length,
                 maxLengthEnforcement: MaxLengthEnforcement.enforced),
           ],
-          style: AppTextStyles.inter(
-                  size: 26, weight: FontWeight.w600, color: p.ink)
+          style: AppTextStyles.heading
+              .copyWith(color: p.ink)
               .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
           cursorColor: p.accentText,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.inter(
-                    size: 26, weight: FontWeight.w600, color: p.inkMuted)
+            hintStyle: AppTextStyles.heading
+                .copyWith(color: p.inkMuted)
                 .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
             filled: false,
             contentPadding:
@@ -107,7 +107,7 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
           },
         ),
         const SizedBox(height: 4),
-        Text(label, style: AppTextStyles.inter(size: 12, color: p.inkMuted)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
       ]),
     );
   }
@@ -132,8 +132,7 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
           Row(children: [
             Expanded(
                 child: Text('Track time',
-                    style: AppTextStyles.inter(
-                        size: 22, weight: FontWeight.w600, color: p.ink))),
+                    style: AppTextStyles.heading.copyWith(color: p.ink))),
             TextButton(
                 onPressed: () => Navigator.pop(context, ''),
                 child: const Text('Clear')),
@@ -182,7 +181,7 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
   Widget separator(String text) => Padding(
         padding: const EdgeInsets.only(top: 12),
         child: Text(text,
-            style:
-                AppTextStyles.inter(size: 26, color: context.palette.inkMuted)),
+            style: AppTextStyles.heading
+                .copyWith(color: context.palette.inkMuted)),
       );
 }

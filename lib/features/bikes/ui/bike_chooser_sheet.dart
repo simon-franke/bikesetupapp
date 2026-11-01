@@ -1,7 +1,5 @@
-import 'package:bikesetupapp/common/ui/app_haptics.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/app_scroll_edge.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_info_bottom_sheet.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_list.dart';
@@ -92,18 +90,11 @@ class BikeChooserContent extends StatelessWidget {
               const SizedBox(height: 8),
               Flexible(
                   fit: FlexFit.loose, child: AppScrollEdge(child: bikeList)),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: context.palette.surface2,
-                    foregroundColor: context.palette.ink,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18)),
-                  ),
-                  onPressed: AppHaptics.wrap(onAddBike),
-                  icon: const Icon(CupertinoIcons.plus, size: 20),
-                  label: const Text('Add bike')),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: AppAddButton(label: 'Add bike', onPressed: onAddBike),
+              ),
             ],
           ),
         ),

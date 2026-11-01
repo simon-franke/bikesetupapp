@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
@@ -70,11 +71,9 @@ class SetupOverview extends StatelessWidget {
                       children: [
                         const Row(children: [
                           Expanded(
-                              child: Text('Tires',
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600))),
-                          Icon(CupertinoIcons.chevron_right, size: 19)
+                              child: Text('Tires', style: AppTextStyles.label)),
+                          Icon(CupertinoIcons.chevron_right,
+                              size: AppIconSizes.compact)
                         ]),
                         const SizedBox(height: 16),
                         IntrinsicHeight(
@@ -97,8 +96,7 @@ class SetupOverview extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                   Text(c == 'FrontTire' ? 'Front' : 'Rear',
-                                      style: TextStyle(
-                                          fontSize: 12,
+                                      style: AppTextStyles.caption.copyWith(
                                           color: context.palette.inkMuted)),
                                   _Values(
                                       user: user,
@@ -123,27 +121,23 @@ class SetupOverview extends StatelessWidget {
                         Row(children: [
                           Expanded(
                               child: Text(categoryLabel(category),
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600))),
-                          const Icon(CupertinoIcons.chevron_right, size: 19)
+                                  style: AppTextStyles.label)),
+                          const Icon(CupertinoIcons.chevron_right,
+                              size: AppIconSizes.compact)
                         ]),
-                        const SizedBox(height: 16),
-                        _Values(
-                            user: user,
-                            bike: bike,
-                            setup: setup,
-                            category: category),
+                        if (category != 'GeneralSettings') ...[
+                          _Values(
+                              user: user,
+                              bike: bike,
+                              setup: setup,
+                              category: category,
+                              topPadding: 16,
+                              pressureOnly:
+                                  category == 'Fork' || category == 'Shock'),
+                        ],
                       ])),
             if (onAddCategory != null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: AppHaptics.wrap(onAddCategory),
-                  icon: const Icon(CupertinoIcons.plus, size: 18),
-                  label: const Text('Add category'),
-                ),
-              ),
+              AppAddButton(label: 'Add category', onPressed: onAddCategory),
           ]);
 }
 
@@ -153,10 +147,12 @@ class _Values extends StatefulWidget {
       required this.bike,
       required this.setup,
       required this.category,
-      this.pressureOnly = false});
+      this.pressureOnly = false,
+      this.topPadding = 0});
   final User user;
   final String bike, setup, category;
   final bool pressureOnly;
+  final double topPadding;
   @override
   State<_Values> createState() => _ValuesState();
 }
@@ -170,18 +166,30 @@ class _ValuesState extends State<_Values> {
   Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
       stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.hasError) return const Text('Could not load settings');
+        if (snapshot.hasError) {
+          return Padding(
+            padding: EdgeInsets.only(top: widget.topPadding),
+            child: const Text('Could not load settings'),
+          );
+        }
         if (!snapshot.hasData) return const SizedBox(height: 48);
         final values = snapshot.data!;
         bool hasValue(String key) =>
             values[key]?.toString().trim().isNotEmpty == true;
+        if (widget.pressureOnly &&
+            (widget.category == 'Fork' || widget.category == 'Shock') &&
+            !hasValue('Pressure')) {
+          return const SizedBox.shrink();
+        }
         if (!widget.pressureOnly && !values.keys.any(hasValue)) {
-          return Text(
-              widget.category == 'GeneralSettings'
-                  ? 'Add fit measurements'
-                  : 'Add ${widget.category.toLowerCase()} settings',
-              style:
-                  TextStyle(fontSize: 13, color: context.palette.accentText));
+          return Padding(
+              padding: EdgeInsets.only(top: widget.topPadding),
+              child: Text(
+                  widget.category == 'GeneralSettings'
+                      ? 'Add fit measurements'
+                      : 'Add ${widget.category.toLowerCase()} settings',
+                  style: AppTextStyles.body
+                      .copyWith(color: context.palette.accentText)));
         }
         Widget value(String key, {bool large = false}) {
           final meta = kFieldMeta[key];
@@ -206,23 +214,22 @@ class _ValuesState extends State<_Values> {
                     'Seat Height' => 'Seat',
                     _ => key
                   }}  ',
-                  style:
-                      TextStyle(color: context.palette.inkMuted, fontSize: 12)),
+                  style: AppTextStyles.caption
+                      .copyWith(color: context.palette.inkMuted)),
             TextSpan(
                 text: number,
-                style: AppTextStyles.mono(
-                    size: large ? (widget.pressureOnly ? 30 : 25) : 13,
-                    weight: FontWeight.w400,
-                    color: context.palette.ink)),
+                style: (large ? AppTextStyles.heading : AppTextStyles.label)
+                    .copyWith(color: context.palette.ink)),
             if (large || key == 'Reach' || key.contains('Height'))
               TextSpan(
                   text: ' ${parsed.unit?.label ?? ''}',
-                  style:
-                      TextStyle(fontSize: 12, color: context.palette.inkMuted)),
+                  style: AppTextStyles.caption
+                      .copyWith(color: context.palette.inkMuted)),
           ]));
         }
 
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(height: widget.topPadding),
           if (widget.pressureOnly)
             ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 48, minWidth: 80),
@@ -231,9 +238,8 @@ class _ValuesState extends State<_Values> {
                     child: hasValue('Pressure')
                         ? value('Pressure', large: true)
                         : Text('Set pressure',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: context.palette.accentText))))
+                            style: AppTextStyles.body
+                                .copyWith(color: context.palette.accentText))))
           else if (hasValue('Pressure') || hasValue('Sag'))
             Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -242,8 +248,8 @@ class _ValuesState extends State<_Values> {
                   if (hasValue('Pressure')) value('Pressure', large: true),
                   if (hasValue('Sag'))
                     Text('${values['Sag']} sag',
-                        style: TextStyle(
-                            fontSize: 12, color: context.palette.inkMuted)),
+                        style: AppTextStyles.caption
+                            .copyWith(color: context.palette.inkMuted)),
                 ]),
           if (!widget.pressureOnly &&
               !hasValue('Pressure') &&

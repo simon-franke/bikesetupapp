@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../common/ui/app_components.dart';
@@ -92,12 +93,12 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                   if (custom && suggestions.isNotEmpty)
                     IconButton(
                         tooltip: 'Back',
-                        icon: const Icon(CupertinoIcons.chevron_left, size: 20),
+                        icon: const Icon(CupertinoIcons.chevron_left,
+                            size: AppIconSizes.compact),
                         onPressed: () => setState(() => custom = false)),
                   Expanded(
                       child: Text(showForm ? 'New category' : 'Add category',
-                          style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w600))),
+                          style: AppTextStyles.heading)),
                 ]),
                 const SizedBox(height: 22),
                 if (!showForm) ...[

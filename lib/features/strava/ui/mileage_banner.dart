@@ -39,18 +39,18 @@ class MileageBanner extends StatelessWidget {
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Bike mileage', style: TextStyle(fontSize: 16, color: ink)),
+        Text('Bike mileage', style: AppTextStyles.body.copyWith(color: ink)),
         const SizedBox(height: 4),
         Text(
           mileageKm == null
               ? 'Not available'
               : '${NumberFormat('#,###').format(mileageKm!.round())} km',
-          style:
-              TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: ink),
+          style: AppTextStyles.heading.copyWith(color: ink),
         ),
         const SizedBox(height: 4),
         Text(_syncLabel(),
-            style: TextStyle(fontSize: 14, color: context.palette.inkMuted)),
+            style:
+                AppTextStyles.body.copyWith(color: context.palette.inkMuted)),
       ],
     );
     final action = TextButton.icon(
@@ -60,7 +60,7 @@ class MileageBanner extends StatelessWidget {
         disabledForegroundColor: ink,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         minimumSize: const Size(0, 44),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        textStyle: AppTextStyles.label,
       ),
       icon: isLoading
           ? SizedBox(
@@ -71,7 +71,7 @@ class MileageBanner extends StatelessWidget {
               isConnected
                   ? CupertinoIcons.arrow_2_circlepath
                   : CupertinoIcons.link,
-              size: 18),
+              size: AppIconSizes.compact),
       label: Text(isLoading
           ? 'Syncing'
           : isConnected

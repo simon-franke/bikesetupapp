@@ -212,7 +212,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byType(TextField));
       await tester.enterText(find.byType(TextField), 'Cleaned and inspected');
-      final save = find.widgetWithText(FilledButton, 'Log service').last;
+      final save = find.widgetWithText(ElevatedButton, 'Log service').last;
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
