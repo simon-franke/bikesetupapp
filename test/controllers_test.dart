@@ -5,6 +5,8 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/app/startup/startup_controller.dart';
 import 'package:bikesetupapp/features/bikes/controllers/bikes_controller.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
+import 'package:bikesetupapp/features/bikes/models/bike_creation_draft.dart';
+import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/service_entries_controller.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/services_controller.dart';
@@ -27,11 +29,22 @@ void main() {
   test('bike creation retains defaults and shock configuration', () async {
     final bikes = FakeBikesRepository();
     final setups = FakeSetupsRepository();
-    final setupController = SetupsController(setups);
     final controller = BikesController(bikes, setups);
-    final id = await controller
-        .createBike('Enduro', {'shock': 'Coil'})
+    final created = await controller
+        .createFromDraft(BikeCreationDraft(
+          name: 'Enduro',
+          configuration: SetupConfiguration({
+            'FrontTire': ['Pressure'],
+            'RearTire': ['Pressure'],
+            'Shock': ['Spring Rate'],
+          }),
+          specifications: {'shock': 'Coil'},
+          values: {
+            'Shock': {'Spring Rate': '450'}
+          },
+        ))
         .orThrow();
+    final id = created.bikeId;
     final setupId = setups.defaults[id]!;
     expect(bikes.defaultBike, id);
     expect(bikes.bikes.single.name, 'Enduro');
@@ -40,21 +53,17 @@ void main() {
     expect(setups.settings.containsKey('$id/$setupId/Shock/Pressure'), isFalse);
     expect(controller.isBusy, isFalse);
     controller.dispose();
-    setupController.dispose();
   });
 
   test('startup rejects incomplete selections and resolves a complete default',
       () async {
     final bikes = FakeBikesRepository();
     final setups = FakeSetupsRepository();
-    final setupController = SetupsController(setups);
     final bikeController = BikesController(bikes, setups);
     final startup = StartupController(bikes, setups);
     expect(await startup.loadSelection(), isNull);
     bikes.defaultBike = 'bike';
-    bikes.bikes = [
-      Bike(id: 'bike', name: 'Road')
-    ];
+    bikes.bikes = [Bike(id: 'bike', name: 'Road')];
     expect(await startup.loadSelection(), isNull);
     setups.defaults['bike'] = 'setup';
     expect(await startup.loadSelection(), isNull);
@@ -63,7 +72,6 @@ void main() {
     expect(selected.bikeName, 'Road');
     expect(selected.setupName, 'Commute');
     bikeController.dispose();
-    setupController.dispose();
   });
 
   test('setting writes stay ordered per destination while other fields proceed',

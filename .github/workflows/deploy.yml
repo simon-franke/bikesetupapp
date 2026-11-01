@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Firebase
 
 on:
   push:
@@ -7,59 +7,12 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: firebase-deploy
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Inject Firebase options
-        run: |
-          if [ -z "$FIREBASE_OPTIONS" ]; then
-            echo "ERROR: FIREBASE_OPTIONS secret is not set"
-            exit 1
-          fi
-          echo "$FIREBASE_OPTIONS" | base64 --decode --ignore-garbage > lib/firebase_options.dart
-          if [ ! -s lib/firebase_options.dart ]; then
-            echo "ERROR: firebase_options.dart is empty after decode"
-            exit 1
-          fi
-        env:
-          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build web
-        run: flutter build web --base-href /bikesetupapp/ --release --dart-define="STRAVA_CLIENT_ID=$STRAVA_CLIENT_ID"
-        env:
-          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
-  deploy:
-    needs: [build, deploy-functions]
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
-
   deploy-functions:
     runs-on: ubuntu-latest
     steps:

@@ -4,7 +4,6 @@ import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'support/fake_repositories.dart';
 
@@ -15,7 +14,6 @@ class OverviewUser extends Fake implements User {
 
 void main() {
   testWidgets('summary cards navigate from values and padding', (tester) async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     final repository = FakeSetupsRepository()
       ..settings.addAll({
         'bike/setup/FrontTire/Pressure': '27 psi',
@@ -31,6 +29,7 @@ void main() {
         theme: AppTheme.darkTheme,
         home: Scaffold(
             body: SetupOverview(
+          configuration: testSetupConfiguration,
           user: OverviewUser(),
           bike: 'bike',
           setup: 'setup',

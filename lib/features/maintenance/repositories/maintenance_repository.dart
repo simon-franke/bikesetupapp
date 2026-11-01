@@ -12,5 +12,4 @@ abstract interface class MaintenanceRepository {
   Future<void> addServiceEntry(String componentId, ServiceEntry entry);
   Future<void> deleteServiceEntry(String componentId, String entryId);
   Stream<ServiceEntry?> streamLatestEntryForComponent(String componentId);
-  Future<ServiceEntry?> getLatestEntryForComponent(String componentId);
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../app/app_dependencies.dart';
 import '../../../common/ui/command_feedback.dart';
@@ -40,7 +39,7 @@ class _BikeMileagePanelState extends State<BikeMileagePanel> {
           isConnected: controller.connected,
           onSync: () => presentCommand(context, controller.sync),
           onConnect: () =>
-              presentCommand(context, () => controller.connect(web: kIsWeb)),
+              presentCommand(context, controller.connect),
         ),
       );
 }

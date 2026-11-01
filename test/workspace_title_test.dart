@@ -2,10 +2,8 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/workspace/ui/workspace_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   for (final reduced in [false, true]) {
     testWidgets('bike label stays fixed across tabs, reduced motion $reduced',
         (tester) async {

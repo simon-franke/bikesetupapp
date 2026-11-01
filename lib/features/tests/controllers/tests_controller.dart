@@ -1,6 +1,5 @@
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:uuid/uuid.dart';
-import 'package:bikesetupapp/features/setups/models/setup_defaults.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -42,7 +41,7 @@ class TestsController extends OperationController {
   Stream<List<SetupTest>> watch(String bike, String setup) =>
       _repository.watch(bike, setup);
   Future<CommandResult<SetupTest>> create(
-          String bike, String setup, String name, List<String> categories) =>
+          String bike, String setup, String name) =>
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
             final values = <String, Map<String, String>>{};
@@ -50,22 +49,14 @@ class TestsController extends OperationController {
             final information = await _setups.getSetupInformation(bike, setup);
             final configuration =
                 SetupConfiguration.fromInformation(information);
-            final defaults = SetupDefaults.forShock(
-                information['shock']?.toString() ?? 'Air');
-            for (final category in configuration?.fields.keys ?? categories) {
+            for (final category in configuration.fields.keys) {
               values[category] =
                   (await _setups.getSettings(bike, category, setup).first)
                       .map((k, v) => MapEntry(k, v.toString()));
               metadata[category] =
                   (await _setups.getSettingsMeta(bike, category, setup).first)
                       .map((k, v) => MapEntry(k, v.toString()));
-              final fields = configuration?.fields[category] ??
-                  defaults.entries
-                      .where((e) => e.key.category == category)
-                      .firstOrNull
-                      ?.value
-                      .keys ??
-                  <String>[];
+              final fields = configuration.fields[category]!;
               for (final field in fields) {
                 values[category]!.putIfAbsent(field, () => '');
               }
@@ -76,14 +67,8 @@ class TestsController extends OperationController {
                 name: '$name test',
                 setupInformation: {
                   for (final entry in information.entries)
-                    if (entry.value is String && entry.key != 'activeTestId')
-                      entry.key: entry.value as String,
-                  SetupConfiguration.metadataKey: (configuration ??
-                          SetupConfiguration({
-                            for (final entry in values.entries)
-                              entry.key: entry.value.keys.toList(),
-                          }))
-                      .encode(),
+                    if (entry.value is String) entry.key: entry.value as String,
+                  SetupConfiguration.metadataKey: configuration.encode(),
                 },
                 fieldMetadata: readValues(metadata),
                 before: readValues(values),
@@ -103,11 +88,6 @@ class TestsController extends OperationController {
             });
             if (!isDisposed) onCommitted?.call();
           }));
-
-  Future<CommandResult<void>> renameDraft(
-          String bike, String setup, String id, String name) =>
-      _update(bike, setup, id, TestStage.draft,
-          (latest) => latest.copyWith(name: name.trim()));
 
   Future<CommandResult<void>> renameExperiment(
           String bike, String setup, String id, TestStage stage, String name) =>

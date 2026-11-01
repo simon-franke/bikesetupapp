@@ -8,7 +8,6 @@ CI uses Flutter 3.41.4 and Node 22. Run:
 flutter pub get --enforce-lockfile
 flutter analyze --fatal-infos
 flutter test
-flutter test --platform chrome test/strava_web_callback_test.dart
 (cd functions && npm test)
 ```
 
@@ -21,7 +20,7 @@ as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
 - Preserve the user's VS Code debug session; never stop or replace its app process.
 - Reuse an existing tooling connection for inspection when available. Ask before
   hot restart or resetting app state.
-- Run tests separately; use another device/browser instance if they relaunch the
+- Run tests separately; use another device instance if they relaunch the
   app. Only stop processes started exclusively for your own tests.
 
 ## Code conventions
@@ -38,6 +37,8 @@ as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
   settings live separately in `Bikes/{bikeId}/{setupId}/{category}`.
   Both are under `UserBikeSetup/{uid}`. `Category.category` supplies the stored
   category name; changing it affects existing data.
+- Setups require explicit field configuration, and experiments require a captured
+  setup snapshot. Do not add migrations for pre-release development data.
 - Setting icons, units and default fields belong in
   `lib/features/setups/ui/field_meta.dart`.
 
@@ -68,13 +69,14 @@ as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
 
 ## Strava and deployment
 
-- Web OAuth and refresh go through `stravaCallback` and `stravaRefresh` in
-  `functions/`. `STRAVA_CLIENT_SECRET` stays in Cloud Secret Manager for web;
-  never bundle it in the web app.
+- Native Strava OAuth and refresh use `stravaExchange` and `stravaRefresh` in
+  `functions/`. `STRAVA_CLIENT_SECRET` stays in Cloud Secret Manager; never
+  bundle it in a client build.
 - Credentials belong to a Firebase UID. Preserve single-use OAuth state checks,
-  the ten-minute expiry and sign-out cleanup. Historical mileage requires
+  and sign-out cleanup. Historical mileage requires
   `activity:read_all`; unscoped credentials require reconnection.
-- Every push to `main` deploys Firebase Functions and GitHub Pages via
-  `.github/workflows/deploy.yml`. Web builds require `--base-href /bikesetupapp/`.
-- Deployment secrets: `FIREBASE_OPTIONS` (base64-encoded
-  `lib/firebase_options.dart`), `STRAVA_CLIENT_ID` and `FIREBASE_TOKEN`.
+- Every push to `main` deploys Firebase Functions and Firestore rules via
+  `.github/workflows/deploy.yml`. This is a native-only project; do not restore
+  web platform files, hosting, or browser-specific authentication.
+- Deployment secret: `FIREBASE_TOKEN`. Firebase options and the Strava client ID
+  are configured locally for client builds.

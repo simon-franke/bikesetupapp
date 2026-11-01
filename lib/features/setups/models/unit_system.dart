@@ -103,8 +103,8 @@ String formatNumber(double value, int decimals) {
 /// Parsed representation of a setting value stored in Firestore.
 ///
 /// Storage format: `"<number> <unitId>"` (e.g. `"180 psi"`), `"<number>"` for
-/// unitless numerics, or arbitrary text for free-text fields. Legacy values
-/// without a unit suffix fall back to a caller-provided default unit.
+/// unitless numerics, or arbitrary text for free-text fields. Numeric input
+/// without a unit suffix uses the field's configured unit.
 class SettingValue {
   final double? number;
   final UnitDef? unit;
@@ -126,7 +126,7 @@ class SettingValue {
       SettingValue._(text: text, family: UnitFamily.freeText);
 
   /// Parses a stored string. [fallbackFamily] and [fallbackUnit] are used when
-  /// the stored value is just a number (legacy data or unitless field).
+  /// the stored value is just a number (numeric input or unitless field).
   factory SettingValue.parse(
     String raw, {
     UnitFamily? fallbackFamily,
@@ -187,10 +187,4 @@ class SettingValue {
 
   /// Human-facing unit label (e.g. "°" not "deg"). Empty for unitless/freeText.
   String displayUnit() => unit?.label ?? '';
-
-  SettingValue convertTo(UnitFamily targetFamily, UnitDef targetUnit) {
-    if (number == null || unit == null) return this;
-    final converted = convertValue(number!, unit!, targetUnit);
-    return SettingValue.numeric(converted, targetFamily, targetUnit);
-  }
 }

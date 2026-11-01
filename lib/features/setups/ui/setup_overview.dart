@@ -9,8 +9,6 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'field_meta.dart';
 import '../models/unit_system.dart';
 
-List<String> setupCategories() =>
-    ['FrontTire', 'RearTire', 'Fork', 'Shock', 'GeneralSettings'];
 String categoryLabel(String category) => switch (category) {
       'FrontTire' => 'Front tire',
       'RearTire' => 'Rear tire',
@@ -43,13 +41,13 @@ class SetupOverview extends StatelessWidget {
       required this.user,
       required this.bike,
       required this.setup,
-      this.configuration,
+      required this.configuration,
       this.onAddCategory,
       required this.onCategory});
   final User user;
   final String bike, setup;
 
-  final SetupConfiguration? configuration;
+  final SetupConfiguration configuration;
   final ValueChanged<String> onCategory;
   final VoidCallback? onAddCategory;
   @override
@@ -60,9 +58,8 @@ class SetupOverview extends StatelessWidget {
               20,
               MediaQuery.paddingOf(context).bottom + 24),
           children: [
-            if (configuration == null ||
-                configuration!.fields.keys
-                    .any((key) => ['FrontTire', 'RearTire'].contains(key)))
+            if (configuration.fields.keys
+                .any((key) => ['FrontTire', 'RearTire'].contains(key)))
               SetupCard(
                   padding: 17,
                   onTap: () => onCategory('Tires'),
@@ -78,13 +75,11 @@ class SetupOverview extends StatelessWidget {
                         const SizedBox(height: 16),
                         IntrinsicHeight(
                             child: Row(children: [
-                          for (final c in ['FrontTire', 'RearTire'].where((c) =>
-                              configuration == null ||
-                              configuration!.fields.containsKey(c))) ...[
+                          for (final c in ['FrontTire', 'RearTire'].where(
+                              (c) => configuration.fields.containsKey(c))) ...[
                             if (c == 'RearTire' &&
-                                (configuration == null ||
-                                    configuration!.fields
-                                        .containsKey('FrontTire'))) ...[
+                                (configuration.fields
+                                    .containsKey('FrontTire'))) ...[
                               VerticalDivider(
                                   width: 38,
                                   thickness: 1,
@@ -108,10 +103,8 @@ class SetupOverview extends StatelessWidget {
                           ],
                         ])),
                       ])),
-            for (final category
-                in (configuration?.fields.keys.toList() ?? setupCategories())
-                    .where((category) =>
-                        !['FrontTire', 'RearTire'].contains(category)))
+            for (final category in (configuration.fields.keys.toList()).where(
+                (category) => !['FrontTire', 'RearTire'].contains(category)))
               SetupCard(
                   padding: 17,
                   onTap: () => onCategory(category),

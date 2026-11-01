@@ -50,10 +50,8 @@ class _BikeInfoSheetContent extends StatelessWidget {
 
   List<(String, String)> _buildRows(Map<String, dynamic> data) {
     final config = SetupConfiguration.fromInformation(data);
-    final fork = config?.fields.containsKey('Fork') ??
-        (data['fork'] != null && data['fork'] != 'None');
-    final shock = config?.fields.containsKey('Shock') ??
-        (data['shock'] != null && data['shock'] != 'None');
+    final fork = config.fields.containsKey('Fork');
+    final shock = config.fields.containsKey('Shock');
     String value(String key, [String unit = '']) {
       final raw = data[key]?.toString().trim() ?? '';
       return raw.isEmpty ? '' : '$raw$unit';

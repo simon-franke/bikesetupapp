@@ -22,8 +22,6 @@ class PlatformStravaRepository implements StravaRepository {
   @override
   Future<StravaAuth?> authorize() => _auth.authorize();
   @override
-  Future<void> authorizeWeb() => _auth.authorizeWeb();
-  @override
   Future<void> clearAuth() async {
     final owner = _userId();
     await _auth.clearAuth();
