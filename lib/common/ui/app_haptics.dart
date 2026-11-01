@@ -13,9 +13,8 @@ abstract final class AppHaptics {
   static void emphasis() => _emit(HapticFeedback.mediumImpact);
 
   static void _emit(Future<void> Function() feedback) {
-    if (kIsWeb ||
-        (defaultTargetPlatform != TargetPlatform.iOS &&
-            defaultTargetPlatform != TargetPlatform.android)) {
+    if (defaultTargetPlatform != TargetPlatform.iOS &&
+        defaultTargetPlatform != TargetPlatform.android) {
       return;
     }
     final now = _clock.elapsedMilliseconds;

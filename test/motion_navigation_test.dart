@@ -3,10 +3,8 @@ import 'package:bikesetupapp/features/workspace/ui/view_toggle.dart';
 import 'package:cupertino_liquid_glass/cupertino_liquid_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   for (final reduced in [false, true]) {
     testWidgets('prebuilt tabs select at narrow width, reduce motion $reduced',
         (tester) async {

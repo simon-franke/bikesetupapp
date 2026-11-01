@@ -319,7 +319,7 @@ class _TestsViewState extends State<TestsView> {
       SetupTest? created;
       final saved = await presentCommand(context, () async {
         final result = await controller.create(
-            widget.bike, widget.setup, widget.setupName, setupCategories());
+            widget.bike, widget.setup, widget.setupName);
         if (result.isSuccess) created = result.requireValue();
         return result;
       });

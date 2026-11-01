@@ -58,12 +58,6 @@ class SettingsController extends OperationController {
               result.requireValue();
             }
           }));
-  Future<CommandResult<void>> connectWeb() => share(
-      'connectWeb',
-      () => command(() async {
-            beginRequest('state');
-            (await _connection.authorizeWeb()).requireValue();
-          }));
   Future<CommandResult<void>> disconnect() => share(
       'disconnect',
       () => command(() async {

@@ -11,7 +11,6 @@ bool sameSettingValue(String? a, String? b) {
   if (a == null || b == null || a.isEmpty || b.isEmpty) return false;
   final x = SettingValue.parse(a), y = SettingValue.parse(b);
   if (x.number == null || y.number == null) return false;
-  // Legacy values have no suffix and use the field's default unit.
   if (x.unit != null && y.unit != null && x.family != y.family) return false;
   return (x.number! * (x.unit?.toCanonical ?? 1) -
               y.number! * (y.unit?.toCanonical ?? 1))
@@ -70,7 +69,7 @@ class SetupTest {
       required this.name,
       required this.before,
       required this.values,
-      this.setupInformation,
+      required this.setupInformation,
       this.fieldMetadata = const {},
       this.stage = TestStage.draft,
       this.draftStep = 0,
@@ -81,8 +80,7 @@ class SetupTest {
   final TestStage stage;
   final int draftStep;
   final SetupValues before, values;
-  // Null identifies experiments saved before configuration snapshots existed.
-  final Map<String, String>? setupInformation;
+  final Map<String, String> setupInformation;
   final SetupValues fieldMetadata;
   final List<RideFeedback> rides;
   final RideFeedback feedback;
@@ -118,7 +116,7 @@ class SetupTest {
         'id': id,
         'name': name,
         'before': before,
-        if (setupInformation != null) 'setupInformation': setupInformation,
+        'setupInformation': setupInformation,
         'fieldMetadata': fieldMetadata,
         'values': values,
         'stage': stage.name,
@@ -131,13 +129,12 @@ class SetupTest {
       id: data['id'] as String,
       name: data['name'] as String,
       before: readValues(data['before'] as Map),
-      setupInformation: data['setupInformation'] == null
-          ? null
-          : Map<String, String>.from(data['setupInformation'] as Map),
-      fieldMetadata: readValues(data['fieldMetadata'] as Map? ?? {}),
+      setupInformation:
+          Map<String, String>.from(data['setupInformation'] as Map),
+      fieldMetadata: readValues(data['fieldMetadata'] as Map),
       values: readValues(data['values'] as Map),
       stage: TestStage.values.byName(data['stage'] as String),
-      draftStep: (data['draftStep'] as num?)?.toInt() ?? 0,
+      draftStep: (data['draftStep'] as num).toInt(),
       rides: (data['rides'] as List)
           .map((r) => RideFeedback.fromMap(r as Map))
           .toList(),

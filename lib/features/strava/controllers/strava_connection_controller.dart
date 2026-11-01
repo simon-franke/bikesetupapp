@@ -14,8 +14,6 @@ class StravaConnectionController extends OperationController {
             if (auth == null || isDisposed) throw const CommandAborted();
             return auth;
           }));
-  Future<CommandResult<void>> authorizeWeb() =>
-      command(_repository.authorizeWeb);
   Future<CommandResult<void>> deauthorize() => command(_repository.deauthorize);
   Future<DateTime?> getLastSyncTime() => _repository.getLastSyncTime();
   Future<double?> mileageAtDate(

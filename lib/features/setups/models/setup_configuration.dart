@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// Explicit field selection for a setup. Missing metadata denotes a legacy setup.
+/// Required category and field selection for a setup.
 class SetupConfiguration {
   static const metadataKey = 'setup_fields_v1';
   final Map<String, List<String>> fields;
@@ -31,9 +31,8 @@ class SetupConfiguration {
 
   String encode() => jsonEncode(fields);
 
-  static SetupConfiguration? fromInformation(Map<String, dynamic> information) {
+  static SetupConfiguration fromInformation(Map<String, dynamic> information) {
     final encoded = information[metadataKey];
-    if (encoded == null) return null;
     if (encoded is! String) {
       throw const FormatException('Invalid setup configuration');
     }

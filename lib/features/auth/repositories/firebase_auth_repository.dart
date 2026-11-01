@@ -2,7 +2,6 @@ import 'package:bikesetupapp/common/data/firebase_operation.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -50,10 +49,6 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<UserCredential> signInWithGoogle() async {
     return _authentication(() async {
-      if (kIsWeb) {
-        return await _auth.signInWithPopup(GoogleAuthProvider());
-      }
-
       await _initializeGoogle();
       // Trigger the authentication flow
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
@@ -74,10 +69,6 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<UserCredential> signInWithApple() async {
     return _authentication(() async {
-      if (kIsWeb) {
-        return await _auth.signInWithPopup(OAuthProvider('apple.com'));
-      }
-
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,

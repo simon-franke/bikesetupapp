@@ -47,29 +47,6 @@ jobs:
         if: matrix.check == 'tests'
         run: flutter test
 
-      - name: Browser callback tests
-        if: matrix.check == 'tests'
-        run: flutter test --platform chrome test/strava_web_callback_test.dart
-
-      - uses: actions/setup-node@v4
-        if: matrix.check == 'tests'
-        with:
-          node-version: '22'
-
-      - uses: actions/setup-java@v4
-        if: matrix.check == 'tests'
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Firestore repository regression tests
-        if: matrix.check == 'tests'
-        run: >-
-          npx --yes firebase-tools@15.18.0 emulators:exec
-          --only firestore --project demo-bike-tests
-          --config test/firestore/firebase.repository.json
-          "flutter test --platform chrome test/firestore_tests_repository_test.dart"
-
   firestore-rules:
     name: Firestore ownership rules
     runs-on: ubuntu-latest

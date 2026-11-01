@@ -30,7 +30,7 @@ void main() {
         'Tokens': '6 count',
         'High Speed Compression': '5 clicks',
       };
-      final draft = SetupTest(id: 'test', name: 'Test', before: {
+      final draft = testExperiment(id: 'test', name: 'Test', before: {
         'Fork': before
       }, values: {
         'Fork': {
@@ -73,7 +73,7 @@ void main() {
   test(
       'saved values survive stale snapshots, preserve other fields and release on acknowledgement',
       () async {
-    final original = SetupTest(id: 'test', name: 'Test', before: {
+    final original = testExperiment(id: 'test', name: 'Test', before: {
       'FrontTire': {'Pressure': '22 psi'},
       'RearTire': {'Pressure': '25 psi'},
     }, values: {
@@ -128,7 +128,7 @@ void main() {
 
   testWidgets('saved field updates the walkthrough before watch emits',
       (tester) async {
-    final original = SetupTest(id: 'test', name: 'Test', before: {
+    final original = testExperiment(id: 'test', name: 'Test', before: {
       'FrontTire': {'Pressure': '22 psi'}
     }, values: {
       'FrontTire': {'Pressure': '23 psi'}
@@ -192,15 +192,15 @@ void main() {
   test('draft progress survives serialization and failed writes', () async {
     final repo = MemoryTests()
       ..records['test'] =
-          SetupTest(id: 'test', name: 'Test', before: {}, values: {});
+          testExperiment(id: 'test', name: 'Test', before: {}, values: {});
     final controller = TestsController(repo, FakeSetupsRepository());
     expect(
         (await controller.moveDraftStep('bike', 'setup', 'test', 2)).isSuccess,
         isTrue);
     final restored = SetupTest.fromMap(repo.records['test']!.toMap());
     expect(restored.draftStep, 2);
-    final legacy = restored.toMap()..remove('draftStep');
-    expect(SetupTest.fromMap(legacy).draftStep, 0);
+    final missingSnapshot = restored.toMap()..remove('setupInformation');
+    expect(() => SetupTest.fromMap(missingSnapshot), throwsA(isA<TypeError>()));
     repo.fail = true;
     expect(
         (await controller.moveDraftStep('bike', 'setup', 'test', 3)).isSuccess,

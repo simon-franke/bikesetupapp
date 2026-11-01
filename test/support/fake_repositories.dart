@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'dart:async';
 
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
@@ -53,7 +54,8 @@ class FakeSetupsRepository implements SetupsRepository {
   @override
   Future<Map<String, dynamic>> getSetupInformation(
           String bike, String setup) async =>
-      Map.of(information[setup] ?? {});
+      Map.of(information[setup] ??
+          {SetupConfiguration.metadataKey: testSetupConfiguration.encode()});
   Future<void> Function(
           String key, String value, String bike, String category, String setup)?
       onWrite;
@@ -158,3 +160,17 @@ class FakeStravaRepository implements StravaRepository {
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError(invocation.memberName.toString());
 }
+
+final testSetupConfiguration = SetupConfiguration({
+  'FrontTire': ['Pressure'],
+  'RearTire': ['Pressure'],
+  'Fork': [
+    'Pressure',
+    'Tokens',
+    'Low Speed Rebound',
+    'High Speed Rebound',
+    'Compression'
+  ],
+  'Shock': ['Pressure', 'Rebound'],
+  'GeneralSettings': ['Reach', 'Stack Height'],
+});

@@ -1,4 +1,3 @@
-import '../../setups/models/setup_configuration.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firebase_operation.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -107,17 +106,8 @@ class FirestoreTestsRepository implements TestsRepository {
             }
           }
           if (newSetupId != null) {
-            tx.set(_bike(bike).collection('SetupList').doc(newSetupId), {
-              ...?test.setupInformation,
-              // Older experiments have no captured configuration. Reconstruct
-              // their selected fields from the saved values, never today's setup.
-              if (test.setupInformation == null)
-                SetupConfiguration.metadataKey: SetupConfiguration({
-                  for (final entry in test.values.entries)
-                    entry.key: entry.value.keys.toList(),
-                }).encode(),
-              'setup_name': newSetupName
-            });
+            tx.set(_bike(bike).collection('SetupList').doc(newSetupId),
+                {...test.setupInformation, 'setup_name': newSetupName});
             for (final entry in test.values.entries) {
               tx.set(_bike(bike).collection(newSetupId).doc(entry.key),
                   entry.value);
@@ -125,10 +115,6 @@ class FirestoreTestsRepository implements TestsRepository {
                   _bike(bike).collection(newSetupId).doc('${entry.key}_meta'),
                   test.fieldMetadata[entry.key] ?? <String, String>{});
             }
-          }
-          // Remove the legacy single-test pointer only for its own test.
-          if (baseline.data()?['activeTestId'] == id) {
-            tx.update(parent, {'activeTestId': FieldValue.delete()});
           }
           if (test.stage == TestStage.draft && !apply && newSetupId == null) {
             tx.delete(testRef);
@@ -149,7 +135,7 @@ class FirestoreTestsRepository implements TestsRepository {
       });
 
   /// Preparation performs reads and validation only. Rejected commands commit
-  /// no writes, and their Dart failures never cross the web SDK's JS boundary.
+  /// no writes; typed failures are returned outside the SDK transaction.
   Future<void> _writeTransaction(
           Future<void Function()> Function(Transaction tx) prepare) =>
       firebaseOperation(() async {

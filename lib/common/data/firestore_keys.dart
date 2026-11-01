@@ -37,7 +37,4 @@ abstract class FirestoreKeys {
   static const String stravaBikeName = 'strava_bike_name';
   static const String distanceMeters = 'distance_meters';
   static const String linkedBikeId = 'linked_bike_id';
-
-  // Mileage offset field (on bike document)
-  static const String mileageOffsetKm = 'mileage_offset_km';
 }

@@ -8,8 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:bikesetupapp/features/strava/models/strava_auth.dart';
 import 'package:bikesetupapp/features/strava/models/strava_exception.dart';
 import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.dart';
-import 'package:bikesetupapp/features/strava/platform/strava_web_callback_stub.dart'
-    if (dart.library.js_interop) 'package:bikesetupapp/features/strava/platform/strava_web_callback.dart';
 
 class StravaAuthService {
   StravaAuthService(
@@ -175,15 +173,6 @@ class StravaAuthService {
     return _userId() == owner ? token : null;
   }
 
-  Future<void> authorizeWeb() async {
-    ++_generation;
-    final owner = _userId();
-    if (owner == null) throw const AppFailure(FailureCode.authenticationFailed);
-    final state = _newState();
-    rememberStravaWebAuth(userId: owner, state: state);
-    openStravaAuthInTab(buildWebAuthUrl(state: state));
-  }
-
   String _authUrl(String redirect, String state) =>
       Uri.parse(_authorizeUrl).replace(queryParameters: {
         'client_id': _clientId,
@@ -194,12 +183,8 @@ class StravaAuthService {
         'state': state
       }).toString();
 
-  String buildWebAuthUrl({required String state}) =>
-      _authUrl('$_functionBase/stravaCallback', state);
-
   Future<void> clearAuth() async {
     ++_generation;
-    clearPendingStravaWebAuth();
     final owner = _userId();
     if (owner != null) await StravaTokenStorage.clearAuth(userId: owner);
   }

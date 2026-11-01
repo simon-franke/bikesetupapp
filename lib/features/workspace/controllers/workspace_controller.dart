@@ -1,6 +1,5 @@
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
-import 'package:bikesetupapp/features/setups/models/category.dart';
 import 'package:bikesetupapp/features/strava/controllers/strava_controller.dart';
 import '../models/active_view.dart';
 
@@ -16,14 +15,12 @@ class WorkspaceController extends OperationController {
         _bikeName = bikeName,
         _bikeId = bikeId,
         _setupName = setupName,
-        _setupId = setupId,
-        _category = Category.frontTire;
+        _setupId = setupId;
   final StravaController? _strava;
   String _bikeName;
   String _bikeId;
   String _setupName;
   String _setupId;
-  Category _category;
   ActiveView _activeView = ActiveView.setup;
   bool _serviceAlert = false;
   double? _mileageKm;
@@ -31,7 +28,6 @@ class WorkspaceController extends OperationController {
   String get bikeId => _bikeId;
   String get setupName => _setupName;
   String get setupId => _setupId;
-  Category get category => _category;
   ActiveView get activeView => _activeView;
   bool get serviceAlert => _serviceAlert;
   double? get mileageKm => _mileageKm;
@@ -42,16 +38,10 @@ class WorkspaceController extends OperationController {
     _bikeId = id;
     _setupName = setup;
     _setupId = setupID;
-    _category = Category.frontTire;
     _mileageKm = null;
     _serviceAlert = false;
     emit();
     return loadMileage();
-  }
-
-  void selectCategory(Category value) {
-    _category = value;
-    emit();
   }
 
   void selectView(ActiveView value) {

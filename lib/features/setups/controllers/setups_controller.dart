@@ -15,15 +15,14 @@ class SetupsController extends OperationController {
 
   Future<CommandResult<void>> setCategoryEnabled(
           String bike, String setup, String category, bool enabled,
-          {required Map<String, List<String>> legacyFields,
-          required Map<String, List<String>> addedFields}) =>
+          {required Map<String, List<String>> addedFields}) =>
       command(() => _categoryWrites.enqueue(() async {
             final information =
                 await _repository.getSetupInformation(bike, setup);
             final configuration =
                 SetupConfiguration.fromInformation(information);
             final fields = <String, List<String>>{
-              ...configuration?.fields ?? legacyFields,
+              ...configuration.fields,
             };
             final categories =
                 category == 'Tires' ? ['FrontTire', 'RearTire'] : [category];
@@ -43,14 +42,6 @@ class SetupsController extends OperationController {
           }));
   final Map<(String, String, String, String), SettingWriteQueue> _writes = {};
 
-  Future<CommandResult<void>> createSetup(
-    String uBikeID,
-    String uSetupID,
-    String setupName,
-    Map<String, String> setupInformation,
-  ) =>
-      command(() => SetupCreationService(_repository)
-          .create(uBikeID, uSetupID, setupName, setupInformation));
   Future<CommandResult<void>> updateSetupInformation(String bike, String setup,
           String name, Map<String, String> information) =>
       command(
@@ -69,19 +60,16 @@ class SetupsController extends OperationController {
           final information = current.isEmpty
               ? <String, dynamic>{}
               : await _repository.getSetupInformation(bike, current);
-          information.remove('activeTestId');
           await SetupCreationService(_repository).create(bike, id, name, {
             for (final entry in information.entries)
               if (entry.value is String) entry.key: entry.value as String,
-            'empty_values': 'true',
           });
           return;
         }
         final information = await _repository.getSetupInformation(bike, source);
-        information.remove('activeTestId');
         final categories = {
           ...Category.values.map((category) => category.category),
-          ...?SetupConfiguration.fromInformation(information)?.fields.keys,
+          ...SetupConfiguration.fromInformation(information).fields.keys,
         };
         for (final category in categories) {
           final values =

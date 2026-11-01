@@ -30,7 +30,6 @@ class BikeCreationDraft {
 
   Map<String, String> toSetupInformation() => {
     ...specifications,
-    'empty_values': 'true',
     SetupConfiguration.metadataKey: configuration.encode(),
   };
 }

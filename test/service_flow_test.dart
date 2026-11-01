@@ -158,8 +158,8 @@ void main() {
     expect(repo.baseline!.initialDistanceKm, 250);
     final restored = ServiceComponent.fromMap('part', repo.component!.toMap());
     expect(restored.customIcon, ServiceIcon.saddle);
-    final legacy = repo.component!.toMap()..remove('customIcon');
-    expect(ServiceComponent.fromMap('part', legacy).customIcon, isNull);
+    final withoutOptionalField = repo.component!.toMap()..remove('customIcon');
+    expect(ServiceComponent.fromMap('part', withoutOptionalField).customIcon, isNull);
     expect(tester.takeException(), isNull);
   });
 

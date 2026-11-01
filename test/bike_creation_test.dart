@@ -12,7 +12,6 @@ import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'support/fake_repositories.dart';
 
@@ -33,7 +32,6 @@ BikeCreationDraft coilDraft() => BikeCreationDraft(
     }));
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   test(
       'reviewed configuration creates only selected parts and no invented values',
       () async {
@@ -55,7 +53,7 @@ void main() {
     expect(setups.settings.values.every((value) => value.isEmpty), isTrue);
     final restored = SetupConfiguration.fromInformation(
         setups.information[created.setupId]!);
-    expect(restored!.fields, coilDraft().configuration.fields);
+    expect(restored.fields, coilDraft().configuration.fields);
     expect(setups.defaults[created.bikeId], created.setupId);
     controller.dispose();
   });

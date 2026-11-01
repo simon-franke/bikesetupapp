@@ -56,3 +56,6 @@ firebase_app_id_file.json
 
 # Node dependencies, including Firestore rules tests
 node_modules/
+
+# Regenerable Icon Composer and launch artwork previews
+/assets/app-icon/previews/

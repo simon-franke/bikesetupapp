@@ -8,7 +8,6 @@ import 'package:bikesetupapp/features/bikes/ui/bike_list.dart';
 import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
 import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:ui' show Tristate;
@@ -109,7 +108,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   testWidgets(
       'deleting the selected bike uses a sheet and selects its replacement',
       (tester) async {

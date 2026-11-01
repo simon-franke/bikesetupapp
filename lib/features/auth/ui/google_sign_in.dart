@@ -10,7 +10,6 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 
 import 'package:bikesetupapp/features/auth/ui/auth_alert_dialogs.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 const String _googleIconPath = 'assets/google_icon.png';
@@ -20,7 +19,7 @@ const String _appleIconPath = 'assets/apple_icon.png';
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
-  bool get _showAppleSignIn => kIsWeb || Platform.isIOS || Platform.isMacOS;
+  bool get _showAppleSignIn => Platform.isIOS || Platform.isMacOS;
 
   Future<void> _handleSignIn(
     BuildContext context,

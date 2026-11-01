@@ -11,22 +11,12 @@ class SettingSaveController extends OperationController {
   final SettingWriteQueue _writes;
   bool _saving = false;
   bool _failed = false;
-  bool _dirty = false;
   bool get saving => _saving;
   bool get failed => _failed;
-  bool get dirty => _dirty;
-  void markDirty() {
-    if (!isDisposed) {
-      _dirty = true;
-      emit();
-    }
-  }
-
   Future<CommandResult<void>> save(
           String value, Future<void> Function(String) write) =>
       command(() async {
         final generation = beginRequest('save');
-        _dirty = false;
         _saving = true;
         _failed = false;
         emit();

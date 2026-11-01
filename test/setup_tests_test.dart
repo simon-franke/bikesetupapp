@@ -12,14 +12,18 @@ import 'package:bikesetupapp/features/tests/ui/track_time_sheet.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
 import 'support/fake_repositories.dart';
 
-SetupTest sample({TestStage stage = TestStage.draft}) =>
-    SetupTest(id: 'test', name: 'Roots and braking', stage: stage, before: {
-      'FrontTire': {'Pressure': '22 psi'},
-      'Fork': {'Compression': '6 clicks'}
-    }, values: {
-      'FrontTire': {'Pressure': '21 psi'},
-      'Fork': {'Compression': '4 clicks'}
-    });
+SetupTest sample({TestStage stage = TestStage.draft}) => testExperiment(
+        id: 'test',
+        name: 'Roots and braking',
+        stage: stage,
+        before: {
+          'FrontTire': {'Pressure': '22 psi'},
+          'Fork': {'Compression': '6 clicks'}
+        },
+        values: {
+          'FrontTire': {'Pressure': '21 psi'},
+          'Fork': {'Compression': '4 clicks'}
+        });
 
 void main() {
   test('editing an experiment preserves baseline and protects logged rides',
@@ -87,7 +91,7 @@ void main() {
     await repo.updates.close();
   });
 
-  test('track times accept legacy seconds and exact milliseconds', () {
+  test('track times accept seconds and exact milliseconds', () {
     for (final time in ['03:42', '03:42.156', '00:00.000', '999:59.999']) {
       final feedback = RideFeedback(feeling: 'Same', time: time);
       expect(feedback.validationError, isNull);
@@ -158,12 +162,11 @@ void main() {
     setups.settings['bike/setup/Fork/Spring Rate'] = '65 N/mm';
     setups.metadata['bike/setup/Fork/Serial'] = 'freeText';
     final controller = TestsController(repo, setups);
-    final result = await controller.create('bike', 'setup', 'Coil',
-        ['FrontTire', 'RearTire', 'Fork', 'Shock', 'GeneralSettings']);
+    final result = await controller.create('bike', 'setup', 'Coil');
     expect(result.isSuccess, isTrue);
     final draft = repo.records.values.single;
     final restored = SetupTest.fromMap(draft.copyWith(name: 'Renamed').toMap());
-    expect(restored.setupInformation![SetupConfiguration.metadataKey],
+    expect(restored.setupInformation[SetupConfiguration.metadataKey],
         configuration.encode());
     expect(restored.fieldMetadata['Fork']!['Serial'], 'freeText');
     expect(draft.values.keys.toSet(), configuration.fields.keys.toSet());
@@ -181,10 +184,7 @@ void main() {
     setups.settings['bike/setup/FrontTire/Pressure'] = '22 psi';
     setups.settings['bike/setup/Fork/Compression'] = '6 clicks';
     final controller = TestsController(repo, setups);
-    expect(
-        (await controller
-                .create('bike', 'setup', 'Dry trails', ['FrontTire', 'Fork']))
-            .isSuccess,
+    expect((await controller.create('bike', 'setup', 'Dry trails')).isSuccess,
         isTrue);
     final draft = repo.records.values.single;
     await Future.wait([
@@ -197,7 +197,7 @@ void main() {
     expect(restored.changes, hasLength(2));
     expect(restored.before['FrontTire']!['Pressure'], '22 psi');
     expect(setups.settings['bike/setup/FrontTire/Pressure'], '22 psi');
-    await controller.create('bike', 'setup', 'Duplicate', ['FrontTire']);
+    await controller.create('bike', 'setup', 'Duplicate');
     expect(repo.records, hasLength(2));
     await controller.startTest('bike', 'setup', restored.id, restored.name);
     await controller.logRide(
@@ -226,7 +226,8 @@ void main() {
     expect((await controller.resumeTest('bike', 'setup', 'test')).isSuccess,
         isFalse);
     await Future.wait([
-      controller.renameDraft('bike', 'setup', 'test', 'Renamed'),
+      controller.renameExperiment(
+          'bike', 'setup', 'test', TestStage.draft, 'Renamed'),
       controller.updateField(
           'bike', 'setup', 'test', 'Fork', 'Compression', '3 clicks'),
       controller.startTest('bike', 'setup', 'test', 'Renamed'),
@@ -480,7 +481,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final repo = MemoryTests();
     repo.records['test'] = sample(stage: TestStage.ride);
-    repo.records['second'] = SetupTest(
+    repo.records['second'] = testExperiment(
         id: 'second',
         name: 'Softer tires',
         stage: TestStage.ride,

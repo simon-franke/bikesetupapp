@@ -3,13 +3,11 @@ import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/setups/ui/add_category_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   testWidgets(
       'add category shares suggestion rows and creates a named category',
       (tester) async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     String? selected;
     await tester.pumpWidget(MaterialApp(
       theme: AppTheme.darkTheme,

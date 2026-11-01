@@ -33,6 +33,7 @@ void main() {
           theme: AppTheme.darkTheme,
           home: Scaffold(
               body: SetupCategoryView(
+                  configuration: testSetupConfiguration,
                   user: MetadataUser(),
                   bike: 'bike',
                   setup: 'setup',
@@ -56,7 +57,7 @@ void main() {
       final setups = FakeSetupsRepository()
         ..settings['bike/setup/Custom/Serial'] = '123'
         ..metadata['bike/setup/Custom/Serial'] = 'freeText';
-      final draft = SetupTest(id: 'test', name: 'Test', before: {
+      final draft = testExperiment(id: 'test', name: 'Test', before: {
         'Custom': {'Serial': '123'}
       }, values: {
         'Custom': {'Serial': '123'}
@@ -79,6 +80,7 @@ void main() {
                           initial: draft,
                           nameFor: (test) => test.name)
                       : SetupCategoryView(
+                          configuration: testSetupConfiguration,
                           user: MetadataUser(),
                           bike: 'bike',
                           setup: 'setup',
@@ -111,7 +113,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final repo = MemoryTests()
-        ..records['test'] = SetupTest(id: 'test', name: 'Test', before: {
+        ..records['test'] = testExperiment(id: 'test', name: 'Test', before: {
           'FrontTire': {'Pressure': '22 psi'},
           'RearTire': {'Pressure': '25 psi'},
           'Fork': {'Compression': '4 clicks'}

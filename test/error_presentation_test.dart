@@ -4,7 +4,6 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -50,7 +49,6 @@ void main() {
     // without adding machine-specific assets or golden files to ordinary tests.
     final fontDir = Platform.environment['ERROR_PREVIEW_FONT_DIR'];
     if (fontDir == null) return;
-    GoogleFonts.config.allowRuntimeFetching = false;
     PathProviderPlatform.instance = _PreviewPaths(fontDir);
     for (final file in Directory(fontDir).listSync().whereType<File>()) {
       final name = file.uri.pathSegments.last;

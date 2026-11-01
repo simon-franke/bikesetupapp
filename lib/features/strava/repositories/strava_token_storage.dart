@@ -17,7 +17,7 @@ class StravaTokenStorage {
           key: 'strava_auth_$userId', value: jsonEncode(auth.toJson())));
 
   static Future<StravaAuth?> getAuth({required String userId}) async {
-    // Unscoped legacy credentials have no provable owner; never adopt them.
+    // Read only credentials owned by this Firebase user.
     final raw = await _writes.enqueue(() => platformOperation(
         () => _storage.read(key: 'strava_auth_$userId'),
         fallback: FailureCode.loadFailed));
@@ -35,6 +35,5 @@ class StravaTokenStorage {
 
   static Future<void> clearAuth({required String userId}) => _mutate(() async {
         await _storage.delete(key: 'strava_auth_$userId');
-        await _storage.delete(key: 'strava_auth');
       });
 }

@@ -4,8 +4,6 @@ import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
 import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
-import 'package:bikesetupapp/features/strava/platform/strava_web_callback_stub.dart'
-    if (dart.library.js_interop) 'package:bikesetupapp/features/strava/platform/strava_web_callback.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,15 +19,9 @@ void main() async {
 
   final dependencies = AppDependencies.instance;
   final user = dependencies.auth.currentUser;
-  // Validate the pending OAuth session against the restored Firebase user.
-  final bool newStravaAuth = await handleStravaWebCallback(userId: user?.uid);
   final selection = user == null
       ? null
       : await dependencies.forUser(user.uid).startup.loadSelection();
-  if (newStravaAuth && user != null) {
-    await dependencies.forUser(user.uid).strava.sync();
-  }
-
   final savedTheme = await dependencies.themePreferences.readTheme();
 
   runApp(Provider<AppDependencies>.value(

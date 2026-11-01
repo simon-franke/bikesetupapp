@@ -23,7 +23,6 @@ import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
 import 'package:bikesetupapp/features/maintenance/ui/services_view.dart';
 import 'package:bikesetupapp/features/workspace/ui/view_toggle.dart';
-import 'package:bikesetupapp/features/setups/models/category.dart';
 
 import 'dart:math' as math;
 
@@ -70,7 +69,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 .then(SetupConfiguration.fromInformation);
   }
 
-  Category get chosenCategory => _workspace.category;
   String get _bikeName => _workspace.bikeName;
   String get _uBikeID => _workspace.bikeId;
   String get _setupName => _workspace.setupName;
@@ -122,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildSetupView(BuildContext context, double contentWidth,
-          SetupConfiguration? configuration) =>
+          SetupConfiguration configuration) =>
       SetupOverview(
           key: ValueKey('$_uBikeID/$_uSetupID'),
           user: widget.user!,
@@ -143,10 +141,6 @@ class _MyHomePageState extends State<MyHomePage> {
               _uSetupID,
               category,
               enabled,
-              legacyFields: {
-                for (final key in setupCategories())
-                  key: kDefaultFieldKeys[key]!
-              },
               addedFields: kDefaultFieldKeys,
             ));
     if (saved && mounted) {
@@ -157,14 +151,15 @@ class _MyHomePageState extends State<MyHomePage> {
     return saved;
   }
 
-  Future<void> _addCategory(SetupConfiguration? configuration) async {
-    final active =
-        configuration?.fields.keys.toSet() ?? setupCategories().toSet();
+  Future<void> _addCategory(SetupConfiguration configuration) async {
+    final active = configuration.fields.keys.toSet();
     final category = await showAddCategorySheet(context, active);
     if (category == null || !mounted) return;
     if (await _changeCategory(category, true) && mounted) {
       final configuration = await _configurationFuture;
-      if (mounted) _openCategory(category, configuration);
+      if (mounted && configuration != null) {
+        _openCategory(category, configuration);
+      }
     }
   }
 
@@ -194,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _openCategory(String category, SetupConfiguration? configuration) {
+  void _openCategory(String category, SetupConfiguration configuration) {
     _contentNavigator.currentState!.push(AppRoutes.fadeSlide(Builder(
         builder: (routeContext) => Scaffold(
               extendBody: true,
@@ -380,7 +375,7 @@ class _MyHomePageState extends State<MyHomePage> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator.adaptive());
         }
-        if (snapshot.hasError) {
+        if (snapshot.hasError || !snapshot.hasData) {
           return Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Text('Could not load this setup.'),
@@ -392,13 +387,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text('Retry')),
           ]));
         }
-        return _buildWorkspace(context, contentWidth, snapshot.data);
+        return _buildWorkspace(context, contentWidth, snapshot.data!);
       },
     );
   }
 
   Widget _buildWorkspace(BuildContext context, double contentWidth,
-      SetupConfiguration? configuration) {
+      SetupConfiguration configuration) {
     return WorkspaceTransition(
       key: ValueKey('${widget.user!.uid}/$_uBikeID/$_uSetupID'),
       child: _activeView == ActiveView.setup

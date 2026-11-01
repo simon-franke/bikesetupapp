@@ -42,6 +42,8 @@ void main() {
         expect(
             request.queryParameters['redirect_uri'], 'bikesetup://localhost');
         expect(request.queryParameters['scope'], contains('activity:read_all'));
+        expect(request.queryParameters['approval_prompt'], 'force');
+        expect(request.queryParameters['state'], isNotEmpty);
         expect(callbackUrlScheme, 'bikesetup');
         return Uri.parse('bikesetup://localhost').replace(queryParameters: {
           'state': request.queryParameters['state']!,
@@ -216,7 +218,7 @@ void main() {
     expect(await auth.getValidToken(), 'renewed');
     expect(calls, 2);
   });
-  test('unowned legacy credentials are not adopted by a new user', () async {
+  test('credentials without an owner are not adopted by a user', () async {
     FlutterSecureStorage.setMockInitialValues(
         {'strava_auth': jsonEncode(expired.toJson())});
     expect(await StravaTokenStorage.getAuth(userId: 'user'), isNull);
@@ -296,11 +298,5 @@ void main() {
             currentTotalKm: 1000),
         850);
   });
-  test('authorization requests full activity scope and per-request state', () {
-    final auth = StravaAuthService(userId: () => 'user');
-    final url = Uri.parse(auth.buildWebAuthUrl(state: 'nonce'));
-    expect(url.queryParameters['state'], 'nonce');
-    expect(url.queryParameters['scope'], contains('activity:read_all'));
-    expect(url.queryParameters['approval_prompt'], 'force');
-  });
+
 }

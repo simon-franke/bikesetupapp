@@ -6,7 +6,6 @@ import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'support/fake_repositories.dart';
 
@@ -32,7 +31,6 @@ class DeletableSetupsRepository extends FakeSetupsRepository {
 void main() {
   testWidgets('default pressure can be deleted and added back from suggestions',
       (tester) async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     final repo = DeletableSetupsRepository()
       ..settings['bike/setup/FrontTire/Pressure'] = '24 psi'
       ..settings['bike/other/FrontTire/Pressure'] = '30 psi';
@@ -42,6 +40,7 @@ void main() {
         theme: AppTheme.darkTheme,
         home: Scaffold(
             body: SetupCategoryView(
+                  configuration: testSetupConfiguration,
           user: SheetUser(),
           bike: 'bike',
           setup: 'setup',
@@ -72,7 +71,6 @@ void main() {
   });
   testWidgets('suggestions hide existing settings and save only from editor',
       (tester) async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     final repo = FakeSetupsRepository()
       ..settings['bike/setup/Fork/High Speed Rebound'] = '2 clicks'
       ..settings['bike/setup/Fork/Sag'] = '  ';
@@ -107,7 +105,6 @@ void main() {
   for (final category in ['Fork', 'No suggestions']) {
     testWidgets('opens new setting directly for $category with no suggestions',
         (tester) async {
-      GoogleFonts.config.allowRuntimeFetching = false;
       final repo = FakeSetupsRepository();
       for (final key in {
         ...?kDefaultFieldKeys[category],

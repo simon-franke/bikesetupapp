@@ -4,7 +4,6 @@ class AppColors {
   AppColors._();
 
   static const Color blue = Color(0xFF4D7EA8);
-  static const Color blueDeep = Color(0xFF3B4D53);
 
   static const Color darkBg = Color(0xFF111E32);
   static const Color darkSurface = Color(0xFF203550);
@@ -410,10 +409,6 @@ class AppTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
-      ),
-      drawerTheme: DrawerThemeData(
-        backgroundColor: p.surface,
-        scrimColor: Colors.black.withValues(alpha: 0.5),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: p.surface,

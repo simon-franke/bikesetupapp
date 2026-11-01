@@ -4,7 +4,6 @@ import '../models/strava_bike.dart';
 abstract interface class StravaRepository {
   Future<StravaAuth?> getAuth();
   Future<StravaAuth?> authorize();
-  Future<void> authorizeWeb();
   Future<void> deauthorize();
   Future<void> clearAuth();
   Future<String?> getValidToken();

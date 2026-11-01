@@ -1,6 +1,5 @@
 const STRAVA_CLIENT_ID = '214695';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
-const APP_BASE_URL = 'https://simon-franke.github.io/bikesetupapp/';
 
 // The refresh token is a bearer credential. Never log it or include it in URLs.
 function createStravaHandlers({ clientSecret, fetchToken = fetch }) {
@@ -22,35 +21,7 @@ function createStravaHandlers({ clientSecret, fetchToken = fetch }) {
     return json;
   }
 
-  function redirect(res, state, payload) {
-    const url = new URL(APP_BASE_URL);
-    url.searchParams.set('strava_auth', payload);
-    url.searchParams.set('strava_state', state);
-    res.set('Cache-Control', 'no-store');
-    res.set('Referrer-Policy', 'no-referrer');
-    res.redirect(302, url.toString());
-  }
-
   return {
-    async callback(req, res) {
-      const { code, state, scope, error } = req.query;
-      if (req.method !== 'GET') return res.status(405).send('Method not allowed');
-      if (typeof state !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(state)) {
-        return res.status(400).send('Invalid OAuth state');
-      }
-      if (error === 'access_denied') return redirect(res, state, 'error');
-      if (typeof code !== 'string' || !code) {
-        return res.status(400).send('Missing required parameter: code');
-      }
-      try {
-        const json = await exchange({ code, grant_type: 'authorization_code' });
-        // Granted scopes arrive on the OAuth redirect, not reliably in tokens.
-        json.scope = typeof scope === 'string' ? scope : '';
-        redirect(res, state, Buffer.from(JSON.stringify(json)).toString('base64url'));
-      } catch (_) {
-        redirect(res, state, 'error');
-      }
-    },
     async nativeExchange(req, res) {
       res.set('Cache-Control', 'no-store');
       if (req.method !== 'POST') return res.status(405).send('Method not allowed');

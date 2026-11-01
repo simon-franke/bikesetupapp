@@ -105,18 +105,18 @@ void main() {
       expect((await controller.save([ride('invalid', km)])).isSuccess, isFalse);
     }
     expect(repo.saved.length, 1);
-    final legacy = Ride.fromMap(
-        'legacy',
+    final withoutOptionalField = Ride.fromMap(
+        'withoutOptionalField',
         Ride(
-                id: 'legacy',
+                id: 'withoutOptionalField',
                 bikeId: 'bike',
                 startedAt: date,
                 durationSeconds: 3600,
                 source: 'manual')
             .toMap()
           ..remove('distanceInStrava'));
-    expect(legacy.distanceKm, isNull);
-    expect(legacy.distanceInStrava, isFalse);
+    expect(withoutOptionalField.distanceKm, isNull);
+    expect(withoutOptionalField.distanceInStrava, isFalse);
   });
 
   for (final mode in ['distance', 'time', 'both']) {
