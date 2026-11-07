@@ -1,14 +1,13 @@
 import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
-import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
+import 'package:bikesetupapp/features/auth/ui/session_landing.dart';
+import 'package:bikesetupapp/features/auth/controllers/auth_controller.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -18,10 +17,6 @@ void main() async {
   );
 
   final dependencies = AppDependencies.instance;
-  final user = dependencies.auth.currentUser;
-  final selection = user == null
-      ? null
-      : await dependencies.forUser(user.uid).startup.loadSelection();
   final savedTheme = await dependencies.themePreferences.readTheme();
 
   runApp(Provider<AppDependencies>.value(
@@ -30,56 +25,64 @@ void main() async {
           create: (context) => AppStateNotifier(
               AppStateNotifier.fromSaved(savedTheme),
               preferences: dependencies.themePreferences),
-          child: MyApp(
-            isSignedIn: selection != null,
-            user: AppDependencies.instance.auth.currentUser,
-            defaultBikeID: selection?.bikeId ?? '',
-            defaultBike: selection?.bikeName ?? '',
-            defaultSetupID: selection?.setupId ?? '',
-            defaultSetup: selection?.setupName ?? '',
-          ))));
+          child: const MyApp())));
 }
 
-class MyApp extends StatelessWidget {
-  final bool isSignedIn;
-  final User? user;
-  final String defaultBikeID;
-  final String defaultBike;
-  final String defaultSetupID;
-  final String defaultSetup;
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
 
-  const MyApp(
-      {super.key,
-      required this.isSignedIn,
-      required this.user,
-      required this.defaultBikeID,
-      required this.defaultBike,
-      required this.defaultSetupID,
-      required this.defaultSetup});
+class _MyAppState extends State<MyApp> {
+  late final AuthController auth = AppDependencies.of(context).auth;
+  GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  String? _session;
+  bool _deleteAccount = Uri.base.queryParameters['action'] == 'delete-account';
+
+  String get session =>
+      '${auth.currentUser?.uid}/${auth.currentUser?.isAnonymous}';
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AppStateNotifier>(
-      builder: (context, appState, child) {
-        return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            builder: (context, child) => PhoneViewport(child: child!),
-            title: "Clickwise",
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: appState.themeMode,
-            themeAnimationDuration: const Duration(milliseconds: 240),
-            themeAnimationCurve: Curves.easeOutCubic,
-            home: isSignedIn
-                ? MyHomePage(
-                    user: user,
-                    bikeName: defaultBike,
-                    uBikeID: defaultBikeID,
-                    setupName: defaultSetup,
-                    uSetupID: defaultSetupID,
-                  )
-                : const LoginPage());
-      },
-    );
+  void initState() {
+    super.initState();
+    _session = session;
+    auth.addListener(_changed);
   }
+
+  void _changed() {
+    if (session == _session || !mounted) return;
+    setState(() {
+      if (auth.currentUser == null) _deleteAccount = false;
+      _session = session;
+      // Replace every route, including root sheets and workspace navigators.
+      _navigatorKey = GlobalKey<NavigatorState>();
+    });
+  }
+
+  @override
+  void dispose() {
+    auth.removeListener(_changed);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Consumer<AppStateNotifier>(
+        builder: (context, appState, child) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) => PhoneViewport(child: child!),
+          title: 'Clickwise',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: appState.themeMode,
+          themeAnimationDuration: const Duration(milliseconds: 240),
+          themeAnimationCurve: Curves.easeOutCubic,
+          home: SessionLanding(
+              key: ValueKey(_session),
+              user: auth.currentUser,
+              deleteAccount: _deleteAccount,
+              onCancelDeletion: () => setState(() => _deleteAccount = false)),
+        ),
+      );
 }

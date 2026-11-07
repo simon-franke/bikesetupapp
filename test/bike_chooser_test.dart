@@ -128,7 +128,7 @@ void main() {
                 selected = [name, bike, setupName, setup]))));
     await tester.pumpAndSettle();
     Future<void> openConfirmation() async {
-      await tester.tap(find.byTooltip('Bike options'));
+      await tester.tap(find.byTooltip('Bike options').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete bike'));
       await tester.pumpAndSettle();
@@ -177,7 +177,7 @@ void main() {
     ));
     await tester.tap(find.text('Choose bike'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Bike options'));
+    await tester.tap(find.byTooltip('Bike options').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete bike'));
     await tester.pumpAndSettle();
@@ -218,7 +218,7 @@ void main() {
     expect(bikes.selectedBike, 'other');
     expect(tester.takeException(), isNull);
   });
-  testWidgets('bike accordion animates height without reloading setup streams',
+  testWidgets('bike sections show setups directly and keep stable streams',
       (tester) async {
     final setups = ChooserSetups();
     final dependencies = AppDependencies(
@@ -237,19 +237,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.text('Current bike')).dy,
         lessThan(tester.getTopLeft(find.text('Other bike')).dy));
-    final card = find.byKey(const Key('current'));
-    final expanded = tester.getSize(card).height;
-    await tester.tap(find.text('Current bike'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 120));
-    final middle = tester.getSize(card).height;
-    await tester.pumpAndSettle();
-    final collapsed = tester.getSize(card).height;
-    expect(middle, lessThan(expanded));
-    expect(middle, greaterThan(collapsed));
-    await tester.tap(find.text('Current bike'));
-    await tester.pumpAndSettle();
     expect(find.text('current setup'), findsOneWidget);
+    expect(find.text('other setup'), findsOneWidget);
+    await tester.pump();
     expect(setups.subscriptions, {'current': 1, 'other': 1});
     expect(tester.takeException(), isNull);
   });

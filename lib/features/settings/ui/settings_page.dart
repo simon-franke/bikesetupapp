@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/features/auth/ui/delete_account_page.dart';
+import 'package:bikesetupapp/features/auth/ui/privacy_page.dart';
 import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'theme_selector.dart';
@@ -70,31 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final p = context.palette;
     return Scaffold(
       backgroundColor: p.bg,
-      appBar: AppBar(
-        backgroundColor: p.bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(children: [
-            _IconBtn(
-              icon: CupertinoIcons.xmark,
-              onTap: () {
-                if (user == null) {
-                  Navigator.of(context)
-                      .push(AppRoutes.fadeSlide(const LoginPage()));
-                } else {
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-            const SizedBox(width: 12),
-            Text('Settings', style: AppTextStyles.label.copyWith(color: p.ink)),
-          ]),
-        ),
-      ),
+      appBar: buildDetailAppBar(context, title: 'Settings'),
       body: SafeArea(
           top: false,
           child: SizedBox(
@@ -111,23 +89,60 @@ class _SettingsPageState extends State<SettingsPage> {
                     onSignOut: _onSignOut,
                     onSignIn: _onSignIn,
                   )),
+                  if (user?.isAnonymous == true)
+                    Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                            onPressed: _onSignOut,
+                            child: const Text('Leave guest session'))),
                   _SectionLabel('Integrations'),
                   _SettingsCard(
-                    child: _StravaCard(
-                      isConnected: _isStravaConnected,
-                      athleteId: _stravaAthleteId,
-                      bikeCount: _stravaBikeCount,
-                      onConnect: _connectStrava,
-                      onDisconnect: _disconnectStrava,
-                      onManageBikes: () {
-                        if (user != null) {
-                          Navigator.of(context).push(
-                            AppRoutes.fadeSlide(BikeMatchingPage(user: user!)),
-                          );
-                        }
-                      },
-                    ),
+                    child: user == null || user!.isAnonymous
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                                const Text('Track mileage automatically',
+                                    style: AppTextStyles.label),
+                                const SizedBox(height: 8),
+                                const Text(
+                                    'Save your bikes to an account, then connect Strava to sync ride distances.'),
+                                const SizedBox(height: 12),
+                                AppActionButton(
+                                    label: 'Save to an account',
+                                    onPressed: _onSignIn),
+                              ])
+                        : _StravaCard(
+                            isConnected: _isStravaConnected,
+                            athleteId: _stravaAthleteId,
+                            bikeCount: _stravaBikeCount,
+                            onConnect: _connectStrava,
+                            onDisconnect: _disconnectStrava,
+                            onManageBikes: () {
+                              if (user != null) {
+                                Navigator.of(context).push(
+                                  AppRoutes.fadeSlide(
+                                      BikeMatchingPage(user: user!)),
+                                );
+                              }
+                            },
+                          ),
                   ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Privacy policy'),
+                      trailing: const Icon(CupertinoIcons.chevron_right),
+                      onTap: () => Navigator.of(context)
+                          .push(AppRoutes.fadeSlide(const PrivacyPage()))),
+                  ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Delete account',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error)),
+                      onTap: _controller.isBusy
+                          ? null
+                          : () => Navigator.of(context).push(
+                              AppRoutes.fadeSlide(const DeleteAccountPage()))),
                 ],
               ))),
     );
@@ -144,7 +159,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _onSignIn() {
-    Navigator.of(context).push(AppRoutes.fadeSlide(const LoginPage()));
+    Navigator.of(context, rootNavigator: true).push(
+        AppRoutes.fadeSlide(LoginPage(upgrade: user?.isAnonymous == true)));
   }
 }
 
@@ -167,7 +183,7 @@ class _SettingsCard extends StatelessWidget {
     final p = context.palette;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: p.surface,
         border: Border.all(color: p.border),
@@ -200,7 +216,7 @@ class _AccountRow extends StatelessWidget {
 
   String _initials(User u) {
     final name = u.displayName?.trim() ?? '';
-    if (name.isEmpty) return u.isAnonymous ? 'AN' : '?';
+    if (name.isEmpty) return u.isAnonymous ? 'G' : '?';
     final parts = name.split(' ').where((s) => s.isNotEmpty).toList();
     if (parts.length == 1) {
       return parts.first
@@ -216,67 +232,64 @@ class _AccountRow extends StatelessWidget {
     final p = context.palette;
     final u = user;
     final name = u == null
-        ? 'No User'
-        : (u.displayName ?? (u.isAnonymous ? 'Anonymous' : 'Signed in'));
+        ? 'Signed out'
+        : (u.displayName ?? (u.isAnonymous ? 'Guest' : 'Signed in'));
     final email = u?.email ?? '';
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: p.accent,
-            image: (u?.photoURL != null)
-                ? DecorationImage(
-                    image: NetworkImage(u!.photoURL!), fit: BoxFit.cover)
+        Row(children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: p.accent,
+              image: (u?.photoURL != null)
+                  ? DecorationImage(
+                      image: NetworkImage(u!.photoURL!), fit: BoxFit.cover)
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: (u?.photoURL == null)
+                ? Text(
+                    u == null ? '?' : _initials(u),
+                    style: AppTextStyles.label.copyWith(color: p.accentInk),
+                  )
                 : null,
           ),
-          alignment: Alignment.center,
-          child: (u?.photoURL == null)
-              ? Text(
-                  u == null ? '?' : _initials(u),
-                  style: AppTextStyles.label.copyWith(color: p.accentInk),
-                )
-              : null,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                name,
-                style: AppTextStyles.label.copyWith(color: p.ink),
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (email.isNotEmpty)
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  email,
-                  style: AppTextStyles.caption.copyWith(color: p.inkMuted),
-                  overflow: TextOverflow.ellipsis,
+                  name,
+                  style: AppTextStyles.label.copyWith(color: p.ink),
                 ),
-            ],
+                if (email.isNotEmpty)
+                  Text(
+                    email,
+                    style: AppTextStyles.caption.copyWith(color: p.inkMuted),
+                  ),
+              ],
+            ),
           ),
-        ),
-        _OutlineChip(
-          label: u == null ? 'Sign in' : 'Sign out',
-          onTap: u == null ? onSignIn : () => onSignOut(),
-        ),
+        ]),
+        const SizedBox(height: 8),
+        Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+                onPressed:
+                    u == null || u.isAnonymous ? onSignIn : () => onSignOut(),
+                child: Text(u == null
+                    ? 'Sign in'
+                    : u.isAnonymous
+                        ? 'Save account'
+                        : 'Sign out'))),
       ],
     );
-  }
-}
-
-class _OutlineChip extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _OutlineChip({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppActionButton(label: label, onPressed: onTap, outlined: true);
   }
 }
 
@@ -387,16 +400,5 @@ class _OutlineButton extends StatelessWidget {
         width: double.infinity,
         child: AppActionButton(
             label: label, icon: icon, onPressed: onTap, outlined: true));
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(onPressed: onTap, icon: Icon(icon));
   }
 }

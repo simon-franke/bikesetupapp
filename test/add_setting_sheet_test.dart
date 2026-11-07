@@ -51,7 +51,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pressure'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Delete field'));
+    expect(find.text('Delete field'), findsNothing);
+    await tester.tap(find.byTooltip('Setting options'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Delete field'));
     await tester.pumpAndSettle();
     expect(repo.settings['bike/setup/FrontTire/Pressure'], '24 psi');

@@ -68,26 +68,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
     final p = context.palette;
     return Scaffold(
       backgroundColor: p.bg,
-      appBar: AppBar(
-        backgroundColor: p.bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: _IconBtn(
-              icon: CupertinoIcons.chevron_back,
-              onTap: () => Navigator.of(context).pop(),
-            ),
-          ),
-        ),
-        leadingWidth: 60,
-        title: Text(
-          'Link Strava Bikes',
-          style: AppTextStyles.label.copyWith(color: p.ink),
-        ),
-      ),
+      appBar: buildDetailAppBar(context, title: 'Link Strava bikes'),
       body: _buildBody(p),
     );
   }
@@ -123,7 +104,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 60),
         children: [
-          _SectionLabel('Strava Bikes'),
+          _SectionLabel('Strava bikes'),
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
             decoration: BoxDecoration(
@@ -165,7 +146,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 60),
       children: [
-        _SectionLabel('Strava Bikes'),
+        _SectionLabel('Strava bikes'),
         ..._stravaBikes.map((strava) => _BikeMatchCard(
               strava: strava,
               appBikes: _appBikes,
@@ -175,26 +156,16 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
               },
             )),
         const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              flex: 1,
-              child: _OutlineButton(
-                icon: CupertinoIcons.arrow_clockwise,
-                label: 'Resync',
-                onTap: _manualSync,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              flex: 2,
-              child: _PrimaryButton(
-                icon: CupertinoIcons.link,
-                label: 'Save Links',
-                onTap: _saveLinks,
-              ),
-            ),
-          ],
+        _PrimaryButton(
+          icon: CupertinoIcons.link,
+          label: 'Save links',
+          onTap: _saveLinks,
+        ),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          icon: const Icon(CupertinoIcons.arrow_clockwise),
+          label: const Text('Resync'),
+          onPressed: _manualSync,
         ),
       ],
     );
@@ -235,41 +206,18 @@ class _BikeMatchCard extends StatelessWidget {
               Icon(CupertinoIcons.flame,
                   size: AppIconSizes.compact, color: p.accentText),
               const SizedBox(width: 5),
-              Text(
-                'Strava bike mileage'.toUpperCase(),
+              Expanded(
+                  child: Text(
+                'Strava bike mileage',
                 style: AppTextStyles.caption.copyWith(color: p.inkDim),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  strava.name,
-                  style: AppTextStyles.label.copyWith(color: p.ink),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    kmText,
-                    style: AppTextStyles.label.copyWith(color: p.ink),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'km',
-                    style: AppTextStyles.caption.copyWith(color: p.inkMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          Text(strava.name, style: AppTextStyles.label.copyWith(color: p.ink)),
+          const SizedBox(height: 6),
+          Text('$kmText km',
+              style: AppTextStyles.body.copyWith(color: p.inkMuted)),
           const SizedBox(height: 12),
           Text(
             'Linked app bike'.toUpperCase(),
@@ -354,16 +302,5 @@ class _PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppActionButton(label: label, icon: icon, onPressed: onTap);
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(onPressed: onTap, icon: Icon(icon));
   }
 }

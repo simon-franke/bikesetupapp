@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../common/theme/theme_data.dart';
 
-/// Keeps bike identity stable while the selected tab changes its main value.
+/// Keeps bike identity prominent while the selected tab changes its context.
 class WorkspaceTitle extends StatelessWidget {
   const WorkspaceTitle(
       {super.key,
@@ -22,7 +22,7 @@ class WorkspaceTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final value = bikeOnly ? activitySummary ?? 'No rides yet' : setupName;
-    final titleStyle = AppTextStyles.heading
+    final titleStyle = AppTextStyles.label
         .copyWith(color: p.ink)
         .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Column(
@@ -30,9 +30,7 @@ class WorkspaceTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(bikeName,
-            style: AppTextStyles.caption.copyWith(color: p.inkMuted),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis),
+            style: titleStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),
         AnimatedSwitcher(
           duration: MediaQuery.disableAnimationsOf(context)
@@ -48,10 +46,10 @@ class WorkspaceTitle extends StatelessWidget {
                       key: const ValueKey('activity-odometer'),
                       mileageKm: mileageKm,
                       hours: hours,
-                      style: titleStyle)
+                      style: AppTextStyles.caption.copyWith(color: p.inkMuted))
                   : Text(value,
                       key: ValueKey(value),
-                      style: titleStyle,
+                      style: AppTextStyles.caption.copyWith(color: p.inkMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
         ),

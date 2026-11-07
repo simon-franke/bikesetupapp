@@ -59,55 +59,76 @@ class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
     final p = context.palette;
     final bottom =
         (MediaQuery.viewPaddingOf(context).bottom - 12).clamp(8.0, 24.0);
-    return Padding(
-        key: const ValueKey('navigation-inset'),
-        padding: EdgeInsets.fromLTRB(20, 8, 20, bottom),
-        child: AppGlassSurface(
-            child: TabBar(
-                controller: _controller,
-                onTap: (index) {
-                  if (index != widget.activeView.index) AppHaptics.selection();
-                  widget.onChanged(ActiveView.values[index]);
-                },
-                dividerColor: Colors.transparent,
-                labelColor: p.accentText,
-                unselectedLabelColor: p.inkMuted,
-                labelStyle: AppTextStyles.caption,
-                unselectedLabelStyle: AppTextStyles.caption,
-                labelPadding: EdgeInsets.zero,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicator: BoxDecoration(
-                    color: p.accentText.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(25)),
-                splashFactory: NoSplash.splashFactory,
-                overlayColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.pressed)
-                        ? Colors.transparent
-                        : null),
-                tabs: [
-              const Tab(
-                  height: 64,
-                  iconMargin: EdgeInsets.only(bottom: 5),
-                  icon: Icon(CupertinoIcons.slider_horizontal_3,
-                      size: AppIconSizes.navigation),
-                  text: 'Setup'),
-              const Tab(
-                  height: 64,
-                  iconMargin: EdgeInsets.only(bottom: 5),
-                  icon: Icon(CupertinoIcons.lab_flask,
-                      size: AppIconSizes.navigation),
-                  text: 'Experiments'),
-              Tab(
-                  height: 64,
-                  iconMargin: const EdgeInsets.only(bottom: 5),
-                  icon: const Icon(CupertinoIcons.wrench,
-                      size: AppIconSizes.navigation),
-                  child: Text('Service',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      semanticsLabel: widget.showServiceAlert
-                          ? 'Service, maintenance due'
-                          : 'Service')),
-            ])));
+    return Stack(children: [
+      Positioned.fill(
+        child: IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [p.bg, p.bg, p.bg.withValues(alpha: 0)],
+                stops: const [0, .7, 1],
+              ),
+            ),
+          ),
+        ),
+      ),
+      Padding(
+          key: const ValueKey('navigation-inset'),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, bottom),
+          child: AppGlassSurface(
+              child: TabBar(
+                  controller: _controller,
+                  onTap: (index) {
+                    if (index != widget.activeView.index) {
+                      AppHaptics.selection();
+                    }
+                    widget.onChanged(ActiveView.values[index]);
+                  },
+                  dividerColor: Colors.transparent,
+                  labelColor: p.accentText,
+                  unselectedLabelColor: p.inkMuted,
+                  labelStyle: AppTextStyles.caption,
+                  unselectedLabelStyle: AppTextStyles.caption,
+                  labelPadding: EdgeInsets.zero,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                      color: p.accentText.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(25)),
+                  splashFactory: NoSplash.splashFactory,
+                  overlayColor: WidgetStateProperty.resolveWith((states) =>
+                      states.contains(WidgetState.pressed)
+                          ? Colors.transparent
+                          : null),
+                  tabs: [
+                const Tab(
+                    height: 64,
+                    iconMargin: EdgeInsets.only(bottom: 5),
+                    icon: Icon(CupertinoIcons.slider_horizontal_3,
+                        size: AppIconSizes.navigation),
+                    text: 'Setup'),
+                const Tab(
+                    height: 64,
+                    iconMargin: EdgeInsets.only(bottom: 5),
+                    icon: Icon(CupertinoIcons.lab_flask,
+                        size: AppIconSizes.navigation),
+                    text: 'Experiments'),
+                Tab(
+                    height: 64,
+                    iconMargin: const EdgeInsets.only(bottom: 5),
+                    icon: Badge(
+                        isLabelVisible: widget.showServiceAlert,
+                        backgroundColor: p.red,
+                        child: const Icon(CupertinoIcons.wrench,
+                            size: AppIconSizes.navigation)),
+                    child: Text('Service',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        semanticsLabel: widget.showServiceAlert
+                            ? 'Service, maintenance due'
+                            : 'Service')),
+              ]))),
+    ]);
   }
 }

@@ -40,9 +40,16 @@ class SettingsController extends OperationController {
     emit();
   }
 
+  void _requireAccount() {
+    if (_auth.currentUser == null || _auth.currentUser!.isAnonymous) {
+      throw const AppFailure(FailureCode.authenticationFailed);
+    }
+  }
+
   Future<CommandResult<void>> connect() => share(
       'connect',
       () => command(() async {
+            _requireAccount();
             final generation = beginRequest('state');
             final auth = (await _connection.authorize()).requireValue();
             _check(generation);

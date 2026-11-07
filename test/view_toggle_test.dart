@@ -27,6 +27,7 @@ void main() {
 
     expect(find.text('Setup'), findsOneWidget);
     expect(find.text('Service'), findsOneWidget);
+    expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isTrue);
     expect(
         tester
             .getSemantics(find.bySemanticsLabel(RegExp(r'^Setup')))
@@ -37,7 +38,8 @@ void main() {
 
     expect(
         tester
-            .getSemantics(find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
+            .getSemantics(
+                find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
             .getSemanticsData()
             .hasAction(SemanticsAction.tap),
         isTrue);
@@ -47,7 +49,8 @@ void main() {
     expect(activeView, ActiveView.services);
     expect(
         tester
-            .getSemantics(find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
+            .getSemantics(
+                find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
             .getSemanticsData()
             .flagsCollection
             .isSelected,

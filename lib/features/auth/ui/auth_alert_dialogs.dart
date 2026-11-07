@@ -1,86 +1,34 @@
-import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/dialog_helpers.dart';
-import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
-import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
-import 'package:bikesetupapp/features/bikes/ui/new_bike_bottom_sheet.dart';
+import 'google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthAlerts {
-  static Future<void> handleAuthentication(
-      UserCredential userCredential, BuildContext context) async {
-    User? user = AppDependencies.of(context).auth.currentUser;
-
-    if (user != null &&
-        userCredential.additionalUserInfo != null &&
-        userCredential.additionalUserInfo!.isNewUser) {
-      if (!context.mounted) return;
-      showNewBikeSheet(context, user, NewBikeMode.newBike,
-          onBikeSelected: (bikeName, uBikeID, setupName, uSetupID) {
-        Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
-          user: user,
-          bikeName: bikeName,
-          uBikeID: uBikeID,
-
-          setupName: setupName,
-          uSetupID: uSetupID,
-        )));
-      });
-      return;
-    }
-    if (user == null) {
-      if (!context.mounted) return;
-      generalError(context, 'Error: No User');
-      return;
-    }
-    final selection = await AppDependencies.of(context)
-        .forUser(user.uid)
-        .startup
-        .loadSelection();
-    if (selection == null) {
-      if (!context.mounted) return;
-      showNewBikeSheet(context, user, NewBikeMode.newBike,
-          onBikeSelected: (bikeName, uBikeID, setupName, uSetupID) {
-        Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
-          user: user,
-          bikeName: bikeName,
-          uBikeID: uBikeID,
-
-          setupName: setupName,
-          uSetupID: uSetupID,
-        )));
-      });
-      return;
-    }
-    if (!context.mounted) return;
-    Navigator.of(context).push(AppRoutes.fadeSlide(MyHomePage(
-      user: user,
-      bikeName: selection.bikeName,
-      uBikeID: selection.bikeId,
-
-      setupName: selection.setupName,
-      uSetupID: selection.setupId,
-    )));
-  }
-
   static Future<bool?> signOutAnonymous(BuildContext context, User user) async {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
         return WorkshopDialog(
-          title: 'Sign out',
+          title: 'Leave without saving?',
           content: const Text(
-            'Are you sure you want to sign out of your anonymous account? This may result in a loss of data.',
+            'Your guest bikes cannot be recovered after you sign out. Save them to an account before leaving.',
           ),
           actions: [
+            DialogPrimaryButton(
+                label: 'Save to an account',
+                onPressed: () {
+                  Navigator.of(ctx).pop(false);
+                  Navigator.of(context, rootNavigator: true).push(
+                      AppRoutes.fadeSlide(const LoginPage(upgrade: true)));
+                }),
             DialogSecondaryButton(
-              label: 'No',
+              label: 'Stay here',
               onPressed: () => Navigator.of(ctx).pop(false),
             ),
-            DialogPrimaryButton(
-              label: 'Sign out',
+            DialogSecondaryButton(
+              label: 'Leave guest session',
               onPressed: () {
                 Navigator.of(ctx).pop(true);
               },

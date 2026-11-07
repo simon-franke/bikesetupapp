@@ -8,4 +8,11 @@ abstract interface class AuthRepository {
   Future<UserCredential> signUpWithEmail(String email, String password);
   Future<UserCredential> signInAnonymously();
   Future<void> signOut();
+  Future<void> resetPassword(String email);
+  Future<void> deleteAccount({String? password});
+}
+
+/// Optional live session source for repositories backed by an auth SDK.
+abstract interface class AuthSessionEvents {
+  Stream<User?> get userChanges;
 }

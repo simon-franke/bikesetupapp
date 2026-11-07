@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
@@ -16,16 +17,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class BikeList extends StatefulWidget {
+  final FutureOr<void> Function()? onNoBikes;
+  final VoidCallback? onDeletionStarted;
   final User? user;
   final bool bikesOnly;
   final String selectedBikeId;
   final String selectedSetupId;
   final void Function(String, String, String, String) onSetupDetails;
-  final void Function(String, String, String, String) onBikeSelected;
+  final FutureOr<void> Function(String, String, String, String) onBikeSelected;
 
   const BikeList({
     super.key,
     required this.user,
+    this.onNoBikes,
+    this.onDeletionStarted,
     this.bikesOnly = false,
     required this.selectedBikeId,
     required this.selectedSetupId,
@@ -39,8 +44,6 @@ class BikeList extends StatefulWidget {
 
 class _BikeListState extends State<BikeList> {
   late Stream<List<Bike>> _bikesStream;
-  String? _expandedBikeId;
-  bool _didInitExpansion = false;
 
   @override
   void initState() {
@@ -94,26 +97,15 @@ class _BikeListState extends State<BikeList> {
           ...snapshot.data!.where((bike) => bike.id == widget.selectedBikeId),
           ...snapshot.data!.where((bike) => bike.id != widget.selectedBikeId),
         ];
-        if (!_didInitExpansion) {
-          _didInitExpansion = true;
-          for (final d in docs) {
-            final b = d;
-            if (b.id == widget.selectedBikeId) {
-              _expandedBikeId = b.id;
-              break;
-            }
-          }
-        }
         return ListView.separated(
           shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(top: 16),
+          padding: EdgeInsets.zero,
           itemCount: docs.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          separatorBuilder: (_, __) => const SizedBox(height: 24),
           itemBuilder: (context, index) {
             final bike = docs[index];
             final active = bike.id == widget.selectedBikeId;
-            final expanded = _expandedBikeId == bike.id;
             if (widget.bikesOnly) {
               return Material(
                 color: active ? p.bg : Colors.transparent,
@@ -154,14 +146,10 @@ class _BikeListState extends State<BikeList> {
             return _BikeCard(
               bike: bike,
               user: widget.user!,
-              expanded: expanded,
-              onToggleExpand: () => setState(
-                () => _expandedBikeId = expanded ? null : bike.id,
-              ),
               onSelectSetup: widget.onBikeSelected,
               selectedSetupId: active ? widget.selectedSetupId : null,
               onSetupDetails: widget.onSetupDetails,
-              onConfirmDeleteBike: () => _confirmDeleteBike(bike, docs.length),
+              onConfirmDeleteBike: () => _confirmDeleteBike(bike),
             );
           },
         );
@@ -169,35 +157,33 @@ class _BikeListState extends State<BikeList> {
     );
   }
 
-  Future<bool> _confirmDeleteBike(Bike bike, int total) async {
-    if (total <= 1) {
-      BikeAlerts.deleteError(context, 'Bike');
-      return false;
-    }
-    final confirmed = await showDeleteConfirmationSheet(
+  Future<bool> _confirmDeleteBike(Bike bike) async {
+    final replaceSelection = bike.id == widget.selectedBikeId;
+    final onBikeSelected = widget.onBikeSelected;
+    final onNoBikes = widget.onNoBikes;
+    final onDeletionStarted = widget.onDeletionStarted;
+    final controller =
+        AppDependencies.of(context).forUser(widget.user!.uid).bikes;
+    return showDeleteConfirmationSheet(
       context,
       title: 'Delete ${bike.name}?',
       actionLabel: 'Delete',
       message: 'This permanently removes this bike and its saved data.',
-    );
-    if (confirmed && mounted) {
-      final replaceSelection = bike.id == widget.selectedBikeId;
-      final onBikeSelected = widget.onBikeSelected;
-      final controller =
-          AppDependencies.of(context).forUser(widget.user!.uid).bikes;
-      return presentCommand(context, () async {
-        final result = await controller.deleteBike(bike.id);
-        if (result.isSuccess && replaceSelection) {
-          final selection = result.requireValue();
+      onConfirm: () {
+        onDeletionStarted?.call();
+        return controller.deleteBike(bike.id);
+      },
+      onConfirmed: (selection) async {
+        if (replaceSelection) {
           if (selection != null) {
-            onBikeSelected(selection.bikeName, selection.bikeId,
+            await onBikeSelected(selection.bikeName, selection.bikeId,
                 selection.setupName, selection.setupId);
+          } else {
+            await onNoBikes?.call();
           }
         }
-        return result;
-      });
-    }
-    return confirmed;
+      },
+    );
   }
 }
 
@@ -206,8 +192,6 @@ class _BikeCard extends StatelessWidget {
   final User user;
   final String? selectedSetupId;
   final void Function(String, String, String, String) onSetupDetails;
-  final bool expanded;
-  final VoidCallback onToggleExpand;
   final void Function(String, String, String, String) onSelectSetup;
   final Future<bool> Function() onConfirmDeleteBike;
 
@@ -216,8 +200,6 @@ class _BikeCard extends StatelessWidget {
     required this.user,
     required this.selectedSetupId,
     required this.onSetupDetails,
-    required this.expanded,
-    required this.onToggleExpand,
     required this.onSelectSetup,
     required this.onConfirmDeleteBike,
   });
@@ -225,70 +207,33 @@ class _BikeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final details = Visibility(
-        visible: expanded,
-        maintainState: true,
-        child: Column(children: [
-          _SetupsList(
-              user: user,
-              bike: bike,
-              onSelectSetup: onSelectSetup,
-              selectedSetupId: selectedSetupId,
-              onSetupDetails: onSetupDetails),
-        ]));
-    return Material(
+    return Column(
       key: Key(bike.id),
-      color: expanded ? p.bg : Colors.transparent,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        InkWell(
-          onTap: AppHaptics.wrap(onToggleExpand, selection: true),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-            child: Row(children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(bike.name,
-                        style: AppTextStyles.label.copyWith(color: p.ink)),
-                  ],
-                ),
-              ),
-              if (expanded)
-                AppObjectMenu(
-                    tooltip: 'Bike options',
-                    title: bike.name,
-                    deleteLabel: 'Delete bike',
-                    onDelete: () {
-                      onConfirmDeleteBike();
-                    },
-                    onRename: () =>
-                        BikeAlerts.renameBike(context, bike.id, bike.name)),
-              Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: AnimatedRotation(
-                      turns: expanded ? .25 : 0,
-                      duration: MediaQuery.disableAnimationsOf(context)
-                          ? Duration.zero
-                          : const Duration(milliseconds: 240),
-                      curve: Curves.easeInOutCubic,
-                      child: Icon(CupertinoIcons.chevron_right,
-                          size: AppIconSizes.compact, color: p.inkMuted))),
-            ]),
-          ),
-        ),
-        if (MediaQuery.disableAnimationsOf(context))
-          details
-        else
-          AnimatedSize(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeInOutCubic,
-            alignment: Alignment.topCenter,
-            child: details,
-          ),
-      ]),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(children: [
+          Expanded(
+              child: Semantics(
+                  header: true,
+                  child: Text(bike.name,
+                      style: AppTextStyles.label.copyWith(color: p.ink)))),
+          AppObjectMenu(
+              tooltip: 'Bike options',
+              title: bike.name,
+              deleteLabel: 'Delete bike',
+              onDelete: () {
+                onConfirmDeleteBike();
+              },
+              onRename: () =>
+                  BikeAlerts.renameBike(context, bike.id, bike.name)),
+        ]),
+        _SetupsList(
+            user: user,
+            bike: bike,
+            onSelectSetup: onSelectSetup,
+            selectedSetupId: selectedSetupId,
+            onSetupDetails: onSetupDetails),
+      ],
     );
   }
 }
@@ -400,7 +345,7 @@ class _SetupsListState extends State<_SetupsList> {
         }
         final docs = snap.data ?? <BikeSetup>[];
         return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          padding: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

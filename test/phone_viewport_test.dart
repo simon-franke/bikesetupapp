@@ -1,3 +1,5 @@
+import 'support/fake_auth_repository.dart';
+import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'dart:math' as math;
 import 'package:bikesetupapp/main.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
@@ -16,15 +18,15 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(ChangeNotifierProvider(
-        create: (_) => AppStateNotifier(ThemeMode.light),
-        child: const MyApp(
-            isSignedIn: false,
-            user: null,
-            defaultBikeID: '',
-            defaultBike: '',
-            defaultSetupID: '',
-            defaultSetup: '')));
+    final auth = FakeAuthRepository();
+    final dependencies = AppDependencies(authRepository: auth);
+    addTearDown(dependencies.dispose);
+    addTearDown(auth.events.close);
+    await tester.pumpWidget(Provider.value(
+        value: dependencies,
+        child: ChangeNotifierProvider(
+            create: (_) => AppStateNotifier(ThemeMode.light),
+            child: const MyApp())));
     await tester.pumpAndSettle();
     expect(tester.getRect(find.byType(Scaffold)),
         const Rect.fromLTWH(480, 0, 480, 900));

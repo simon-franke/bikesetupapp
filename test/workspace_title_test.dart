@@ -29,7 +29,10 @@ void main() {
       await tester.pumpWidget(host(true, summary: '120 km   4 h'));
       await tester.pump(const Duration(milliseconds: 90));
       expect(tester.getTopLeft(find.text('Trail bike')), bikePosition);
-      expect(tester.widget<Text>(find.text('Trail bike')).style!.fontSize, 12);
+      expect(tester.widget<Text>(find.text('Trail bike')).style!.fontSize,
+          AppTextStyles.label.fontSize);
+      expect(tester.widget<Text>(find.text('120 km   4 h')).style!.fontSize,
+          AppTextStyles.caption.fontSize);
       await tester.pumpAndSettle();
       expect(find.text('120 km   4 h'), findsOneWidget);
       expect(find.text('Weekend'), findsNothing);
