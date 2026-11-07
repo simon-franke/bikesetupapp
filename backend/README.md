@@ -26,7 +26,9 @@ The demo project runs locally and does not require production credentials.
 
 ## Deployment
 
-Pushes to `main` affecting `backend/` or the deployment workflow deploy Functions and Firestore rules using the `FIREBASE_TOKEN` GitHub secret. Manual deployment, with access to the configured Firebase project:
+Pushes to `main` affecting `backend/` or the CI/deployment workflows deploy Functions and Firestore rules after all CI checks pass. Deployment uses the `FIREBASE_TOKEN` GitHub secret. For manual deployment through GitHub, run **Flutter CI** on `main`; the same checks run first. `deploy.yml` is called by CI and has no independent trigger.
+
+Direct local deployment, with access to the configured Firebase project (does not run CI checks):
 
 ```sh
 firebase deploy --only functions,firestore:rules --project bikesetupapp-bd22a
