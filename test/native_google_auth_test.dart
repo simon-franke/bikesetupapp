@@ -39,6 +39,8 @@ class FakeCredential extends Fake implements UserCredential {}
 
 class FakeFirebaseAuth extends Fake implements FirebaseAuth {
   @override
+  User? get currentUser => null;
+  @override
   Future<UserCredential> signInWithCredential(
           AuthCredential credential) async =>
       FakeCredential();

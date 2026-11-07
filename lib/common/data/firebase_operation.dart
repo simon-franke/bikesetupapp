@@ -7,15 +7,28 @@ Future<T> firebaseOperation<T>(Future<T> Function() action,
   try {
     return await action();
   } on FirebaseException catch (error, stack) {
+    if ([
+      'popup-closed-by-user',
+      'cancelled-popup-request',
+      'web-context-cancelled',
+      'canceled'
+    ].contains(error.code)) {
+      throw const CommandAborted();
+    }
     final code = switch (error.code) {
       'permission-denied' || 'unauthenticated' => FailureCode.permissionDenied,
       'unavailable' || 'network-request-failed' => FailureCode.unavailable,
       'wrong-password' ||
       'user-not-found' ||
       'invalid-credential' ||
-      'invalid-email' =>
+      'invalid-email' ||
+      'user-mismatch' ||
+      'requires-recent-login' =>
         FailureCode.invalidCredentials,
-      'email-already-in-use' => FailureCode.emailInUse,
+      'email-already-in-use' ||
+      'credential-already-in-use' ||
+      'account-exists-with-different-credential' =>
+        FailureCode.emailInUse,
       'weak-password' => FailureCode.weakPassword,
       'too-many-requests' || 'resource-exhausted' => FailureCode.rateLimited,
       _ => fallback,

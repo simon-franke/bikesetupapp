@@ -1,6 +1,7 @@
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
 import 'setting_unit_selector.dart';
+import 'setup_overview.dart' show categoryLabel;
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -69,6 +70,7 @@ Future<void> showSettingStepperSheet(
   required bool canDelete,
   UnitFamily? familyOverride,
   String? saveLabel,
+  bool optimistic = false,
   VoidCallback? onClear,
 }) {
   final knownMeta = kFieldMeta[settingKey];
@@ -118,12 +120,52 @@ Future<void> showSettingStepperSheet(
     isFreeText = false;
   }
 
+  final setups = onSave == null
+      ? AppDependencies.of(context).forUser(user!.uid).setups
+      : null;
+  final save = onSave ??
+      (String value) =>
+          setups!.setSetting(settingKey, value, uBikeID, category, uSetupID);
+  final feedbackContext = Navigator.of(context, rootNavigator: true).context;
+  final messenger = ScaffoldMessenger.of(context);
+  Future<void> saveOptimistically(String value) async {
+    await presentCommand(feedbackContext, () => save(value),
+        onFailure: (message) {
+      if (!messenger.mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text('$settingKey: $value wasn’t saved. $message'),
+        duration: const Duration(seconds: 12),
+        action: context.mounted
+            ? SnackBarAction(
+                label: 'Review',
+                onPressed: () {
+                  if (!context.mounted) return;
+                  showSettingStepperSheet(context,
+                      user: user,
+                      onSave: onSave,
+                      uBikeID: uBikeID,
+                      category: category,
+                      uSetupID: uSetupID,
+                      settingKey: settingKey,
+                      currentValue: value,
+                      canDelete: canDelete,
+                      familyOverride: familyOverride,
+                      saveLabel: saveLabel,
+                      onClear: onClear,
+                      optimistic: optimistic);
+                })
+            : null,
+      ));
+    });
+  }
+
   return showAppSheet<void>(
     context: context,
     builder: (ctx) => _StepperSheetContent(
       user: user,
-      onSave: onSave,
-      saveLabel: saveLabel,
+      onSave: save,
+      optimisticSave: optimistic || onSave == null ? saveOptimistically : null,
+      saveLabel: saveLabel ?? (onSave == null ? 'Save' : 'Save to experiment'),
       onClear: onClear,
       uBikeID: uBikeID,
       category: category,
@@ -142,6 +184,7 @@ Future<void> showSettingStepperSheet(
 }
 
 class _StepperSheetContent extends StatefulWidget {
+  final Future<void> Function(String)? optimisticSave;
   final String? saveLabel;
   final VoidCallback? onClear;
   final User? user;
@@ -162,6 +205,7 @@ class _StepperSheetContent extends StatefulWidget {
   const _StepperSheetContent({
     required this.user,
     this.onSave,
+    this.optimisticSave,
     this.saveLabel,
     this.onClear,
     required this.uBikeID,
@@ -233,6 +277,12 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     final stored = widget.isFreeText
         ? _textController.text.trim()
         : SettingValue.numeric(_value, widget.family, _unit).format();
+    if (widget.optimisticSave != null) {
+      final save = widget.optimisticSave!;
+      Navigator.of(context).pop();
+      await save(stored);
+      return;
+    }
     final saved = await presentCommand(
         context,
         () => widget.onSave != null
@@ -272,29 +322,39 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     }
   }
 
+  Future<void> _showOptions() async {
+    final action = await showAppOptionsSheet(
+      context: context,
+      title: 'Setting options',
+      entries: const [
+        AppSheetOption(
+            value: 'delete',
+            label: 'Delete field',
+            icon: CupertinoIcons.trash,
+            destructive: true),
+      ],
+    );
+    if (action == 'delete' && mounted && !_saving) await _onDelete();
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
 
     return Padding(
-      padding: EdgeInsets.only(
-        left: 22,
-        right: 22,
-        top: 12,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
+      padding: appSheetPadding(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AppSheetHandle(),
-          const SizedBox(height: 22),
-          Row(children: [
-            Expanded(
-                child: Text(
-                    '${widget.category == 'FrontTire' ? 'Front tire' : widget.category == 'RearTire' ? 'Rear tire' : widget.category == 'GeneralSettings' ? 'General' : widget.category} ${widget.settingKey.toLowerCase()}',
-                    style: AppTextStyles.caption.copyWith(color: p.inkMuted))),
-          ]),
-          const SizedBox(height: 22),
+          AppSheetHeader(
+              title:
+                  '${categoryLabel(widget.category)} ${widget.settingKey.toLowerCase()}',
+              action: widget.canDelete
+                  ? IconButton(
+                      tooltip: 'Setting options',
+                      onPressed: _saving ? null : _showOptions,
+                      icon: const Icon(CupertinoIcons.ellipsis))
+                  : null),
           if (widget.isFreeText)
             _FreeTextField(controller: _textController)
           else
@@ -305,7 +365,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
             child: AppTactileButton(
               onPressed: _saving ? null : _onSave,
               child: Text(widget.saveLabel ??
-                  (widget.onSave == null ? 'Save' : 'Save to test')),
+                  (widget.onSave == null ? 'Save' : 'Save to experiment')),
             ),
           ),
           if (widget.onClear != null) ...[
@@ -319,16 +379,6 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
                     },
               child: Text('Clear value',
                   style: AppTextStyles.label.copyWith(color: p.red)),
-            ),
-          ],
-          if (widget.canDelete) ...[
-            const SizedBox(height: 6),
-            TextButton(
-              onPressed: _saving ? null : _onDelete,
-              child: Text(
-                'Delete field',
-                style: AppTextStyles.label.copyWith(color: p.red),
-              ),
             ),
           ],
         ],

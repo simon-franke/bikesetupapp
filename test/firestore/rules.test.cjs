@@ -32,3 +32,15 @@ test('unrecognized paths remain denied', async () => {
   await assertFails(setDoc(doc(db, 'UserBikeSetup/alice/Unknown/doc'), {}));
   await assertFails(setDoc(doc(db, 'Public/doc'), {}));
 });
+
+test('deletion tombstone prevents old sessions from recreating data', async () => {
+  const owner = environment.authenticatedContext('deleted-user').firestore();
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'AccountDeletions/deleted-user'), {requestedAt: new Date()});
+  });
+  for (const suffix of ['', '/Bikes/bike', '/Bikes/bike/SetupList/setup', '/Bikes/bike/setup/Fork', '/RideLog/ride', '/ServiceComponents/component/ServiceEntries/entry', '/StravaBikes/gear']) {
+    await assertFails(setDoc(doc(owner, `UserBikeSetup/deleted-user${suffix}`), {value: 'stale offline write'}));
+  }
+  await assertFails(setDoc(doc(owner, 'AccountDeletions/deleted-user'), {}));
+  await assertFails(getDoc(doc(owner, 'AccountDeletions/deleted-user')));
+});

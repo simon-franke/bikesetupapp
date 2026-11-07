@@ -160,7 +160,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.records['test']!.values['FrontTire']!['Pressure'], '24 psi');
       expect(repo.records['test']!.before['FrontTire']!['Pressure'], '22 psi');
-      await tester.tap(find.text('Continue'));
+      await tester.tap(find.text('Use these changes'));
       await tester.pumpAndSettle();
       expect(find.text('Fork'), findsOneWidget);
       expect(find.text('Compression'), findsOneWidget);
@@ -169,7 +169,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Rename'), findsNothing);
       expect(find.text('Discard draft'), findsNothing);
-      await tester.ensureVisible(find.byTooltip('Experiment options'));
+      await tester.scrollUntilVisible(
+          find.byTooltip('Experiment options').hitTestable(), -200);
       await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       expect(find.text('Discard draft'), findsOneWidget);

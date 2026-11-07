@@ -18,19 +18,49 @@ Future<void> showAddFieldSheet(
   required String uBikeID,
   required String category,
   required String uSetupID,
+  List<String>? preferredFields,
 }) =>
     showAppSheet<void>(
         context: context,
         builder: (_) => _AddFieldSheet(
-            user: user, bike: uBikeID, category: category, setup: uSetupID));
+            user: user,
+            bike: uBikeID,
+            category: category,
+            setup: uSetupID,
+            preferredFields: preferredFields));
+
+Future<void> showAddDraftFieldSheet(
+  BuildContext context, {
+  required String bike,
+  required String setup,
+  required String category,
+  required Map<String, String> existingValues,
+  required Future<CommandResult<void>> Function(String, String, UnitFamily?)
+      onSave,
+}) =>
+    showAppSheet<void>(
+        context: context,
+        builder: (_) => _AddFieldSheet(
+            bike: bike,
+            setup: setup,
+            category: category,
+            existingValues: existingValues,
+            onSave: onSave));
 
 class _AddFieldSheet extends StatefulWidget {
   const _AddFieldSheet(
-      {required this.user,
+      {this.user,
+      this.preferredFields,
+      this.existingValues,
+      this.onSave,
       required this.bike,
       required this.category,
       required this.setup});
-  final User user;
+  final List<String>? preferredFields;
+  final User? user;
+  final Map<String, String>? existingValues;
+  final Future<CommandResult<void>> Function(String, String, UnitFamily?)?
+      onSave;
   final String bike, category, setup;
   @override
   State<_AddFieldSheet> createState() => _AddFieldSheetState();
@@ -59,7 +89,15 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
   @override
   void initState() {
     super.initState();
-    _load();
+    if (widget.existingValues != null) {
+      _existing = widget.existingValues!.entries
+          .where((entry) => entry.value.trim().isNotEmpty)
+          .map((entry) => entry.key)
+          .toSet();
+      _loading = false;
+    } else {
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -69,7 +107,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
     });
     try {
       final values = await AppDependencies.of(context)
-          .forUser(widget.user.uid)
+          .forUser(widget.user!.uid)
           .setups
           .getSettings(widget.bike, widget.category, widget.setup)
           .first;
@@ -112,7 +150,10 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
     FocusScope.of(context).unfocus();
     setState(() => _opening = true);
     var saved = false;
-    final setups = AppDependencies.of(context).forUser(widget.user.uid).setups;
+    final setups = widget.user == null
+        ? null
+        : AppDependencies.of(context).forUser(widget.user!.uid).setups;
+
     await showSettingStepperSheet(context,
         user: widget.user,
         uBikeID: widget.bike,
@@ -122,13 +163,17 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
         currentValue: '',
         canDelete: false,
         familyOverride: family,
-        saveLabel: 'Add setting', onSave: (value) async {
+        saveLabel: widget.onSave == null ? 'Add setting' : 'Save to experiment',
+        onSave: (value) async {
       if (value.trim().isEmpty) {
         return const CommandFailure<void>(AppFailure(FailureCode.invalidInput));
       }
-      final result = await setups.addField(
-          name, value, widget.bike, widget.category, widget.setup,
-          familyName: kFieldMeta.containsKey(name) ? null : family?.name);
+      final result = widget.onSave != null
+          ? await widget.onSave!(
+              name, value, family ?? kFieldMeta[name]?.family)
+          : await setups!.addField(
+              name, value, widget.bike, widget.category, widget.setup,
+              familyName: kFieldMeta.containsKey(name) ? null : family?.name);
       saved = result.isSuccess;
       return result;
     });
@@ -147,32 +192,26 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
   @override
   Widget build(BuildContext context) {
     final suggestions = {
-      ...?kDefaultFieldKeys[widget.category],
+      ...?(widget.preferredFields ?? kDefaultFieldKeys[widget.category]),
       ...?kSuggestedFieldKeys[widget.category],
     }.where((key) => !_existing.contains(key));
     final showNewSetting =
         _custom || (!_loading && !_failed && suggestions.isEmpty);
     return Padding(
-        padding: EdgeInsets.fromLTRB(
-            22, 12, 22, MediaQuery.viewInsetsOf(context).bottom + 28),
+        padding: appSheetPadding(context),
         child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const AppSheetHandle(),
-              const SizedBox(height: 18),
-              Row(children: [
-                if (_custom && suggestions.isNotEmpty)
-                  IconButton(
-                      tooltip: 'Back',
-                      onPressed: () => setState(() => _custom = false),
-                      icon: const Icon(CupertinoIcons.chevron_left,
-                          size: AppIconSizes.compact)),
-                Expanded(
-                    child: Text(showNewSetting ? 'New setting' : 'Add setting',
-                        style: AppTextStyles.heading)),
-              ]),
-              const SizedBox(height: 22),
+              AppSheetHeader(
+                  title: showNewSetting ? 'New setting' : 'Add setting',
+                  leading: _custom && suggestions.isNotEmpty
+                      ? IconButton(
+                          tooltip: 'Back',
+                          onPressed: () => setState(() => _custom = false),
+                          icon: const Icon(CupertinoIcons.chevron_left,
+                              size: AppIconSizes.compact))
+                      : null),
               if (_loading)
                 const Center(child: CircularProgressIndicator.adaptive())
               else if (_failed)
@@ -183,15 +222,19 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                 _choice('New setting…', () => setState(() => _custom = true),
                     custom: true),
               ] else ...[
+                const AppFieldLabel('Setting name'),
+                const SizedBox(height: 8),
                 AppTextField(
                     controller: _name,
-                    hint: 'Setting name',
+                    hint: 'e.g. Tire insert',
                     autofocus: true,
                     errorText: _nameError,
                     textInputAction: TextInputAction.next,
                     onChanged: (_) => setState(() => _nameError = null)),
-                const SizedBox(height: 14),
-                if (!kFieldMeta.containsKey(_name.text.trim()))
+                if (!kFieldMeta.containsKey(_name.text.trim())) ...[
+                  const SizedBox(height: 20),
+                  const AppFieldLabel('Value type'),
+                  const SizedBox(height: 8),
                   AppSelect<UnitFamily>(
                       label: 'Value type',
                       value: _family,
@@ -203,6 +246,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                       onChanged: (family) {
                         if (family != null) setState(() => _family = family);
                       }),
+                ],
                 const SizedBox(height: 24),
                 AppActionButton(
                     label: 'Continue',

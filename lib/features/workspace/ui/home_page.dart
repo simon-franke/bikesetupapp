@@ -7,6 +7,7 @@ import 'package:bikesetupapp/common/ui/app_glass_surface.dart';
 import 'package:bikesetupapp/common/ui/app_scroll_edge.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'workspace_transition.dart';
 import 'workspace_activity_title.dart';
 import '../../rides/ui/ride_log_page.dart';
@@ -14,7 +15,6 @@ import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/workspace_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
 import 'package:bikesetupapp/features/settings/ui/settings_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -30,6 +30,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class MyHomePage extends StatefulWidget {
+  final SetupConfiguration? initialConfiguration;
+  final VoidCallback? onNoBikes;
   final User? user;
   final String bikeName;
   final String uBikeID;
@@ -39,6 +41,8 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage(
       {super.key,
       required this.user,
+      this.initialConfiguration,
+      this.onNoBikes,
       required this.bikeName,
       required this.uBikeID,
       required this.setupName,
@@ -53,12 +57,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late final WorkspaceController _workspace;
   String _configurationScope = '';
+  bool _initialConfigurationConsumed = false;
   late Future<SetupConfiguration?> _configurationFuture;
 
   void _bindConfiguration() {
     final scope = '${widget.user?.uid}/$_uBikeID/$_uSetupID';
     if (_configurationScope == scope) return;
+    final firstConfiguration = !_initialConfigurationConsumed &&
+        _uBikeID == widget.uBikeID &&
+        _uSetupID == widget.uSetupID &&
+        widget.initialConfiguration != null;
     _configurationScope = scope;
+    _initialConfigurationConsumed = true;
+    if (firstConfiguration) {
+      _configurationFuture = SynchronousFuture(widget.initialConfiguration);
+      return;
+    }
     _configurationFuture =
         widget.user == null || _uBikeID.isEmpty || _uSetupID.isEmpty
             ? Future.value(null)
@@ -89,13 +103,6 @@ class _MyHomePageState extends State<MyHomePage> {
             : AppDependencies.of(context).forUser(widget.user!.uid).strava)
       ..addListener(_changed);
     _bindConfiguration();
-    if (widget.user == null || _uBikeID.isEmpty || _uSetupID.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).push(AppRoutes.fadeSlide(const LoginPage()));
-        }
-      });
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) presentCommand(context, _workspace.loadMileage);
     });
@@ -130,18 +137,25 @@ class _MyHomePageState extends State<MyHomePage> {
           onAddCategory: () => _addCategory(configuration),
           onCategory: (category) => _openCategory(category, configuration));
 
-  Future<bool> _changeCategory(String category, bool enabled) async {
+  Future<bool> _changeCategory(String category, bool enabled,
+      {String? suspensionType}) async {
     final saved = await presentCommand(
         context,
         () => AppDependencies.of(context)
-            .forUser(widget.user!.uid)
-            .setups
-            .setCategoryEnabled(
+                .forUser(widget.user!.uid)
+                .setups
+                .setCategoryEnabled(
               _uBikeID,
               _uSetupID,
               category,
               enabled,
-              addedFields: kDefaultFieldKeys,
+              suspensionType: suspensionType,
+              addedFields: {
+                ...kDefaultFieldKeys,
+                if (suspensionType != null)
+                  category: suspensionFields(
+                      suspensionType, ['Rebound', 'Compression']),
+              },
             ));
     if (saved && mounted) {
       _configurationScope = '';
@@ -155,7 +169,13 @@ class _MyHomePageState extends State<MyHomePage> {
     final active = configuration.fields.keys.toSet();
     final category = await showAddCategorySheet(context, active);
     if (category == null || !mounted) return;
-    if (await _changeCategory(category, true) && mounted) {
+    String? suspensionType;
+    if (category == 'Fork' || category == 'Shock') {
+      suspensionType = await showSuspensionTypeSheet(context, category);
+      if (suspensionType == null || !mounted) return;
+    }
+    if (await _changeCategory(category, true, suspensionType: suspensionType) &&
+        mounted) {
       final configuration = await _configurationFuture;
       if (mounted && configuration != null) {
         _openCategory(category, configuration);
@@ -225,21 +245,19 @@ class _MyHomePageState extends State<MyHomePage> {
         clipBehavior: Clip.none,
         fit: StackFit.expand,
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.viewPaddingOf(context).top + 8,
+          Positioned.fill(
             child: IgnorePointer(
-                child: DecoratedBox(
-                    decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [p.bg, p.bg, p.bg.withValues(alpha: 0)],
-                stops: const [0, 0.85, 1],
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [p.bg, p.bg, p.bg.withValues(alpha: 0)],
+                    stops: const [0, .7, 1],
+                  ),
+                ),
               ),
-            ))),
+            ),
           ),
           SafeArea(
               bottom: false,
@@ -341,10 +359,11 @@ class _MyHomePageState extends State<MyHomePage> {
                           tooltip: 'Settings',
                           icon: const Icon(CupertinoIcons.gear_alt,
                               size: AppIconSizes.control),
-                          onPressed: () => Navigator.of(context).push(
-                              AppRoutes.fadeSlide(SettingsPage(
-                                  bikeName: _bikeName,
-                                  chosenSetup: _setupName))),
+                          onPressed: () =>
+                              Navigator.of(context, rootNavigator: true).push(
+                                  AppRoutes.fadeSlide(SettingsPage(
+                                      bikeName: _bikeName,
+                                      chosenSetup: _setupName))),
                         )),
                   ])),
                 ),
@@ -364,6 +383,7 @@ class _MyHomePageState extends State<MyHomePage> {
       selectedBikeId: _uBikeID,
       selectedSetupId: _uSetupID,
       onBikeSelected: _onBikeSelected,
+      onNoBikes: widget.onNoBikes,
     );
   }
 

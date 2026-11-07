@@ -23,80 +23,72 @@ class AppSelect<T> extends StatelessWidget {
     FocusScope.of(context).unfocus();
     await showAppSheet<void>(
         context: context,
-        builder: (sheet) => SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxHeight: MediaQuery.sizeOf(sheet).height * .7),
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const AppSheetHandle(),
-                          const SizedBox(height: 24),
-                          Text(label,
-                              style: AppTextStyles.heading
-                                  .copyWith(color: sheet.palette.ink)),
-                          const SizedBox(height: 20),
-                          Flexible(
-                              child: ListView.separated(
-                                  shrinkWrap: true,
-                                  itemCount: items.length,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(height: 4),
-                                  itemBuilder: (_, index) {
-                                    final item = items[index];
-                                    final selected = item.value == value;
-                                    return Semantics(
-                                        selected: selected,
-                                        child: Material(
-                                            color: sheet.palette.bg,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            child: ListTile(
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12)),
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 16,
-                                                        vertical: 4),
-                                                title: DefaultTextStyle(
-                                                    style: (selected ? AppTextStyles.label : AppTextStyles.body)
-                                                        .copyWith(
-                                                            color: selected
-                                                                ? sheet.palette
-                                                                    .accentText
-                                                                : sheet.palette
-                                                                    .ink),
-                                                    child: item.child),
-                                                trailing: selected
-                                                    ? Icon(
-                                                        CupertinoIcons.checkmark,
-                                                        size: AppIconSizes.control,
-                                                        color: sheet.palette.accentText)
-                                                    : null,
-                                                enabled: item.enabled,
-                                                onTap: item.enabled
-                                                    ? () {
-                                                        if (!selected) {
-                                                          AppHaptics
-                                                              .selection();
-                                                        }
-                                                        Navigator.of(sheet)
-                                                            .pop();
-                                                        if (context.mounted) {
-                                                          onChanged?.call(
-                                                              item.value);
-                                                        }
+        builder: (sheet) => Padding(
+              padding: appSheetPadding(sheet),
+              child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(sheet).height * .7),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AppSheetHeader(title: label),
+                        Flexible(
+                            child: ListView.separated(
+                                shrinkWrap: true,
+                                itemCount: items.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 4),
+                                itemBuilder: (_, index) {
+                                  final item = items[index];
+                                  final selected = item.value == value;
+                                  return Semantics(
+                                      selected: selected,
+                                      child: Material(
+                                          color: sheet.palette.bg,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: ListTile(
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          12)),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 4),
+                                              title: DefaultTextStyle(
+                                                  style: (selected
+                                                          ? AppTextStyles.label
+                                                          : AppTextStyles.body)
+                                                      .copyWith(
+                                                          color: selected
+                                                              ? sheet.palette
+                                                                  .accentText
+                                                              : sheet
+                                                                  .palette.ink),
+                                                  child: item.child),
+                                              trailing: selected
+                                                  ? Icon(
+                                                      CupertinoIcons.checkmark,
+                                                      size: AppIconSizes.control,
+                                                      color: sheet.palette.accentText)
+                                                  : null,
+                                              enabled: item.enabled,
+                                              onTap: item.enabled
+                                                  ? () {
+                                                      if (!selected) {
+                                                        AppHaptics.selection();
                                                       }
-                                                    : null)));
-                                  })),
-                        ])),
-              ),
+                                                      Navigator.of(sheet).pop();
+                                                      if (context.mounted) {
+                                                        onChanged
+                                                            ?.call(item.value);
+                                                      }
+                                                    }
+                                                  : null)));
+                                })),
+                      ])),
             ));
   }
 

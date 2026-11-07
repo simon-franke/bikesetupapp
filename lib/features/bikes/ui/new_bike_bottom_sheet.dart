@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
-import 'create_bike_flow.dart';
+import 'quick_bike_sheet.dart';
 
 Future<void> showNewBikeSheet(
   BuildContext context,
@@ -23,7 +22,10 @@ Future<void> showNewBikeSheet(
     showAppSheet<void>(
         context: context,
         builder: (_) => mode == NewBikeMode.newBike
-            ? CreateBikeFlow(user: user, onCreated: onBikeSelected)
+            ? QuickBikeSheet(
+                user: user,
+                onCreated: (name, bike, setupName, setup, configuration) =>
+                    onBikeSelected(name, bike, setupName, setup))
             : _SetupSheet(
                 user: user,
                 mode: mode,
@@ -93,71 +95,57 @@ class _SetupSheetState extends State<_SetupSheet> {
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !saving,
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-            child: Padding(
-          padding: EdgeInsets.fromLTRB(
-              20, 12, 20, 24 + MediaQuery.viewInsetsOf(context).bottom),
-          child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const AppSheetHandle(),
-                const SizedBox(height: 20),
-                Text(widget.mode.isEdit ? 'Rename setup' : 'Add setup',
-                    style: AppTextStyles.heading
-                        .copyWith(color: context.palette.ink)),
-                const SizedBox(height: 8),
-                Text(widget.bikeName,
-                    style: TextStyle(color: context.palette.inkMuted)),
+      child: Padding(
+        padding: appSheetPadding(context),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppSheetHeader(
+                  title: widget.mode.isEdit ? 'Rename setup' : 'Add setup',
+                  subtitle: widget.bikeName),
+              const AppFieldLabel('Setup name'),
+              const SizedBox(height: 8),
+              AppTextField(
+                  controller: name, hint: 'Name your setup', errorText: error),
+              if (!widget.mode.isEdit) ...[
                 const SizedBox(height: 24),
-                const AppFieldLabel('Setup name'),
+                const AppFieldLabel('Start from'),
                 const SizedBox(height: 8),
-                AppTextField(
-                    controller: name,
-                    hint: 'Name your setup',
-                    errorText: error),
-                if (!widget.mode.isEdit) ...[
-                  const SizedBox(height: 24),
-                  const AppFieldLabel('Start from'),
-                  const SizedBox(height: 8),
-                  StreamBuilder(
-                      stream: stream,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return const Text(
-                              'Could not load setups. Reopen this form to retry.');
-                        }
-                        if (!snapshot.hasData) {
-                          return const LinearProgressIndicator();
-                        }
-                        if (!snapshot.data!
-                            .any((setup) => setup.id == source)) {
-                          source = '';
-                        }
-                        return AppSelect<String>(
-                            label: 'Start from',
-                            value: source,
-                            items: [
-                              const DropdownMenuItem(
-                                  value: '',
-                                  child: Text('Same parts, blank values')),
-                              for (final setup in snapshot.data!)
-                                DropdownMenuItem(
-                                    value: setup.id,
-                                    child: Text('Copy ${setup.name}')),
-                            ],
-                            onChanged: saving
-                                ? null
-                                : (value) => setState(() => source = value!));
-                      }),
-                ],
-                const SizedBox(height: 24),
-                AppActionButton(
-                    label: saving ? 'Saving…' : 'Save setup',
-                    onPressed: saving ? null : save),
-              ]),
-        )),
+                StreamBuilder(
+                    stream: stream,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return const Text(
+                            'Could not load setups. Reopen this form to retry.');
+                      }
+                      if (!snapshot.hasData) {
+                        return const LinearProgressIndicator();
+                      }
+                      if (!snapshot.data!.any((setup) => setup.id == source)) {
+                        source = '';
+                      }
+                      return AppSelect<String>(
+                          label: 'Start from',
+                          value: source,
+                          items: [
+                            const DropdownMenuItem(
+                                value: '',
+                                child: Text('Same parts, blank values')),
+                            for (final setup in snapshot.data!)
+                              DropdownMenuItem(
+                                  value: setup.id,
+                                  child: Text('Copy ${setup.name}')),
+                          ],
+                          onChanged: saving
+                              ? null
+                              : (value) => setState(() => source = value!));
+                    }),
+              ],
+              const SizedBox(height: 24),
+              AppActionButton(
+                  label: saving ? 'Saving…' : 'Save setup',
+                  onPressed: saving ? null : save),
+            ]),
       ));
 }

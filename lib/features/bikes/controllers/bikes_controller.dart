@@ -13,13 +13,15 @@ class BikesController extends OperationController {
   final BikesRepository _repository;
   final SetupsRepository _setups;
   Future<CommandResult<({String bikeId, String setupId})>> createFromDraft(
-          BikeCreationDraft draft) =>
+          BikeCreationDraft draft,
+          {String setupName = 'Default'}) =>
       command(() => _create(draft.name, draft.toSetupInformation(),
-          values: draft.values));
+          values: draft.values, setupName: setupName));
 
   Future<({String bikeId, String setupId})> _create(
       String bikeName, Map<String, String> setupInformation,
-      {Map<String, Map<String, String>> values = const {}}) async {
+      {Map<String, Map<String, String>> values = const {},
+      String setupName = 'Default'}) async {
     if ((await _repository.getBikes().first).any(
         (bike) => bike.name.toLowerCase() == bikeName.trim().toLowerCase())) {
       throw const AppFailure(FailureCode.duplicateName);
@@ -27,7 +29,7 @@ class BikesController extends OperationController {
     final bikeId = const Uuid().v4();
     final setupId = const Uuid().v4();
     await SetupCreationService(_setups)
-        .create(bikeId, setupId, 'Default', setupInformation, values: values);
+        .create(bikeId, setupId, setupName, setupInformation, values: values);
     if (await getDefaultBike() == '') await _repository.setDefaultBike(bikeId);
     await _setups.setDefaultSetup(bikeId, setupId);
     await _repository.createBikeRecord(bikeId, bikeName.trim());

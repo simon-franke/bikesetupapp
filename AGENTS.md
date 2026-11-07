@@ -67,6 +67,29 @@ as `lib/firebase_options.dart` and set `STRAVA_CLIENT_ID=ci-placeholder` in
 - Use subtle motion and feedback to clarify changes and maintain continuity,
   without distracting from the task or making the interface feel unstable.
 
+## Screen transitions
+
+- Use `AppTactileButton.isLoading` for pending primary actions, with a short
+  `loadingLabel`. Use `AppLoadingState` for a page/section that has no content yet.
+  Both share the clicking logo in `app_loading.dart`; keep existing content in
+  place during writes, and never delay completion to finish an animation cycle.
+- Use `AppRoutes.fadeSlide()` for pushed pages; preserve native iOS back gestures.
+- Use `AppScreenTransition` with stable state keys when replacing screens
+  (for example workspace and no-bikes), rather than adding a navigation route.
+  It fades through the page background so unrelated layouts do not overlap.
+  Keep outgoing widget ancestry stable until dismissal; do not remount screens
+  to disable their input. Inspect intermediate frames, not only settled screens.
+- Timing and curves live in `lib/app/routing/app_motion.dart`. Do not invent
+  durations per screen. Respect Reduced Motion.
+- Use `showAppSheet` for sheets. Its future completes after dismissal finishes.
+  If a sheet action changes the underlying screen, await `dismissAppSheet`
+  before applying that change; capture callbacks before the sheet is disposed.
+- When the next screen's data is already available, update synchronously instead
+  of briefly rendering a loading screen between known states.
+- Destructive confirmations that run a command stay visible until it completes,
+  with progress and retry in the same sheet. Remove any covered chooser when
+  the command starts, so live deletions cannot expose an empty intermediate sheet.
+
 ## Strava and deployment
 
 - Native Strava OAuth and refresh use `stravaExchange` and `stravaRefresh` in

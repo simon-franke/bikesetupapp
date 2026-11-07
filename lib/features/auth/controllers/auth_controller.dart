@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,7 +9,28 @@ class AuthController extends OperationController {
   AuthController(this._repository,
       {void Function()? onSignedOut, Future<void> Function()? onSigningOut})
       : _onSignedOut = onSignedOut,
-        _onSigningOut = onSigningOut;
+        _onSigningOut = onSigningOut {
+    if (_repository case final AuthSessionEvents events) {
+      var previousUid = _repository.currentUser?.uid;
+      _subscription = events.userChanges.listen((user) {
+        if (previousUid != null && previousUid != user?.uid) {
+          _onSignedOut?.call();
+        }
+        previousUid = user?.uid;
+        emit();
+      }, onError: (Object error, StackTrace stack) {
+        // SDK stream errors are reported; command failures retain their own UI.
+        Zone.current.handleUncaughtError(error, stack);
+      });
+    }
+  }
+  StreamSubscription<User?>? _subscription;
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   final void Function()? _onSignedOut;
   final Future<void> Function()? _onSigningOut;
   final AuthRepository _repository;
@@ -36,6 +58,13 @@ class AuthController extends OperationController {
           String email, String password) =>
       _session(('signup', email, password),
           () => _repository.signUpWithEmail(email, password));
+  Future<CommandResult<void>> resetPassword(String email) =>
+      _session(('reset', email), () => _repository.resetPassword(email));
+  Future<CommandResult<void>> deleteAccount({String? password}) =>
+      _session('delete', () async {
+        await _repository.deleteAccount(password: password);
+        _onSignedOut?.call();
+      });
   Future<CommandResult<void>> signOut() => _session('signout', () async {
         await _onSigningOut?.call();
         await _repository.signOut();
