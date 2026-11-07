@@ -43,6 +43,10 @@ jobs:
       - name: Get dependencies
         run: flutter pub get --enforce-lockfile
 
+      - name: Check formatting
+        if: matrix.check == 'lint'
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
       - name: Lint
         if: matrix.check == 'lint'
         run: flutter analyze --fatal-infos
@@ -84,3 +88,11 @@ jobs:
       - name: Test OAuth handlers
         run: npm test
         working-directory: backend/functions
+
+  deploy:
+    name: Deploy Firebase after checks
+    needs: [check, firestore-rules, functions]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/deploy.yml
+    secrets:
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
