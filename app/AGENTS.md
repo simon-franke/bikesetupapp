@@ -8,6 +8,7 @@ CI uses Flutter 3.41.4 and Node 22:
 
 ```sh
 flutter pub get --enforce-lockfile
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze --fatal-infos
 flutter test
 (cd ../backend/functions && npm test)
