@@ -1,11 +1,9 @@
 # README screenshots
 
-These images show actual Flutter widgets rendered with sample repositories. No personal ride or account data is used. They are UI previews, not photographs of a running device.
+Full-screen captures from the running Clickwise iOS app in dark mode, taken with Device Hub's Screenshot control. These include the status bar and the app navigation where visible; they are not isolated widget renders.
 
-From `app/`, regenerate the source captures with the existing visual-review test:
+- `setup.png`: setup overview, including the bike chooser and bottom tabs.
+- `pressure.png`: fork pressure sheet over the fork settings screen. The sheet covers the bottom navigation.
+- `experiment.png`: experiments tab, including the bike chooser and bottom tabs.
 
-```sh
-UI_REVIEW_OUTPUT=/tmp/clickwise-readme flutter test test/ui_consistency_test.dart --update-goldens --plain-name 'setup and experiment hierarchy fits dark=false scale=1.0'
-```
-
-Copy `overview-false-1.0.png`, `pressure-editor-false-1.0.png` and `comparison-false-1.0.png` to `setup.png`, `pressure.png` and `experiment.png` respectively. Review the images before replacing the published screenshots.
+To refresh them, navigate to the matching screens in the running app and capture the complete device screen. Preserve the dark theme, use data suitable for public display and check each image before replacing it. Do not change settings or save records just to take screenshots.
