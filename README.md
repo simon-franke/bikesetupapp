@@ -21,9 +21,9 @@ A mountain bike setup journal for iOS and Android. Save bike settings, compare s
 
 ## Suspension telemetry
 
-Magnetic travel sensors for forks and shocks, designed to record suspension movement alongside your setups. Below is the current fork-mounted design.
+Magnetic travel sensors for forks and shocks, designed to record suspension movement alongside your setups. Below is an exploded view of the current fork-mounted design.
 
-<img src="hardware/telemetry/previews/Rear_fork_overview.png" alt="Fusion model of the travel sensor mounted behind a fork leg" width="480">
+<img src="hardware/telemetry/previews/Rear_mounts_exploded.png" alt="Exploded Fusion view of the travel sensor and its mounts behind a fork leg" width="640">
 
 *Work in progress: hardware prototype; app integration planned.*
 
