@@ -5,14 +5,22 @@ import 'package:bikesetupapp/common/models/command_result.dart';
 /// Serializes writes for one field. A failed write does not block retries.
 class SettingWriteQueue extends WriteQueue {}
 
+/// Tracks an editor's latest save while preserving the order of accepted writes.
 class SettingSaveController extends OperationController {
   SettingSaveController({SettingWriteQueue? writes})
       : _writes = writes ?? SettingWriteQueue();
+
   final SettingWriteQueue _writes;
   bool _saving = false;
   bool _failed = false;
+
   bool get saving => _saving;
   bool get failed => _failed;
+
+  /// Queues [value] for persistence, even if the editor is subsequently disposed.
+  ///
+  /// Only the latest request updates saving and failure indicators. Older requests
+  /// can return cancellation after their writes have completed.
   Future<CommandResult<void>> save(
           String value, Future<void> Function(String) write) =>
       command(() async {
@@ -20,6 +28,7 @@ class SettingSaveController extends OperationController {
         _saving = true;
         _failed = false;
         emit();
+
         try {
           // Accepted edits must persist even if the user switches fields.
           await _writes.enqueue(() => write(value));
@@ -27,7 +36,8 @@ class SettingSaveController extends OperationController {
             throw const CommandAborted();
           }
         } catch (error) {
-          if (isCurrentRequest('save', generation) && error is! CommandAborted) {
+          if (isCurrentRequest('save', generation) &&
+              error is! CommandAborted) {
             _failed = true;
           }
           rethrow;

@@ -1,7 +1,6 @@
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/ui/failure_message.dart';
 import '../controllers/service_editor_controller.dart';
@@ -11,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 const int _kDeferDefaultKm = 50;
+
 Future<void> showDeferServiceSheet(
         {required BuildContext context,
         required String userID,
@@ -24,9 +24,11 @@ Future<void> showDeferServiceSheet(
 class _DeferServiceForm extends StatefulWidget {
   const _DeferServiceForm(
       {required this.userId, required this.component, required this.mileageKm});
+
   final String userId;
   final ServiceComponent component;
   final double mileageKm;
+
   @override
   State<_DeferServiceForm> createState() => _DeferServiceFormState();
 }
@@ -34,6 +36,7 @@ class _DeferServiceForm extends StatefulWidget {
 class _DeferServiceFormState extends State<_DeferServiceForm> {
   late final ServiceEditorController _controller;
   int _extendKm = _kDeferDefaultKm;
+
   @override
   void initState() {
     super.initState();
@@ -70,8 +73,8 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final error = _controller.saveError;
+
     return Padding(
         padding: appSheetPadding(context),
         child: Column(
@@ -92,20 +95,17 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
                       decimals: 0,
                       unitLabel: 'km',
                       onChanged: (value) => _extendKm = value.round())),
-              if (error != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                    error is AppFailure && error.code != FailureCode.saveFailed
-                        ? failureMessage(error)
-                        : 'Could not save service. Try again.',
-                    style: TextStyle(color: p.red)),
-              ],
               const SizedBox(height: 24),
-              SizedBox(
-                  width: double.infinity,
-                  child: AppActionButton(
-                      label: _controller.saving ? 'Saving…' : 'Defer service',
-                      onPressed: _controller.saving ? null : _save)),
+              AppFormFooter(
+                  label: 'Defer service',
+                  isLoading: _controller.saving,
+                  error: error == null
+                      ? null
+                      : error is AppFailure &&
+                              error.code != FailureCode.saveFailed
+                          ? failureMessage(error)
+                          : 'Could not save service. Try again.',
+                  onPressed: _save),
             ]));
   }
 }

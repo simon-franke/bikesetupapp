@@ -34,8 +34,11 @@ class _AppPageRoute<T> extends MaterialPageRoute<T> {
         child,
       );
     }
+
     if (reduced) return child;
+
     final eased = animation.drive(CurveTween(curve: AppMotion.curve));
+
     return SlideTransition(
         position:
             eased.drive(Tween(begin: const Offset(1, 0), end: Offset.zero)),

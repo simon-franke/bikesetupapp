@@ -1,10 +1,11 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
-import 'package:bikesetupapp/main.dart';
+import 'package:bikesetupapp/app/app.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -39,6 +40,7 @@ class EmptyStravaBikes extends FakeStravaBikesRepository {
 class DeletableBikes extends FakeBikesRepository {
   final changes = StreamController<List<Bike>>.broadcast();
   Completer<void>? afterRemoval;
+
   @override
   Stream<List<Bike>> getBikes() async* {
     yield List.of(bikes);
@@ -47,6 +49,7 @@ class DeletableBikes extends FakeBikesRepository {
 
   bool failDeletion = false;
   Completer<void>? deletion;
+
   @override
   Future<void> deleteBike(String id) async {
     await deletion?.future;
@@ -60,6 +63,7 @@ class DeletableBikes extends FakeBikesRepository {
 
 class ChoosableSetups extends FakeSetupsRepository {
   int informationReads = 0;
+
   @override
   Future<Map<String, dynamic>> getSetupInformation(String bike, String setup) {
     informationReads++;
@@ -139,12 +143,14 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Trail bike');
     await tester.tap(find.text('Add bike'));
     await tester.pump();
+
     for (var frame = 0; frame < 20; frame++) {
       await tester.pump(const Duration(milliseconds: 16));
       expect(find.byType(CircularProgressIndicator), findsNothing);
       if (find.byType(QuickBikeSheet).evaluate().isNotEmpty) {
         expect(find.text('Trail bike'), findsWidgets);
       }
+
       final output = Platform.environment['MOTION_REVIEW_OUTPUT'];
       if (output != null && [0, 5, 10, 19].contains(frame)) {
         await tester.runAsync(() async {
@@ -159,6 +165,7 @@ void main() {
         });
       }
     }
+
     await tester.pumpAndSettle();
     expect(find.byType(MyHomePage), findsOneWidget);
     expect((setups as ChoosableSetups).informationReads, 0);
@@ -207,6 +214,7 @@ void main() {
         await tester.tapAt(const Offset(10, 10));
         await tester.pumpAndSettle();
       }
+
       bikes.deletion!.complete();
       await tester.pumpAndSettle();
       expect(bikes.bikes, isEmpty);
@@ -235,6 +243,7 @@ void main() {
           }
         }
       }
+
       await tester.pumpAndSettle();
       expect(find.byType(MyHomePage), findsNothing);
       expect(find.byType(BottomSheet), findsNothing);
@@ -372,13 +381,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'password');
     auth.failDeletion = true;
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+    await tester.tap(find.widgetWithText(AppActionButton, 'Delete account'));
     await tester.pumpAndSettle();
     expect(find.text('Could not finish deleting your account. Please retry.'),
         findsOneWidget);
     expect(auth.currentUser, isNotNull);
     auth.failDeletion = false;
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+    await tester.tap(find.widgetWithText(AppActionButton, 'Delete account'));
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
     expect(find.byType(MyHomePage), findsNothing);

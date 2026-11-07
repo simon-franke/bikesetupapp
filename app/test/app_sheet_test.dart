@@ -47,6 +47,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
   testWidgets('phone sheet scrolls with keyboard and enlarged text',
       (tester) async {
     tester.view.physicalSize = const Size(1024, 700);

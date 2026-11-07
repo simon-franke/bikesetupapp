@@ -6,10 +6,12 @@ void main() {
     final state = BikeOnboardingState()..fork = 'Air';
     addTearDown(state.dispose);
     state.go(2);
+
     for (final pressure in ['0 psi', '5 psi', '400 psi', '']) {
       state.setting('FrontTire', 'Pressure').text = pressure;
       expect(state.validate(), isTrue);
     }
+
     state.setting('FrontTire', 'Pressure').text = 'invalid';
     expect(state.validate(), isFalse);
     state.go(state.steps
@@ -25,6 +27,7 @@ void main() {
     final nameProgress = state.progress;
     state.go(1);
     final partsProgress = state.progress;
+
     for (final enabled in [true, false, true]) {
       state.fork = enabled ? 'Air' : 'None';
       state.shock = enabled ? 'Air' : 'None';
@@ -36,12 +39,14 @@ void main() {
       expect(state.progress, nameProgress);
       state.go(1);
       var previous = state.progress;
+
       for (var index = 2; index < state.steps.length; index++) {
         state.go(index);
         expect(state.progress, greaterThan(previous));
         expect(state.progress, lessThanOrEqualTo(1));
         previous = state.progress;
       }
+
       expect(state.progress, closeTo(1, .000001));
       state.go(1);
       expect(state.progress, partsProgress);

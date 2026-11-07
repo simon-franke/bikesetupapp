@@ -10,5 +10,4 @@
 
 //import 'package:bikesetupapp/main.dart';
 
-void main() {
-}
+void main() {}

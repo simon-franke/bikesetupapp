@@ -9,5 +9,6 @@ enum Category {
   fork(category: 'Fork');
 
   final String category;
+
   const Category({required this.category});
 }

@@ -5,6 +5,7 @@ import 'app_components.dart';
 
 class AppUnitOption {
   const AppUnitOption(this.id, this.symbol, this.label);
+
   final String id;
   final String symbol;
   final String label;
@@ -17,6 +18,7 @@ class AppUnitSelector extends StatelessWidget {
       required this.value,
       required this.options,
       required this.onChanged});
+
   final String value;
   final List<AppUnitOption> options;
   final ValueChanged<String> onChanged;
@@ -27,6 +29,7 @@ class AppUnitSelector extends StatelessWidget {
     final label = Text(selected.symbol,
         style: AppTextStyles.body.copyWith(color: context.palette.inkMuted));
     if (options.length < 2) return label;
+
     return Semantics(
       label: 'Unit: ${selected.label}',
       button: true,

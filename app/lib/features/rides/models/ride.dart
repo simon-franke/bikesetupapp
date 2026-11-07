@@ -9,13 +9,16 @@ class Ride {
       this.distanceKm,
       this.distanceInStrava = false,
       this.indoor = false});
+
   final String id, bikeId, source, name;
   final DateTime startedAt;
   final int durationSeconds;
   final bool indoor;
   final double? distanceKm;
   final bool distanceInStrava;
+
   double get hours => durationSeconds / 3600;
+
   Ride forBike(String bike) => Ride(
       id: id,
       bikeId: bike,
@@ -26,6 +29,7 @@ class Ride {
       distanceKm: distanceKm,
       distanceInStrava: distanceInStrava,
       indoor: indoor);
+
   Map<String, dynamic> toMap() => {
         'bikeId': bikeId,
         'startedAt': startedAt,
@@ -36,6 +40,7 @@ class Ride {
         'distanceInStrava': distanceInStrava,
         'indoor': indoor
       };
+
   factory Ride.fromMap(String id, Map<String, dynamic> map) => Ride(
       id: id,
       bikeId: map['bikeId'] as String,

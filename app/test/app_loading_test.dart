@@ -93,6 +93,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(screen(1));
     final output = Platform.environment['LOADING_REVIEW_OUTPUT'];
+
     for (var frame = 0; frame < (output == null ? 36 : 144); frame++) {
       await tester.pump(const Duration(milliseconds: 40));
       if (output != null) {
@@ -108,6 +109,7 @@ void main() {
         });
       }
     }
+
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();

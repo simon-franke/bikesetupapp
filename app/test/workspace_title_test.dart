@@ -43,6 +43,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
   for (final reduced in [false, true]) {
     testWidgets('odometer rolls and settles, reduced motion $reduced',
         (tester) async {

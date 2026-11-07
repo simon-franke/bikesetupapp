@@ -14,9 +14,11 @@ class ViewToggle extends StatefulWidget {
       required this.activeView,
       required this.onChanged,
       this.showServiceAlert = false});
+
   final ActiveView activeView;
   final ValueChanged<ActiveView> onChanged;
   final bool showServiceAlert;
+
   @override
   State<ViewToggle> createState() => _ViewToggleState();
 }
@@ -24,6 +26,7 @@ class ViewToggle extends StatefulWidget {
 class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
   TabController? _controller;
   bool _reducedMotion = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -59,6 +62,7 @@ class _ViewToggleState extends State<ViewToggle> with TickerProviderStateMixin {
     final p = context.palette;
     final bottom =
         (MediaQuery.viewPaddingOf(context).bottom - 12).clamp(8.0, 24.0);
+
     return Stack(children: [
       Positioned.fill(
         child: IgnorePointer(

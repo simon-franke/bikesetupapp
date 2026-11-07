@@ -13,8 +13,10 @@ import '../models/service_component.dart';
 class HourServiceSheet extends StatefulWidget {
   const HourServiceSheet(
       {super.key, required this.uid, required this.component});
+
   final String uid;
   final ServiceComponent component;
+
   @override
   State<HourServiceSheet> createState() => _HourServiceSheetState();
 }
@@ -24,6 +26,7 @@ class _HourServiceSheetState extends State<HourServiceSheet> {
   final entryId = const Uuid().v4();
   DateTime date = DateTime.now();
   bool saving = false;
+
   @override
   void dispose() {
     note.dispose();
@@ -43,25 +46,28 @@ class _HourServiceSheetState extends State<HourServiceSheet> {
                 style: AppTextStyles.body
                     .copyWith(color: context.palette.inkMuted)),
             const SizedBox(height: 20),
-            const AppFieldLabel('Date & time'),
-            const SizedBox(height: 8),
-            AppValueButton(
-                label: DateFormat.yMMMd().add_Hm().format(date),
-                onTap: saving
-                    ? null
-                    : () async {
-                        final selected = await pickAppDate(context,
-                            initial: date, includeTime: true);
-                        if (selected == null || !mounted) return;
-                        setState(() => date = selected);
-                      }),
+            AppFormField(
+                label: 'Date & time',
+                child: AppValueButton(
+                    label: DateFormat.yMMMd().add_Hm().format(date),
+                    onTap: saving
+                        ? null
+                        : () async {
+                            final selected = await pickAppDate(context,
+                                initial: date, includeTime: true);
+                            if (selected == null || !mounted) return;
+                            setState(() => date = selected);
+                          })),
             const SizedBox(height: 20),
-            const AppFieldLabel('Note (optional)'),
-            const SizedBox(height: 8),
-            AppTextField(controller: note, hint: 'What was done?', maxLines: 3),
+            AppFormField(
+                label: 'Note (optional)',
+                child: AppTextField(
+                    controller: note, hint: 'What was done?', maxLines: 3)),
             const SizedBox(height: 24),
-            AppActionButton(
-                label: saving ? 'Saving…' : 'Log service',
+            AppFormFooter(
+                isLoading: saving,
+                loadingLabel: 'Saving…',
+                label: 'Log service',
                 onPressed: saving
                     ? null
                     : () async {
@@ -78,6 +84,7 @@ class _HourServiceSheetState extends State<HourServiceSheet> {
                                     note: note.text,
                                     entryId: entryId));
                         if (!context.mounted) return;
+
                         if (saved) {
                           Navigator.pop(context);
                         } else {

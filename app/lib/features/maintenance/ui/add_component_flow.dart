@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import '../models/service_component.dart';
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
 import '../models/service_icon.dart';
@@ -61,6 +62,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
 
   Widget _componentChoices() {
     final p = context.palette;
+
     return StreamBuilder<List<ServiceComponent>>(
       stream: _components,
       builder: (context, snapshot) {
@@ -70,10 +72,13 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
             onRetry: () => setState(() => _components = _loadComponents()),
           );
         }
+
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return const Center(child: AppLoadingState());
         }
+
         final added = snapshot.data!.map((component) => component.type).toSet();
+
         return Column(children: [
           for (final type in ComponentType.values.where((type) =>
               type != ComponentType.tires &&
@@ -131,6 +136,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
         _initialKm.text,
       );
     }
+
     final draft = _drafts[type];
     setState(() {
       _submitted = false;
@@ -194,6 +200,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
           ? 'Enter how much it has already been used, or leave it blank.'
           : null;
     });
+
     return _nameError == null && _intervalError == null && _usageError == null;
   }
 
@@ -203,6 +210,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
 
   Future<void> _onSave() async {
     if (_saving || _selectedType == null) return;
+
     final name = _nameController.text.trim();
     final interval = double.tryParse(_intervalController.text.trim()) ?? 0;
     final initialText = (_hours ? _initialHours : _initialKm).text.trim();
@@ -219,6 +227,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
           'Enter zero or more ${_hours ? 'hours' : 'kilometres'} already used.');
       return;
     }
+
     setState(() {
       _saving = true;
       _error = null;
@@ -239,6 +248,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
             currentMileageKm: widget.currentMileageKm),
         onFailure: (message) => setState(() => _error = message));
     if (!mounted) return;
+
     if (saved) {
       Navigator.of(context).pop();
     } else {
@@ -249,6 +259,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return PopScope(
         canPop: !_saving,
         child: Scaffold(
@@ -281,73 +292,75 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                                   offstage: _step != 0,
                                   child: _componentChoices()),
                               if (_step == 1) ...[
-                                const AppFieldLabel('Name'),
-                                const SizedBox(height: 8),
-                                Row(children: [
-                                  IconButton(
-                                      tooltip: 'Choose icon',
-                                      style: IconButton.styleFrom(
-                                          backgroundColor: p.surface2,
-                                          minimumSize: const Size(56, 56),
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14))),
-                                      icon: ServiceComponentIcon(
-                                          type: ComponentType.other,
-                                          customIcon: _customIcon,
-                                          color: p.ink),
-                                      onPressed: () async {
-                                        final icon = await pickServiceIcon(
-                                            context, _customIcon);
-                                        if (mounted && icon != null) {
-                                          setState(() => _customIcon = icon);
-                                        }
-                                      }),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                      child: AppTextField(
-                                          controller: _nameController,
-                                          hint: 'Component name',
-                                          errorText: _nameError,
-                                          onChanged: _revalidate)),
-                                ]),
+                                AppFormField(
+                                    label: 'Name',
+                                    child: Row(children: [
+                                      IconButton(
+                                          tooltip: 'Choose icon',
+                                          style: IconButton.styleFrom(
+                                              backgroundColor: p.surface2,
+                                              minimumSize: const Size(56, 56),
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          14))),
+                                          icon: ServiceComponentIcon(
+                                              type: ComponentType.other,
+                                              customIcon: _customIcon,
+                                              color: p.ink),
+                                          onPressed: () async {
+                                            final icon = await pickServiceIcon(
+                                                context, _customIcon);
+                                            if (mounted && icon != null) {
+                                              setState(
+                                                  () => _customIcon = icon);
+                                            }
+                                          }),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                          child: AppTextField(
+                                              controller: _nameController,
+                                              hint: 'Component name',
+                                              errorText: _nameError,
+                                              onChanged: _revalidate)),
+                                    ])),
                                 const SizedBox(height: 24),
-                                const AppFieldLabel('Service every'),
-                                const SizedBox(height: 8),
-                                AppTextField(
-                                    key: const ValueKey('service-interval'),
-                                    controller: _intervalController,
-                                    errorText: _intervalError,
-                                    onChanged: _revalidate,
-                                    hint: _hours
-                                        ? 'Manufacturer’s interval'
-                                        : 'Distance between services',
-                                    suffixWidget: AppUnitSelector(
-                                        value: _hours ? 'h' : 'km',
-                                        options: const [
-                                          AppUnitOption(
-                                              'km', 'km', 'Kilometres'),
-                                          AppUnitOption('h', 'h', 'Ride hours')
-                                        ],
-                                        onChanged: (unit) =>
-                                            _changeUnit(unit == 'h')),
-                                    keyboardType:
-                                        TextInputType.numberWithOptions(
-                                            decimal: _hours)),
+                                AppFormField(
+                                    label: 'Service every',
+                                    child: AppTextField(
+                                        key: const ValueKey('service-interval'),
+                                        controller: _intervalController,
+                                        errorText: _intervalError,
+                                        onChanged: _revalidate,
+                                        hint: _hours
+                                            ? 'Manufacturer’s interval'
+                                            : 'Distance between services',
+                                        suffixWidget: AppUnitSelector(
+                                            value: _hours ? 'h' : 'km',
+                                            options: const [
+                                              AppUnitOption(
+                                                  'km', 'km', 'Kilometres'),
+                                              AppUnitOption(
+                                                  'h', 'h', 'Ride hours')
+                                            ],
+                                            onChanged: (unit) =>
+                                                _changeUnit(unit == 'h')),
+                                        keyboardType:
+                                            TextInputType.numberWithOptions(
+                                                decimal: _hours))),
                                 const SizedBox(height: 24),
-                                const AppFieldLabel('Already used'),
-                                const SizedBox(height: 8),
-                                AppTextField(
-                                    key: const ValueKey('already-used'),
-                                    errorText: _usageError,
-                                    onChanged: _revalidate,
-                                    controller:
-                                        _hours ? _initialHours : _initialKm,
-                                    hint: '0',
-                                    suffix: _hours ? 'h' : 'km',
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true)),
+                                AppFormField(
+                                    label: 'Already used',
+                                    child: AppTextField(
+                                        key: const ValueKey('already-used'),
+                                        errorText: _usageError,
+                                        onChanged: _revalidate,
+                                        controller:
+                                            _hours ? _initialHours : _initialKm,
+                                        hint: '0',
+                                        suffix: _hours ? 'h' : 'km',
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true))),
                                 const SizedBox(height: 8),
                                 Text('Since the last service or installation.',
                                     style: AppTextStyles.body
@@ -364,7 +377,9 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                             ])))),
             if (_step > 0)
               AppFlowFooter(
-                  label: _saving ? 'Adding…' : 'Add component',
+                  isLoading: _saving,
+                  loadingLabel: 'Adding…',
+                  label: 'Add component',
                   error: _error,
                   onDismissError: () => setState(() => _error = null),
                   onPressed: _saving

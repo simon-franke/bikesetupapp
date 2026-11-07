@@ -22,17 +22,22 @@ extension ServiceStatusColor on ServiceStatus {
 
 String serviceDistanceLabel(AnnotatedService service) {
   if (service.component.interval <= 0) return 'Set a service interval';
+
   if (service.lastServicedAt == null) return 'No service recorded';
+
   if (service.usageUnknown) {
     return service.component.usesHours
         ? 'Ride log needed to estimate service'
         : 'Mileage needed to estimate service';
   }
+
   final format = NumberFormat('#,###');
   final overdue = service.usage - service.component.interval;
   if (overdue > 0) {
     return '${service.component.usesHours ? overdue.toStringAsFixed(1) : format.format(overdue.round())} ${service.component.unitLabel} overdue';
   }
+
   if (service.remaining == 0) return 'Service due now';
+
   return 'Service in ${service.component.usesHours ? service.remaining.toStringAsFixed(1) : format.format(service.remaining.round())} ${service.component.unitLabel}';
 }

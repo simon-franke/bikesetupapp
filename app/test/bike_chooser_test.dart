@@ -41,10 +41,13 @@ class ChooserBikes extends Fake implements BikesRepository {
   String? selectedBike = 'current';
   String? deletedBike;
   Completer<void>? deletion;
+
   @override
   Future<String> getDefaultBike() async => selectedBike!;
+
   @override
   Future<String> getBikeNameFromID(String id) async => 'Other bike';
+
   @override
   Future<void> deleteBike(String id) async {
     await deletion?.future;
@@ -66,8 +69,10 @@ class ChooserBikes extends Fake implements BikesRepository {
 
 class ChooserSetups extends Fake implements SetupsRepository {
   final subscriptions = <String, int>{};
+
   @override
   Future<String> getDefaultSetup(String bike) async => 'saved-setup';
+
   @override
   Future<String> getSetupNameFromID(String bike, String setup) async => 'Trail';
 
@@ -326,6 +331,7 @@ void main() {
     expect(added, 1);
     expect(tester.takeException(), isNull);
   });
+
   for (final count in [2, 20]) {
     testWidgets('phone chooser fits $count bikes and keeps actions visible',
         (tester) async {
@@ -353,6 +359,7 @@ void main() {
         await tester.drag(find.byType(ListView), const Offset(0, -1000));
         await tester.pumpAndSettle();
       }
+
       await tester.tap(find.text('Add bike'));
       expect(added, 1);
       expect(tester.takeException(), isNull);

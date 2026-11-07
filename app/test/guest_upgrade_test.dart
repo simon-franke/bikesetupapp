@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 class LinkedCredential extends Fake implements UserCredential {
   LinkedCredential(this.linkedUser);
+
   final User linkedUser;
+
   @override
   User get user => linkedUser;
 }
@@ -14,10 +16,12 @@ class Guest extends Fake implements User {
   bool anonymous = true;
   bool conflict = false;
   int links = 0;
+
   @override
   String get uid => 'guest-with-bikes';
   @override
   bool get isAnonymous => anonymous;
+
   @override
   Future<UserCredential> linkWithCredential(AuthCredential credential) async {
     links++;
@@ -31,10 +35,13 @@ class Guest extends Fake implements User {
 
 class GuestFirebase extends Fake implements FirebaseAuth {
   GuestFirebase(this.guest);
+
   final Guest guest;
   int replacements = 0;
+
   @override
   User get currentUser => guest;
+
   @override
   Future<UserCredential> signInWithCredential(AuthCredential credential) async {
     replacements++;

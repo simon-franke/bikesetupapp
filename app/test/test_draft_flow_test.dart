@@ -378,6 +378,7 @@ class _CachedFirstTests extends MemoryTests {
 
 class _DelayedWatchTests extends MemoryTests {
   final snapshots = StreamController<List<SetupTest>>.broadcast();
+
   @override
   Stream<List<SetupTest>> watch(String bike, String setup) async* {
     yield records.values.toList();

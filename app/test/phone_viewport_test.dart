@@ -1,7 +1,7 @@
 import 'support/fake_auth_repository.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'dart:math' as math;
-import 'package:bikesetupapp/main.dart';
+import 'package:bikesetupapp/app/app.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
 import 'package:provider/provider.dart';
 import 'package:bikesetupapp/common/layout/phone_viewport.dart';
@@ -52,6 +52,7 @@ void main() {
         builder: (context, child) => PhoneViewport(child: child!),
         home: Builder(builder: (context) {
           logicalSize = MediaQuery.sizeOf(context);
+
           return Scaffold(
               key: const Key('home'),
               body: TextButton(

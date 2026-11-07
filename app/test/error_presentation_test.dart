@@ -17,7 +17,9 @@ import 'package:bikesetupapp/features/maintenance/ui/service_components_list.dar
 
 class _PreviewPaths extends PathProviderPlatform {
   _PreviewPaths(this.path);
+
   final String path;
+
   @override
   Future<String> getApplicationSupportPath() async => path;
 }
@@ -25,6 +27,7 @@ class _PreviewPaths extends PathProviderPlatform {
 class _Repository extends Fake implements MaintenanceRepository {
   bool failLoads = false;
   int saves = 0, loads = 0;
+
   @override
   Future<void> createComponentWithBaseline(
       ServiceComponent component, ServiceEntry baseline) async {
@@ -49,7 +52,9 @@ void main() {
     // without adding machine-specific assets or golden files to ordinary tests.
     final fontDir = Platform.environment['ERROR_PREVIEW_FONT_DIR'];
     if (fontDir == null) return;
+
     PathProviderPlatform.instance = _PreviewPaths(fontDir);
+
     for (final file in Directory(fontDir).listSync().whereType<File>()) {
       final name = file.uri.pathSegments.last;
       if (!name.startsWith('Inter_') || !name.endsWith('.ttf')) continue;
@@ -59,6 +64,7 @@ void main() {
                 Future.value(ByteData.sublistView(file.readAsBytesSync()))))
           .load();
     }
+
     await (FontLoader('MaterialIcons')
           ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
         .load();

@@ -8,11 +8,13 @@ import '../models/service_entry.dart';
 import '../models/deferred_service.dart';
 import '../repositories/maintenance_repository.dart';
 
+/// Writes component schedules and service history through the maintenance repository.
 class MaintenanceController extends OperationController {
   MaintenanceController(this._repository,
       {String Function()? newId, DateTime Function()? now})
       : _newId = newId ?? const Uuid().v4,
         _now = now ?? DateTime.now;
+
   final MaintenanceRepository _repository;
   final String Function() _newId;
   final DateTime Function() _now;
@@ -20,11 +22,17 @@ class MaintenanceController extends OperationController {
 
   Stream<List<ServiceComponent>> getComponentsForBike(String bikeId) =>
       _repository.getComponentsForBike(bikeId);
+
   Stream<List<ServiceEntry>> getEntriesForComponent(String componentId) =>
       _repository.getEntriesForComponent(componentId);
+
   Stream<ServiceEntry?> streamLatestEntryForComponent(String componentId) =>
       _repository.streamLatestEntryForComponent(componentId);
 
+  /// Creates a component together with its initial service baseline.
+  ///
+  /// Identical in-flight requests share work. A failed draft retains its generated
+  /// IDs and date so retrying the same inputs reuses the same records.
   Future<CommandResult<void>> createComponent(
       {required String bikeId,
       required ComponentType type,
@@ -50,6 +58,7 @@ class MaintenanceController extends OperationController {
       includeIndoorRides,
       baselineDate
     );
+
     return share(
         ('createComponent', key),
         () => command(() async {
@@ -63,6 +72,7 @@ class MaintenanceController extends OperationController {
                   (baselineDate?.isAfter(_now()) ?? false)) {
                 throw const AppFailure(FailureCode.invalidInput);
               }
+
               final (componentId, entryId, date) = _componentDrafts.putIfAbsent(
                   key, () => (_newId(), _newId(), _now().toUtc()));
               final component = ServiceComponent(
@@ -88,6 +98,7 @@ class MaintenanceController extends OperationController {
               await _repository.createComponentWithBaseline(
                   component, baseline);
               if (isDisposed) throw const CommandAborted();
+
               _componentDrafts.remove(key);
             }));
   }
@@ -108,8 +119,10 @@ class MaintenanceController extends OperationController {
             serviceIntervalKm: serviceIntervalKm,
             serviceIntervalHours: serviceIntervalHours);
       });
+
   Future<CommandResult<void>> deleteComponent(String componentId) =>
       command(() => _repository.deleteComponent(componentId));
+
   Future<CommandResult<void>> deleteServiceEntry(
           String componentId, String entryId) =>
       command(() => _repository.deleteServiceEntry(componentId, entryId));
@@ -139,6 +152,7 @@ class MaintenanceController extends OperationController {
         if (extendKm <= 0 || component.serviceIntervalKm <= 0) {
           throw const AppFailure(FailureCode.invalidInput);
         }
+
         await _writeService(
             componentId: component.id,
             date: date ?? _now(),
@@ -163,7 +177,9 @@ class MaintenanceController extends OperationController {
             date.isAfter(_now()))) {
       throw const AppFailure(FailureCode.invalidInput);
     }
+
     final trimmed = note?.trim();
+
     return _repository.addServiceEntry(
         componentId,
         ServiceEntry(

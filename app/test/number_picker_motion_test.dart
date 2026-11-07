@@ -60,10 +60,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 40));
     expect(find.byType(ImageFiltered), findsWidgets);
     await tester.pumpAndSettle();
+
     for (final filter
         in tester.widgetList<ImageFiltered>(find.byType(ImageFiltered))) {
       expect(filter.enabled, isFalse);
     }
+
     expect(tester.takeException(), isNull);
   });
 
@@ -140,9 +142,11 @@ void main() {
     final changes = <double>[];
     await mount(tester, changes.add,
         initial: 100, step: 1, decimals: 0, reduced: true);
+
     for (var i = 0; i < 4; i++) {
       await pinch(tester, 0.5);
     }
+
     expect(changes, isEmpty);
     final scroll = tester
         .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))

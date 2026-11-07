@@ -15,6 +15,7 @@ Future<T> firebaseOperation<T>(Future<T> Function() action,
     ].contains(error.code)) {
       throw const CommandAborted();
     }
+
     final code = switch (error.code) {
       'permission-denied' || 'unauthenticated' => FailureCode.permissionDenied,
       'unavailable' || 'network-request-failed' => FailureCode.unavailable,

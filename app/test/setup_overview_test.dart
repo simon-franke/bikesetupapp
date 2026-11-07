@@ -40,10 +40,12 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
+
     for (final text in ['27 psi', '38 psi']) {
       await tester.tap(find.text(text, findRichText: true));
       await tester.pumpAndSettle();
     }
+
     final tires = tester.getRect(find.byType(SetupCard).first);
     await tester.tapAt(tires.topLeft + const Offset(8, 8));
     await tester.pumpAndSettle();

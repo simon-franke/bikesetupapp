@@ -10,6 +10,7 @@ class AppGlassSurface extends StatelessWidget {
       this.showShadow = true,
       this.tintColor,
       this.tintOpacity = .78});
+
   final Widget child;
   final bool showShadow;
   final Color? tintColor;
@@ -18,6 +19,7 @@ class AppGlassSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+
     return CupertinoLiquidGlass(
       theme: (dark ? LiquidGlassThemeData.dark() : LiquidGlassThemeData.light())
           .copyWith(

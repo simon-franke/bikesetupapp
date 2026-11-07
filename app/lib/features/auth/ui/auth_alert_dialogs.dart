@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/dialog_helpers.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'google_sign_in.dart';
@@ -16,19 +17,19 @@ class AuthAlerts {
             'Your guest bikes cannot be recovered after you sign out. Save them to an account before leaving.',
           ),
           actions: [
-            DialogPrimaryButton(
+            AppActionButton(
                 label: 'Save to an account',
                 onPressed: () {
                   Navigator.of(ctx).pop(false);
                   Navigator.of(context, rootNavigator: true).push(
                       AppRoutes.fadeSlide(const LoginPage(upgrade: true)));
                 }),
-            DialogSecondaryButton(
-              label: 'Stay here',
+            TextButton(
+              child: const Text('Stay here'),
               onPressed: () => Navigator.of(ctx).pop(false),
             ),
-            DialogSecondaryButton(
-              label: 'Leave guest session',
+            TextButton(
+              child: const Text('Leave guest session'),
               onPressed: () {
                 Navigator.of(ctx).pop(true);
               },
@@ -47,7 +48,7 @@ class AuthAlerts {
           title: 'Error',
           content: Text(message),
           actions: [
-            DialogPrimaryButton(
+            AppActionButton(
               label: 'OK',
               onPressed: () => Navigator.of(ctx).pop(),
             ),

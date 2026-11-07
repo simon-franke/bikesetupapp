@@ -30,7 +30,8 @@ String failureMessage(AppFailure failure) => switch (failure.code) {
         'Strava has disabled this API application. Its owner must check their Strava subscription and reactivate the app at strava.com/settings/api.',
       FailureCode.stravaDenied =>
         'Strava denied access. Check the API application status and granted permissions.',
-      FailureCode.rateLimited => 'You reached the request limit. Try again later.',
+      FailureCode.rateLimited =>
+        'You reached the request limit. Try again later.',
       FailureCode.network =>
         'Could not reach Strava. Check your connection and try again.',
       FailureCode.invalidResponse =>

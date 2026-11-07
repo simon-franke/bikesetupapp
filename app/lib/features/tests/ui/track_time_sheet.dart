@@ -6,6 +6,7 @@ import 'package:bikesetupapp/common/ui/app_sheet.dart';
 
 class TrackTimeSheet extends StatefulWidget {
   const TrackTimeSheet({super.key, required this.initial});
+
   final String initial;
 
   @override
@@ -108,12 +109,14 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
       const SizedBox(height: 4),
       Text(label, style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
     ]);
+
     return expanded ? Expanded(child: field) : field;
   }
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Padding(
       padding: appSheetPadding(context),
       child: Column(
@@ -146,6 +149,7 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
                       expanded: false),
                 ]);
               }
+
               return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

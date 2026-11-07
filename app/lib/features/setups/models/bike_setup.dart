@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 
+/// Setup-list identity and display name; field values are stored separately.
 class BikeSetup {
   final String id;
   final String name;

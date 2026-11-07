@@ -22,6 +22,7 @@ enum ServiceIcon {
   bolt('Bolt');
 
   const ServiceIcon(this.label);
+
   final String label;
 
   static ServiceIcon forType(ComponentType type) => switch (type) {

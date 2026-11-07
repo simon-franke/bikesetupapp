@@ -1,3 +1,4 @@
+import 'app_error_banner.dart';
 import 'app_haptics.dart';
 import 'app_loading.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,6 +12,8 @@ AppBar buildDetailAppBar(
   BuildContext context, {
   required String title,
   List<Widget> actions = const [],
+  VoidCallback? onBack,
+  bool backEnabled = true,
 }) {
   final style = AppTextStyles.heading.copyWith(
     color: context.palette.ink,
@@ -27,6 +30,7 @@ AppBar buildDetailAppBar(
   )..layout(maxWidth: titleWidth);
   final height = (painter.height + 24).clamp(64.0, double.infinity);
   painter.dispose();
+
   return AppBar(
     automaticallyImplyLeading: false,
     centerTitle: false,
@@ -40,8 +44,9 @@ AppBar buildDetailAppBar(
                     MaterialLocalizations.of(routeContext).backButtonTooltip,
                 icon: const Icon(CupertinoIcons.chevron_left,
                     size: AppIconSizes.compact),
-                onPressed: AppHaptics.wrap(
-                    () => Navigator.of(routeContext).maybePop()),
+                onPressed: AppHaptics.wrap(backEnabled
+                    ? onBack ?? () => Navigator.of(routeContext).maybePop()
+                    : null),
               )),
     ),
     titleSpacing: 8,
@@ -60,6 +65,8 @@ AppBar buildDetailAppBar(
 /// AppTheme so focus, disabled states, sizing and semantics stay consistent.
 class AppActionButton extends StatelessWidget {
   final String label;
+  final bool isLoading;
+  final String loadingLabel;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool outlined;
@@ -71,6 +78,8 @@ class AppActionButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.isLoading = false,
+    this.loadingLabel = 'Saving…',
     this.icon,
     this.outlined = false,
     this.destructive = false,
@@ -80,16 +89,26 @@ class AppActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Text(label, style: textStyle);
+    final action = isLoading ? null : onPressed;
+    final child = isLoading
+        ? AppLoadingContent(label: loadingLabel)
+        : Text(label, style: textStyle);
     if (outlined) {
-      return icon == null
-          ? OutlinedButton(onPressed: AppHaptics.wrap(onPressed), child: child)
+      return icon == null || isLoading
+          ? OutlinedButton(
+              onPressed: AppHaptics.wrap(action),
+              style: isLoading
+                  ? OutlinedButton.styleFrom(
+                      disabledForegroundColor: context.palette.ink)
+                  : null,
+              child: child)
           : OutlinedButton.icon(
-              onPressed: AppHaptics.wrap(onPressed),
+              onPressed: AppHaptics.wrap(action),
               icon: Icon(icon),
               label: child);
     }
-    final content = icon == null
+
+    final content = icon == null || isLoading
         ? child
         : Row(
             mainAxisSize: MainAxisSize.min,
@@ -101,9 +120,10 @@ class AppActionButton extends StatelessWidget {
           );
     if (destructive || color == context.palette.red) {
       return TextButton(
-        onPressed: AppHaptics.wrap(onPressed),
+        onPressed: AppHaptics.wrap(action),
         style: TextButton.styleFrom(
           foregroundColor: context.palette.red,
+          disabledForegroundColor: isLoading ? context.palette.ink : null,
           backgroundColor: context.palette.red.withValues(alpha: .10),
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -113,7 +133,13 @@ class AppActionButton extends StatelessWidget {
         child: content,
       );
     }
-    return AppTactileButton(onPressed: onPressed, color: color, child: content);
+
+    return AppTactileButton(
+        onPressed: onPressed,
+        color: color,
+        isLoading: isLoading,
+        loadingLabel: loadingLabel,
+        child: content);
   }
 }
 
@@ -158,8 +184,11 @@ class AppObjectMenu extends StatelessWidget {
                 destructive: true),
         ]);
     if (!context.mounted) return;
+
     if (selected == 'rename') onRename?.call();
+
     if (selected == 'discard') onDiscard?.call();
+
     if (selected == 'delete') onDelete?.call();
   }
 
@@ -185,6 +214,7 @@ class AppSheetOption {
       this.destructive = false,
       this.selected = false,
       this.count = 0});
+
   final String value, label;
   final IconData? icon;
   final bool destructive, selected;
@@ -204,6 +234,7 @@ Future<String?> showAppOptionsSheet({
     builder: (sheetContext) {
       sheetRoute = ModalRoute.of(sheetContext);
       final p = sheetContext.palette;
+
       return SafeArea(
         top: false,
         child: Padding(
@@ -270,6 +301,7 @@ Future<String?> showAppOptionsSheet({
     },
   );
   await sheetRoute?.completed;
+
   return selected;
 }
 
@@ -298,6 +330,7 @@ class AppEditButton extends StatelessWidget {
       ),
       child: Text(label),
     );
+
     return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
   }
 }
@@ -305,6 +338,10 @@ class AppEditButton extends StatelessWidget {
 class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
+  final bool enabled;
+  final bool obscureText;
+  final bool autocorrect;
+  final Iterable<String>? autofillHints;
   final String? errorText;
   final String? suffix;
   final Widget? suffixWidget;
@@ -319,7 +356,11 @@ class AppTextField extends StatelessWidget {
   const AppTextField({
     super.key,
     required this.controller,
-    required this.hint,
+    this.hint = '',
+    this.enabled = true,
+    this.obscureText = false,
+    this.autocorrect = true,
+    this.autofillHints,
     this.errorText,
     this.suffix,
     this.suffixWidget,
@@ -336,12 +377,17 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final invalid = errorText != null;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
           controller: controller,
+          enabled: enabled,
+          obscureText: obscureText,
+          autocorrect: autocorrect,
+          autofillHints: autofillHints,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           textInputAction: textInputAction,
@@ -375,6 +421,7 @@ class AppTextField extends StatelessWidget {
 
 class AppFieldLabel extends StatelessWidget {
   final String label;
+
   const AppFieldLabel(this.label, {super.key});
 
   @override
@@ -386,12 +433,15 @@ class AppFieldLabel extends StatelessWidget {
 
 class AppSectionLabel extends StatelessWidget {
   final String label;
+
   const AppSectionLabel(this.label, {super.key});
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+        child: Semantics(
+            header: true,
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium)),
       );
 }
 
@@ -399,18 +449,21 @@ class AppSectionLabel extends StatelessWidget {
 class AppSectionToolbar extends StatelessWidget {
   final Widget title;
   final Widget? action;
+
   const AppSectionToolbar({super.key, required this.title, this.action});
 
   @override
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, constraints) {
         if (action == null) return title;
+
         if (constraints.maxWidth < 420 ||
             MediaQuery.textScalerOf(context).scale(14) > 22) {
           return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [title, const SizedBox(height: 8), action!]);
         }
+
         return Row(children: [
           Expanded(child: title),
           const SizedBox(width: 16),
@@ -426,9 +479,11 @@ class AppSuggestionTile extends StatelessWidget {
       required this.label,
       required this.onTap,
       this.isNew = false});
+
   final String label;
   final VoidCallback? onTap;
   final bool isNew;
+
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -469,6 +524,7 @@ class AppTactileButton extends StatefulWidget {
       this.isLoading = false,
       this.loadingLabel = 'Saving…',
       this.compact = false});
+
   final VoidCallback? onPressed;
   final Widget child;
   final String? tooltip;
@@ -565,28 +621,13 @@ class _AppTactileButtonState extends State<AppTactileButton> {
               splashFactory: NoSplash.splashFactory,
             ),
             child: widget.isLoading
-                ? Semantics(
-                    liveRegion: true,
-                    label: widget.loadingLabel,
-                    child: ExcludeSemantics(
-                        child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(
-                            width: 28,
-                            height: 20,
-                            child: OverflowBox(
-                                maxHeight: 28,
-                                child: AppLoadingIndicator(size: 28))),
-                        const SizedBox(width: 10),
-                        Flexible(child: Text(widget.loadingLabel)),
-                      ],
-                    )))
+                ? AppLoadingContent(label: widget.loadingLabel)
                 : widget.child,
           ),
         ),
       ),
     ]);
+
     return widget.tooltip == null
         ? button
         : Tooltip(
@@ -600,8 +641,10 @@ class _AppTactileButtonState extends State<AppTactileButton> {
 class AppSelectionSurface extends StatelessWidget {
   const AppSelectionSurface(
       {super.key, required this.selected, required this.child});
+
   final bool selected;
   final Widget child;
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
@@ -619,9 +662,11 @@ class AppSelectionSurface extends StatelessWidget {
 class AppAddButton extends StatelessWidget {
   const AppAddButton(
       {super.key, required this.label, required this.onPressed, this.tooltip});
+
   final String label;
   final VoidCallback? onPressed;
   final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
     final button = Align(
@@ -638,6 +683,65 @@ class AppAddButton extends StatelessWidget {
         label: Text(label),
       ),
     );
+
     return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
   }
+}
+
+/// A visible field label and its control, with consistent spacing and semantics.
+class AppFormField extends StatelessWidget {
+  const AppFormField({super.key, required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ExcludeSemantics(child: AppFieldLabel(label)),
+          const SizedBox(height: 8),
+          Semantics(label: label, child: child),
+        ],
+      );
+}
+
+/// Shared submission feedback; the caller owns saving, retries, and dismissal.
+class AppFormFooter extends StatelessWidget {
+  const AppFormFooter({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.loadingLabel = 'Saving…',
+    this.error,
+    this.destructive = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final String loadingLabel;
+  final String? error;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (error != null) ...[
+            AppErrorBanner(message: error!),
+            const SizedBox(height: 16),
+          ],
+          AppActionButton(
+            label: label,
+            onPressed: onPressed,
+            isLoading: isLoading,
+            loadingLabel: loadingLabel,
+            destructive: destructive,
+          ),
+        ],
+      );
 }

@@ -5,6 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import '../repositories/auth_repository.dart';
 
+/// Serializes session changes and shares duplicate in-flight authentication requests.
+///
+/// Session callbacks let the composition root clear account-specific state.
 class AuthController extends OperationController {
   AuthController(this._repository,
       {void Function()? onSignedOut, Future<void> Function()? onSigningOut})
@@ -24,7 +27,9 @@ class AuthController extends OperationController {
       });
     }
   }
+
   StreamSubscription<User?>? _subscription;
+
   @override
   void dispose() {
     _subscription?.cancel();
@@ -35,6 +40,7 @@ class AuthController extends OperationController {
   final Future<void> Function()? _onSigningOut;
   final AuthRepository _repository;
   final WriteQueue _sessions = WriteQueue();
+
   Future<CommandResult<T>> _session<T>(
           Object key, Future<T> Function() action) =>
       share(
@@ -43,28 +49,40 @@ class AuthController extends OperationController {
                 if (isDisposed) throw const CommandAborted();
                 return action();
               })));
+
   User? get currentUser => _repository.currentUser;
+
   Future<CommandResult<UserCredential>> signInWithGoogle() =>
       _session('google', _repository.signInWithGoogle);
+
   Future<CommandResult<UserCredential>> signInWithApple() =>
       _session('apple', _repository.signInWithApple);
+
   Future<CommandResult<UserCredential>> signInAnonymously() =>
       _session('anonymous', _repository.signInAnonymously);
+
   Future<CommandResult<UserCredential>> signInWithEmail(
           String email, String password) =>
       _session(('email', email, password),
           () => _repository.signInWithEmail(email, password));
+
   Future<CommandResult<UserCredential>> signUpWithEmail(
           String email, String password) =>
       _session(('signup', email, password),
           () => _repository.signUpWithEmail(email, password));
+
   Future<CommandResult<void>> resetPassword(String email) =>
       _session(('reset', email), () => _repository.resetPassword(email));
+
   Future<CommandResult<void>> deleteAccount({String? password}) =>
       _session('delete', () async {
         await _repository.deleteAccount(password: password);
         _onSignedOut?.call();
       });
+
+  /// Runs connection cleanup before signing out, then clears user controllers.
+  ///
+  /// If cleanup or repository sign-out fails, the command reports that failure.
   Future<CommandResult<void>> signOut() => _session('signout', () async {
         await _onSigningOut?.call();
         await _repository.signOut();

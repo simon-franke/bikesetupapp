@@ -39,6 +39,7 @@ void main() {
     await controller.setCategoryEnabled('bike', 'setup', 'Drivetrain', true,
         addedFields: kDefaultFieldKeys);
     expect(repo.settings['bike/setup/Drivetrain/Chain length'], '112 count');
+
     for (final name in ['', '../bad', 'Fork_meta', '__reserved__']) {
       expect(() => SetupConfiguration({name: []}), throwsFormatException);
     }

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,6 +26,7 @@ class BikeMatchingPage extends StatefulWidget {
 
 class _BikeMatchingPageState extends State<BikeMatchingPage> {
   late final BikeMatchingController _controller;
+
   List<StravaBike> get _stravaBikes => _controller.stravaBikes;
   List<Bike> get _appBikes => _controller.appBikes;
   Map<String, String?> get _links => _controller.links;
@@ -78,24 +80,8 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
       return SizedBox(
         height: 240,
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator.adaptive(
-                  strokeWidth: 2.4,
-                  valueColor: AlwaysStoppedAnimation(p.accent),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                (_syncing ? 'Syncing with Strava…' : 'Loading…').toUpperCase(),
-                style: AppTextStyles.caption.copyWith(color: p.inkDim),
-              ),
-            ],
-          ),
+          child: AppLoadingState(
+              label: _syncing ? 'Syncing with Strava…' : 'Loading bikes…'),
         ),
       );
     }
@@ -262,6 +248,7 @@ class _BikeDropdown extends StatelessWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
+
   const _SectionLabel(this.text);
 
   @override
@@ -274,6 +261,7 @@ class _OutlineButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+
   const _OutlineButton({
     required this.icon,
     required this.label,
@@ -293,6 +281,7 @@ class _PrimaryButton extends StatelessWidget {
   final IconData? icon;
   final String label;
   final VoidCallback onTap;
+
   const _PrimaryButton({
     required this.label,
     required this.onTap,

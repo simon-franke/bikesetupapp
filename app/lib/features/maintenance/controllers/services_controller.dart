@@ -3,9 +3,13 @@ import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/features/strava/controllers/strava_controller.dart';
 import 'package:bikesetupapp/features/strava/controllers/strava_connection_controller.dart';
 
+/// Loads connection status and mileage for the currently selected maintenance bike.
+///
+/// Request generations prevent superseded loads from publishing stale results.
 class ServicesController extends OperationController {
   ServicesController(this._strava, this._connection, String bikeId)
       : _bikeId = bikeId;
+
   final StravaController _strava;
   final StravaConnectionController _connection;
   String _bikeId;
@@ -14,6 +18,7 @@ class ServicesController extends OperationController {
   double? _mileageKm;
   DateTime? _lastSyncTime;
   bool _mileageError = false;
+
   String get bikeId => _bikeId;
   bool get connected => _connected;
   bool get syncing => _syncing;
@@ -36,6 +41,7 @@ class ServicesController extends OperationController {
 
   Future<void> _load(int generation) async {
     final id = _bikeId;
+
     try {
       final auth = await _connection.getAuth();
       _check(generation);
@@ -63,14 +69,17 @@ class ServicesController extends OperationController {
   }
 
   Future<CommandResult<void>> sync() => share('sync', () => command(_sync));
+
   Future<void> _sync() async {
     final generation = beginRequest('load');
     if (!_connected) {
       await _load(generation);
       return;
     }
+
     _syncing = true;
     emit();
+
     try {
       final result = await _strava.sync();
       _check(generation);

@@ -16,6 +16,7 @@ import 'package:bikesetupapp/features/tests/models/setup_test.dart';
 
 class DelayedDraft extends MemoryTests {
   final gate = Completer<void>();
+
   @override
   Future<void> update(String bike, String setup, String id,
       {required TestStage expectedStage,
@@ -28,10 +29,12 @@ class DelayedDraft extends MemoryTests {
 
 class DelayedSettings extends FakeSetupsRepository {
   final pending = <Completer<void>>[];
+
   @override
   Stream<Map<String, dynamic>> getSettings(
           String bike, String category, String setup) =>
       Stream.value({'Pressure': '24 psi'});
+
   @override
   Future<void> setSetting(
       String key, String value, String bike, String category, String setup) {

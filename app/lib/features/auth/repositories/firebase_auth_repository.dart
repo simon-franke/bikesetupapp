@@ -18,6 +18,7 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
       : _client = client,
         _auth = auth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+
   final http.Client? _client;
   final GoogleSignIn _googleSignIn;
   final Future<void> Function()? beforeAccountDeletion;
@@ -45,6 +46,7 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
   }
 
   final FirebaseAuth _auth;
+
   @override
   Stream<User?> get userChanges => _auth.userChanges();
 
@@ -57,10 +59,12 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
 
   @override
   User? get currentUser => _auth.currentUser;
+
   @override
   Future<UserCredential> signInAnonymously() =>
       firebaseOperation(() => _auth.signInAnonymously(),
           fallback: FailureCode.authenticationFailed);
+
   @override
   Future<UserCredential> signInWithGoogle() async {
     return _authentication(() async {
@@ -141,6 +145,7 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
         if (user == null) {
           throw const AppFailure(FailureCode.authenticationFailed);
         }
+
         final providers =
             user.providerData.map((provider) => provider.providerId).toSet();
         if (providers.contains('apple.com')) {
@@ -159,6 +164,7 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
             if (token == null || token.isEmpty) {
               throw const AppFailure(FailureCode.accountDeletionFailed);
             }
+
             final response = await _post(
                 Uri.https(
                     'identitytoolkit.googleapis.com',
@@ -189,11 +195,13 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
         } else if (!user.isAnonymous) {
           throw const AppFailure(FailureCode.authenticationFailed);
         }
+
         await beforeAccountDeletion?.call();
         final token = await user.getIdToken(true);
         if (token == null || _auth.currentUser?.uid != user.uid) {
           throw const CommandAborted();
         }
+
         final response = await _post(
             Uri.parse(
                 'https://us-central1-${_auth.app.options.projectId}.cloudfunctions.net/deleteAccount'),
@@ -205,6 +213,7 @@ class FirebaseAuthRepository implements AuthRepository, AuthSessionEvents {
         if (response.statusCode != 200) {
           throw const AppFailure(FailureCode.accountDeletionFailed);
         }
+
         await _auth.signOut();
       });
 

@@ -8,6 +8,7 @@ import 'package:bikesetupapp/features/strava/controllers/strava_connection_contr
 class SettingsController extends OperationController {
   SettingsController(this._auth, this._connection, this._stravaForUser)
       : _user = _auth.currentUser;
+
   final AuthController _auth;
   final StravaConnectionController _connection;
   final StravaController Function(String) _stravaForUser;
@@ -15,6 +16,7 @@ class SettingsController extends OperationController {
   bool _connected = false;
   int? _athleteId;
   int _bikeCount = 0;
+
   User? get user => _user;
   bool get connected => _connected;
   int? get athleteId => _athleteId;
@@ -26,6 +28,7 @@ class SettingsController extends OperationController {
 
   Future<CommandResult<void>> load() =>
       command(() => _load(beginRequest('state')));
+
   Future<void> _load(int generation) async {
     final auth = await _connection.getAuth();
     _check(generation);
@@ -65,6 +68,7 @@ class SettingsController extends OperationController {
               result.requireValue();
             }
           }));
+
   Future<CommandResult<void>> disconnect() => share(
       'disconnect',
       () => command(() async {
@@ -77,11 +81,13 @@ class SettingsController extends OperationController {
                   .requireValue();
               _check(generation);
             }
+
             _connected = false;
             _athleteId = null;
             _bikeCount = 0;
             emit();
           }));
+
   Future<CommandResult<void>> signOut() => share(
       'signOut',
       () => command(() async {

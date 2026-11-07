@@ -10,10 +10,13 @@ import 'maintenance_repository.dart';
 class FirestoreMaintenanceRepository implements MaintenanceRepository {
   FirestoreMaintenanceRepository(this.userID, {FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+
   final String userID;
   final FirebaseFirestore _firestore;
+
   CollectionReference<Map<String, dynamic>> get userBikeSetup =>
       _firestore.collection(FirestoreKeys.userBikeSetup);
+
   @override
   Stream<List<ServiceComponent>> getComponentsForBike(String bikeId) {
     return firebaseStream(userBikeSetup
@@ -51,10 +54,13 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
       if (serviceIntervalHours != null) {
         updates['serviceIntervalHours'] = serviceIntervalHours;
       }
+
       if (name != null) updates[FirestoreKeys.componentName] = name;
+
       if (serviceIntervalKm != null) {
         updates[FirestoreKeys.serviceIntervalKm] = serviceIntervalKm;
       }
+
       return userBikeSetup
           .doc(userID)
           .collection(FirestoreKeys.serviceComponents)
@@ -72,9 +78,11 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
           .doc(componentId)
           .collection(FirestoreKeys.serviceEntries)
           .get();
+
       for (var doc in entries.docs) {
         await doc.reference.delete();
       }
+
       await userBikeSetup
           .doc(userID)
           .collection(FirestoreKeys.serviceComponents)

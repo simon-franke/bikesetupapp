@@ -54,6 +54,7 @@ class AppDependencies {
             ((id) => FirestoreStravaBikesRepository(id));
 
   static final instance = AppDependencies();
+
   static AppDependencies of(BuildContext context) {
     try {
       return Provider.of<AppDependencies>(context, listen: false);
@@ -85,6 +86,7 @@ class AppDependencies {
               auth.currentUser != null && !auth.currentUser!.isAnonymous));
   final Map<String, UserControllers> _users = {};
 
+  /// Reuses the controller bundle for a user until [clearUsers] disposes it.
   UserControllers forUser(String id) => _users.putIfAbsent(
       id,
       () => UserControllers(
@@ -98,11 +100,15 @@ class AppDependencies {
           ));
 
   final List<ChangeNotifier> _owned = [];
+
   T _own<T extends ChangeNotifier>(T controller) {
     _owned.add(controller);
     return controller;
   }
 
+  /// Disposes cached user controllers and forgets their local state.
+  ///
+  /// Called when the authenticated account changes; repositories are not deleted.
   void clearUsers() {
     for (final user in _users.values) {
       user.dispose();
@@ -119,6 +125,10 @@ class AppDependencies {
   }
 }
 
+/// Lazily creates and owns the controllers for one authenticated user.
+///
+/// Obtain this bundle through [AppDependencies.forUser] so session cleanup can
+/// dispose every controller that has been created.
 class UserControllers {
   UserControllers({
     required RidesRepository Function() ridesRepository,
@@ -135,6 +145,7 @@ class UserControllers {
         _maintenance = maintenanceRepository,
         _stravaBikes = stravaBikesRepository,
         _connection = stravaRepository;
+
   final RidesRepository Function() _rides;
   late final RidesController rides = _own(RidesController(_rides()));
   final TestsRepository Function() _tests;
@@ -145,6 +156,7 @@ class UserControllers {
   final StravaBikesRepository Function() _stravaBikes;
   final StravaRepository Function() _connection;
   final List<ChangeNotifier> _owned = [];
+
   T _own<T extends ChangeNotifier>(T controller) {
     _owned.add(controller);
     return controller;
@@ -157,6 +169,7 @@ class UserControllers {
       _own(MaintenanceController(_maintenance()));
   late final StravaController strava =
       _own(StravaController(_stravaBikes(), _connection()));
+
   void dispose() {
     for (final controller in _owned) {
       controller.dispose();

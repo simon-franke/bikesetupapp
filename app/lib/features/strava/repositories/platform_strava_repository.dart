@@ -13,14 +13,18 @@ class PlatformStravaRepository implements StravaRepository {
       : _userId = userId,
         _auth = auth ?? StravaAuthService(userId: userId),
         _api = api ?? StravaApiService();
+
   final String? Function() _userId;
   final StravaAuthService _auth;
   final StravaApiService _api;
   static const _lastSyncKey = 'strava_last_sync';
+
   @override
   Future<StravaAuth?> getAuth() => _auth.getAuth();
+
   @override
   Future<StravaAuth?> authorize() => _auth.authorize();
+
   @override
   Future<void> clearAuth() async {
     final owner = _userId();
@@ -33,11 +37,14 @@ class PlatformStravaRepository implements StravaRepository {
 
   @override
   Future<void> deauthorize() => _auth.deauthorize();
+
   @override
   Future<String?> getValidToken() => _auth.getValidToken();
+
   @override
   Future<List<StravaBike>> fetchAthleteBikes(String token) =>
       _api.fetchAthleteBikes(token);
+
   @override
   Future<double?> fetchMileageAtDate(
       {required String gearId,

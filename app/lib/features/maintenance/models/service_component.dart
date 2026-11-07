@@ -11,9 +11,11 @@ class ServiceComponent {
   final int serviceIntervalKm;
   final double? serviceIntervalHours;
   final bool includeIndoorRides;
+
   bool get usesHours => serviceIntervalHours != null;
   double get interval => serviceIntervalHours ?? serviceIntervalKm.toDouble();
   String get unitLabel => usesHours ? 'ride hours' : 'km';
+
   final DateTime createdAt;
 
   const ServiceComponent({

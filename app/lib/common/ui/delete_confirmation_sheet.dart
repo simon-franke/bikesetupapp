@@ -34,9 +34,11 @@ class _DeleteConfirmation<T> extends StatefulWidget {
       required this.actionLabel,
       this.onConfirm,
       this.onConfirmed});
+
   final String title, message, actionLabel;
   final Future<CommandResult<T>> Function()? onConfirm;
   final FutureOr<void> Function(T)? onConfirmed;
+
   @override
   State<_DeleteConfirmation<T>> createState() => _DeleteConfirmationState<T>();
 }
@@ -47,10 +49,12 @@ class _DeleteConfirmationState<T> extends State<_DeleteConfirmation<T>> {
 
   Future<void> confirm() async {
     if (deleting) return;
+
     if (widget.onConfirm == null) {
       Navigator.pop(context, true);
       return;
     }
+
     setState(() {
       deleting = true;
       error = null;
@@ -61,6 +65,7 @@ class _DeleteConfirmationState<T> extends State<_DeleteConfirmation<T>> {
       return result!;
     }, onFailure: (message) => setState(() => error = message));
     if (!mounted) return;
+
     if (success) {
       await widget.onConfirmed?.call(result!.requireValue());
       if (mounted) Navigator.pop(context, true);

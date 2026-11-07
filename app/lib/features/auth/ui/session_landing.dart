@@ -22,9 +22,11 @@ class SessionLanding extends StatefulWidget {
       required this.user,
       this.deleteAccount = false,
       this.onCancelDeletion});
+
   final User? user;
   final bool deleteAccount;
   final VoidCallback? onCancelDeletion;
+
   @override
   State<SessionLanding> createState() => _SessionLandingState();
 }
@@ -32,6 +34,7 @@ class SessionLanding extends StatefulWidget {
 class _SessionLandingState extends State<SessionLanding> {
   SetupConfiguration? createdConfiguration;
   late Future<StartupSelection?> selection = load();
+
   Future<StartupSelection?> load() => widget.user == null
       ? Future.value(null)
       : AppDependencies.of(context)
@@ -69,6 +72,7 @@ class _SessionLandingState extends State<SessionLanding> {
           key: ValueKey('loading'),
           body: Center(child: AppLoadingState(label: 'Loading your bikes…')));
     }
+
     final selected = snapshot.data;
     if (!snapshot.hasError && selected != null) {
       return MyHomePage(
@@ -87,6 +91,7 @@ class _SessionLandingState extends State<SessionLanding> {
           setupName: selected.setupName,
           uSetupID: selected.setupId);
     }
+
     return Scaffold(
         key: ValueKey(snapshot.hasError ? 'error' : 'no-bikes'),
         appBar: AppBar(title: const Text('Clickwise'), actions: [

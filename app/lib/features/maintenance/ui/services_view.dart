@@ -29,6 +29,7 @@ class ServicesView extends StatefulWidget {
 
 class _ServicesViewState extends State<ServicesView> {
   late ServicesController _controller;
+
   double? get _mileageKm => _controller.mileageKm;
   bool get _mileageError => _controller.mileageError;
 
@@ -120,6 +121,7 @@ class _ServicesViewState extends State<ServicesView> {
         ? null
         : await db.strava.getStravaGearIdForBike(widget.uBikeID);
     if (!mounted) return;
+
     Navigator.of(context).push(
       AppRoutes.fadeSlide(
         ComponentDetailPage(

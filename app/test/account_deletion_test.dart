@@ -10,6 +10,7 @@ import 'support/fake_auth_repository.dart';
 class DeletionUser extends SessionUser {
   bool rejectPassword = false;
   bool reauthenticated = false;
+
   @override
   Future<UserCredential> reauthenticateWithCredential(
       AuthCredential credential) async {
@@ -37,11 +38,14 @@ class DeletionApp extends Fake implements FirebaseApp {
 
 class DeletionAuth extends Fake implements FirebaseAuth {
   DeletionAuth(this.user);
+
   User? user;
+
   @override
   User? get currentUser => user;
   @override
   FirebaseApp get app => DeletionApp();
+
   @override
   Future<void> signOut() async {
     user = null;

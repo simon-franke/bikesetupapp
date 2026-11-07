@@ -17,6 +17,7 @@ void main() {
                 height: 500,
                 child: StatefulBuilder(builder: (context, setState) {
                   update = setState;
+
                   return WorkspaceTransition(
                       child: service
                           ? LayoutBuilder(
@@ -32,11 +33,13 @@ void main() {
     update(() => service = true);
     await tester.pump();
     final top = tester.getTopLeft(find.byKey(pageKey));
+
     for (final milliseconds in [40, 60, 100]) {
       await tester.pump(Duration(milliseconds: milliseconds));
       expect(tester.getSize(find.byKey(pageKey)), const Size(390, 500));
       expect(tester.getTopLeft(find.text('Service')).dy, top.dy);
     }
+
     update(() => loaded = true);
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.text('Service')).dy, top.dy);

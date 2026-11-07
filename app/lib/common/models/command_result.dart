@@ -26,10 +26,12 @@ enum FailureCode {
 /// Expected failure information without presentation text or persistence types.
 class AppFailure implements Exception {
   const AppFailure(this.code, {this.cause, this.stackTrace, this.statusCode});
+
   final FailureCode code;
   final Object? cause;
   final StackTrace? stackTrace;
   final int? statusCode;
+
   @override
   String toString() => 'AppFailure(${code.name})';
 }
@@ -39,14 +41,22 @@ class CommandAborted implements Exception {
   const CommandAborted();
 }
 
+/// Outcome of a controller command: success, expected failure, or cancellation.
+///
+/// Cancellation does not guarantee that an underlying write was rolled back.
 sealed class CommandResult<T> {
   const CommandResult();
+
   bool get isSuccess => this is CommandSuccess<T>;
   bool get isCancelled => this is CommandCancelled<T>;
   AppFailure? get failure => switch (this) {
         CommandFailure<T>(:final reason) => reason,
         _ => null,
       };
+
+  /// Returns the value, or throws the failure or [CommandAborted].
+  ///
+  /// Use when composing commands so a failed inner command stops the outer one.
   T requireValue() => switch (this) {
         CommandSuccess<T>(:final value) => value,
         CommandFailure<T>(:final reason) => throw reason,
@@ -56,11 +66,13 @@ sealed class CommandResult<T> {
 
 class CommandSuccess<T> extends CommandResult<T> {
   const CommandSuccess(this.value);
+
   final T value;
 }
 
 class CommandFailure<T> extends CommandResult<T> {
   const CommandFailure(this.reason);
+
   final AppFailure reason;
 }
 

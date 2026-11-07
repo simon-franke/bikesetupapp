@@ -9,7 +9,9 @@ abstract final class AppHaptics {
   static int? _lastPulse;
 
   static void selection() => _emit(HapticFeedback.selectionClick);
+
   static void action() => _emit(HapticFeedback.lightImpact);
+
   static void emphasis() => _emit(HapticFeedback.mediumImpact);
 
   static void _emit(Future<void> Function() feedback) {
@@ -27,6 +29,7 @@ abstract final class AppHaptics {
   static VoidCallback? wrap(VoidCallback? callback,
       {bool selection = false, bool emphasized = false}) {
     if (callback == null) return null;
+
     return () {
       if (selection) {
         AppHaptics.selection();

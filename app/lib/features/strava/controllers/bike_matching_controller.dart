@@ -8,6 +8,7 @@ import 'strava_controller.dart';
 
 class BikeMatchingController extends OperationController {
   BikeMatchingController(this._bikes, this._strava);
+
   final BikesController _bikes;
   final StravaController _strava;
   List<StravaBike> _stravaBikes = [];
@@ -15,6 +16,7 @@ class BikeMatchingController extends OperationController {
   final Map<String, String?> _links = {};
   bool _loading = true;
   bool _syncing = false;
+
   List<StravaBike> get stravaBikes => List.unmodifiable(_stravaBikes);
   List<Bike> get appBikes => List.unmodifiable(_appBikes);
   Map<String, String?> get links => Map.unmodifiable(_links);
@@ -27,6 +29,7 @@ class BikeMatchingController extends OperationController {
         _syncing = false;
         _loading = true;
         emit();
+
         try {
           final syncFailure = await _load(generation, syncIfEmpty: syncIfEmpty);
           if (syncFailure != null) throw syncFailure;
@@ -51,6 +54,7 @@ class BikeMatchingController extends OperationController {
     if (incoming.isEmpty && syncIfEmpty) {
       _syncing = true;
       emit();
+
       try {
         final synced = await _strava.sync();
         check();
@@ -65,12 +69,14 @@ class BikeMatchingController extends OperationController {
         }
       }
     }
+
     _stravaBikes = List.of(incoming);
     _appBikes = List.of(bikes);
     _links
       ..clear()
       ..addAll(suggestBikeLinks(incoming, bikes));
     emit();
+
     return syncFailure;
   }
 
@@ -80,6 +86,7 @@ class BikeMatchingController extends OperationController {
             final generation = beginRequest('load');
             _syncing = true;
             emit();
+
             try {
               final result = await _strava.sync();
               if (!isCurrentRequest('load', generation)) {
@@ -98,7 +105,8 @@ class BikeMatchingController extends OperationController {
           }));
 
   void link(String gearId, String? bikeId) {
-    if (isDisposed || !_stravaBikes.any((bike) => bike.stravaGearId == gearId)) {
+    if (isDisposed ||
+        !_stravaBikes.any((bike) => bike.stravaGearId == gearId)) {
       return;
     }
     if (bikeId != null && !_appBikes.any((bike) => bike.id == bikeId)) return;
@@ -111,6 +119,7 @@ class BikeMatchingController extends OperationController {
       () => command(() async {
             final incoming = List.of(_stravaBikes);
             final links = Map.of(_links);
+
             for (final strava in incoming) {
               if (isDisposed) throw const CommandAborted();
               final id = links[strava.stravaGearId];

@@ -82,6 +82,7 @@ Future<void> showBikeChooserSheet({
               onBikeSelected: onBikeSelected);
         },
       );
+
   return showModalBottomSheet<void>(
     context: context,
     useSafeArea: true,

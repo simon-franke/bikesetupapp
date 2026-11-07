@@ -7,13 +7,16 @@ Map<String, String?> suggestBikeLinks(
   final bikes = appBikes.toList();
   final ids = bikes.map((bike) => bike.id).toSet();
   final suggestions = <String, String?>{};
+
   for (final strava in stravaBikes) {
     if (strava.linkedBikeId != null && ids.contains(strava.linkedBikeId)) {
       suggestions[strava.stravaGearId] = strava.linkedBikeId;
       continue;
     }
+
     final name = strava.name.trim().toLowerCase();
     if (name.isEmpty) continue;
+
     for (final bike in bikes) {
       final candidate = bike.name.trim().toLowerCase();
       if (candidate.isNotEmpty &&
@@ -23,5 +26,6 @@ Map<String, String?> suggestBikeLinks(
       }
     }
   }
+
   return Map.unmodifiable(suggestions);
 }

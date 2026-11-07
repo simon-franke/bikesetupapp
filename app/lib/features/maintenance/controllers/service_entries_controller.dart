@@ -4,19 +4,28 @@ import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import '../models/service_entry.dart';
 import 'maintenance_controller.dart';
 
+/// Watches each component's latest service entry with separate loading and error state.
 class ServiceEntriesController extends OperationController {
   ServiceEntriesController(this._maintenance);
+
   final MaintenanceController _maintenance;
   final Map<String, ServiceEntry?> _entries = {};
   final Map<String, (Object, StackTrace)> _errors = {};
+
   Map<String, (Object, StackTrace)> get errors => Map.unmodifiable(_errors);
+
   final Map<String, StreamSubscription<ServiceEntry?>> _subscriptions = {};
   Set<String> _ids = {};
+
   Map<String, ServiceEntry?> get entries => Map.unmodifiable(_entries);
   bool get hasError => _errors.isNotEmpty;
   bool get loading =>
       _ids.any((id) => !_entries.containsKey(id) && !_errors.containsKey(id));
 
+  /// Replaces subscriptions when the requested component set changes.
+  ///
+  /// Previous entries and errors are cleared; late events from old subscriptions
+  /// are ignored. Supplying the same set leaves current subscriptions intact.
   void watch(Iterable<String> componentIds) {
     if (isDisposed) return;
     final ids = componentIds.toSet();
@@ -34,6 +43,7 @@ class ServiceEntriesController extends OperationController {
     _cancelAll();
     _entries.clear();
     _errors.clear();
+
     for (final id in _ids) {
       _subscriptions[id] =
           _maintenance.streamLatestEntryForComponent(id).listen((entry) {
@@ -47,6 +57,7 @@ class ServiceEntriesController extends OperationController {
         emit();
       });
     }
+
     emit();
   }
 

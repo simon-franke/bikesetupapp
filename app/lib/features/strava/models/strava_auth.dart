@@ -32,6 +32,7 @@ class StravaAuth {
         athlete <= 0) {
       throw const FormatException('Invalid Strava credentials');
     }
+
     return StravaAuth(
         accessToken: access,
         refreshToken: refresh,

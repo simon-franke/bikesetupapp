@@ -10,8 +10,10 @@ class StravaController extends OperationController {
   StravaController(this._repository, StravaRepository connection) {
     _sync = StravaSyncService(_repository, connection, writes: _writes);
   }
+
   final WriteQueue _writes = WriteQueue();
   late final StravaSyncService _sync;
+
   Future<CommandResult<void>> sync() => share(
       'sync',
       () => command(() async {
@@ -20,17 +22,24 @@ class StravaController extends OperationController {
                 isCurrent: () => isCurrentRequest('sync', generation));
             result.requireValue();
           }));
+
   final StravaBikesRepository _repository;
+
   Stream<List<StravaBike>> getStravaBikes() => _repository.getStravaBikes();
+
   Future<CommandResult<void>> linkStravaBike(
           String stravaGearId, String appBikeId) =>
       command(() => _repository.linkStravaBike(stravaGearId, appBikeId));
+
   Future<CommandResult<void>> unlinkStravaBike(String stravaGearId) =>
       command(() => _repository.unlinkStravaBike(stravaGearId));
+
   Future<String?> getStravaGearIdForBike(String appBikeId) =>
       _repository.getStravaGearIdForBike(appBikeId);
+
   Future<double?> getMileageForBike(String appBikeId) =>
       _repository.getMileageForBike(appBikeId);
+
   Future<CommandResult<void>> deleteAllStravaBikes() => share(
       'deleteAll',
       () => command(() async {

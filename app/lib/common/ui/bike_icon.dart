@@ -15,7 +15,8 @@ class BikeIcon extends StatelessWidget {
       'assets/icons/bike.svg',
       width: size ?? theme.size ?? 24,
       height: size ?? theme.size ?? 24,
-      colorFilter: ColorFilter.mode(color ?? theme.color ?? Colors.black, BlendMode.srcIn),
+      colorFilter: ColorFilter.mode(
+          color ?? theme.color ?? Colors.black, BlendMode.srcIn),
       excludeFromSemantics: true,
     );
   }

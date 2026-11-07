@@ -2,7 +2,10 @@ import '../../app/routing/app_motion.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 
-/// Forms always use the phone bottom-sheet presentation.
+/// Shows a form using the phone bottom-sheet presentation.
+///
+/// Completes after dismissal finishes, so callers can safely change the screen
+/// underneath. Returns the value supplied when the sheet was popped, if any.
 Future<T?> showAppSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -35,6 +38,7 @@ Future<T?> showAppSheet<T>({
     },
   );
   await sheetRoute?.completed;
+
   return result;
 }
 

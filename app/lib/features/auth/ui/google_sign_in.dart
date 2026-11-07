@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'privacy_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:flutter/foundation.dart';
@@ -17,7 +19,9 @@ String _authMessage(AppFailure failure, bool upgrade) => upgrade &&
 /// Authentication only. The app's session gate owns all successful navigation.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, this.upgrade = false});
+
   final bool upgrade;
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -29,10 +33,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> authenticate(
       Future<CommandResult<UserCredential>> Function() action) async {
     if (busy) return;
+
     setState(() {
       busy = true;
       error = null;
     });
+
     try {
       (await action()).requireValue();
     } on CommandAborted {
@@ -74,8 +80,11 @@ class _LoginPageState extends State<LoginPage> {
                 textAlign: TextAlign.center),
           ),
         );
+
     return Scaffold(
-      appBar: widget.upgrade ? AppBar(title: const Text('Save account')) : null,
+      appBar: widget.upgrade
+          ? buildDetailAppBar(context, title: 'Save account')
+          : null,
       body: SafeArea(
         child: LayoutBuilder(builder: (context, constraints) {
           return SingleChildScrollView(
@@ -121,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                           label: const Text('Continue with email')),
                       if (busy)
                         const Center(
-                            child: CircularProgressIndicator.adaptive()),
+                            child: AppLoadingContent(label: 'Signing in…')),
                       if (error != null)
                         Padding(
                             padding: const EdgeInsets.only(top: 16),
@@ -153,7 +162,9 @@ class _LoginPageState extends State<LoginPage> {
 
 class _EmailSignInSheet extends StatefulWidget {
   const _EmailSignInSheet({required this.upgrade});
+
   final bool upgrade;
+
   @override
   State<_EmailSignInSheet> createState() => _EmailSignInSheetState();
 }
@@ -167,6 +178,7 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
   bool resetSent = false;
   bool showPassword = false;
   String? error;
+
   @override
   void dispose() {
     email.dispose();
@@ -176,6 +188,7 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
 
   Future<void> submit() async {
     if (busy) return;
+
     if (!email.text.trim().contains('@') ||
         (!resetting && password.text.isEmpty)) {
       setState(() => error = resetting
@@ -183,12 +196,14 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
           : 'Enter a valid email address and password.');
       return;
     }
+
     setState(() {
       busy = true;
       error = null;
     });
     resetSent = false;
     final auth = AppDependencies.of(context).auth;
+
     try {
       if (resetting) {
         (await auth.resetPassword(email.text.trim())).requireValue();
@@ -234,52 +249,45 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
                             : 'Sign in with email',
                     style: AppTextStyles.heading),
                 const SizedBox(height: 20),
-                Text('Email',
-                    style: AppTextStyles.caption
-                        .copyWith(color: context.palette.inkMuted)),
-                const SizedBox(height: 8),
-                Semantics(
-                    label: 'Email',
-                    child: TextField(
-                        controller: email,
-                        enabled: !busy,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        autocorrect: false,
-                        textInputAction: resetting
-                            ? TextInputAction.done
-                            : TextInputAction.next,
-                        onSubmitted: resetting ? (_) => submit() : null,
-                        decoration: const InputDecoration())),
+                AppFormField(
+                  label: 'Email',
+                  child: AppTextField(
+                    controller: email,
+                    enabled: !busy,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    autocorrect: false,
+                    textInputAction:
+                        resetting ? TextInputAction.done : TextInputAction.next,
+                    onSubmitted: resetting ? (_) => submit() : null,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                if (!resetting) ...[
-                  Text('Password',
-                      style: AppTextStyles.caption
-                          .copyWith(color: context.palette.inkMuted)),
-                  const SizedBox(height: 8),
-                  Semantics(
-                      label: 'Password',
-                      child: TextField(
-                          controller: password,
-                          enabled: !busy,
-                          obscureText: !showPassword,
-                          autofillHints: [
-                            signUp
-                                ? AutofillHints.newPassword
-                                : AutofillHints.password
-                          ],
-                          onSubmitted: (_) => submit(),
-                          decoration: InputDecoration(
-                              suffixIcon: IconButton(
-                                  tooltip: showPassword
-                                      ? 'Hide password'
-                                      : 'Show password',
-                                  onPressed: () => setState(
-                                      () => showPassword = !showPassword),
-                                  icon: Icon(showPassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined))))),
-                ],
+                if (!resetting)
+                  AppFormField(
+                    label: 'Password',
+                    child: AppTextField(
+                      controller: password,
+                      enabled: !busy,
+                      obscureText: !showPassword,
+                      autocorrect: false,
+                      autofillHints: [
+                        signUp
+                            ? AutofillHints.newPassword
+                            : AutofillHints.password
+                      ],
+                      onSubmitted: (_) => submit(),
+                      suffixWidget: IconButton(
+                        tooltip:
+                            showPassword ? 'Hide password' : 'Show password',
+                        onPressed: () =>
+                            setState(() => showPassword = !showPassword),
+                        icon: Icon(showPassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined),
+                      ),
+                    ),
+                  ),
                 if (!signUp && !resetting && !widget.upgrade)
                   Align(
                     alignment: Alignment.centerRight,
@@ -304,23 +312,18 @@ class _EmailSignInSheetState extends State<_EmailSignInSheet> {
                       padding: EdgeInsets.only(top: 16),
                       child: Text(
                           'If an account uses this email, a reset link has been sent.')),
-                if (error != null)
-                  Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error))),
                 SizedBox(
                     height: !signUp && !resetting && !widget.upgrade ? 12 : 24),
-                ElevatedButton(
-                    onPressed: busy ? null : submit,
-                    child: Text(busy
-                        ? 'Please wait…'
-                        : resetting
-                            ? 'Send reset link'
-                            : signUp
-                                ? 'Create account'
-                                : 'Sign in')),
+                AppFormFooter(
+                    error: error,
+                    isLoading: busy,
+                    loadingLabel: 'Please wait…',
+                    onPressed: submit,
+                    label: resetting
+                        ? 'Send reset link'
+                        : signUp
+                            ? 'Create account'
+                            : 'Sign in'),
                 if (resetting)
                   TextButton(
                       onPressed: busy

@@ -43,10 +43,12 @@ class MemoryTests implements TestsRepository {
         current.stage != expectedStage) {
       throw const AppFailure(FailureCode.saveFailed);
     }
+
     final updated = change(current);
     if (updated.id != id || updated.stage == TestStage.finished) {
       throw const AppFailure(FailureCode.invalidInput);
     }
+
     records[id] = updated;
     updates.add(null);
   }
@@ -60,14 +62,18 @@ class MemoryTests implements TestsRepository {
     _checkFailure();
     final current = records[id];
     if (current == null) throw const AppFailure(FailureCode.saveFailed);
+
     if (onlyIfUnchanged &&
         (current.stage != TestStage.draft || current.changes.isNotEmpty)) {
       return;
     }
+
     if (current.stage == TestStage.finished) return;
+
     if ((apply || newSetupId != null) && current.stage != TestStage.review) {
       throw const AppFailure(FailureCode.invalidInput);
     }
+
     applied = apply;
     if (current.stage == TestStage.draft) {
       records.remove(id);
@@ -75,6 +81,7 @@ class MemoryTests implements TestsRepository {
       records[id] =
           current.copyWith(stage: TestStage.finished, result: 'Baseline kept');
     }
+
     updates.add(null);
   }
 }

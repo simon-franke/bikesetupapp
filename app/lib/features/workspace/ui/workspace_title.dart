@@ -25,6 +25,7 @@ class WorkspaceTitle extends StatelessWidget {
     final titleStyle = AppTextStyles.label
         .copyWith(color: p.ink)
         .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,6 +65,7 @@ class _ActivityOdometerTitle extends StatelessWidget {
       required this.mileageKm,
       required this.hours,
       required this.style});
+
   final double? mileageKm, hours;
   final TextStyle style;
 
@@ -78,6 +80,7 @@ class _ActivityOdometerTitle extends StatelessWidget {
     final finalLabel = label(mileageKm);
     Widget text(String value) =>
         Text(value, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+
     return Semantics(
       label: finalLabel,
       excludeSemantics: true,
@@ -119,6 +122,7 @@ class _OdometerPainter extends CustomPainter {
       required this.style,
       required this.textScaler,
       required this.textDirection});
+
   final String label;
   final double progress;
   final TextStyle style;
@@ -140,6 +144,7 @@ class _OdometerPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(Offset.zero & size);
     var x = 0.0;
+
     for (final character in RegExp(r'[0-9]|[^0-9]+')
         .allMatches(label)
         .map((match) => match.group(0)!)) {
@@ -150,6 +155,7 @@ class _OdometerPainter extends CustomPainter {
         x += glyph.width;
         continue;
       }
+
       final position = (10 + target) * progress;
       final current = position.floor();
       final fraction = position - current;
@@ -161,9 +167,11 @@ class _OdometerPainter extends CustomPainter {
         text('${(current + 1) % 10}')
             .paint(canvas, Offset(x, (1 - fraction) * digitSize.height));
       }
+
       canvas.restore();
       x += digitSize.width;
     }
+
     canvas.restore();
   }
 

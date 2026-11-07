@@ -6,6 +6,7 @@ import '../theme/theme_data.dart';
 class AppErrorBanner extends StatelessWidget {
   const AppErrorBanner(
       {super.key, required this.message, this.onRetry, this.onDismiss});
+
   final String message;
   final VoidCallback? onRetry;
   final VoidCallback? onDismiss;
@@ -13,6 +14,7 @@ class AppErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Semantics(
         liveRegion: true,
         child: Container(

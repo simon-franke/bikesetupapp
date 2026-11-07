@@ -20,6 +20,7 @@ void main() {
         p.surface2,
         Color.alphaBlend(p.accent.withValues(alpha: .15), p.surface2)
       ];
+
       for (final background in surfaces) {
         for (final foreground in [
           p.ink,
@@ -35,13 +36,16 @@ void main() {
               reason: '$foreground on $background');
         }
       }
+
       expect(contrast(p.accentInk, p.accent), greaterThanOrEqualTo(4.5));
       expect(contrast(p.cardInk, p.card), greaterThanOrEqualTo(4.5));
+
       for (final background in [p.surface, p.surface2]) {
         expect(contrast(p.borderStrong, background), greaterThanOrEqualTo(3));
       }
     });
   }
+
   test('bike and hotspots contrast with the open canvas in both themes', () {
     for (final p in [AppPalette.dark, AppPalette.light]) {
       expect(contrast(p.inkMuted, p.bg), greaterThanOrEqualTo(4.5));

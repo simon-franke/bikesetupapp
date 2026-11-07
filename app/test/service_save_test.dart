@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 class SaveRepository extends Fake implements MaintenanceRepository {
   Completer<void> result = Completer<void>();
   final List<ServiceEntry> entries = [];
+
   @override
   Future<void> addServiceEntry(String componentId, ServiceEntry entry) {
     entries.add(entry);
@@ -66,6 +67,7 @@ void main() {
       if (!defer) {
         await tester.enterText(find.byType(TextField), 'Keep this note');
       }
+
       final buttonLabel = defer ? 'Defer service' : 'Log service';
       await tester.tap(find.widgetWithText(ElevatedButton, buttonLabel));
       await tester.pump(const Duration(milliseconds: 120));
@@ -77,11 +79,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Could not save service. Try again.'), findsOneWidget);
       if (!defer) expect(find.text('Keep this note'), findsOneWidget);
+
       repository.result = Completer<void>();
       await tester.tap(find.widgetWithText(ElevatedButton, buttonLabel));
       await tester.pump(const Duration(milliseconds: 120));
       expect(repository.entries, hasLength(2));
       if (!defer) expect(repository.entries.last.note, 'Keep this note');
+
       repository.result.complete();
       await tester.pumpAndSettle();
       expect(find.text(buttonLabel), findsNothing);

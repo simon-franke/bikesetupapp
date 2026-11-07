@@ -94,6 +94,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+
     for (final target in tester.widgetList<InkWell>(find.byType(InkWell))) {
       expect(tester.getSize(find.byWidget(target)).height,
           greaterThanOrEqualTo(44));

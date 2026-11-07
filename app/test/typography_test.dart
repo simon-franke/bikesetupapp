@@ -17,6 +17,7 @@ void main() {
           ..addFont(rootBundle.load('assets/fonts/Sora.ttf')))
         .load();
   });
+
   for (final width in [320.0, 390.0]) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(
