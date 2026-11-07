@@ -215,6 +215,13 @@ abstract final class AppTextStyles {
       fontWeight: FontWeight.w500,
       height: 1.4,
       letterSpacing: 0);
+  static const pickerValue = TextStyle(
+      fontFamily: 'Sora',
+      fontSize: 64,
+      fontWeight: FontWeight.w600,
+      height: 1.1,
+      letterSpacing: 0,
+      fontFeatures: [FontFeature.tabularFigures()]);
   static const value = TextStyle(
       fontFamily: 'Sora',
       fontSize: 48,

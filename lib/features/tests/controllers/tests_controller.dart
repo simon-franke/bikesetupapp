@@ -1,3 +1,5 @@
+import '../../../common/controllers/optimistic_edits.dart';
+import '../../setups/models/unit_system.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
@@ -17,25 +19,63 @@ class TestsController extends OperationController {
   final _savedFields =
       <(String, String, String), Map<(String, String), String>>{};
 
-  SetupTest withSavedValues(String bike, String setup, SetupTest test) {
-    final key = (bike, setup, test.id);
-    final pending = _savedFields[key];
-    if (pending == null) return test;
-    if (test.stage != TestStage.draft) {
-      _savedFields.remove(key);
-      return test;
-    }
-    pending.removeWhere(
-        (field, value) => test.values[field.$1]?[field.$2] == value);
-    if (pending.isEmpty) {
-      _savedFields.remove(key);
-      return test;
-    }
+  final _savedFamilies =
+      <(String, String, String), Map<(String, String), String>>{};
+
+  final _observedFields = <(String, String, String, String, String), String>{};
+
+  final _localEdits =
+      OptimisticEdits<(String, String, String, String, String), String>();
+
+  SetupTest _withLocalEdits(String bike, String setup, SetupTest test) {
     final values = readValues(test.values);
-    for (final entry in pending.entries) {
-      values[entry.key.$1]?[entry.key.$2] = entry.value;
+    for (final field in _localEdits.keys.toList()) {
+      if ((field.$1, field.$2, field.$3) != (bike, setup, test.id)) continue;
+      final value = _localEdits.resolve(field, values[field.$4]?[field.$5]);
+      if (value == null) {
+        values[field.$4]?.remove(field.$5);
+      } else {
+        (values[field.$4] ??= {})[field.$5] = value;
+      }
     }
     return test.copyWith(values: values);
+  }
+
+  SetupTest withSavedValues(String bike, String setup, SetupTest test) {
+    for (final category in test.values.entries) {
+      for (final field in category.value.entries) {
+        _observedFields[(bike, setup, test.id, category.key, field.key)] =
+            field.value;
+      }
+    }
+    final key = (bike, setup, test.id);
+    final pending = _savedFields[key];
+    final families = _savedFamilies[key];
+    if (pending == null) return _withLocalEdits(bike, setup, test);
+    if (test.stage != TestStage.draft) {
+      _savedFields.remove(key);
+      _savedFamilies.remove(key);
+      return test;
+    }
+    pending.removeWhere((field, value) =>
+        test.values[field.$1]?[field.$2] == value &&
+        (families?[field] == null ||
+            test.fieldMetadata[field.$1]?[field.$2] == families![field]));
+    if (pending.isEmpty) {
+      _savedFields.remove(key);
+      _savedFamilies.remove(key);
+      return _withLocalEdits(bike, setup, test);
+    }
+    final values = readValues(test.values);
+    final metadata = readValues(test.fieldMetadata);
+    for (final entry in pending.entries) {
+      (values[entry.key.$1] ??= {})[entry.key.$2] = entry.value;
+      if (families?[entry.key] != null) {
+        (metadata[entry.key.$1] ??= {})[entry.key.$2] = families![entry.key]!;
+      }
+    }
+    return _withLocalEdits(
+        bike, setup, test.copyWith(values: values, fieldMetadata: metadata));
   }
 
   Stream<List<SetupTest>> watch(String bike, String setup) =>
@@ -111,8 +151,22 @@ class TestsController extends OperationController {
       });
 
   Future<CommandResult<void>> updateField(String bike, String setup, String id,
-          String category, String field, String value) =>
-      _update(bike, setup, id, TestStage.draft, (latest) {
+      String category, String field, String value,
+      {String? previousValue}) async {
+    if (isDisposed) return const CommandCancelled();
+    final key = (bike, setup, id, category, field);
+    final token = previousValue == null
+        ? null
+        : _localEdits.begin(
+            key,
+            _savedFields[(bike, setup, id)]?[(category, field)] ??
+                _observedFields[key] ??
+                previousValue,
+            value);
+    emit();
+    var success = false;
+    try {
+      final result = await _update(bike, setup, id, TestStage.draft, (latest) {
         if (!latest.values.containsKey(category) ||
             !latest.values[category]!.containsKey(field)) {
           throw const AppFailure(FailureCode.invalidInput);
@@ -121,8 +175,44 @@ class TestsController extends OperationController {
         values[category]![field] = value;
         return latest.copyWith(values: values);
       }, onCommitted: () {
-        (_savedFields[(bike, setup, id)] ??= {})[(category, field)] = value;
+        final pending = _savedFields[(bike, setup, id)] ??= {};
+        pending[(category, field)] = value;
       });
+      success = result.isSuccess;
+      return result;
+    } finally {
+      if (token != null) _localEdits.complete(key, token, success: success);
+      emit();
+    }
+  }
+
+  Future<CommandResult<void>> addField(String bike, String setup, String id,
+      String category, String field, String value,
+      {UnitFamily? family}) {
+    final name = field.trim();
+    return _update(bike, setup, id, TestStage.draft, (latest) {
+      if (!latest.values.containsKey(category) ||
+          name.isEmpty ||
+          name.length > 100 ||
+          value.trim().isEmpty ||
+          latest.values[category]!.entries.any((entry) =>
+              entry.key.toLowerCase() == name.toLowerCase() &&
+              entry.value.trim().isNotEmpty)) {
+        throw const AppFailure(FailureCode.invalidInput);
+      }
+      final values = readValues(latest.values);
+      final metadata = readValues(latest.fieldMetadata);
+      values[category]![name] = value;
+      if (family != null) (metadata[category] ??= {})[name] = family.name;
+      return latest.copyWith(values: values, fieldMetadata: metadata);
+    }, onCommitted: () {
+      (_savedFields[(bike, setup, id)] ??= {})[(category, name)] = value;
+      if (family != null) {
+        (_savedFamilies[(bike, setup, id)] ??= {})[(category, name)] =
+            family.name;
+      }
+    });
+  }
 
   Future<CommandResult<void>> startTest(
           String bike, String setup, String id, String name) =>
@@ -173,6 +263,7 @@ class TestsController extends OperationController {
                 newSetupId: newSetupName == null ? null : id,
                 newSetupName: newSetupName?.trim());
             _savedFields.remove((bike, setup, id));
+            _savedFamilies.remove((bike, setup, id));
           }));
 
   Future<CommandResult<void>> discardUnchangedDraft(
@@ -185,6 +276,9 @@ class TestsController extends OperationController {
   @override
   void dispose() {
     _savedFields.clear();
+    _savedFamilies.clear();
+    _localEdits.clear();
+    _observedFields.clear();
     super.dispose();
   }
 }

@@ -72,13 +72,17 @@ class AppDependencies {
   final MaintenanceRepository Function(String) _maintenance;
   final StravaBikesRepository Function(String) _stravaBikes;
   late final AuthController auth = _own(AuthController(
-      _authRepository ?? FirebaseAuthRepository(),
+      _authRepository ??
+          FirebaseAuthRepository(
+              beforeAccountDeletion: () => _connection.deauthorize()),
       onSignedOut: clearUsers,
       onSigningOut: () => _connection.clearAuth()));
   late final StravaRepository _connection = _stravaRepository ??
       PlatformStravaRepository(userId: () => auth.currentUser?.uid);
-  late final StravaConnectionController stravaConnection =
-      _own(StravaConnectionController(_connection));
+  late final StravaConnectionController stravaConnection = _own(
+      StravaConnectionController(_connection,
+          canAuthorize: () =>
+              auth.currentUser != null && !auth.currentUser!.isAnonymous));
   final Map<String, UserControllers> _users = {};
 
   UserControllers forUser(String id) => _users.putIfAbsent(

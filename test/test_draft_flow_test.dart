@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'dart:async';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -14,6 +15,91 @@ import 'support/fake_repositories.dart';
 import 'support/fake_tests_repository.dart';
 
 void main() {
+  testWidgets('tires always allow a custom setting without editing baseline',
+      (tester) async {
+    final draft = SetupTest(
+        setupInformation: const {},
+        id: 'test',
+        name: 'Test',
+        before: {
+          'FrontTire': {'Pressure': '24 psi'},
+          'RearTire': {'Pressure': '26 psi'},
+        },
+        values: {
+          'FrontTire': {'Pressure': '24 psi'},
+          'RearTire': {'Pressure': '26 psi'},
+        });
+    final repo = MemoryTests()..records['test'] = draft;
+    final deps = AppDependencies(
+        testsRepository: (_) => repo,
+        setupsRepository: (_) => FakeSetupsRepository());
+    await tester.pumpWidget(Provider.value(
+        value: deps,
+        child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: TestDraftFlow(
+                uid: 'user',
+                bike: 'bike',
+                setup: 'setup',
+                initial: draft,
+                nameFor: (test) => test.name))));
+    await tester.pumpAndSettle();
+    expect(find.text('Add rear setting'), findsOneWidget);
+    await tester.tap(find.text('Add front setting'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Insert weight');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    tester
+        .widget<SettingValueEditor>(find.byType(SettingValueEditor))
+        .onChanged(2);
+    await tester.tap(find.text('Save to experiment'));
+    await tester.pumpAndSettle();
+    final saved = repo.records['test']!;
+    expect(saved.values['FrontTire']!['Insert weight'], isNotEmpty);
+    expect(saved.fieldMetadata['FrontTire']!['Insert weight'], 'count');
+    expect(saved.before['FrontTire']!.containsKey('Insert weight'), isFalse);
+    expect(find.text('Add front setting'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    deps.dispose();
+    await repo.updates.close();
+  });
+
+  test('added field metadata survives stale snapshots and duplicates fail',
+      () async {
+    final draft = SetupTest(
+        setupInformation: const {},
+        id: 'test',
+        name: 'Test',
+        before: {
+          'FrontTire': {'Pressure': '24 psi'}
+        },
+        values: {
+          'FrontTire': {'Pressure': '24 psi'}
+        });
+    final repo = MemoryTests()..records['test'] = draft;
+    final controller = TestsController(repo, FakeSetupsRepository());
+    expect(
+        (await controller.addField(
+                'bike', 'setup', 'test', 'FrontTire', 'Insert', 'Foam',
+                family: UnitFamily.freeText))
+            .isSuccess,
+        isTrue);
+    final visible = controller.withSavedValues('bike', 'setup', draft);
+    expect(visible.values['FrontTire']!['Insert'], 'Foam');
+    expect(visible.fieldMetadata['FrontTire']!['Insert'], 'freeText');
+    expect(
+        (await controller.addField(
+                'bike', 'setup', 'test', 'FrontTire', 'insert', 'Other',
+                family: UnitFamily.freeText))
+            .isSuccess,
+        isFalse);
+    expect(SetupTest.fromMap(repo.records['test']!.toMap()).fieldMetadata,
+        visible.fieldMetadata);
+    controller.dispose();
+    await repo.updates.close();
+  });
+
   for (final size in [(390.0, 1.0), (320.0, 2.0)]) {
     testWidgets(
         'draft cards align with wrapped labels at ${size.$1}/${size.$2}',
@@ -241,7 +327,7 @@ void main() {
     expect(find.byType(TestDraftFlow), findsOneWidget);
     expect(repo.records, hasLength(1));
     expect(find.text('Tires'), findsOneWidget);
-    expect(find.text('Leave as is'), findsOneWidget);
+    expect(find.text('Keep these settings'), findsOneWidget);
     expect(repo.records.values.single.changes, isEmpty);
     await tester.tap(find.text('Front pressure'));
     await tester.pumpAndSettle();
@@ -253,11 +339,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.records.values.single.changes, isEmpty);
     repo.fail = false;
+    await tester.tap(find.widgetWithText(SnackBarAction, 'Review').last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save to experiment'));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 9));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.text('Use these changes'));
     await tester.pumpAndSettle();
     expect(find.text('Start experiment'), findsOneWidget);
     expect(find.text('Fork'), findsOneWidget);

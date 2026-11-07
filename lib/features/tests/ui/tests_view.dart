@@ -9,6 +9,8 @@ import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
+import 'package:bikesetupapp/features/setups/ui/setting_display.dart';
+import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'test_draft_flow.dart';
 import 'track_time_sheet.dart';
 import '../controllers/tests_controller.dart';
@@ -147,7 +149,8 @@ class _TestsViewState extends State<TestsView> {
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return detail(const Center(
-                  child: Text('Could not load tests. Reopen Tests to retry.')));
+                  child: Text(
+                      'Could not load experiments. Reopen Experiments to retry.')));
             }
             if (!snapshot.hasData) {
               return detail(const Center(child: CircularProgressIndicator()));
@@ -170,7 +173,8 @@ class _TestsViewState extends State<TestsView> {
               return detail(
                   active == null
                       ? const Center(
-                          child: Text('This test is no longer available.'))
+                          child:
+                              Text('This experiment is no longer available.'))
                       : ListView(
                           padding: EdgeInsets.fromLTRB(20, 12, 20,
                               MediaQuery.paddingOf(context).bottom + 24),
@@ -208,7 +212,7 @@ class _TestsViewState extends State<TestsView> {
                   20,
                   MediaQuery.paddingOf(context).bottom + 24),
               children: [
-                testEntry(),
+                if (ongoing.isEmpty) testEntry(),
                 if (ongoing.isNotEmpty) title('Ongoing experiments'),
                 for (final test in ongoing)
                   if (test.stage == TestStage.draft)
@@ -222,6 +226,12 @@ class _TestsViewState extends State<TestsView> {
                                 ? 'Ready to ride'
                                 : 'Results',
                             onTap: () => openTest(test))),
+                if (ongoing.isNotEmpty)
+                  AppAddButton(
+                      label: 'Create experiment',
+                      onPressed: controller.isBusy || openingNewTest
+                          ? null
+                          : createTest),
                 if (previous.isNotEmpty) title('Previous experiments'),
                 for (final test in previous)
                   Padding(
@@ -265,17 +275,21 @@ class _TestsViewState extends State<TestsView> {
       );
 
   String draftName(SetupTest test) {
-    if (test.name.isNotEmpty && test.name != '${widget.setupName} test') {
+    if (test.name.isNotEmpty &&
+        test.name != '${widget.setupName} test' &&
+        test.name != '${widget.setupName} experiment') {
       return test.name;
     }
     final changes = test.changes;
-    if (changes.isEmpty) return '${widget.setupName} test';
+    if (changes.isEmpty) return '${widget.setupName} experiment';
     if (changes
         .every((c) => c.category.endsWith('Tire') && c.field == 'Pressure')) {
-      return 'Tire pressure test';
+      return 'Tire pressure experiment';
     }
     final categories = changes.map((c) => categoryLabel(c.category)).toSet();
-    return categories.length == 1 ? '${categories.single} test' : 'Setup test';
+    return categories.length == 1
+        ? '${categories.single} experiment'
+        : 'Setup experiment';
   }
 
   Future<void> rename(SetupTest test) async {
@@ -398,7 +412,55 @@ class _TestsViewState extends State<TestsView> {
           Text(t.name, style: AppTextStyles.label)
         ],
         const SizedBox(height: 24),
-        Table(
+        comparisonValues(t),
+      ]));
+
+  Widget comparisonValues(SetupTest test) =>
+      LayoutBuilder(builder: (context, constraints) {
+        final p = context.palette;
+        String value(TestChange change, {required bool before}) {
+          final raw = before ? change.before : change.after;
+          if (raw.isEmpty) return before ? 'No previous value' : 'Removed';
+          return settingDisplayValue(change.field, raw,
+              familyOverride: unitFamilyFromName(
+                  test.fieldMetadata[change.category]?[change.field] ?? ''));
+        }
+
+        if (constraints.maxWidth < 290 ||
+            MediaQuery.textScalerOf(context).scale(16) > 21) {
+          Widget measurement(String label, String text,
+                  {bool changed = false}) =>
+              Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style:
+                            AppTextStyles.caption.copyWith(color: p.inkMuted)),
+                    const SizedBox(height: 4),
+                    Text(text,
+                        style: AppTextStyles.label
+                            .copyWith(color: changed ? p.playfulText : p.ink)),
+                  ]);
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < test.changes.length; i++) ...[
+                  if (i > 0) const Divider(height: 32),
+                  Text(
+                      '${categoryLabel(test.changes[i].category)} ${test.changes[i].field.toLowerCase()}',
+                      style: AppTextStyles.body),
+                  const SizedBox(height: 12),
+                  Wrap(spacing: 24, runSpacing: 12, children: [
+                    measurement(
+                        'Baseline', value(test.changes[i], before: true)),
+                    measurement('New', value(test.changes[i], before: false),
+                        changed: true),
+                  ]),
+                ],
+              ]);
+        }
+        return Table(
             border: TableBorder(
                 horizontalInside: BorderSide(color: context.palette.border)),
             columnWidths: const {
@@ -409,24 +471,28 @@ class _TestsViewState extends State<TestsView> {
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
               TableRow(children: [
-                const Text('Setting'),
-                const Text('Baseline', textAlign: TextAlign.right),
-                const Text('Test', textAlign: TextAlign.right)
+                Text('Setting',
+                    style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
+                Text('Baseline',
+                    textAlign: TextAlign.right,
+                    style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
+                Text('New',
+                    textAlign: TextAlign.right,
+                    style: AppTextStyles.caption.copyWith(color: p.inkMuted))
               ]),
-              for (final c in t.changes)
+              for (final c in test.changes)
                 TableRow(children: [
                   Padding(
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Text(
                           '${categoryLabel(c.category)} ${c.field.toLowerCase()}')),
-                  Text(c.before.isEmpty ? 'No previous value' : c.before,
-                      textAlign: TextAlign.right),
-                  Text(c.after.isEmpty ? 'Removed' : c.after,
+                  Text(value(c, before: true), textAlign: TextAlign.right),
+                  Text(value(c, before: false),
                       textAlign: TextAlign.right,
                       style: TextStyle(color: context.palette.playfulText)),
                 ])
-            ]),
-      ]));
+            ]);
+      });
   RideFeedback get enteredFeedback =>
       RideFeedback(feeling: feeling, note: notes.text, time: time.text);
 
@@ -578,17 +644,12 @@ class _TestsViewState extends State<TestsView> {
           return SafeArea(
               top: false,
               child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+                  padding: appSheetPadding(sheet),
                   child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const AppSheetHandle(),
-                        const SizedBox(height: 24),
-                        Text('Finish experiment',
-                            style: AppTextStyles.heading
-                                .copyWith(color: sheet.palette.ink)),
-                        const SizedBox(height: 20),
+                        const AppSheetHeader(title: 'Choose an outcome'),
                         AppValueButton(
                             label: 'Use tested settings',
                             value: 'Update ${widget.setupName}',
@@ -652,7 +713,10 @@ class _TestsViewState extends State<TestsView> {
   }
 
   List<Widget> results(SetupTest t) => [
-        comparison(t, badge: '${t.rides.length} rides logged', showName: false),
+        comparison(t,
+            badge:
+                '${t.rides.length} ${t.rides.length == 1 ? 'ride' : 'rides'} logged',
+            showName: false),
         for (var i = 0; i < t.rides.length; i++) rideCard(t.rides[i], i + 1),
         const SizedBox(height: 8),
         AppActionButton(
@@ -701,16 +765,12 @@ class _SetupNameState extends State<_SetupName> {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: EdgeInsets.fromLTRB(
-          24, 24, 24, 24 + MediaQuery.viewInsetsOf(context).bottom),
+      padding: appSheetPadding(context),
       child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const AppSheetHandle(),
-            const SizedBox(height: 24),
-            Text(widget.title, style: AppTextStyles.heading),
-            const SizedBox(height: 24),
+            AppSheetHeader(title: widget.title),
             AppTextField(
                 controller: text,
                 hint:
@@ -719,7 +779,7 @@ class _SetupNameState extends State<_SetupName> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => submit(),
                 onChanged: (_) => setState(() {})),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             AppActionButton(
                 label: widget.action,
                 onPressed: text.text.trim().isEmpty ? null : submit),

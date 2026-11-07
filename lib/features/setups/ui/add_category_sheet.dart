@@ -126,3 +126,37 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
         ));
   }
 }
+
+/// Asked only when the rider adds suspension, before anything is saved.
+Future<String?> showSuspensionTypeSheet(
+        BuildContext context, String category) =>
+    showAppSheet<String>(
+      context: context,
+      builder: (sheet) => Padding(
+        padding: appSheetPadding(sheet),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppSheetHeader(
+                title: category == 'Fork'
+                    ? 'What kind of fork?'
+                    : 'What kind of rear shock?'),
+            for (final type in ['Air', 'Coil'])
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(type, style: AppTextStyles.label),
+                subtitle: Text(
+                    type == 'Air'
+                        ? 'Pressure and tokens'
+                        : 'Spring rate and preload',
+                    style: AppTextStyles.caption
+                        .copyWith(color: sheet.palette.inkMuted)),
+                trailing: Icon(CupertinoIcons.chevron_right,
+                    size: AppIconSizes.compact, color: sheet.palette.inkMuted),
+                onTap: () => Navigator.pop(sheet, type),
+              ),
+          ],
+        ),
+      ),
+    );

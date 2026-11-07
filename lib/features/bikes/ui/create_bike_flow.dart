@@ -22,9 +22,11 @@ class CreateBikeFlow extends StatefulWidget {
       {super.key,
       required this.user,
       required this.onCreated,
-      this.initialDraft});
+      this.initialDraft,
+      this.setupName = 'Default'});
   final User user;
   final BikeCreationDraft? initialDraft;
+  final String setupName;
   final void Function(String, String, String, String) onCreated;
   @override
   State<CreateBikeFlow> createState() => _CreateBikeFlowState();
@@ -67,7 +69,8 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
     String? bikeId, setupId;
     final success = await presentCommand(context, () async {
       final controllers = AppDependencies.of(context).forUser(widget.user.uid);
-      final result = await controllers.bikes.createFromDraft(reviewed);
+      final result = await controllers.bikes
+          .createFromDraft(reviewed, setupName: widget.setupName);
       if (!result.isSuccess) return result;
       final created = result.requireValue();
       bikeId = created.bikeId;
@@ -78,7 +81,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
     setState(() => saving = false);
     if (success && bikeId != null && setupId?.isNotEmpty == true) {
       Navigator.of(context).pop();
-      widget.onCreated(reviewed.name, bikeId!, 'Default', setupId!);
+      widget.onCreated(reviewed.name, bikeId!, widget.setupName, setupId!);
     }
   }
 

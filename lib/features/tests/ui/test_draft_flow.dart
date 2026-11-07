@@ -1,3 +1,4 @@
+import '../../setups/ui/add_field_bottom_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import '../../setups/ui/field_meta.dart';
 import '../../setups/models/unit_system.dart';
@@ -159,7 +160,15 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
-                    AppFlowHeading(group?.key ?? 'No settings yet'),
+                    AppFlowHeading(group == null
+                        ? 'No settings yet'
+                        : 'What would you like to change?'),
+                    if (group != null) ...[
+                      Text(group.key,
+                          style: AppTextStyles.body
+                              .copyWith(color: context.palette.inkMuted)),
+                      const SizedBox(height: 24),
+                    ],
                     if (group != null) panel(test, group.value),
                     if (last && test.changes.isEmpty)
                       Text('Adjust a setting to start an experiment.',
@@ -171,8 +180,8 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
                   label: last
                       ? 'Start experiment'
                       : changed
-                          ? 'Continue'
-                          : 'Leave as is',
+                          ? 'Use these changes'
+                          : 'Keep these settings',
                   onPressed: controller.isBusy ||
                           group == null ||
                           (last && test.changes.isEmpty)
@@ -198,42 +207,35 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
       ]);
 
   Widget panel(SetupTest test, List<String> categories) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.zero,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           for (final category in categories) ...[
+            if (category != categories.first) const SizedBox(height: 16),
             for (final field
                 in (test.values[category] ?? <String, String>{}).entries)
               if (field.value.trim().isNotEmpty)
                 draftField(test, category, field.key, field.value),
-            if (missingFields(test, category).isNotEmpty)
-              AppAddButton(
-                  label: categories.length > 1
-                      ? 'Add ${category == 'FrontTire' ? 'front' : 'rear'} setting'
-                      : 'Add setting',
-                  onPressed: controller.isBusy
-                      ? null
-                      : () => addSetting(test, category)),
+            AppAddButton(
+                label: categories.length > 1
+                    ? 'Add ${category == 'FrontTire' ? 'front' : 'rear'} setting'
+                    : 'Add setting',
+                onPressed: controller.isBusy
+                    ? null
+                    : () => addSetting(test, category)),
           ],
         ]),
       );
 
-  Iterable<String> missingFields(SetupTest test, String category) => <String>{
-        ...?kSuggestedFieldKeys[category],
-        ...?kDefaultFieldKeys[category],
-        ...?test.values[category]?.keys,
-      }.where((key) => test.values[category]?[key]?.trim().isNotEmpty != true);
-
-  Future<void> addSetting(SetupTest test, String category) async {
-    final choices = missingFields(test, category);
-    final chosen = await showAppOptionsSheet(
-        context: context,
-        title: 'Add setting',
-        entries: [
-          for (final key in choices) AppSheetOption(value: key, label: key)
-        ]);
-    if (chosen != null && mounted) await edit(test, category, chosen, '');
-  }
+  Future<void> addSetting(SetupTest test, String category) =>
+      showAddDraftFieldSheet(context,
+          bike: widget.bike,
+          setup: widget.setup,
+          category: category,
+          existingValues: test.values[category] ?? {},
+          onSave: (field, value, family) => controller.addField(
+              widget.bike, widget.setup, test.id, category, field, value,
+              family: family));
 
   String fieldLabel(String category, String field) => category.endsWith('Tire')
       ? '${category == 'FrontTire' ? 'Front' : 'Rear'} ${field.toLowerCase()}'
@@ -251,31 +253,36 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
             fallbackUnit: meta?.defaultUnit)
         .format();
     final p = context.palette;
-    return TextButton(
-      style: TextButton.styleFrom(
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          foregroundColor: p.ink),
-      onPressed:
-          controller.isBusy ? null : () => edit(test, category, field, value),
-      child: SizedBox(
-          width: double.infinity,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(fieldLabel(category, field),
-                style: AppTextStyles.label.copyWith(color: p.ink)),
-            const SizedBox(height: 6),
-            Text.rich(TextSpan(children: [
-              if (changed && before?.isNotEmpty == true && before != '--')
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextButton(
+        style: TextButton.styleFrom(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            backgroundColor: p.bg,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            foregroundColor: p.ink),
+        onPressed: () => edit(test, category, field, value),
+        child: SizedBox(
+            width: double.infinity,
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(fieldLabel(category, field),
+                  style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
+              const SizedBox(height: 6),
+              Text.rich(TextSpan(children: [
+                if (changed && before?.isNotEmpty == true && before != '--')
+                  TextSpan(
+                      text: '${display(before!)} → ',
+                      style: AppTextStyles.body.copyWith(color: p.inkMuted)),
                 TextSpan(
-                    text: '${display(before!)} → ',
-                    style: AppTextStyles.body.copyWith(color: p.inkMuted)),
-              TextSpan(
-                  text: display(value),
-                  style: AppTextStyles.body
-                      .copyWith(color: changed ? p.accentText : p.inkMuted)),
+                    text: display(value),
+                    style: AppTextStyles.label
+                        .copyWith(color: changed ? p.accentText : p.ink)),
+              ])),
             ])),
-          ])),
+      ),
     );
   }
 
@@ -290,9 +297,11 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
         familyOverride:
             unitFamilyFromName(t.fieldMetadata[category]?[field] ?? ''),
         canDelete: false,
+        optimistic: true,
         saveLabel: 'Save to experiment', onSave: (v) {
       return controller.updateField(
-          widget.bike, widget.setup, t.id, category, field, v);
+          widget.bike, widget.setup, t.id, category, field, v,
+          previousValue: value);
     });
   }
 }

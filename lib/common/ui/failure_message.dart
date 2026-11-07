@@ -10,6 +10,8 @@ String failureMessage(AppFailure failure) => switch (failure.code) {
         'That name is already in use. Choose a different name.',
       FailureCode.saveFailed => 'Could not save your changes. Try again.',
       FailureCode.loadFailed => 'Could not load data. Try again.',
+      FailureCode.accountDeletionFailed =>
+        'Could not finish deleting your account. Please retry.',
       FailureCode.authenticationFailed => 'Could not sign in. Try again.',
       FailureCode.invalidCredentials =>
         'Check your email and password and try again.',
@@ -28,8 +30,7 @@ String failureMessage(AppFailure failure) => switch (failure.code) {
         'Strava has disabled this API application. Its owner must check their Strava subscription and reactivate the app at strava.com/settings/api.',
       FailureCode.stravaDenied =>
         'Strava denied access. Check the API application status and granted permissions.',
-      FailureCode.rateLimited =>
-        'Strava’s request limit has been reached. Try again later.',
+      FailureCode.rateLimited => 'You reached the request limit. Try again later.',
       FailureCode.network =>
         'Could not reach Strava. Check your connection and try again.',
       FailureCode.invalidResponse =>

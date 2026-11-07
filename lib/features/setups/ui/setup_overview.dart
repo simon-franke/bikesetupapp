@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'field_meta.dart';
-import '../models/unit_system.dart';
+import 'setting_display.dart';
 
 String categoryLabel(String category) => switch (category) {
       'FrontTire' => 'Front tire',
@@ -61,7 +61,7 @@ class SetupOverview extends StatelessWidget {
             if (configuration.fields.keys
                 .any((key) => ['FrontTire', 'RearTire'].contains(key)))
               SetupCard(
-                  padding: 17,
+                  padding: 16,
                   onTap: () => onCategory('Tires'),
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +106,7 @@ class SetupOverview extends StatelessWidget {
             for (final category in (configuration.fields.keys.toList()).where(
                 (category) => !['FrontTire', 'RearTire'].contains(category)))
               SetupCard(
-                  padding: 17,
+                  padding: 16,
                   onTap: () => onCategory(category),
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,16 +118,12 @@ class SetupOverview extends StatelessWidget {
                           const Icon(CupertinoIcons.chevron_right,
                               size: AppIconSizes.compact)
                         ]),
-                        if (category != 'GeneralSettings') ...[
-                          _Values(
-                              user: user,
-                              bike: bike,
-                              setup: setup,
-                              category: category,
-                              topPadding: 16,
-                              pressureOnly:
-                                  category == 'Fork' || category == 'Shock'),
-                        ],
+                        _Values(
+                            user: user,
+                            bike: bike,
+                            setup: setup,
+                            category: category,
+                            topPadding: 12),
                       ])),
             if (onAddCategory != null)
               AppAddButton(label: 'Add category', onPressed: onAddCategory),
@@ -169,11 +165,6 @@ class _ValuesState extends State<_Values> {
         final values = snapshot.data!;
         bool hasValue(String key) =>
             values[key]?.toString().trim().isNotEmpty == true;
-        if (widget.pressureOnly &&
-            (widget.category == 'Fork' || widget.category == 'Shock') &&
-            !hasValue('Pressure')) {
-          return const SizedBox.shrink();
-        }
         if (!widget.pressureOnly && !values.keys.any(hasValue)) {
           return Padding(
               padding: EdgeInsets.only(top: widget.topPadding),
@@ -184,78 +175,48 @@ class _ValuesState extends State<_Values> {
                   style: AppTextStyles.body
                       .copyWith(color: context.palette.accentText)));
         }
-        Widget value(String key, {bool large = false}) {
-          final meta = kFieldMeta[key];
-          final raw = values[key]?.toString() ?? '';
-          final parsed = SettingValue.parse(raw,
-              fallbackFamily: meta?.family, fallbackUnit: meta?.defaultUnit);
-          final number = parsed.number == null
-              ? (raw.isEmpty ? 'Add pressure' : raw)
-              : formatNumber(parsed.number!, parsed.unit?.decimals ?? 0);
-          return Text.rich(TextSpan(children: [
-            if (!large)
+        Widget value(String key, {bool large = false}) =>
+            Text.rich(TextSpan(children: [
+              if (!large)
+                TextSpan(
+                    text: '${switch (key) {
+                      'Low Speed Rebound' => 'LSR',
+                      'High Speed Rebound' => 'HSR',
+                      'Low Speed Compression' => 'LSC',
+                      'High Speed Compression' => 'HSC',
+                      'Tokens' =>
+                        widget.category == 'Shock' ? 'Spacers' : 'Tokens',
+                      _ => key
+                    }}  ',
+                    style: AppTextStyles.body
+                        .copyWith(color: context.palette.inkMuted)),
               TextSpan(
-                  text: '${switch (key) {
-                    'Low Speed Rebound' => 'LSR',
-                    'High Speed Rebound' => 'HSR',
-                    'Low Speed Compression' => 'LSC',
-                    'High Speed Compression' => 'HSC',
-                    'Compression' => 'Comp.',
-                    'Tokens' =>
-                      widget.category == 'Shock' ? 'Spacers' : 'Tokens',
-                    'Stack Height' => 'Stack',
-                    'Seat Height' => 'Seat',
-                    _ => key
-                  }}  ',
-                  style: AppTextStyles.caption
-                      .copyWith(color: context.palette.inkMuted)),
-            TextSpan(
-                text: number,
-                style: (large ? AppTextStyles.heading : AppTextStyles.label)
-                    .copyWith(color: context.palette.ink)),
-            if (large || key == 'Reach' || key.contains('Height'))
-              TextSpan(
-                  text: ' ${parsed.unit?.label ?? ''}',
-                  style: AppTextStyles.caption
-                      .copyWith(color: context.palette.inkMuted)),
-          ]));
-        }
+                  text: settingDisplayValue(key, values[key].toString()),
+                  style: (large ? AppTextStyles.heading : AppTextStyles.label)
+                      .copyWith(color: context.palette.ink)),
+            ]));
+
+        final secondary = [
+          ...?kDefaultFieldKeys[widget.category],
+          ...values.keys.where((key) =>
+              !(kDefaultFieldKeys[widget.category] ?? []).contains(key))
+        ].where((key) => key != 'Pressure' && hasValue(key)).take(2).toList();
 
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(height: widget.topPadding),
-          if (widget.pressureOnly)
-            ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48, minWidth: 80),
-                child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: hasValue('Pressure')
-                        ? value('Pressure', large: true)
-                        : Text('Set pressure',
-                            style: AppTextStyles.body
-                                .copyWith(color: context.palette.accentText))))
-          else if (hasValue('Pressure') || hasValue('Sag'))
-            Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                children: [
-                  if (hasValue('Pressure')) value('Pressure', large: true),
-                  if (hasValue('Sag'))
-                    Text('${values['Sag']} sag',
-                        style: AppTextStyles.caption
-                            .copyWith(color: context.palette.inkMuted)),
-                ]),
-          if (!widget.pressureOnly &&
-              !hasValue('Pressure') &&
-              !hasValue('Sag')) ...[
-            Wrap(spacing: 16, runSpacing: 12, children: [
-              for (final key in [
-                ...?kDefaultFieldKeys[widget.category],
-                ...values.keys.where((k) =>
-                    !(kDefaultFieldKeys[widget.category] ?? []).contains(k))
-              ].where(hasValue).take(2))
-                value(key)
-            ]),
-          ]
+          if (hasValue('Pressure'))
+            value('Pressure', large: true)
+          else if (widget.pressureOnly)
+            Text('Set pressure',
+                style: AppTextStyles.body
+                    .copyWith(color: context.palette.accentText)),
+          if (!widget.pressureOnly && secondary.isNotEmpty) ...[
+            if (hasValue('Pressure')) const SizedBox(height: 8),
+            for (var i = 0; i < secondary.length; i++) ...[
+              if (i > 0) const SizedBox(height: 6),
+              value(secondary[i]),
+            ],
+          ],
         ]);
       });
 }

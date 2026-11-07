@@ -73,22 +73,15 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
     final p = context.palette;
     final error = _controller.saveError;
     return Padding(
-        padding: EdgeInsets.fromLTRB(
-            20, 16, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
+        padding: appSheetPadding(context),
         child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AppSheetHandle(),
-              const SizedBox(height: 18),
-              Center(
-                  child: Text('Defer service',
-                      style: AppTextStyles.heading.copyWith(color: p.ink))),
-              const SizedBox(height: 12),
-              Text(
-                  'How much further is ${widget.component.name.toLowerCase()} good for?',
-                  style: AppTextStyles.body.copyWith(color: p.inkMuted)),
-              const SizedBox(height: 8),
+              AppSheetHeader(
+                  title: 'Defer service',
+                  subtitle:
+                      'How much further is ${widget.component.name.toLowerCase()} good for?'),
               IgnorePointer(
                   ignoring: _controller.saving,
                   child: SettingValueEditor(
@@ -107,7 +100,7 @@ class _DeferServiceFormState extends State<_DeferServiceForm> {
                         : 'Could not save service. Try again.',
                     style: TextStyle(color: p.red)),
               ],
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               SizedBox(
                   width: double.infinity,
                   child: AppActionButton(

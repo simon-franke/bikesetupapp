@@ -108,27 +108,15 @@ class _LogServiceFormState extends State<_LogServiceForm> {
         mileageError.code == FailureCode.insufficientActivityScope;
     final saveError = _controller.saveError;
     return Padding(
-        padding: EdgeInsets.fromLTRB(
-            24,
-            16,
-            24,
-            MediaQuery.viewInsetsOf(context).bottom +
-                MediaQuery.paddingOf(context).bottom +
-                24),
+        padding: appSheetPadding(context),
         child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AppSheetHandle(),
-              const SizedBox(height: 18),
-              Text('Log service',
-                  style: AppTextStyles.heading.copyWith(color: p.ink)),
-              const SizedBox(height: 8),
-              Text(widget.component.name,
-                  style: AppTextStyles.body.copyWith(color: p.inkMuted)),
-              const SizedBox(height: 14),
+              AppSheetHeader(
+                  title: 'Log service', subtitle: widget.component.name),
               const AppFieldLabel('Date'),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               AppValueButton(
                   label: DateFormat.yMMMd().format(_selectedDate),
                   icon: CupertinoIcons.calendar,
@@ -145,9 +133,9 @@ class _LogServiceFormState extends State<_LogServiceForm> {
                             ? 'scope'
                             : 'error'),
               ],
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
               const AppFieldLabel('Note (optional)'),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               IgnorePointer(
                   ignoring: _controller.saving,
                   child: AppTextField(
@@ -161,7 +149,7 @@ class _LogServiceFormState extends State<_LogServiceForm> {
                         : 'Could not save service. Try again.',
                     style: TextStyle(color: p.red)),
               ],
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               SizedBox(
                   width: double.infinity,
                   child: AppActionButton(

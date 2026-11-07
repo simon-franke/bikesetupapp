@@ -1,3 +1,4 @@
+import '../../setups/models/setup_configuration.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firebase_operation.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -93,7 +94,7 @@ class FirestoreTestsRepository implements TestsRepository {
           for (final change in test.changes) {
             if ((categories[change.category]?[change.field]?.toString() ??
                     '') !=
-                change.before) {
+                (test.before[change.category]?[change.field] ?? '')) {
               throw const AppFailure(FailureCode.baselineChanged);
             }
           }
@@ -103,11 +104,49 @@ class FirestoreTestsRepository implements TestsRepository {
             for (final change in test.changes) {
               tx.set(_bike(bike).collection(setup).doc(change.category),
                   {change.field: change.after}, SetOptions(merge: true));
+              final family = test.fieldMetadata[change.category]?[change.field];
+              if (family != null) {
+                tx.set(
+                    _bike(bike)
+                        .collection(setup)
+                        .doc('${change.category}_meta'),
+                    {change.field: family},
+                    SetOptions(merge: true));
+              }
+            }
+            final configuration =
+                SetupConfiguration.fromInformation(baseline.data()!);
+            {
+              final fields = {
+                for (final entry in configuration.fields.entries)
+                  entry.key: [...entry.value],
+              };
+              for (final change in test.changes) {
+                final selected = fields[change.category] ??= [];
+                if (!selected.contains(change.field)) {
+                  selected.add(change.field);
+                }
+              }
+              tx.set(
+                  parent,
+                  {
+                    SetupConfiguration.metadataKey:
+                        SetupConfiguration(fields).encode()
+                  },
+                  SetOptions(merge: true));
             }
           }
           if (newSetupId != null) {
-            tx.set(_bike(bike).collection('SetupList').doc(newSetupId),
-                {...test.setupInformation, 'setup_name': newSetupName});
+            tx.set(_bike(bike).collection('SetupList').doc(newSetupId), {
+              ...test.setupInformation,
+              SetupConfiguration.metadataKey: SetupConfiguration({
+                ...SetupConfiguration.fromInformation(test.setupInformation)
+                    .fields,
+                for (final entry in test.values.entries)
+                  entry.key: entry.value.keys.toList(),
+              }).encode(),
+              'setup_name': newSetupName
+            });
             for (final entry in test.values.entries) {
               tx.set(_bike(bike).collection(newSetupId).doc(entry.key),
                   entry.value);

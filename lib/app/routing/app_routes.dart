@@ -1,3 +1,4 @@
+import 'app_motion.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -9,10 +10,10 @@ class _AppPageRoute<T> extends MaterialPageRoute<T> {
   _AppPageRoute(Widget page) : super(builder: (_) => page);
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 300);
+  Duration get transitionDuration => AppMotion.forward;
 
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 260);
+  Duration get reverseTransitionDuration => AppMotion.reverse;
 
   @override
   Widget buildTransitions(BuildContext context, Animation<double> animation,
@@ -34,7 +35,7 @@ class _AppPageRoute<T> extends MaterialPageRoute<T> {
       );
     }
     if (reduced) return child;
-    final eased = animation.drive(CurveTween(curve: Curves.easeInOutCubic));
+    final eased = animation.drive(CurveTween(curve: AppMotion.curve));
     return SlideTransition(
         position:
             eased.drive(Tween(begin: const Offset(1, 0), end: Offset.zero)),

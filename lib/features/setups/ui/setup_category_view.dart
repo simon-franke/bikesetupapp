@@ -9,6 +9,7 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'control_panel_grid.dart';
 import 'add_field_bottom_sheet.dart';
 import 'setup_overview.dart';
+import 'setting_display.dart';
 
 /// Category content stays inside the workspace, preserving its bottom navigation.
 class SetupCategoryView extends StatelessWidget {
@@ -36,8 +37,10 @@ class SetupCategoryView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(categoryLabel(category), style: AppTextStyles.label),
-                    const SizedBox(height: 8),
+                    if (categories.length > 1) ...[
+                      Text(categoryLabel(category), style: AppTextStyles.label),
+                      const SizedBox(height: 8),
+                    ],
                     _CategoryRows(
                         key: ValueKey(category),
                         uid: user.uid,
@@ -65,7 +68,8 @@ class SetupCategoryView extends StatelessWidget {
                           user: user,
                           uBikeID: bike,
                           uSetupID: setup,
-                          category: category),
+                          category: category,
+                          preferredFields: configuration.fields[category]),
                     ),
                   ],
                 )),
@@ -128,7 +132,10 @@ class _CategoryRowsState extends State<_CategoryRows> {
                     for (final key in keys)
                       _SettingRow(
                         label: key,
-                        value: values[key]?.toString() ?? '',
+                        value: settingDisplayValue(
+                            key, values[key]?.toString() ?? '',
+                            familyOverride: unitFamilyFromName(
+                                metadata.data![key]?.toString() ?? '')),
                         onTap: () => widget.onEdit(
                             key,
                             values[key]?.toString() ?? '',
@@ -164,10 +171,10 @@ class _SettingRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppTextStyles.label.copyWith(color: p.ink)),
-              const SizedBox(height: 6),
-              Text(value,
+              Text(label,
                   style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+              const SizedBox(height: 6),
+              Text(value, style: AppTextStyles.label.copyWith(color: p.ink)),
             ],
           ),
         ),

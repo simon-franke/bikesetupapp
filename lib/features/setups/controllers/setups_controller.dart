@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../../common/controllers/optimistic_edits.dart';
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
 import '../models/setup_configuration.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -15,8 +17,15 @@ class SetupsController extends OperationController {
 
   Future<CommandResult<void>> setCategoryEnabled(
           String bike, String setup, String category, bool enabled,
-          {required Map<String, List<String>> addedFields}) =>
+          {String? suspensionType,
+          required Map<String, List<String>> addedFields}) =>
       command(() => _categoryWrites.enqueue(() async {
+            if (suspensionType != null &&
+                (!enabled ||
+                    !['Fork', 'Shock'].contains(category) ||
+                    !['Air', 'Coil'].contains(suspensionType))) {
+              throw const AppFailure(FailureCode.invalidInput);
+            }
             final information =
                 await _repository.getSetupInformation(bike, setup);
             final configuration =
@@ -36,6 +45,8 @@ class SetupsController extends OperationController {
             final name = await _repository.getSetupNameFromID(bike, setup);
             await _repository.createSetupList(bike, setup, name, {
               ...information,
+              if (suspensionType != null)
+                category.toLowerCase(): suspensionType,
               SetupConfiguration.metadataKey:
                   SetupConfiguration(fields).encode(),
             });
@@ -88,14 +99,34 @@ class SetupsController extends OperationController {
         await _repository.createSetupList(bike, id, name.trim(), information);
       });
 
+  final _localEdits =
+      OptimisticEdits<(String, String, String, String), String>();
+  final _lastSettings = <(String, String, String), Map<String, dynamic>>{};
+
   Future<CommandResult<void>> setSetting(String key, String value,
-          String uBikeID, String category, String uSetupID) =>
-      command(() => _writes.putIfAbsent((uBikeID, uSetupID, category, key),
-              SettingWriteQueue.new).enqueue(() {
-            if (isDisposed) throw const CommandAborted();
-            return _repository.setSetting(
-                key, value, uBikeID, category, uSetupID);
-          }));
+      String uBikeID, String category, String uSetupID) async {
+    if (isDisposed) return const CommandCancelled();
+    final scope = (uBikeID, uSetupID, category);
+    final field = (uBikeID, uSetupID, category, key);
+    final token =
+        _localEdits.begin(field, _lastSettings[scope]?[key]?.toString(), value);
+    emit();
+    var success = false;
+    try {
+      final result = await command(
+          () => _writes.putIfAbsent(field, SettingWriteQueue.new).enqueue(() {
+                if (isDisposed) throw const CommandAborted();
+                return _repository.setSetting(
+                    key, value, uBikeID, category, uSetupID);
+              }));
+      success = result.isSuccess;
+      return result;
+    } finally {
+      _localEdits.complete(field, token, success: success);
+      emit();
+    }
+  }
+
   Future<CommandResult<void>> deleteSetup(String uBikeID, String uSetupID) =>
       command(() => _repository.deleteSetup(uBikeID, uSetupID));
   Future<CommandResult<void>> addField(
@@ -119,7 +150,46 @@ class SetupsController extends OperationController {
       _repository.getSettingsMeta(uBikeID, category, uSetupID);
   Stream<Map<String, dynamic>> getSettings(
           String uBikeID, String category, String uSetupID) =>
-      _repository.getSettings(uBikeID, category, uSetupID);
+      Stream.multi((sink) {
+        final scope = (uBikeID, uSetupID, category);
+        Map<String, dynamic>? remote;
+        void publish() {
+          if (remote == null || isDisposed) return;
+          final visible = Map<String, dynamic>.from(remote!);
+          for (final field in _localEdits.keys.toList()) {
+            if ((field.$1, field.$2, field.$3) != scope) continue;
+            final value =
+                _localEdits.resolve(field, remote![field.$4]?.toString());
+            if (value == null) {
+              visible.remove(field.$4);
+            } else {
+              visible[field.$4] = value;
+            }
+          }
+          sink.add(visible);
+        }
+
+        addListener(publish);
+        final subscription = _repository
+            .getSettings(uBikeID, category, uSetupID)
+            .listen((values) {
+          remote = Map<String, dynamic>.from(values);
+          _lastSettings[scope] = remote!;
+          publish();
+        }, onError: sink.addError);
+        sink.onCancel = () {
+          removeListener(publish);
+          unawaited(subscription.cancel());
+        };
+      });
+
+  @override
+  void dispose() {
+    _localEdits.clear();
+    _lastSettings.clear();
+    super.dispose();
+  }
+
   Stream<List<BikeSetup>> getSetups(String uBikeID) =>
       _repository.getSetups(uBikeID);
   Future<String> getDefaultSetup(String uBikeID) =>

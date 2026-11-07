@@ -9,6 +9,8 @@ import 'support/fake_repositories.dart';
 
 class OverviewUser extends Fake implements User {
   @override
+  bool get isAnonymous => false;
+  @override
   String get uid => 'user';
 }
 
@@ -49,8 +51,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened, ['Tires', 'Tires', 'Tires', 'Fork']);
     expect(find.byType(BottomSheet), findsNothing);
-    expect(find.textContaining('LSC', findRichText: true), findsNothing);
-    expect(find.textContaining('HSR', findRichText: true), findsNothing);
+    expect(find.textContaining('LSC  4 clicks', findRichText: true),
+        findsOneWidget);
+    expect(find.textContaining('HSR  1 clicks', findRichText: true),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

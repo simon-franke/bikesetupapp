@@ -6,6 +6,7 @@ enum FailureCode {
   duplicateName,
   loadFailed,
   authenticationFailed,
+  accountDeletionFailed,
   invalidCredentials,
   emailInUse,
   weakPassword,

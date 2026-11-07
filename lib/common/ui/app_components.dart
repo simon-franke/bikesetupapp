@@ -1,4 +1,5 @@
 import 'app_haptics.dart';
+import 'app_loading.dart';
 import 'package:flutter/cupertino.dart';
 import 'app_sheet.dart';
 import 'package:flutter/services.dart';
@@ -211,13 +212,9 @@ Future<String?> showAppOptionsSheet({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const AppSheetHandle(),
-              const SizedBox(height: 24),
-              Text(title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(sheetContext).textTheme.titleLarge),
-              const SizedBox(height: 24),
+              AppSheetHeader(title: title),
               for (final (index, entry) in entries.indexed) ...[
+                if (index > 0) const SizedBox(height: 8),
                 AppSelectionSurface(
                   selected: entry.selected,
                   child: TextButton(
@@ -469,12 +466,16 @@ class AppTactileButton extends StatefulWidget {
       required this.child,
       this.tooltip,
       this.color,
+      this.isLoading = false,
+      this.loadingLabel = 'Saving…',
       this.compact = false});
   final VoidCallback? onPressed;
   final Widget child;
   final String? tooltip;
   final Color? color;
   final bool compact;
+  final bool isLoading;
+  final String loadingLabel;
 
   @override
   State<AppTactileButton> createState() => _AppTactileButtonState();
@@ -499,7 +500,7 @@ class _AppTactileButtonState extends State<AppTactileButton> {
   }
 
   Future<void> _activate() async {
-    if (_activating || widget.onPressed == null) return;
+    if (_activating || widget.isLoading || widget.onPressed == null) return;
     final action = widget.onPressed!;
     setState(() => _activating = true);
     AppHaptics.action();
@@ -507,7 +508,7 @@ class _AppTactileButtonState extends State<AppTactileButton> {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     setState(() => _activating = false);
-    if (widget.onPressed != null) action();
+    if (widget.onPressed != null && !widget.isLoading) action();
   }
 
   @override
@@ -522,7 +523,7 @@ class _AppTactileButtonState extends State<AppTactileButton> {
     final p = context.palette;
     final face = widget.color ?? p.accent;
     final ink = widget.color == null ? p.accentInk : AppColors.onColor(face);
-    final enabled = widget.onPressed != null;
+    final enabled = widget.onPressed != null && !widget.isLoading;
     final pressed =
         _activating || (enabled && _states.value.contains(WidgetState.pressed));
     final radius = BorderRadius.circular(10);
@@ -549,7 +550,7 @@ class _AppTactileButtonState extends State<AppTactileButton> {
               backgroundColor: face,
               foregroundColor: ink,
               disabledBackgroundColor: p.surface2,
-              disabledForegroundColor: p.inkDim,
+              disabledForegroundColor: widget.isLoading ? p.ink : p.inkDim,
               minimumSize: const Size(48, 48),
               padding: widget.compact
                   ? EdgeInsets.zero
@@ -563,7 +564,25 @@ class _AppTactileButtonState extends State<AppTactileButton> {
                       : null),
               splashFactory: NoSplash.splashFactory,
             ),
-            child: widget.child,
+            child: widget.isLoading
+                ? Semantics(
+                    liveRegion: true,
+                    label: widget.loadingLabel,
+                    child: ExcludeSemantics(
+                        child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                            width: 28,
+                            height: 20,
+                            child: OverflowBox(
+                                maxHeight: 28,
+                                child: AppLoadingIndicator(size: 28))),
+                        const SizedBox(width: 10),
+                        Flexible(child: Text(widget.loadingLabel)),
+                      ],
+                    )))
+                : widget.child,
           ),
         ),
       ),

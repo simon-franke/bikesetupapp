@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 
@@ -26,23 +25,12 @@ class _ServiceIntervalSheetState extends State<ServiceIntervalSheet> {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: EdgeInsets.fromLTRB(
-          24,
-          16,
-          24,
-          24 +
-              MediaQuery.viewInsetsOf(context).bottom +
-              MediaQuery.paddingOf(context).bottom),
+      padding: appSheetPadding(context),
       child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const AppSheetHandle(),
-            const SizedBox(height: 24),
-            Text('Service interval',
-                style:
-                    AppTextStyles.heading.copyWith(color: context.palette.ink)),
-            const SizedBox(height: 24),
+            const AppSheetHeader(title: 'Service interval'),
             AppTextField(
                 controller: text,
                 hint: widget.hours ? 'Ride hours' : 'Kilometres',
