@@ -14,6 +14,10 @@ concurrency:
   group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: app
+
 jobs:
   check:
     name: Flutter ${{ matrix.check }}
@@ -61,8 +65,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci
-        working-directory: test/firestore
+        working-directory: backend/test/firestore
       - name: Test production rules
+        working-directory: backend
         run: >-
           npx --yes firebase-tools@15.18.0 emulators:exec
           --only firestore --project demo-bike-rules
@@ -78,4 +83,4 @@ jobs:
           node-version: '22'
       - name: Test OAuth handlers
         run: npm test
-        working-directory: functions
+        working-directory: backend/functions
