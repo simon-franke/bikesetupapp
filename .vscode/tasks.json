@@ -5,9 +5,14 @@
       "label": "Build iOS Simulator",
       "type": "process",
       "command": "flutter",
-      "args": ["build", "ios", "--simulator", "--debug"],
+      "args": [
+        "build",
+        "ios",
+        "--simulator",
+        "--debug"
+      ],
       "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}/app"
       },
       "group": {
         "kind": "build",

@@ -1,0 +1,5 @@
+# CAD exports are generated assets, not useful line-by-line source diffs.
+*.step binary
+*.STEP binary
+*.f3d binary
+*.f3z binary

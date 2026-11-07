@@ -5,17 +5,19 @@
       "name": "iPhone 12 Pro (Release)",
       "type": "dart",
       "request": "launch",
-      "program": "lib/main.dart",
+      "program": "${workspaceFolder}/app/lib/main.dart",
       "deviceId": "00008101-00023D1C34C1001E",
-      "flutterMode": "release"
+      "flutterMode": "release",
+      "cwd": "${workspaceFolder}/app"
     },
     {
       "name": "Attach to running Flutter app",
       "type": "dart",
       "request": "attach",
-      "program": "lib/main.dart",
+      "program": "${workspaceFolder}/app/lib/main.dart",
       "deviceId": "${input:flutterDeviceId}",
-      "vmServiceUri": "${input:flutterVmServiceUri}"
+      "vmServiceUri": "${input:flutterVmServiceUri}",
+      "cwd": "${workspaceFolder}/app"
     }
   ],
   "inputs": [

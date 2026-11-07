@@ -1,59 +1,75 @@
-# Bike Setup App
+<p align="center">
+  <img src="app/assets/app-icon/logo.png" alt="Clickwise suspension top-cap logo" width="96">
+</p>
 
-Keep bike settings, saved setups, maintenance records, and repair to-dos in one place. Built with Flutter and Firebase, with optional Strava integration for bike mileage.
+<h1 align="center">Clickwise</h1>
+<p align="center"><strong>Find your setup. Remember what works.</strong></p>
+<p align="center">A mountain bike setup journal for the details that make a ride feel right.</p>
+<p align="center">
+  <a href="#the-app">The app</a> ·
+  <a href="#suspension-telemetry">Suspension telemetry</a> ·
+  <a href="#development">Development</a>
+</p>
 
-This project targets native apps. GitHub Pages hosting and the web platform have been removed.
+## The app
 
-## Run locally
+A few clicks of rebound. A little less tire pressure. A setting you loved last summer but can't quite remember. Clickwise keeps those details together, so the next adjustment starts with what you already know.
 
-Install Flutter and configure a Firebase project with Firestore and the sign-in methods you want to use.
+- **Keep a baseline.** Save setups for your bikes, from suspension and tires to cockpit and bike fit.
+- **Make deliberate changes.** Compare an experiment against its original settings, record ride feedback and track times, then decide what to keep.
+- **Stay on top of maintenance.** Keep service history, intervals and repair to-dos alongside the bike they belong to.
+- **Bring your mileage along.** Connect Strava to track bike mileage without making it a requirement for using the app.
 
-```bash
-flutter pub get
-dart pub global activate flutterfire_cli
-flutterfire configure
-flutter run
-```
+<table>
+  <tr>
+    <th>Your setup at a glance</th>
+    <th>Dial in the details</th>
+    <th>Find what feels better</th>
+  </tr>
+  <tr>
+    <td><img src="app/docs/screenshots/setup.png" alt="Clickwise setup overview showing tire, fork and shock settings" width="260"></td>
+    <td><img src="app/docs/screenshots/pressure.png" alt="Fork pressure editor with a zoomable adjustment ruler" width="260"></td>
+    <td><img src="app/docs/screenshots/experiment.png" alt="Setup experiment comparing tire pressure and collecting ride feedback" width="260"></td>
+  </tr>
+</table>
 
-Firebase configuration stays local and is not committed. The public Strava client ID defaults to the deployed backend's ID; override it with `--dart-define=STRAVA_CLIENT_ID=...` when using a matching backend. Strava authentication keeps `STRAVA_CLIENT_SECRET` in Cloud Secret Manager. Native code exchange uses `stravaExchange` and token renewal uses `stravaRefresh`. Deploy the functions before distributing a client update. `.env` is not loaded or bundled in any build. If a previous build included a client secret, rotate it in Strava and update Cloud Secret Manager.
+*Actual app UI rendered with sample data. Clickwise is in development for iOS and Android; this is not an app-store release.*
 
-## Contributing
+## Suspension telemetry
 
-Run the checks before opening a pull request:
+Alongside the app, we're exploring compact magnetic travel sensors for forks and shocks. The goal is to connect how a bike feels with how its suspension moves.
 
-```bash
+The hardware folder contains mechanical design studies, Fusion projects and STEP/STL exports. These are **prototypes**, not validated riding hardware. Telemetry recording and app integration are still future work.
+
+[Explore the hardware →](hardware/README.md)
+
+## One product, three working areas
+
+| Folder | What's inside |
+| --- | --- |
+| [`app/`](app/README.md) | Flutter app, assets, native platform projects and app tests |
+| [`backend/`](backend/README.md) | Firebase Functions, Firestore rules and backend tests |
+| [`hardware/`](hardware/README.md) | Suspension telemetry designs and mechanical prototypes |
+
+Each area keeps its own sources and documentation. Shared GitHub workflows live in `.github/workflows/`.
+
+## Development
+
+The app uses Flutter and Firebase. CI uses **Flutter 3.41.4** and **Node 22**; Firestore rules tests also require **Java 21 or newer**.
+
+Start with the [app setup guide](app/README.md) to configure Firebase and run on a device. For cloud services, secrets and rules testing, use the [backend guide](backend/README.md).
+
+From the repository root:
+
+```sh
+cd app
+flutter pub get --enforce-lockfile
 flutter analyze --fatal-infos
 flutter test
-(cd functions && npm test)
+cd ../backend/functions
+npm test
 ```
 
-Firestore ownership-rule tests require Node 22 and Java 21 or newer:
+Firebase configuration and credentials stay local. Never commit service-account keys or the Strava client secret. See [development conventions](AGENTS.md) before contributing.
 
-```bash
-(cd test/firestore && npm ci)
-npx --yes firebase-tools@15.18.0 emulators:exec --only firestore --project demo-bike-rules "npm --prefix test/firestore test"
-```
-
-GitHub Actions runs Flutter analysis, Flutter tests, Firestore ownership-rule tests, and Strava function tests. CI uses placeholder configuration and does not need Firebase or Strava credentials.
-
-See [AGENTS.md](AGENTS.md) for architecture, development conventions, and deployment details.
-
-## Layout
-
-The app uses one phone layout at every window size. `PhoneViewport` caps the entire navigator at 480 logical pixels, including routes and bottom sheets. Text scaling and keyboard handling remain enabled.
-
-## Code structure
-
-Feature code lives in `lib/features/`, shared UI and infrastructure in `lib/common/`, and dependency wiring, startup and navigation in `lib/app/`. Features use a UI → controller → repository flow. See [AGENTS.md](AGENTS.md) for responsibilities, injection and tests.
-
-## Strava integration
-
-Strava credentials belong to the signed-in Firebase user. Historical service mileage requires access to all activities, including private rides. Sign-out clears that user's local credentials and sync timestamp without revoking access for other devices.
-
-Pushes to `main` deploy Firebase Functions and Firestore rules only. To deploy functions manually before distributing a client update:
-
-```bash
-firebase deploy --only functions --project bikesetupapp-bd22a
-```
-
-`stravaRefresh` accepts the user's refresh token in a POST body, exchanges it using the server-side secret, and returns the rotated credentials with caching disabled.
+Backend changes pushed to `main` deploy the Firebase Functions and Firestore rules. App-only and hardware-only changes do not trigger that deployment.
