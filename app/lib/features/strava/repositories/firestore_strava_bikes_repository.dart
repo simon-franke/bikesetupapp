@@ -9,10 +9,13 @@ import 'strava_bikes_repository.dart';
 class FirestoreStravaBikesRepository implements StravaBikesRepository {
   FirestoreStravaBikesRepository(this.userID, {FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+
   final String userID;
   final FirebaseFirestore _firestore;
+
   CollectionReference<Map<String, dynamic>> get userBikeSetup =>
       _firestore.collection(FirestoreKeys.userBikeSetup);
+
   @override
   Future<void> saveStravaBikes(List<StravaBike> bikes) async {
     return firebaseOperation(() async {

@@ -77,14 +77,17 @@ Uint8List fit(
   bytes.setRange(14, 14 + body.length, body);
   data.setUint16(bytes.length - 2,
       FitActivityDecoder.crc(bytes, 0, bytes.length - 2), Endian.little);
+
   return bytes;
 }
 
 class MemoryRides implements RidesRepository {
   final data = <String, Ride>{};
+
   @override
   Stream<List<Ride>> watch(String bikeId) =>
       Stream.value(data.values.where((r) => r.bikeId == bikeId).toList());
+
   @override
   Future<int> insert(List<Ride> rides) async {
     var inserted = 0;
@@ -176,7 +179,8 @@ void main() {
         50);
     final withoutOptionalField = Map<String, dynamic>.from(component.toMap())
       ..remove('serviceIntervalHours');
-    expect(ServiceComponent.fromMap('old', withoutOptionalField).usesHours, isFalse);
+    expect(ServiceComponent.fromMap('old', withoutOptionalField).usesHours,
+        isFalse);
   });
   test(
       'FIT uses active timer rather than elapsed time, without duplicate sessions',

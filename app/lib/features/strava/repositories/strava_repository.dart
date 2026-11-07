@@ -3,15 +3,23 @@ import '../models/strava_bike.dart';
 
 abstract interface class StravaRepository {
   Future<StravaAuth?> getAuth();
+
   Future<StravaAuth?> authorize();
+
   Future<void> deauthorize();
+
   Future<void> clearAuth();
+
   Future<String?> getValidToken();
+
   Future<List<StravaBike>> fetchAthleteBikes(String token);
+
   Future<double?> fetchMileageAtDate(
       {required String gearId,
       required DateTime date,
       required double currentTotalKm});
+
   Future<DateTime?> getLastSyncTime();
+
   Future<void> markSynced();
 }

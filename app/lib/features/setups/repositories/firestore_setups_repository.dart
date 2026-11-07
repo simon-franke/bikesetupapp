@@ -8,10 +8,13 @@ import 'setups_repository.dart';
 class FirestoreSetupsRepository implements SetupsRepository {
   FirestoreSetupsRepository(this.userID, {FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+
   final String userID;
   final FirebaseFirestore _firestore;
+
   CollectionReference<Map<String, dynamic>> get userBikeSetup =>
       _firestore.collection(FirestoreKeys.userBikeSetup);
+
   @override
   Future<void> createSetupList(String uBikeID, String uSetupID,
       String setupName, Map<String, dynamic> setupInformation) {
@@ -86,6 +89,7 @@ class FirestoreSetupsRepository implements SetupsRepository {
         .doc(uSetupID)
         .collection('Tests')
         .get();
+
     for (final test in tests.docs) {
       await test.reference.delete();
     }
@@ -209,6 +213,7 @@ class FirestoreSetupsRepository implements SetupsRepository {
       if (!snapshot.exists) {
         return "";
       }
+
       value = snapshot.data()?[FirestoreKeys.defaultSetup];
 
       return value?.toString() ?? "";
@@ -230,11 +235,13 @@ class FirestoreSetupsRepository implements SetupsRepository {
       if (!snapshot.exists) {
         return "";
       }
+
       value = snapshot.data()?[FirestoreKeys.setupName];
 
       if (value == null) {
         return "";
       }
+
       return value?.toString() ?? "";
     });
   }

@@ -9,6 +9,7 @@ import 'package:bikesetupapp/features/strava/models/strava_bike.dart';
 
 StravaApiException _exceptionFromResponse(http.Response response) {
   var inactive = false;
+
   try {
     final body = jsonDecode(response.body);
     if (body is Map && body['errors'] is List) {
@@ -18,6 +19,7 @@ StravaApiException _exceptionFromResponse(http.Response response) {
           error['code'].toString().toLowerCase() == 'inactive');
     }
   } on FormatException {/* Non-JSON failures still have an HTTP status. */}
+
   final code = inactive
       ? FailureCode.stravaInactive
       : switch (response.statusCode) {
@@ -26,11 +28,13 @@ StravaApiException _exceptionFromResponse(http.Response response) {
           429 => FailureCode.rateLimited,
           _ => FailureCode.stravaError,
         };
+
   return StravaApiException(code, statusCode: response.statusCode);
 }
 
 class StravaApiService {
   final http.Client? _client;
+
   StravaApiService({http.Client? client}) : _client = client;
 
   Future<http.Response> _get(Uri uri, String accessToken) {
@@ -50,11 +54,13 @@ class StravaApiService {
       if (response.statusCode != 200) {
         throw _exceptionFromResponse(response);
       }
+
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final bikesJson = json['bikes'];
       if (bikesJson == null) {
         throw const StravaApiException(FailureCode.missingProfileScope);
       }
+
       return (bikesJson as List<dynamic>)
           .map((b) => StravaBike.fromStravaJson(b as Map<String, dynamic>))
           .toList();
@@ -117,10 +123,12 @@ class StravaApiService {
       }
 
       if (activities.length < 200) break;
+
       page++;
     }
 
     final estimatedMeters = (currentTotalKm * 1000) - distanceAfterMeters;
+
     return estimatedMeters.clamp(0, double.infinity) / 1000;
   }
 
@@ -145,9 +153,11 @@ class StravaApiService {
         debugPrint('Strava: insufficient scope for activities');
         throw const StravaInsufficientScopeException();
       }
+
       if (response.statusCode == 429) {
         throw _exceptionFromResponse(response);
       }
+
       if (response.statusCode != 200) {
         throw _exceptionFromResponse(response);
       }

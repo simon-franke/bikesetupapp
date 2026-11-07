@@ -9,8 +9,13 @@ import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart
 import '../models/setup_test.dart';
 import '../repositories/tests_repository.dart';
 
+/// Manages experiment snapshots, draft edits, and stage transitions.
+///
+/// Writes are serialized, and saved draft values stay visible while watch
+/// snapshots catch up. Repository updates enforce the expected experiment stage.
 class TestsController extends OperationController {
   TestsController(this._repository, this._setups);
+
   final TestsRepository _repository;
   final SetupsRepository _setups;
   final WriteQueue _writes = WriteQueue();
@@ -29,6 +34,7 @@ class TestsController extends OperationController {
 
   SetupTest _withLocalEdits(String bike, String setup, SetupTest test) {
     final values = readValues(test.values);
+
     for (final field in _localEdits.keys.toList()) {
       if ((field.$1, field.$2, field.$3) != (bike, setup, test.id)) continue;
       final value = _localEdits.resolve(field, values[field.$4]?[field.$5]);
@@ -38,9 +44,14 @@ class TestsController extends OperationController {
         (values[field.$4] ??= {})[field.$5] = value;
       }
     }
+
     return test.copyWith(values: values);
   }
 
+  /// Overlays pending and recently saved draft edits on a watched experiment.
+  ///
+  /// Also records observed fields and retires saved overrides once the stream
+  /// acknowledges their values and unit metadata.
   SetupTest withSavedValues(String bike, String setup, SetupTest test) {
     for (final category in test.values.entries) {
       for (final field in category.value.entries) {
@@ -48,15 +59,18 @@ class TestsController extends OperationController {
             field.value;
       }
     }
+
     final key = (bike, setup, test.id);
     final pending = _savedFields[key];
     final families = _savedFamilies[key];
     if (pending == null) return _withLocalEdits(bike, setup, test);
+
     if (test.stage != TestStage.draft) {
       _savedFields.remove(key);
       _savedFamilies.remove(key);
       return test;
     }
+
     pending.removeWhere((field, value) =>
         test.values[field.$1]?[field.$2] == value &&
         (families?[field] == null ||
@@ -66,42 +80,40 @@ class TestsController extends OperationController {
       _savedFamilies.remove(key);
       return _withLocalEdits(bike, setup, test);
     }
+
     final values = readValues(test.values);
     final metadata = readValues(test.fieldMetadata);
+
     for (final entry in pending.entries) {
       (values[entry.key.$1] ??= {})[entry.key.$2] = entry.value;
       if (families?[entry.key] != null) {
         (metadata[entry.key.$1] ??= {})[entry.key.$2] = families![entry.key]!;
       }
     }
+
     return _withLocalEdits(
         bike, setup, test.copyWith(values: values, fieldMetadata: metadata));
   }
 
   Stream<List<SetupTest>> watch(String bike, String setup) =>
       _repository.watch(bike, setup);
+
+  /// Captures the setup's configured fields and metadata in an independent draft.
+  ///
+  /// The original values become the baseline for comparing later edits. Category
+  /// streams are read sequentially, so this is not an atomic cross-category read.
   Future<CommandResult<SetupTest>> create(
           String bike, String setup, String name) =>
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
-            final values = <String, Map<String, String>>{};
-            final metadata = <String, Map<String, String>>{};
+
             final information = await _setups.getSetupInformation(bike, setup);
             final configuration =
                 SetupConfiguration.fromInformation(information);
-            for (final category in configuration.fields.keys) {
-              values[category] =
-                  (await _setups.getSettings(bike, category, setup).first)
-                      .map((k, v) => MapEntry(k, v.toString()));
-              metadata[category] =
-                  (await _setups.getSettingsMeta(bike, category, setup).first)
-                      .map((k, v) => MapEntry(k, v.toString()));
-              final fields = configuration.fields[category]!;
-              for (final field in fields) {
-                values[category]!.putIfAbsent(field, () => '');
-              }
-            }
+            final (values, metadata) =
+                await _captureSetupFields(bike, setup, configuration);
             if (isDisposed) throw const CommandAborted();
+
             final draft = SetupTest(
                 id: const Uuid().v4(),
                 name: '$name test',
@@ -114,8 +126,32 @@ class TestsController extends OperationController {
                 before: readValues(values),
                 values: readValues(values));
             await _repository.create(bike, setup, draft);
+
             return draft;
           }));
+
+  Future<(Map<String, Map<String, String>>, Map<String, Map<String, String>>)>
+      _captureSetupFields(
+          String bike, String setup, SetupConfiguration configuration) async {
+    final values = <String, Map<String, String>>{};
+    final metadata = <String, Map<String, String>>{};
+
+    for (final category in configuration.fields.keys) {
+      values[category] =
+          (await _setups.getSettings(bike, category, setup).first)
+              .map((k, v) => MapEntry(k, v.toString()));
+      metadata[category] =
+          (await _setups.getSettingsMeta(bike, category, setup).first)
+              .map((k, v) => MapEntry(k, v.toString()));
+      final fields = configuration.fields[category]!;
+      for (final field in fields) {
+        values[category]!.putIfAbsent(field, () => '');
+      }
+    }
+
+    return (values, metadata);
+  }
+
   Future<CommandResult<void>> _update(String bike, String setup, String id,
           TestStage stage, SetupTest Function(SetupTest) change,
           {void Function()? onCommitted}) =>
@@ -154,6 +190,7 @@ class TestsController extends OperationController {
       String category, String field, String value,
       {String? previousValue}) async {
     if (isDisposed) return const CommandCancelled();
+
     final key = (bike, setup, id, category, field);
     final token = previousValue == null
         ? null
@@ -165,6 +202,7 @@ class TestsController extends OperationController {
             value);
     emit();
     var success = false;
+
     try {
       final result = await _update(bike, setup, id, TestStage.draft, (latest) {
         if (!latest.values.containsKey(category) ||
@@ -179,6 +217,7 @@ class TestsController extends OperationController {
         pending[(category, field)] = value;
       });
       success = result.isSuccess;
+
       return result;
     } finally {
       if (token != null) _localEdits.complete(key, token, success: success);
@@ -190,6 +229,7 @@ class TestsController extends OperationController {
       String category, String field, String value,
       {UnitFamily? family}) {
     final name = field.trim();
+
     return _update(bike, setup, id, TestStage.draft, (latest) {
       if (!latest.values.containsKey(category) ||
           name.isEmpty ||
@@ -200,10 +240,12 @@ class TestsController extends OperationController {
               entry.value.trim().isNotEmpty)) {
         throw const AppFailure(FailureCode.invalidInput);
       }
+
       final values = readValues(latest.values);
       final metadata = readValues(latest.fieldMetadata);
       values[category]![name] = value;
       if (family != null) (metadata[category] ??= {})[name] = family.name;
+
       return latest.copyWith(values: values, fieldMetadata: metadata);
     }, onCommitted: () {
       (_savedFields[(bike, setup, id)] ??= {})[(category, name)] = value;
@@ -245,10 +287,15 @@ class TestsController extends OperationController {
       _update(bike, setup, id, TestStage.review,
           (latest) => latest.copyWith(stage: TestStage.ride));
 
+  /// Finishes an experiment, optionally applying it or saving it as a new setup.
+  ///
+  /// A supplied [newSetupName] must be nonempty and unique ignoring case. Saved
+  /// field overrides are cleared only after the repository operation succeeds.
   Future<CommandResult<void>> finish(String bike, String setup, String id,
           {bool apply = false, String? newSetupName}) =>
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
+
             if (newSetupName != null) {
               final name = newSetupName.trim();
               if (name.isEmpty ||
@@ -257,7 +304,9 @@ class TestsController extends OperationController {
                 throw const AppFailure(FailureCode.duplicateName);
               }
             }
+
             if (isDisposed) throw const CommandAborted();
+
             await _repository.finish(bike, setup, id,
                 apply: apply,
                 newSetupId: newSetupName == null ? null : id,

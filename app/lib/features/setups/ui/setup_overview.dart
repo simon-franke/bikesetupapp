@@ -19,9 +19,11 @@ String categoryLabel(String category) => switch (category) {
 class SetupCard extends StatelessWidget {
   const SetupCard(
       {super.key, required this.child, this.padding = 20, this.onTap});
+
   final double padding;
   final Widget child;
   final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) => Container(
       width: double.infinity,
@@ -44,12 +46,14 @@ class SetupOverview extends StatelessWidget {
       required this.configuration,
       this.onAddCategory,
       required this.onCategory});
+
   final User user;
   final String bike, setup;
 
   final SetupConfiguration configuration;
   final ValueChanged<String> onCategory;
   final VoidCallback? onAddCategory;
+
   @override
   Widget build(BuildContext context) => ListView(
           padding: EdgeInsets.fromLTRB(
@@ -138,10 +142,12 @@ class _Values extends StatefulWidget {
       required this.category,
       this.pressureOnly = false,
       this.topPadding = 0});
+
   final User user;
   final String bike, setup, category;
   final bool pressureOnly;
   final double topPadding;
+
   @override
   State<_Values> createState() => _ValuesState();
 }
@@ -151,6 +157,7 @@ class _ValuesState extends State<_Values> {
       .forUser(widget.user.uid)
       .setups
       .getSettings(widget.bike, widget.category, widget.setup);
+
   @override
   Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
       stream: stream,
@@ -161,7 +168,9 @@ class _ValuesState extends State<_Values> {
             child: const Text('Could not load settings'),
           );
         }
+
         if (!snapshot.hasData) return const SizedBox(height: 48);
+
         final values = snapshot.data!;
         bool hasValue(String key) =>
             values[key]?.toString().trim().isNotEmpty == true;
@@ -175,6 +184,7 @@ class _ValuesState extends State<_Values> {
                   style: AppTextStyles.body
                       .copyWith(color: context.palette.accentText)));
         }
+
         Widget value(String key, {bool large = false}) =>
             Text.rich(TextSpan(children: [
               if (!large)

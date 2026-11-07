@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/features/setups/ui/add_category_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -38,6 +39,7 @@ class MyHomePage extends StatefulWidget {
 
   final String setupName;
   final String uSetupID;
+
   const MyHomePage(
       {super.key,
       required this.user,
@@ -63,6 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _bindConfiguration() {
     final scope = '${widget.user?.uid}/$_uBikeID/$_uSetupID';
     if (_configurationScope == scope) return;
+
     final firstConfiguration = !_initialConfigurationConsumed &&
         _uBikeID == widget.uBikeID &&
         _uSetupID == widget.uSetupID &&
@@ -73,6 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _configurationFuture = SynchronousFuture(widget.initialConfiguration);
       return;
     }
+
     _configurationFuture =
         widget.user == null || _uBikeID.isEmpty || _uSetupID.isEmpty
             ? Future.value(null)
@@ -162,6 +166,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _bindConfiguration();
       _workspace.selectView(_activeView);
     }
+
     return saved;
   }
 
@@ -169,11 +174,13 @@ class _MyHomePageState extends State<MyHomePage> {
     final active = configuration.fields.keys.toSet();
     final category = await showAddCategorySheet(context, active);
     if (category == null || !mounted) return;
+
     String? suspensionType;
     if (category == 'Fork' || category == 'Shock') {
       suspensionType = await showSuspensionTypeSheet(context, category);
       if (suspensionType == null || !mounted) return;
     }
+
     if (await _changeCategory(category, true, suspensionType: suspensionType) &&
         mounted) {
       final configuration = await _configurationFuture;
@@ -197,6 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
     if (action != 'remove' || !routeContext.mounted) return;
+
     final confirmed = await showDeleteConfirmationSheet(
       routeContext,
       title: 'Remove ${categoryLabel(category)}?',
@@ -204,6 +212,7 @@ class _MyHomePageState extends State<MyHomePage> {
       actionLabel: 'Remove',
     );
     if (!confirmed || !mounted || !routeContext.mounted) return;
+
     if (await _changeCategory(category, false) && routeContext.mounted) {
       Navigator.of(routeContext).pop();
     }
@@ -238,6 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
             )
           ]);
     }
+
     return PreferredSize(
       preferredSize: Size.fromHeight(
           math.max(104, MediaQuery.textScalerOf(context).scale(28) * 2.6 + 24)),
@@ -376,6 +386,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _showBikeSelector() {
     final user = widget.user;
     if (user == null) return;
+
     showBikeChooserSheet(
       context: context,
       user: user,
@@ -389,12 +400,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildBody(BuildContext context, double contentWidth) {
     if (widget.user == null) return const SizedBox.shrink();
+
     return FutureBuilder<SetupConfiguration?>(
       future: _configurationFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return const Center(child: AppLoadingState());
         }
+
         if (snapshot.hasError || !snapshot.hasData) {
           return Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -407,6 +420,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text('Retry')),
           ]));
         }
+
         return _buildWorkspace(context, contentWidth, snapshot.data!);
       },
     );

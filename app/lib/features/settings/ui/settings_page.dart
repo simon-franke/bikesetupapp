@@ -22,6 +22,7 @@ class SettingsPage extends StatefulWidget {
   final String bikeName;
 
   final String chosenSetup;
+
   const SettingsPage({
     super.key,
     required this.bikeName,
@@ -34,6 +35,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late final SettingsController _controller;
+
   User? get user => _controller.user;
   bool get _isStravaConnected => _controller.connected;
   int? get _stravaAthleteId => _controller.athleteId;
@@ -70,6 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Scaffold(
       backgroundColor: p.bg,
       appBar: buildDetailAppBar(context, title: 'Settings'),
@@ -166,6 +169,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
+
   const _SectionLabel(this.text);
 
   @override
@@ -176,11 +180,13 @@ class _SectionLabel extends StatelessWidget {
 
 class _SettingsCard extends StatelessWidget {
   final Widget child;
+
   const _SettingsCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
@@ -211,6 +217,7 @@ class _AccountRow extends StatelessWidget {
   final User? user;
   final Future<void> Function() onSignOut;
   final VoidCallback onSignIn;
+
   const _AccountRow(
       {required this.user, required this.onSignOut, required this.onSignIn});
 
@@ -235,6 +242,7 @@ class _AccountRow extends StatelessWidget {
         ? 'Signed out'
         : (u.displayName ?? (u.isAnonymous ? 'Guest' : 'Signed in'));
     final email = u?.email ?? '';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -300,6 +308,7 @@ class _StravaCard extends StatelessWidget {
   final VoidCallback onConnect;
   final VoidCallback onDisconnect;
   final VoidCallback onManageBikes;
+
   const _StravaCard({
     required this.isConnected,
     required this.athleteId,
@@ -312,6 +321,7 @@ class _StravaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -391,6 +401,7 @@ class _OutlineButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+
   const _OutlineButton(
       {required this.icon, required this.label, required this.onTap});
 

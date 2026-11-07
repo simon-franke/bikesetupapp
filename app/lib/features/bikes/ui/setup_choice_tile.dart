@@ -23,6 +23,7 @@ class SetupChoiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
 import '../../setups/models/unit_system.dart';
 import 'bike_mileage_panel.dart';
@@ -25,7 +26,9 @@ class RideLogPage extends StatefulWidget {
       required this.uid,
       required this.bikeId,
       required this.bikeName});
+
   final String uid, bikeId, bikeName;
+
   @override
   State<RideLogPage> createState() => _RideLogPageState();
 }
@@ -36,11 +39,13 @@ class _RideLogPageState extends State<RideLogPage> {
   late Stream<List<Ride>> stream = controller.watch(widget.bikeId);
   bool importing = false;
   String? message;
+
   Future<void> importFit() async {
     setState(() {
       importing = true;
       message = null;
     });
+
     try {
       final file = await openFile(acceptedTypeGroups: const [
         XTypeGroup(
@@ -49,12 +54,15 @@ class _RideLogPageState extends State<RideLogPage> {
             uniformTypeIdentifiers: ['public.data'])
       ]);
       if (file == null || !mounted) return;
+
       if (await file.length() > FitActivityDecoder.maxBytes) {
         throw const FormatException('Choose a FIT file smaller than 20 MB.');
       }
+
       final rides =
           await compute(FitActivityDecoder.decode, await file.readAsBytes());
       if (!mounted) return;
+
       final confirmed = await showAppSheet<bool>(
           context: context,
           builder: (ctx) => SafeArea(
@@ -92,6 +100,7 @@ class _RideLogPageState extends State<RideLogPage> {
                                 child: const Text('Cancel')),
                           ])))));
       if (confirmed != true || !mounted) return;
+
       var inserted = 0;
       final saved = await presentCommand(context, () async {
         final result = await controller
@@ -167,10 +176,13 @@ class _RideLogPageState extends State<RideLogPage> {
                               child: const Text('Retry'))
                         ]);
                       }
+
                       if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(child: AppLoadingState());
                       }
+
                       final rides = snapshot.data!;
+
                       return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -236,8 +248,10 @@ class ManualRideForm extends StatefulWidget {
       required this.controller,
       required this.bikeId,
       required this.bikeName});
+
   final RidesController controller;
   final String bikeId, bikeName;
+
   @override
   State<ManualRideForm> createState() => _ManualRideFormState();
 }
@@ -254,6 +268,7 @@ class _ManualRideFormState extends State<ManualRideForm> {
   DateTime date = DateTime.now();
   bool indoor = false, saving = false;
   String? error;
+
   @override
   void dispose() {
     name.dispose();
@@ -265,6 +280,7 @@ class _ManualRideFormState extends State<ManualRideForm> {
 
   Future<void> save() async {
     if (saving) return;
+
     final h = int.tryParse(hours.text.trim().isEmpty ? '0' : hours.text);
     final m = int.tryParse(minutes.text.trim().isEmpty ? '0' : minutes.text);
     if (h == null ||
@@ -277,15 +293,18 @@ class _ManualRideFormState extends State<ManualRideForm> {
       setState(() => error = 'Enter hours and minutes (0–59), up to 7 days.');
       return;
     }
+
     if (distance.text.trim().isNotEmpty &&
         (distanceKm == null || !distanceKm!.isFinite || distanceKm! <= 0)) {
       setState(() => error = 'Enter a positive distance.');
       return;
     }
+
     if (h * 60 + m == 0 && distanceKm == null) {
       setState(() => error = 'Enter distance, riding time, or both.');
       return;
     }
+
     setState(() => saving = true);
     final saved = await presentCommand(
         context,
@@ -302,6 +321,7 @@ class _ManualRideFormState extends State<ManualRideForm> {
                   indoor: indoor)
             ]));
     if (!mounted) return;
+
     if (saved) {
       Navigator.pop(context);
     } else {
@@ -333,58 +353,59 @@ class _ManualRideFormState extends State<ManualRideForm> {
                     AppTextField(
                         controller: name, hint: 'Ride name (optional)'),
                     const SizedBox(height: 12),
-                    const AppFieldLabel('Date & time'),
-                    const SizedBox(height: 8),
-                    AppValueButton(
-                        label: DateFormat.yMMMd().add_Hm().format(date),
-                        onTap: saving
-                            ? null
-                            : () async {
-                                final selected = await pickAppDate(context,
-                                    initial: date, includeTime: true);
-                                if (selected != null && mounted) {
-                                  setState(() {
-                                    date = selected;
-                                    error = null;
-                                  });
-                                }
-                              }),
+                    AppFormField(
+                        label: 'Date & time',
+                        child: AppValueButton(
+                            label: DateFormat.yMMMd().add_Hm().format(date),
+                            onTap: saving
+                                ? null
+                                : () async {
+                                    final selected = await pickAppDate(context,
+                                        initial: date, includeTime: true);
+                                    if (selected != null && mounted) {
+                                      setState(() {
+                                        date = selected;
+                                        error = null;
+                                      });
+                                    }
+                                  })),
                     const SizedBox(height: 12),
-                    const AppFieldLabel('Distance'),
-                    const SizedBox(height: 8),
-                    AppTextField(
-                        key: const ValueKey('ride-distance'),
-                        controller: distance,
-                        hint: '0',
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        onChanged: (text) => setState(() {
-                              final value =
-                                  double.tryParse(text.replaceAll(',', '.'));
-                              distanceKm = value == null
-                                  ? null
-                                  : value * distanceUnit.toCanonical;
-                            }),
-                        suffixWidget: SettingUnitSelector(
-                            family: UnitFamily.distance,
-                            unit: distanceUnit,
-                            onChanged: (unit) {
-                              if (distance.text.trim().isNotEmpty &&
-                                  (distanceKm == null ||
-                                      !distanceKm!.isFinite)) {
-                                setState(
-                                    () => error = 'Enter a positive distance.');
-                                return;
-                              }
-                              setState(() {
-                                distanceUnit = unit;
-                                if (distanceKm != null) {
-                                  distance.text =
-                                      (distanceKm! / unit.toCanonical)
-                                          .toStringAsFixed(2);
-                                }
-                              });
-                            })),
+                    AppFormField(
+                        label: 'Distance',
+                        child: AppTextField(
+                            key: const ValueKey('ride-distance'),
+                            controller: distance,
+                            hint: '0',
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            onChanged: (text) => setState(() {
+                                  final value = double.tryParse(
+                                      text.replaceAll(',', '.'));
+                                  distanceKm = value == null
+                                      ? null
+                                      : value * distanceUnit.toCanonical;
+                                }),
+                            suffixWidget: SettingUnitSelector(
+                                family: UnitFamily.distance,
+                                unit: distanceUnit,
+                                onChanged: (unit) {
+                                  if (distance.text.trim().isNotEmpty &&
+                                      (distanceKm == null ||
+                                          !distanceKm!.isFinite)) {
+                                    setState(() =>
+                                        error = 'Enter a positive distance.');
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    distanceUnit = unit;
+                                    if (distanceKm != null) {
+                                      distance.text =
+                                          (distanceKm! / unit.toCanonical)
+                                              .toStringAsFixed(2);
+                                    }
+                                  });
+                                }))),
                     if (distance.text.trim().isNotEmpty)
                       SwitchListTile.adaptive(
                           contentPadding: EdgeInsets.zero,
@@ -395,25 +416,25 @@ class _ManualRideFormState extends State<ManualRideForm> {
                               : (value) =>
                                   setState(() => distanceInStrava = value)),
                     const SizedBox(height: 12),
-                    const AppFieldLabel('Riding time'),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(
-                          child: AppTextField(
-                              key: const ValueKey('ride-hours'),
-                              controller: hours,
-                              hint: 'Hours',
-                              suffix: 'h',
-                              keyboardType: TextInputType.number)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: AppTextField(
-                              key: const ValueKey('ride-minutes'),
-                              controller: minutes,
-                              hint: 'Minutes',
-                              suffix: 'min',
-                              keyboardType: TextInputType.number))
-                    ]),
+                    AppFormField(
+                        label: 'Riding time',
+                        child: Row(children: [
+                          Expanded(
+                              child: AppTextField(
+                                  key: const ValueKey('ride-hours'),
+                                  controller: hours,
+                                  hint: 'Hours',
+                                  suffix: 'h',
+                                  keyboardType: TextInputType.number)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: AppTextField(
+                                  key: const ValueKey('ride-minutes'),
+                                  controller: minutes,
+                                  hint: 'Minutes',
+                                  suffix: 'min',
+                                  keyboardType: TextInputType.number))
+                        ])),
                     SwitchListTile.adaptive(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Indoor ride'),
@@ -425,7 +446,9 @@ class _ManualRideFormState extends State<ManualRideForm> {
                           style: TextStyle(color: context.palette.red)),
                     const SizedBox(height: 16),
                     AppActionButton(
-                        label: saving ? 'Saving…' : 'Save ride',
+                        isLoading: saving,
+                        loadingLabel: 'Saving…',
+                        label: 'Save ride',
                         onPressed: saving ? null : save),
                   ]))));
 }

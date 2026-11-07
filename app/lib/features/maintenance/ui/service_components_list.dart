@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_load_error.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import '../../rides/models/ride.dart';
@@ -73,12 +74,14 @@ class _ServiceComponentsListState extends State<ServiceComponentsList> {
             onRetry: () => setState(_resetStream),
           );
         }
+
         if (!snapshot.hasData) {
           return const Padding(
             padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator.adaptive()),
+            child: Center(child: AppLoadingState()),
           );
         }
+
         return _ComponentListWithEntries(
           key: ValueKey('${widget.userID}_${widget.bikeId}'),
           onAdd: widget.onAdd,
@@ -128,6 +131,7 @@ class _ComponentListWithEntries extends StatefulWidget {
 class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
   late final ServiceEntriesController _entries;
   bool? _lastAlert;
+
   Map<String, ServiceEntry?> get _latestEntries => _entries.entries;
 
   @override
@@ -166,24 +170,29 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
                   child:
                       Text('Could not load rides. Reopen Service to retry.'));
             }
+
             if (!snapshot.hasData) {
               return const Padding(
                   padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator.adaptive()));
+                  child: Center(child: AppLoadingState()));
             }
+
             return _content(context, snapshot.data);
           });
+
   Widget _content(BuildContext context, List<Ride>? rides) {
     if (_entries.hasError) {
       return _LoadError(
           message: 'Could not load service history.', onRetry: _entries.retry);
     }
+
     if (_entries.loading) {
       return const Padding(
         padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator.adaptive()),
+        child: Center(child: AppLoadingState()),
       );
     }
+
     final services = widget.components
         .map((component) => annotateService(
               component: component,
@@ -202,6 +211,7 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
         }
       });
     }
+
     return ServiceSchedule(
       services: services,
       onAdd: widget.onAdd,
@@ -262,6 +272,7 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
                         label: 'Add component', onPressed: widget.onAdd),
                   ])));
     }
+
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
@@ -292,6 +303,7 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
                 .compareTo(b.component.name.toLowerCase());
           });
     if (entries.isEmpty) return [];
+
     return [
       Padding(
         padding: EdgeInsets.fromLTRB(20, 14, 20, 12),
@@ -307,6 +319,7 @@ class _ServiceScheduleState extends State<ServiceSchedule> {
 class _LoadError extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
+
   const _LoadError({required this.message, required this.onRetry});
 
   @override

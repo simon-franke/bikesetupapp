@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
@@ -63,10 +64,7 @@ class MileageBanner extends StatelessWidget {
         textStyle: AppTextStyles.label,
       ),
       icon: isLoading
-          ? SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: ink))
+          ? const AppLoadingIndicator(size: 20)
           : Icon(
               isConnected
                   ? CupertinoIcons.arrow_2_circlepath
@@ -78,6 +76,7 @@ class MileageBanner extends StatelessWidget {
               ? 'Sync Strava'
               : 'Connect Strava'),
     );
+
     return Container(
       width: double.infinity,
       margin: margin,

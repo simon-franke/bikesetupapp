@@ -13,6 +13,7 @@ import 'package:bikesetupapp/features/maintenance/models/service_schedule.dart';
 
 class _Rides extends Fake implements RidesRepository {
   final saved = <Ride>[];
+
   @override
   Future<int> insert(List<Ride> rides) async {
     saved.addAll(rides);
@@ -101,9 +102,11 @@ void main() {
     final restored = Ride.fromMap('valid', value.toMap()).forBike('other');
     expect(restored.distanceKm, 42.5);
     expect(restored.distanceInStrava, isTrue);
+
     for (final km in [0.0, -1.0, double.nan, double.infinity]) {
       expect((await controller.save([ride('invalid', km)])).isSuccess, isFalse);
     }
+
     expect(repo.saved.length, 1);
     final withoutOptionalField = Ride.fromMap(
         'withoutOptionalField',
@@ -155,11 +158,13 @@ void main() {
         await tester.ensureVisible(find.text('Already included in Strava'));
         await tester.tap(find.text('Already included in Strava'));
       }
+
       if (mode != 'distance') {
         await tester.ensureVisible(find.byKey(const ValueKey('ride-minutes')));
         await tester.enterText(
             find.byKey(const ValueKey('ride-minutes')), '45');
       }
+
       await tester.ensureVisible(find.text('Save ride'));
       await tester.tap(find.text('Save ride'));
       await tester.pumpAndSettle();

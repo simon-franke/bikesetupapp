@@ -15,6 +15,7 @@ class AppFlowHeader extends StatelessWidget {
       this.backTooltip = 'Back',
       this.onClose,
       this.closeTooltip = 'Close'});
+
   final double progress;
   final String progressLabel, backTooltip, closeTooltip;
   final VoidCallback? onBack, onClose;
@@ -57,6 +58,7 @@ class AppFlowHeader extends StatelessWidget {
 
 class AppFlowHeading extends StatelessWidget {
   const AppFlowHeading(this.text, {super.key});
+
   final String text;
 
   @override
@@ -75,9 +77,14 @@ class AppFlowFooter extends StatelessWidget {
       {super.key,
       required this.label,
       required this.onPressed,
+      this.isLoading = false,
+      this.loadingLabel = 'Saving…',
       this.error,
       this.onDismissError});
+
   final String label;
+  final bool isLoading;
+  final String loadingLabel;
   final VoidCallback? onPressed;
   final String? error;
   final VoidCallback? onDismissError;
@@ -94,7 +101,11 @@ class AppFlowFooter extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: AppErrorBanner(
                       message: error!, onDismiss: onDismissError)),
-            AppActionButton(label: label, onPressed: onPressed),
+            AppActionButton(
+                label: label,
+                onPressed: onPressed,
+                isLoading: isLoading,
+                loadingLabel: loadingLabel),
           ],
         ),
       );

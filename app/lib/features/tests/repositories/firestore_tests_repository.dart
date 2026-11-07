@@ -7,20 +7,25 @@ import 'tests_repository.dart';
 
 class FirestoreTestsRepository implements TestsRepository {
   FirestoreTestsRepository(this.uid);
+
   final String uid;
+
   DocumentReference<Map<String, dynamic>> _bike(String bike) =>
       FirebaseFirestore.instance
           .collection('UserBikeSetup')
           .doc(uid)
           .collection('Bikes')
           .doc(bike);
+
   CollectionReference<Map<String, dynamic>> _tests(String bike, String setup) =>
       _bike(bike).collection('SetupList').doc(setup).collection('Tests');
+
   @override
   Stream<List<SetupTest>> watch(String bike, String setup) =>
       firebaseStream(_tests(bike, setup)
           .snapshots()
           .map((s) => s.docs.map((d) => SetupTest.fromMap(d.data())).toList()));
+
   @override
   Future<void> create(String bike, String setup, SetupTest test) =>
       _writeTransaction((tx) async {
@@ -48,17 +53,21 @@ class FirestoreTestsRepository implements TestsRepository {
         if (!saved.exists || !baseline.exists) {
           throw const AppFailure(FailureCode.saveFailed);
         }
+
         final current = SetupTest.fromMap(saved.data()!);
         if (current.stage == TestStage.finished ||
             current.stage != expectedStage) {
           throw const AppFailure(FailureCode.saveFailed);
         }
+
         final updated = change(current);
         if (updated.id != id || updated.stage == TestStage.finished) {
           throw const AppFailure(FailureCode.invalidInput);
         }
+
         return () => tx.set(ref, updated.toMap());
       });
+
   @override
   Future<void> finish(String bike, String setup, String id,
           {bool apply = false,
@@ -73,15 +82,19 @@ class FirestoreTestsRepository implements TestsRepository {
         if (!baseline.exists || !saved.exists) {
           throw const AppFailure(FailureCode.saveFailed);
         }
+
         final test = SetupTest.fromMap(saved.data()!);
         if (onlyIfUnchanged &&
             (test.stage != TestStage.draft || test.changes.isNotEmpty)) {
           return () {};
         }
+
         if (test.stage == TestStage.finished) return () {};
+
         if ((apply || newSetupId != null) && test.stage != TestStage.review) {
           throw const AppFailure(FailureCode.invalidInput);
         }
+
         final categories = <String, Map<String, dynamic>>{};
         if (apply) {
           for (final category in test.values.keys) {
@@ -90,6 +103,7 @@ class FirestoreTestsRepository implements TestsRepository {
             categories[category] = doc.data() ?? {};
           }
         }
+
         if (apply) {
           for (final change in test.changes) {
             if ((categories[change.category]?[change.field]?.toString() ??
@@ -99,6 +113,7 @@ class FirestoreTestsRepository implements TestsRepository {
             }
           }
         }
+
         return () {
           if (apply) {
             for (final change in test.changes) {
@@ -114,6 +129,7 @@ class FirestoreTestsRepository implements TestsRepository {
                     SetOptions(merge: true));
               }
             }
+
             final configuration =
                 SetupConfiguration.fromInformation(baseline.data()!);
             {
@@ -121,12 +137,14 @@ class FirestoreTestsRepository implements TestsRepository {
                 for (final entry in configuration.fields.entries)
                   entry.key: [...entry.value],
               };
+
               for (final change in test.changes) {
                 final selected = fields[change.category] ??= [];
                 if (!selected.contains(change.field)) {
                   selected.add(change.field);
                 }
               }
+
               tx.set(
                   parent,
                   {
@@ -136,6 +154,7 @@ class FirestoreTestsRepository implements TestsRepository {
                   SetOptions(merge: true));
             }
           }
+
           if (newSetupId != null) {
             tx.set(_bike(bike).collection('SetupList').doc(newSetupId), {
               ...test.setupInformation,
@@ -147,6 +166,7 @@ class FirestoreTestsRepository implements TestsRepository {
               }).encode(),
               'setup_name': newSetupName
             });
+
             for (final entry in test.values.entries) {
               tx.set(_bike(bike).collection(newSetupId).doc(entry.key),
                   entry.value);
@@ -155,10 +175,12 @@ class FirestoreTestsRepository implements TestsRepository {
                   test.fieldMetadata[entry.key] ?? <String, String>{});
             }
           }
+
           if (test.stage == TestStage.draft && !apply && newSetupId == null) {
             tx.delete(testRef);
             return;
           }
+
           tx.set(
               testRef,
               test

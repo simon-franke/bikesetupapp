@@ -3,11 +3,11 @@ import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import 'package:bikesetupapp/features/strava/controllers/strava_controller.dart';
 import '../models/active_view.dart';
 
+/// Holds the visible bike, setup, view, and mileage for the workspace.
 class WorkspaceController extends OperationController {
   WorkspaceController(
       {required String bikeName,
       required String bikeId,
-
       required String setupName,
       required String setupId,
       StravaController? strava})
@@ -16,6 +16,7 @@ class WorkspaceController extends OperationController {
         _bikeId = bikeId,
         _setupName = setupName,
         _setupId = setupId;
+
   final StravaController? _strava;
   String _bikeName;
   String _bikeId;
@@ -24,6 +25,7 @@ class WorkspaceController extends OperationController {
   ActiveView _activeView = ActiveView.setup;
   bool _serviceAlert = false;
   double? _mileageKm;
+
   String get bikeName => _bikeName;
   String get bikeId => _bikeId;
   String get setupName => _setupName;
@@ -32,6 +34,9 @@ class WorkspaceController extends OperationController {
   bool get serviceAlert => _serviceAlert;
   double? get mileageKm => _mileageKm;
 
+  /// Publishes the known selection immediately, then loads its mileage.
+  ///
+  /// Clears the previous bike's mileage and service alert before notifying listeners.
   Future<CommandResult<void>> selectBike(
       String name, String id, String setup, String setupID) {
     _bikeName = name;

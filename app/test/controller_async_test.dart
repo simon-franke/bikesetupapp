@@ -27,6 +27,7 @@ import 'support/fake_repositories.dart';
 class TestCommands extends OperationController {
   Future<CommandResult<T>> execute<T>(Future<T> Function() action) =>
       command(action);
+
   Future<CommandResult<void>> shared(Future<void> Function() action) =>
       share('write', () => command(action));
 }
@@ -34,6 +35,7 @@ class TestCommands extends OperationController {
 class ServiceWrites extends FakeMaintenanceRepository {
   final entries = <ServiceEntry>[];
   Future<void> Function()? write;
+
   @override
   Future<void> addServiceEntry(String id, ServiceEntry entry) async {
     entries.add(entry);
@@ -47,6 +49,7 @@ class DelayedBikes extends FakeStravaBikesRepository {
   final saveGate = Completer<void>();
   final started = Completer<void>();
   final events = <String>[];
+
   @override
   Future<void> saveStravaBikes(List<StravaBike> incoming) async {
     events.add('save started');
@@ -66,8 +69,10 @@ class DelayedBikes extends FakeStravaBikesRepository {
 class AuthWrites implements AuthRepository {
   final events = <String>[];
   final gate = Completer<void>();
+
   @override
   User? get currentUser => null;
+
   @override
   Future<UserCredential> signInAnonymously() async {
     events.add('signin');
@@ -87,8 +92,10 @@ class AuthWrites implements AuthRepository {
 class ThemeWrites implements ThemePreferencesRepository {
   final writes = <String>[];
   final gate = Completer<void>();
+
   @override
   Future<String?> readTheme() async => null;
+
   @override
   Future<void> saveTheme(String mode) async {
     writes.add(mode);
@@ -310,13 +317,11 @@ void main() {
     final workspace = WorkspaceController(
         bikeName: 'Old',
         bikeId: 'old',
-
         setupName: 'Default',
         setupId: 'setup',
         strava: strava);
     final old = workspace.loadMileage();
-    final current =
-        workspace.selectBike('New', 'new', 'Default', 'setup');
+    final current = workspace.selectBike('New', 'new', 'Default', 'setup');
     repository.mileage['new']!.complete(200);
     expect((await current).isSuccess, isTrue);
     repository.mileage['old']!.complete(100);

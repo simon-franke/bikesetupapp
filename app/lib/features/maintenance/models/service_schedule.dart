@@ -6,17 +6,21 @@ enum ServiceStatus { red, amber, green, unknown }
 
 enum ServiceUnit { kilometres, hours }
 
+/// Usage and interval in one unit, with availability kept separate from zero usage.
 class ServiceUsage {
   const ServiceUsage(
       {required this.unit,
       required this.used,
       required this.interval,
       required this.available});
+
   final ServiceUnit unit;
   final double used, interval;
   final bool available;
+
   double get remaining => (interval - used).clamp(0, double.infinity);
   double get progress => available && interval > 0 ? used / interval : 0;
+
   ServiceStatus get status {
     if (!available) return ServiceStatus.unknown;
     if (progress >= 0.9) return ServiceStatus.red;
@@ -30,9 +34,11 @@ class AnnotatedService {
       {required this.component,
       required this.measurement,
       required this.lastServicedAt});
+
   final ServiceComponent component;
   final ServiceUsage measurement;
   final DateTime? lastServicedAt;
+
   double get usage => measurement.used;
   double get remaining => measurement.remaining;
   double get progress => measurement.progress;
@@ -40,6 +46,10 @@ class AnnotatedService {
   bool get usageUnknown => !measurement.available;
 }
 
+/// Combines a component's latest baseline with mileage or recorded ride usage.
+///
+/// Missing source data produces unknown status. Hour-based schedules require
+/// both ride data and a baseline; distance schedules can also use Strava mileage.
 AnnotatedService annotateService({
   required ServiceComponent component,
   required double currentMileageKm,
@@ -81,6 +91,7 @@ AnnotatedService annotateService({
           (hasStravaBaseline || rides != null),
     );
   }
+
   return AnnotatedService(
       component: component,
       measurement: measurement,

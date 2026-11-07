@@ -10,7 +10,6 @@ class Bike {
     return Bike(
       id: id,
       name: data[FirestoreKeys.bikeName] as String? ?? '',
-
     );
   }
 }

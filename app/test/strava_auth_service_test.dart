@@ -18,6 +18,7 @@ const expired = StravaAuth(
     expiresAt: 1,
     athleteId: 42,
     scopes: ['activity:read_all']);
+
 http.Response renewed() => http.Response(
     jsonEncode({
       'access_token': 'renewed',
@@ -45,6 +46,7 @@ void main() {
         expect(request.queryParameters['approval_prompt'], 'force');
         expect(request.queryParameters['state'], isNotEmpty);
         expect(callbackUrlScheme, 'bikesetup');
+
         return Uri.parse('bikesetup://localhost').replace(queryParameters: {
           'state': request.queryParameters['state']!,
           'code': 'one-use-code',
@@ -90,8 +92,11 @@ void main() {
           if (scenario == 'expired') {
             time = time.add(const Duration(minutes: 10));
           }
+
           if (scenario == 'owner') owner = 'other';
+
           if (scenario == 'signout') await auth.clearAuth();
+
           return Uri.parse(scenario == 'scheme'
                   ? 'wrong://localhost'
                   : 'bikesetup://localhost')
@@ -246,6 +251,7 @@ void main() {
           calls++;
           return http.Response('[]', 200);
         })));
+
     for (final scopes in [
       <String>[],
       ['activity:read']
@@ -265,6 +271,7 @@ void main() {
               currentTotalKm: 1000),
           throwsA(isA<StravaInsufficientScopeException>()));
     }
+
     expect(calls, 0);
   });
   test('full-scope mileage subtracts private rides as well as public rides',
@@ -298,5 +305,4 @@ void main() {
             currentTotalKm: 1000),
         850);
   });
-
 }

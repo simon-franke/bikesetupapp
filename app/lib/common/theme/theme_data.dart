@@ -168,6 +168,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   @override
   AppPalette lerp(ThemeExtension<AppPalette>? other, double t) {
     if (other is! AppPalette) return this;
+
     return AppPalette(
       bg: Color.lerp(bg, other.bg, t)!,
       surface: Color.lerp(surface, other.surface, t)!,

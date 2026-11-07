@@ -21,6 +21,7 @@ void main() {
       ).readAsBytesSync());
       final image = (await codec.getNextFrame()).image;
       codec.dispose();
+
       return image;
     }))!;
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -73,6 +74,7 @@ void main() {
             ..createSync(recursive: true);
           File('${dir.path}/launch_image.png').writeAsBytesSync(bytes);
         }
+
         image.dispose();
       }
     });

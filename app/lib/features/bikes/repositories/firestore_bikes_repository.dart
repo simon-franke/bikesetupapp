@@ -8,10 +8,13 @@ import 'bikes_repository.dart';
 class FirestoreBikesRepository implements BikesRepository {
   FirestoreBikesRepository(this.userID, {FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+
   final String userID;
   final FirebaseFirestore _firestore;
+
   CollectionReference<Map<String, dynamic>> get userBikeSetup =>
       _firestore.collection(FirestoreKeys.userBikeSetup);
+
   @override
   Future<void> setDefaultBike(String uBikeID) {
     return firebaseOperation(() async {
@@ -40,6 +43,7 @@ class FirestoreBikesRepository implements BikesRepository {
           .collection('RideLog')
           .where('bikeId', isEqualTo: uBikeID)
           .get();
+
       for (final ride in rides.docs) {
         await ride.reference.delete();
       }
@@ -52,6 +56,7 @@ class FirestoreBikesRepository implements BikesRepository {
           .doc(uBikeID)
           .collection(FirestoreKeys.setupList)
           .get();
+
       for (var doc in setups.docs) {
         await _deleteSetupData(uBikeID, doc.id);
       }
@@ -87,6 +92,7 @@ class FirestoreBikesRepository implements BikesRepository {
         .doc(uSetupID)
         .collection('Tests')
         .get();
+
     for (final test in tests.docs) {
       await test.reference.delete();
     }
@@ -131,11 +137,13 @@ class FirestoreBikesRepository implements BikesRepository {
       if (!snapshot.exists) {
         return "";
       }
+
       value = snapshot.data()?[FirestoreKeys.defaultBike];
 
       if (value == null) {
         return "";
       }
+
       return value?.toString() ?? "";
     });
   }
@@ -153,11 +161,13 @@ class FirestoreBikesRepository implements BikesRepository {
       if (!snapshot.exists) {
         return "";
       }
+
       value = snapshot.data()?[FirestoreKeys.bikeName];
 
       if (value == null) {
         return "";
       }
+
       return value?.toString() ?? "";
     });
   }
@@ -169,8 +179,7 @@ class FirestoreBikesRepository implements BikesRepository {
           .doc(userID)
           .collection(FirestoreKeys.bikes)
           .doc(id)
-          .set({FirestoreKeys.bikeName: name},
-              SetOptions(merge: true));
+          .set({FirestoreKeys.bikeName: name}, SetOptions(merge: true));
     }, fallback: FailureCode.saveFailed);
   }
 }

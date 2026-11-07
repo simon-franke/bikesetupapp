@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 class SessionUser extends Fake implements User {
   SessionUser({this.id = 'user', this.guest = false});
+
   final String id;
   final bool guest;
+
   @override
   String get uid => id;
   @override
@@ -36,6 +38,7 @@ class FakeAuthRepository extends Fake
   bool failSignIn = false;
   bool failDeletion = false;
   String? resetEmail;
+
   @override
   Future<void> resetPassword(String email) async {
     resetEmail = email;
@@ -51,10 +54,12 @@ class FakeAuthRepository extends Fake
   }
 
   final events = StreamController<User?>.broadcast();
+
   @override
   User? get currentUser => user;
   @override
   Stream<User?> get userChanges => events.stream;
+
   void setUser(User? value) {
     user = value;
     events.add(value);
@@ -76,6 +81,7 @@ class FakeAuthRepository extends Fake
   @override
   Future<UserCredential> signUpWithEmail(String email, String password) =>
       signInWithEmail(email, password);
+
   @override
   Future<void> signOut() async {
     if (failSignOut) throw const AppFailure(FailureCode.unavailable);

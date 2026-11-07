@@ -6,13 +6,16 @@ import '../../strava/ui/mileage_banner.dart';
 
 class BikeMileagePanel extends StatefulWidget {
   const BikeMileagePanel({super.key, required this.uid, required this.bikeId});
+
   final String uid, bikeId;
+
   @override
   State<BikeMileagePanel> createState() => _BikeMileagePanelState();
 }
 
 class _BikeMileagePanelState extends State<BikeMileagePanel> {
   late final ServicesController controller;
+
   @override
   void initState() {
     super.initState();
@@ -38,8 +41,7 @@ class _BikeMileagePanelState extends State<BikeMileagePanel> {
           isLoading: controller.syncing,
           isConnected: controller.connected,
           onSync: () => presentCommand(context, controller.sync),
-          onConnect: () =>
-              presentCommand(context, controller.connect),
+          onConnect: () => presentCommand(context, controller.connect),
         ),
       );
 }

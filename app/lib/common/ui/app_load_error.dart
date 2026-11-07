@@ -5,12 +5,14 @@ import 'app_components.dart';
 /// A recoverable loading failure, with a little workshop humour.
 class AppLoadError extends StatelessWidget {
   const AppLoadError({super.key, required this.message, required this.onRetry});
+
   final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Semantics(
       liveRegion: true,
       child: Padding(
@@ -49,6 +51,7 @@ class _MechanicalPainter extends CustomPainter {
       required this.ground,
       required this.wheel,
       required this.backdrop});
+
   final Color frame, ground, wheel, backdrop;
 
   @override
@@ -84,6 +87,7 @@ class _MechanicalPainter extends CustomPainter {
       ..color = frame
       ..strokeWidth = 1.4;
     canvas.drawCircle(const Offset(55, 64), 26, pen);
+
     for (final point in [
       const Offset(55, 39),
       const Offset(77, 51),
@@ -167,6 +171,7 @@ class _MechanicalPainter extends CustomPainter {
       ..color = ground
       ..strokeWidth = 1.5;
     canvas.drawOval(const Rect.fromLTWH(-22, -30, 44, 60), pen);
+
     for (final point in [
       const Offset(0, -29),
       const Offset(19, -14),
@@ -177,6 +182,7 @@ class _MechanicalPainter extends CustomPainter {
     ]) {
       canvas.drawLine(Offset.zero, point, pen);
     }
+
     canvas.drawCircle(
         Offset.zero,
         4,

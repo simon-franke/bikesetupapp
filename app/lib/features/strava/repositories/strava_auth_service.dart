@@ -9,6 +9,10 @@ import 'package:bikesetupapp/features/strava/models/strava_auth.dart';
 import 'package:bikesetupapp/features/strava/models/strava_exception.dart';
 import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.dart';
 
+/// Manages native Strava authorization and credentials scoped to a Firebase user.
+///
+/// Token exchanges use backend endpoints. Ownership and generation checks reject
+/// responses from superseded authorization attempts or changed sessions.
 class StravaAuthService {
   StravaAuthService(
       {required String? Function() userId,
@@ -21,6 +25,7 @@ class StravaAuthService {
         _client = client,
         _authenticate = authenticate ?? FlutterWebAuth2.authenticate,
         _now = now ?? DateTime.now;
+
   final String? Function() _userId;
   final http.Client? _client;
   final Future<String> Function(
@@ -66,12 +71,18 @@ class StravaAuthService {
     return _userId() == owner && generation == _generation ? auth : null;
   }
 
+  /// Opens consent, validates the callback, and stores the exchanged credentials.
+  ///
+  /// Returns null for cancellation, rejected callbacks, or a changed session.
+  /// Network and malformed-response failures throw [AppFailure].
   Future<StravaAuth?> authorize() async {
     final owner = _userId();
     if (owner == null) return null;
+
     final generation = ++_generation;
     final state = _newState();
     final startedAt = _now();
+
     try {
       final result = await _authenticate(
           url: _authUrl(_redirectUri, state),
@@ -85,20 +96,26 @@ class StravaAuthService {
           callback.queryParameters['state'] != state) {
         return null;
       }
+
       if (callback.queryParameters.containsKey('error')) return null;
+
       final code = callback.queryParameters['code'];
       if (code == null || code.isEmpty) return null;
+
       final response = await _post(
           Uri.parse('$_functionBase/stravaExchange'), {'code': code});
       if (response.statusCode != 200) {
         throw AppFailure(FailureCode.connectionExpired,
             statusCode: response.statusCode);
       }
+
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final auth = StravaAuth.fromTokenResponse(json,
           scopes: StravaAuth.parseScopes(callback.queryParameters['scope']));
       if (_userId() != owner || generation != _generation) return null;
+
       await StravaTokenStorage.saveAuth(auth, userId: owner);
+
       return auth;
     } on PlatformException catch (error, stack) {
       if (error.code.toLowerCase().contains('cancel')) return null;
@@ -113,6 +130,9 @@ class StravaAuthService {
     }
   }
 
+  /// Shares a refresh request for the current user and preserves granted scopes.
+  ///
+  /// Returns null when there is no user or the session changes before saving.
   Future<StravaAuth?> refreshToken(StravaAuth current) {
     final owner = _userId();
     if (owner == null) return Future.value(null);
@@ -133,12 +153,15 @@ class StravaAuthService {
         throw AppFailure(FailureCode.connectionExpired,
             statusCode: response.statusCode);
       }
+
       final auth = StravaAuth.fromTokenResponse(
           jsonDecode(response.body) as Map<String, dynamic>,
           athleteId: current.athleteId,
           scopes: current.scopes);
       if (_userId() != owner || generation != _generation) return null;
+
       await StravaTokenStorage.saveAuth(auth, userId: owner);
+
       return auth;
     } on FormatException catch (error, stack) {
       throw AppFailure(FailureCode.invalidResponse,
@@ -162,6 +185,10 @@ class StravaAuthService {
         : null;
   }
 
+  /// Returns a valid token with permission to read historical activities.
+  ///
+  /// Missing activity scope throws [StravaInsufficientScopeException]; callers
+  /// must request reconnection rather than treating mileage as zero.
   Future<String?> getMileageToken() async {
     final owner = _userId();
     final auth = await getAuth();
@@ -183,12 +210,18 @@ class StravaAuthService {
         'state': state
       }).toString();
 
+  /// Invalidates in-flight authorization work and removes local credentials.
+  ///
+  /// Does not revoke access at Strava; use [deauthorize] for that attempt.
   Future<void> clearAuth() async {
     ++_generation;
     final owner = _userId();
     if (owner != null) await StravaTokenStorage.clearAuth(userId: owner);
   }
 
+  /// Clears local credentials before attempting to revoke access at Strava.
+  ///
+  /// Expected request failures are ignored because local cleanup has completed.
   Future<void> deauthorize() async {
     final owner = _userId();
     final auth = await getAuth();

@@ -12,10 +12,12 @@ class WorkspaceActivityTitle extends StatefulWidget {
       required this.setupName,
       required this.bikeOnly,
       this.mileageKm});
+
   final String? uid;
   final String bikeId, bikeName, setupName;
   final bool bikeOnly;
   final double? mileageKm;
+
   @override
   State<WorkspaceActivityTitle> createState() => _WorkspaceActivityTitleState();
 }
@@ -27,6 +29,7 @@ class _WorkspaceActivityTitleState extends State<WorkspaceActivityTitle> {
           .forUser(widget.uid!)
           .rides
           .watch(widget.bikeId);
+
   @override
   Widget build(BuildContext context) => StreamBuilder<List<Ride>>(
         stream: rides,
@@ -49,6 +52,7 @@ class _WorkspaceActivityTitleState extends State<WorkspaceActivityTitle> {
             if (distance != null) '${distance.round()} km',
             if (hours != null && hours > 0) '${hours.toStringAsFixed(1)} h',
           ].join('   ');
+
           return WorkspaceTitle(
               bikeName: widget.bikeName,
               setupName: widget.setupName,

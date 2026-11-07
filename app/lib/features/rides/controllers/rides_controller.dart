@@ -4,14 +4,19 @@ import 'package:bikesetupapp/common/models/command_result.dart';
 import '../models/ride.dart';
 import '../repositories/rides_repository.dart';
 
+/// Validates ride batches and serializes inserts and removals.
 class RidesController extends OperationController {
   RidesController(this._repository);
+
   final RidesRepository _repository;
   final _writes = WriteQueue();
+
   Stream<List<Ride>> watch(String bikeId) => _repository.watch(bikeId);
+
   Future<CommandResult<int>> save(List<Ride> rides) =>
       command(() => _writes.enqueue(() async {
             if (isDisposed) throw const CommandAborted();
+
             if (rides.isEmpty ||
                 rides.length > 100 ||
                 rides.any((r) =>
@@ -25,8 +30,10 @@ class RidesController extends OperationController {
                     r.startedAt.isAfter(DateTime.now().toUtc()))) {
               throw const AppFailure(FailureCode.invalidInput);
             }
+
             return _repository.insert(rides);
           }));
+
   Future<CommandResult<void>> remove(String id) =>
       command(() => _writes.enqueue(() {
             if (isDisposed) throw const CommandAborted();

@@ -39,6 +39,7 @@ class ServiceComponentCard extends StatelessWidget {
       mileageAvailable: mileageAvailable,
     );
     final color = s.usageUnknown ? p.inkMuted : s.status.color(p);
+
     return Padding(
         padding: margin,
         child: Material(

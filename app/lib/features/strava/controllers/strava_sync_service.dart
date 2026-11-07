@@ -7,6 +7,7 @@ import '../repositories/strava_bikes_repository.dart';
 class StravaSyncService {
   StravaSyncService(this._db, this._connection, {WriteQueue? writes})
       : _writes = writes ?? WriteQueue();
+
   final WriteQueue _writes;
   final StravaBikesRepository _db;
   final StravaRepository _connection;
@@ -21,9 +22,11 @@ class StravaSyncService {
       final token = await _connection.getValidToken();
       checkCurrent();
       if (token == null) throw const AppFailure(FailureCode.connectionExpired);
+
       final bikes = await _connection.fetchAthleteBikes(token);
       checkCurrent();
       if (bikes.isEmpty) throw const AppFailure(FailureCode.noStravaBikes);
+
       await _writes.enqueue(() {
         checkCurrent();
         return _db.saveStravaBikes(bikes);
@@ -31,6 +34,7 @@ class StravaSyncService {
       checkCurrent();
       await _connection.markSynced();
       checkCurrent();
+
       return const CommandSuccess(null);
     } on AppFailure catch (failure) {
       return CommandFailure(failure);

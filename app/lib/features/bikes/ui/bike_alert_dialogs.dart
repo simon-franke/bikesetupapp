@@ -15,6 +15,7 @@ class BikeAlerts {
       context: context,
       builder: (ctx) {
         route = ModalRoute.of(ctx);
+
         return StatefulBuilder(builder: (ctx, update) {
           return SafeArea(
             top: false,
@@ -51,6 +52,7 @@ class BikeAlerts {
                                     .bikes
                                     .renameBike(uBikeID, controller.text));
                             if (!ctx.mounted) return;
+
                             if (saved) {
                               Navigator.of(ctx).pop();
                             } else {
@@ -78,7 +80,7 @@ class BikeAlerts {
           title: 'Cannot delete',
           content: Text('You must have at least one $type.'),
           actions: [
-            DialogPrimaryButton(
+            AppActionButton(
               label: 'OK',
               onPressed: () => Navigator.of(ctx).pop(),
             ),
@@ -96,7 +98,7 @@ class BikeAlerts {
           title: 'Error',
           content: Text(message),
           actions: [
-            DialogPrimaryButton(
+            AppActionButton(
               label: 'OK',
               onPressed: () => Navigator.of(ctx).pop(),
             ),

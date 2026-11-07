@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -80,6 +81,7 @@ class _BikeInfoSheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -136,9 +138,10 @@ class _BikeInfoSheetContent extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
                   padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator.adaptive()),
+                  child: Center(child: AppLoadingState()),
                 );
               }
+
               if (snapshot.hasError || snapshot.data == null) {
                 return Padding(
                   padding: const EdgeInsets.all(32),
@@ -150,8 +153,10 @@ class _BikeInfoSheetContent extends StatelessWidget {
                   ),
                 );
               }
+
               final data = snapshot.data!;
               final rows = _buildRows(data);
+
               return Container(
                 decoration: BoxDecoration(
                   color: p.surface,
@@ -181,11 +186,13 @@ class _BikeInfoSheetContent extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
+
   const _InfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       child: Row(

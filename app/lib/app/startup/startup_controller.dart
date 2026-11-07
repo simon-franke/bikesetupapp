@@ -5,9 +5,9 @@ class StartupSelection {
   const StartupSelection(
       {required this.bikeId,
       required this.bikeName,
-
       required this.setupId,
       required this.setupName});
+
   final String bikeId;
   final String bikeName;
 
@@ -18,20 +18,26 @@ class StartupSelection {
 /// Resolves a complete default selection without constructing UI or routes.
 class StartupController {
   StartupController(this._bikes, this._setups);
+
   final BikesRepository _bikes;
   final SetupsRepository _setups;
 
+  /// Resolves the saved bike and setup, or returns null for an incomplete selection.
+  ///
+  /// Repository errors propagate so loading failures are not treated as onboarding.
   Future<StartupSelection?> loadSelection() async {
     final bikeId = await _bikes.getDefaultBike();
     if (bikeId.isEmpty) return null;
+
     final setupId = await _setups.getDefaultSetup(bikeId);
     if (setupId.isEmpty) return null;
+
     final setupName = await _setups.getSetupNameFromID(bikeId, setupId);
     if (setupName.isEmpty) return null;
+
     return StartupSelection(
         bikeId: bikeId,
         bikeName: await _bikes.getBikeNameFromID(bikeId),
-
         setupId: setupId,
         setupName: setupName);
   }

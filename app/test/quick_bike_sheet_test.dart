@@ -17,6 +17,7 @@ import 'support/fake_auth_repository.dart';
 
 class PendingBikeRepository extends FakeBikesRepository {
   final finish = Completer<void>();
+
   @override
   Future<void> createBikeRecord(String id, String name) async {
     await finish.future;
@@ -67,6 +68,7 @@ void main() {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
   });
+
   for (final scale in [1.0, 2.0]) {
     testWidgets('name-only bike creation works with keyboard at scale $scale',
         (tester) async {
@@ -116,6 +118,7 @@ void main() {
           image.dispose();
         });
       }
+
       await tester.enterText(find.byType(TextField), 'Trail bike');
       tester.view.viewInsets = const FakeViewPadding(bottom: 300);
       await tester.pumpAndSettle();

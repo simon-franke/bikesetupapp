@@ -6,15 +6,18 @@ import '../repositories/theme_preferences_repository.dart';
 
 class AppStateNotifier extends OperationController {
   ThemeMode _themeMode;
+
   ThemeMode get themeMode => _themeMode;
 
   AppStateNotifier(ThemeMode themeMode,
       {ThemePreferencesRepository? preferences})
       : _themeMode = themeMode,
         _preferences = preferences;
+
   final ThemePreferencesRepository? _preferences;
 
   final WriteQueue _writes = WriteQueue();
+
   Future<CommandResult<void>> updateTheme(ThemeMode mode) => command(() async {
         final generation = beginRequest('theme');
         await _writes.enqueue(() async {

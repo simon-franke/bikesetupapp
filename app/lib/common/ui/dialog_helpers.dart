@@ -1,4 +1,3 @@
-import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +5,7 @@ class WorkshopDialog extends StatelessWidget {
   final String title;
   final Widget content;
   final List<Widget> actions;
+
   const WorkshopDialog({
     super.key,
     required this.title,
@@ -16,6 +16,7 @@ class WorkshopDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return AlertDialog(
       backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
@@ -36,55 +37,5 @@ class WorkshopDialog extends StatelessWidget {
       ),
       actions: actions,
     );
-  }
-}
-
-class DialogPrimaryButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final Color? color;
-  const DialogPrimaryButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppActionButton(label: label, onPressed: onPressed, color: color);
-  }
-}
-
-class DialogSecondaryButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  const DialogSecondaryButton(
-      {super.key, required this.label, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(onPressed: onPressed, child: Text(label));
-  }
-}
-
-class DialogTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
-  const DialogTextField({
-    super.key,
-    required this.controller,
-    required this.hint,
-    this.keyboardType,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppTextField(
-        controller: controller,
-        hint: hint,
-        keyboardType: keyboardType,
-        autofocus: true);
   }
 }

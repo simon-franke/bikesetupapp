@@ -44,10 +44,12 @@ class _SetupSheet extends StatefulWidget {
       required this.setup,
       required this.name,
       required this.onSelected});
+
   final User user;
   final NewBikeMode mode;
   final String bike, bikeName, setup, name;
   final void Function(String, String, String, String) onSelected;
+
   @override
   State<_SetupSheet> createState() => _SetupSheetState();
 }
@@ -61,6 +63,7 @@ class _SetupSheetState extends State<_SetupSheet> {
   late String source = widget.setup;
   bool saving = false;
   String? error;
+
   @override
   void dispose() {
     name.dispose();
@@ -69,11 +72,13 @@ class _SetupSheetState extends State<_SetupSheet> {
 
   Future<void> save() async {
     if (saving) return;
+
     final value = name.text.trim();
     if (value.isEmpty) {
       setState(() => error = 'Enter a setup name.');
       return;
     }
+
     setState(() {
       saving = true;
       error = null;
@@ -85,6 +90,7 @@ class _SetupSheetState extends State<_SetupSheet> {
             ? setups.updateSetupInformation(widget.bike, id, value, {})
             : setups.copySetup(widget.bike, id, value, source));
     if (!mounted) return;
+
     setState(() => saving = false);
     if (saved) {
       Navigator.pop(context);
@@ -104,47 +110,55 @@ class _SetupSheetState extends State<_SetupSheet> {
               AppSheetHeader(
                   title: widget.mode.isEdit ? 'Rename setup' : 'Add setup',
                   subtitle: widget.bikeName),
-              const AppFieldLabel('Setup name'),
-              const SizedBox(height: 8),
-              AppTextField(
-                  controller: name, hint: 'Name your setup', errorText: error),
+              AppFormField(
+                  label: 'Setup name',
+                  child: AppTextField(
+                      controller: name,
+                      hint: 'Name your setup',
+                      errorText: error)),
               if (!widget.mode.isEdit) ...[
                 const SizedBox(height: 24),
-                const AppFieldLabel('Start from'),
-                const SizedBox(height: 8),
-                StreamBuilder(
-                    stream: stream,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return const Text(
-                            'Could not load setups. Reopen this form to retry.');
-                      }
-                      if (!snapshot.hasData) {
-                        return const LinearProgressIndicator();
-                      }
-                      if (!snapshot.data!.any((setup) => setup.id == source)) {
-                        source = '';
-                      }
-                      return AppSelect<String>(
-                          label: 'Start from',
-                          value: source,
-                          items: [
-                            const DropdownMenuItem(
-                                value: '',
-                                child: Text('Same parts, blank values')),
-                            for (final setup in snapshot.data!)
-                              DropdownMenuItem(
-                                  value: setup.id,
-                                  child: Text('Copy ${setup.name}')),
-                          ],
-                          onChanged: saving
-                              ? null
-                              : (value) => setState(() => source = value!));
-                    }),
+                AppFormField(
+                    label: 'Start from',
+                    child: StreamBuilder(
+                        stream: stream,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return const Text(
+                                'Could not load setups. Reopen this form to retry.');
+                          }
+
+                          if (!snapshot.hasData) {
+                            return const LinearProgressIndicator();
+                          }
+
+                          if (!snapshot.data!
+                              .any((setup) => setup.id == source)) {
+                            source = '';
+                          }
+
+                          return AppSelect<String>(
+                              label: 'Start from',
+                              value: source,
+                              items: [
+                                const DropdownMenuItem(
+                                    value: '',
+                                    child: Text('Same parts, blank values')),
+                                for (final setup in snapshot.data!)
+                                  DropdownMenuItem(
+                                      value: setup.id,
+                                      child: Text('Copy ${setup.name}')),
+                              ],
+                              onChanged: saving
+                                  ? null
+                                  : (value) => setState(() => source = value!));
+                        })),
               ],
               const SizedBox(height: 24),
               AppActionButton(
-                  label: saving ? 'Saving…' : 'Save setup',
+                  isLoading: saving,
+                  loadingLabel: 'Saving…',
+                  label: 'Save setup',
                   onPressed: saving ? null : save),
             ]),
       ));

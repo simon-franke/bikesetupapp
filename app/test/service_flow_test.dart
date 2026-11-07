@@ -17,14 +17,17 @@ import 'package:provider/provider.dart';
 
 class _Repository extends Fake implements MaintenanceRepository {
   List<ServiceComponent> existing = [];
+
   @override
   Stream<List<ServiceComponent>> getComponentsForBike(String bikeId) =>
       Stream.value(existing.where((item) => item.bikeId == bikeId).toList());
+
   ServiceComponent? component;
   ServiceEntry? baseline;
   ServiceEntry? logged;
   double? updatedHours;
   int? updatedKm;
+
   @override
   Stream<List<ServiceEntry>> getEntriesForComponent(String id) => Stream.value([
         ServiceEntry(
@@ -35,6 +38,7 @@ class _Repository extends Fake implements MaintenanceRepository {
             initialRideHours: 4,
             note: 'Initial setup'),
       ]);
+
   @override
   Future<void> updateComponent(String id,
       {String? name,
@@ -159,7 +163,8 @@ void main() {
     final restored = ServiceComponent.fromMap('part', repo.component!.toMap());
     expect(restored.customIcon, ServiceIcon.saddle);
     final withoutOptionalField = repo.component!.toMap()..remove('customIcon');
-    expect(ServiceComponent.fromMap('part', withoutOptionalField).customIcon, isNull);
+    expect(ServiceComponent.fromMap('part', withoutOptionalField).customIcon,
+        isNull);
     expect(tester.takeException(), isNull);
   });
 
@@ -206,6 +211,7 @@ void main() {
       } else {
         expect(repo.updatedKm, 1500);
       }
+
       expect(find.text(hours ? 'Every 60.5 ride hours' : 'Every 1,500 km'),
           findsOneWidget);
       await tester.tap(find.text('Log service'));
@@ -333,6 +339,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(saved, 1200);
       }
+
       await tester.pumpWidget(const SizedBox());
     }
   });

@@ -22,13 +22,23 @@ abstract class OperationController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// Starts a request generation, making earlier requests with [name] stale.
+  ///
+  /// This does not cancel their work. Check [isCurrentRequest] before publishing
+  /// results after an asynchronous operation.
   @protected
   int beginRequest(String name) =>
       _requests.update(name, (value) => value + 1, ifAbsent: () => 1);
+
+  /// Whether this request still belongs to the latest generation of a live controller.
   @protected
   bool isCurrentRequest(String name, int generation) =>
       !_disposed && _requests[name] == generation;
 
+  /// Reuses the in-flight future for [name] until it completes, even on failure.
+  ///
+  /// Calls sharing a name must use the same result type. A later call can retry
+  /// once the previous future has completed.
   @protected
   Future<T> share<T>(Object name, Future<T> Function() action) {
     final existing = _shared[name];
@@ -40,14 +50,20 @@ abstract class OperationController extends ChangeNotifier {
     return future;
   }
 
+  /// Tracks activity and rethrows errors from [action].
+  ///
+  /// Only the most recently started operation can publish an error. Disposal
+  /// prevents notifications but does not cancel work already in progress.
   @protected
   Future<T> run<T>(Future<T> Function() action) async {
     if (_disposed) throw const CommandAborted();
+
     final revision = ++_operationRevision;
     _pending++;
     _error = null;
     _errorStackTrace = null;
     emit();
+
     try {
       return await action();
     } catch (error, stack) {
@@ -64,6 +80,10 @@ abstract class OperationController extends ChangeNotifier {
     }
   }
 
+  /// Converts expected failures and cancellation into [CommandResult] values.
+  ///
+  /// Unexpected exceptions still propagate. A result arriving after disposal
+  /// is cancelled, even if the underlying write has already succeeded.
   @protected
   Future<CommandResult<T>> command<T>(Future<T> Function() action) async {
     try {

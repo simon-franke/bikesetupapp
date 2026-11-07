@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 
 const double _tickWidth = 12;
+
 const double _rulerHeight = 70;
 
 class SettingValueEditor extends StatefulWidget {
@@ -102,6 +103,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
 
   void _alignZoom() {
     if (_alignmentScheduled) return;
+
     _alignmentScheduled = true;
     // Wait until the new scroll extent is laid out before repositioning it.
     // This is a coordinate change only: it must never publish a new value.
@@ -119,6 +121,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
   }
 
   int _indexFor(double value) => ((value - _effectiveMin) / _step).round();
+
   double _valueFor(int index) => _effectiveMin + index * _step;
 
   @override
@@ -143,6 +146,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
 
   void _onScroll() {
     if (_aligningZoom) return;
+
     final tickCount = ((_effectiveMax - _effectiveMin) / _step).round();
     final maxOffset = tickCount * _tickSpacing;
     final clamped = _controller.offset.clamp(0.0, maxOffset);
@@ -158,6 +162,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
       } else {
         AppHaptics.selection();
       }
+
       setState(() => _currentValue = newValue);
       widget.onChanged(newValue);
     }
@@ -244,6 +249,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
               child: LayoutBuilder(
                 builder: (ctx, constraints) {
                   final halfViewport = constraints.maxWidth / 2;
+
                   return Stack(
                     alignment: Alignment.center,
                     children: [
@@ -275,6 +281,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                                   : _controller.hasClients
                                       ? _controller.offset
                                       : _controller.initialScrollOffset;
+
                               return Stack(
                                   alignment: Alignment.center,
                                   children: [
@@ -320,6 +327,7 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
 /// readable while the ruler is in motion; semantics expose one whole number.
 class _RollingValue extends StatelessWidget {
   const _RollingValue({required this.value, required this.decimals});
+
   final double value;
   final int decimals;
 
@@ -327,12 +335,14 @@ class _RollingValue extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = formatNumber(value, decimals);
     final reduced = MediaQuery.disableAnimationsOf(context);
+
     return Semantics(
       label: text,
       child: ExcludeSemantics(
         child: LayoutBuilder(builder: (context, constraints) {
           final scaler = MediaQuery.textScalerOf(context);
           var style = AppTextStyles.pickerValue;
+
           for (final candidate in [
             AppTextStyles.pickerValue,
             AppTextStyles.value,
@@ -348,9 +358,11 @@ class _RollingValue extends StatelessWidget {
             measure.dispose();
             if (fits) break;
           }
+
           style = style.copyWith(
               color: context.palette.ink,
               fontFeatures: const [FontFeature.tabularFigures()]);
+
           return Row(mainAxisSize: MainAxisSize.min, children: [
             for (var i = 0; i < text.length; i++)
               _RollingDigit(
@@ -373,16 +385,19 @@ class _RollingDigit extends StatefulWidget {
       required this.value,
       required this.style,
       required this.reduced});
+
   final String digit;
   final double value;
   final TextStyle style;
   final bool reduced;
+
   @override
   State<_RollingDigit> createState() => _RollingDigitState();
 }
 
 class _RollingDigitState extends State<_RollingDigit> {
   double direction = 1;
+
   @override
   void didUpdateWidget(_RollingDigit oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -397,6 +412,7 @@ class _RollingDigitState extends State<_RollingDigit> {
     if (widget.reduced || widget.digit == '.' || widget.digit == '-') {
       return glyph;
     }
+
     return ClipRect(
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 140),
@@ -404,6 +420,7 @@ class _RollingDigitState extends State<_RollingDigit> {
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
           final incoming = child.key == ValueKey(widget.digit);
+
           return AnimatedBuilder(
               animation: animation,
               builder: (context, _) {
@@ -432,6 +449,7 @@ class _FlexiblePointer extends StatefulWidget {
       required this.scroll,
       required this.tickWidth,
       required this.enabled});
+
   final Color color;
   final ScrollController scroll;
   final double tickWidth;
@@ -470,6 +488,7 @@ class _FlexiblePointerState extends State<_FlexiblePointer>
       _bend.value = 0;
       return;
     }
+
     final speed = (delta.abs() / elapsed / 800).clamp(0.0, 1.0);
     final phase = (widget.scroll.offset / widget.tickWidth) % 1;
     // A slower turn barely flexes the pointer. Release quickly removes the
@@ -503,6 +522,7 @@ class _FlexiblePointerState extends State<_FlexiblePointer>
 class _PointerPainter extends CustomPainter {
   final Color color;
   final double bend;
+
   const _PointerPainter({required this.color, required this.bend});
 
   @override
@@ -576,6 +596,7 @@ class _RulerPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(Offset.zero & size);
     var lastLabelRight = -double.infinity;
+
     for (var i = first; i <= last; i += minorInterval) {
       // Keep every selectable step near the pointer; remove minor marks at
       // the sides where perspective would crowd them together.
@@ -584,11 +605,14 @@ class _RulerPainter extends CustomPainter {
           ? 1.0
           : ((0.75 - angle.abs()) / 0.3).clamp(0.0, 1.0);
       if (visibility == 0) continue;
+
       if (angle.abs() > arcLimit) continue;
+
       final depth = math.cos(angle);
       final x = center + radius * math.sin(angle);
       final edgeFade = (math.min(x, size.width - x) / 24).clamp(0.0, 1.0);
       if (edgeFade == 0) continue;
+
       final top = 13 + 8 * (1 - depth);
       final major = i % majorInterval == 0;
       final mid = i % midInterval == 0;
@@ -601,6 +625,7 @@ class _RulerPainter extends CustomPainter {
       if (depth < 0.65) {
         tick.maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6);
       }
+
       canvas.drawLine(Offset(x, top), Offset(x, top + height), tick);
       // Keep only the front-facing labels; edge labels would be compressed
       // beyond readability. The selected value above remains fully accessible.
@@ -622,9 +647,11 @@ class _RulerPainter extends CustomPainter {
           tp.paint(canvas, Offset(left, 45));
           lastLabelRight = right;
         }
+
         tp.dispose();
       }
     }
+
     canvas.restore();
   }
 
@@ -644,6 +671,7 @@ class _RulerPainter extends CustomPainter {
 class _SnapScrollPhysics extends ScrollPhysics {
   final double itemWidth;
   final bool momentum;
+
   const _SnapScrollPhysics(
       {required this.itemWidth, this.momentum = true, super.parent});
 
@@ -674,6 +702,7 @@ class _SnapScrollPhysics extends ScrollPhysics {
         velocity.abs() < tolerance.velocity) {
       return null;
     }
+
     return ScrollSpringSimulation(
       spring,
       position.pixels,

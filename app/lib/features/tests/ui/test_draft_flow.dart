@@ -19,6 +19,7 @@ class TestDraftFlow extends StatefulWidget {
       required this.setup,
       required this.initial,
       required this.nameFor});
+
   final String uid, bike, setup;
   final SetupTest initial;
   final String Function(SetupTest) nameFor;
@@ -37,13 +38,16 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
 
   Future<void> close() async {
     if (closing) return;
+
     closing = true;
     final saved = await presentCommand(
         context,
         () => controller.discardUnchangedDraft(
             widget.bike, widget.setup, widget.initial.id));
     if (!mounted) return;
+
     if (!saved) closing = false;
+
     if (saved) {
       setState(() => canExit = true);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -111,6 +115,7 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
                 return unavailable(
                     'Could not load your draft. Close and try again.');
               }
+
               final liveTest = snapshot.data
                   ?.where((test) => test.id == widget.initial.id)
                   .firstOrNull;
@@ -118,6 +123,7 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
                   snapshot.connectionState == ConnectionState.active) {
                 receivedLiveDraft = true;
               }
+
               final snapshotTest = closing
                   ? lastVisibleDraft ?? widget.initial
                   : liveTest ?? (!receivedLiveDraft ? widget.initial : null);
@@ -128,6 +134,7 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
               if (test == null || test.stage != TestStage.draft) {
                 return unavailable('This draft is no longer available.');
               }
+
               lastVisibleDraft = test;
               final available = groupsFor(test)
                   .entries
@@ -141,6 +148,7 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
               final changed = group != null &&
                   test.changes
                       .any((change) => group.value.contains(change.category));
+
               return Column(children: [
                 AppFlowHeader(
                   progress:
@@ -253,6 +261,7 @@ class _TestDraftFlowState extends State<TestDraftFlow> {
             fallbackUnit: meta?.defaultUnit)
         .format();
     final p = context.palette;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextButton(

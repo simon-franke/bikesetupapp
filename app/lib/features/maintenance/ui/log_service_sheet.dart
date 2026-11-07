@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_date_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_value_button.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,7 +11,6 @@ import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/ui/failure_message.dart';
 import '../controllers/service_editor_controller.dart';
 import '../models/service_component.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -38,10 +38,12 @@ class _LogServiceForm extends StatefulWidget {
       required this.component,
       required this.mileageKm,
       this.gearId});
+
   final String userId;
   final ServiceComponent component;
   final double mileageKm;
   final String? gearId;
+
   @override
   State<_LogServiceForm> createState() => _LogServiceFormState();
 }
@@ -50,6 +52,7 @@ class _LogServiceFormState extends State<_LogServiceForm> {
   late final ServiceEditorController _controller;
   DateTime _selectedDate = DateTime.now();
   final _note = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -102,11 +105,11 @@ class _LogServiceFormState extends State<_LogServiceForm> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final mileageError = _controller.mileageError;
     final scopeError = mileageError is AppFailure &&
         mileageError.code == FailureCode.insufficientActivityScope;
     final saveError = _controller.saveError;
+
     return Padding(
         padding: appSheetPadding(context),
         child: Column(
@@ -115,12 +118,12 @@ class _LogServiceFormState extends State<_LogServiceForm> {
             children: [
               AppSheetHeader(
                   title: 'Log service', subtitle: widget.component.name),
-              const AppFieldLabel('Date'),
-              const SizedBox(height: 8),
-              AppValueButton(
-                  label: DateFormat.yMMMd().format(_selectedDate),
-                  icon: CupertinoIcons.calendar,
-                  onTap: _controller.saving ? null : _pickDate),
+              AppFormField(
+                  label: 'Date',
+                  child: AppValueButton(
+                      label: DateFormat.yMMMd().format(_selectedDate),
+                      icon: CupertinoIcons.calendar,
+                      onTap: _controller.saving ? null : _pickDate)),
               if (widget.gearId != null) ...[
                 const SizedBox(height: 10),
                 _buildMileageStatus(
@@ -134,30 +137,25 @@ class _LogServiceFormState extends State<_LogServiceForm> {
                             : 'error'),
               ],
               const SizedBox(height: 20),
-              const AppFieldLabel('Note (optional)'),
-              const SizedBox(height: 8),
-              IgnorePointer(
-                  ignoring: _controller.saving,
-                  child: AppTextField(
-                      controller: _note, hint: 'What was done?', maxLines: 3)),
-              if (saveError != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                    saveError is AppFailure &&
-                            saveError.code != FailureCode.saveFailed
-                        ? failureMessage(saveError)
-                        : 'Could not save service. Try again.',
-                    style: TextStyle(color: p.red)),
-              ],
+              AppFormField(
+                  label: 'Note (optional)',
+                  child: IgnorePointer(
+                      ignoring: _controller.saving,
+                      child: AppTextField(
+                          controller: _note,
+                          hint: 'What was done?',
+                          maxLines: 3))),
               const SizedBox(height: 24),
-              SizedBox(
-                  width: double.infinity,
-                  child: AppActionButton(
-                      label: _controller.saving ? 'Saving…' : 'Log service',
-                      onPressed:
-                          _controller.saving || _controller.fetchingMileage
-                              ? null
-                              : _save)),
+              AppFormFooter(
+                  label: 'Log service',
+                  isLoading: _controller.saving,
+                  error: saveError == null
+                      ? null
+                      : saveError is AppFailure &&
+                              saveError.code != FailureCode.saveFailed
+                          ? failureMessage(saveError)
+                          : 'Could not save service. Try again.',
+                  onPressed: _controller.fetchingMileage ? null : _save),
             ]));
   }
 }
@@ -170,20 +168,7 @@ Widget _buildMileageStatus(
 ) {
   final p = ctx.palette;
   if (fetchingMileage) {
-    return Row(
-      children: [
-        const SizedBox(
-          width: 14,
-          height: 14,
-          child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'Fetching from Strava…',
-          style: AppTextStyles.body.copyWith(color: p.inkMuted),
-        ),
-      ],
-    );
+    return const AppLoadingContent(label: 'Fetching from Strava…');
   }
 
   if (mileageError == 'scope') {

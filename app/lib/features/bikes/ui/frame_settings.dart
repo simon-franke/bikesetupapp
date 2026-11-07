@@ -6,8 +6,10 @@ import 'package:bikesetupapp/common/ui/app_components.dart';
 class FrameSettings extends StatelessWidget {
   const FrameSettings(
       {super.key, required this.values, required this.onChanged});
+
   final Map<String, String> values;
   final void Function(String, String) onChanged;
+
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -36,10 +38,12 @@ class _Positions extends StatefulWidget {
       required this.choices,
       required this.onChanged,
       this.headset = false});
+
   final String label, value;
   final List<String> choices;
   final ValueChanged<String> onChanged;
   final bool headset;
+
   @override
   State<_Positions> createState() => _PositionsState();
 }
@@ -48,6 +52,7 @@ class _PositionsState extends State<_Positions> {
   late bool custom =
       widget.value.isNotEmpty && !widget.choices.contains(widget.value);
   late final input = TextEditingController(text: widget.value);
+
   @override
   void dispose() {
     input.dispose();
@@ -80,6 +85,7 @@ class _PositionsState extends State<_Positions> {
             final cards = [
               for (final value in widget.choices) _choice(context, value)
             ];
+
             return stacked
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,9 +104,11 @@ class _PositionsState extends State<_Positions> {
                   ]);
           }),
       ]);
+
   Widget _choice(BuildContext context, String value) {
     final selected = widget.value == value;
     final color = selected ? context.palette.accentText : context.palette.ink;
+
     return Semantics(
         selected: selected,
         child: AppSelectionSurface(

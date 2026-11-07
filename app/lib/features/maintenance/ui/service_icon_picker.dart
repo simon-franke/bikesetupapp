@@ -11,6 +11,7 @@ Future<ServiceIcon?> pickServiceIcon(
         context: context,
         builder: (context) {
           final p = context.palette;
+
           return SafeArea(
               child: Padding(
                   padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
@@ -24,6 +25,7 @@ Future<ServiceIcon?> pickServiceIcon(
                       final columns = constraints.maxWidth < 330 ? 4 : 5;
                       final width =
                           (constraints.maxWidth - (columns - 1) * 8) / columns;
+
                       return Wrap(spacing: 8, runSpacing: 8, children: [
                         for (final icon in ServiceIcon.values)
                           SizedBox(

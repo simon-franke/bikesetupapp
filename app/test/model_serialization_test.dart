@@ -10,8 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 class MemoryThemePreferences implements ThemePreferencesRepository {
   String? saved;
+
   @override
   Future<String?> readTheme() async => saved;
+
   @override
   Future<void> saveTheme(String mode) async {
     saved = mode;

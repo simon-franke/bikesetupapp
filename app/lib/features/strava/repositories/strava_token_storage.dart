@@ -8,6 +8,7 @@ import 'package:bikesetupapp/features/strava/models/strava_auth.dart';
 class StravaTokenStorage {
   static const _storage = FlutterSecureStorage();
   static final WriteQueue _writes = WriteQueue();
+
   static Future<void> _mutate(Future<void> Function() action) =>
       _writes.enqueue(
           () => platformOperation(action, fallback: FailureCode.saveFailed));
@@ -22,6 +23,7 @@ class StravaTokenStorage {
         () => _storage.read(key: 'strava_auth_$userId'),
         fallback: FailureCode.loadFailed));
     if (raw == null) return null;
+
     try {
       return StravaAuth.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } on FormatException catch (error, stack) {

@@ -16,6 +16,7 @@ class UnitDef {
   final String label;
   final double toCanonical;
   final int decimals;
+
   const UnitDef({
     required this.id,
     required this.label,
@@ -136,6 +137,7 @@ class SettingValue {
     if (fallbackFamily == UnitFamily.freeText) {
       return SettingValue.freeText(trimmed);
     }
+
     if (trimmed.isEmpty) {
       if (fallbackFamily == UnitFamily.freeText) {
         return SettingValue.freeText('');

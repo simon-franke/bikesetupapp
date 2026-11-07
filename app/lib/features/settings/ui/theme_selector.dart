@@ -4,8 +4,10 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector(
       {super.key, required this.selected, required this.onChanged});
+
   final ThemeMode selected;
   final ValueChanged<ThemeMode>? onChanged;
+
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -28,9 +30,11 @@ class ThemeSelector extends StatelessWidget {
 
 class _ThemeOption extends StatelessWidget {
   const _ThemeOption({required this.mode, required this.selected, this.onTap});
+
   final ThemeMode mode;
   final bool selected;
   final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
@@ -39,6 +43,7 @@ class _ThemeOption extends StatelessWidget {
       ThemeMode.light => 'Light',
       ThemeMode.dark => 'Dark'
     };
+
     return Semantics(
         button: true,
         selected: selected,
@@ -81,7 +86,9 @@ class _ThemeOption extends StatelessWidget {
 
 class _Preview extends StatelessWidget {
   const _Preview(this.palette);
+
   final AppPalette palette;
+
   @override
   Widget build(BuildContext context) => ColoredBox(
       color: palette.bg,

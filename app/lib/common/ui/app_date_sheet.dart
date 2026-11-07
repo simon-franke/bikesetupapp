@@ -15,14 +15,17 @@ Future<DateTime?> pickAppDate(BuildContext context,
 
 class _AppDateSheet extends StatefulWidget {
   const _AppDateSheet({required this.initial, required this.includeTime});
+
   final DateTime initial;
   final bool includeTime;
+
   @override
   State<_AppDateSheet> createState() => _AppDateSheetState();
 }
 
 class _AppDateSheetState extends State<_AppDateSheet> {
   late DateTime selected = widget.initial;
+
   @override
   Widget build(BuildContext context) => Padding(
       padding: EdgeInsets.fromLTRB(

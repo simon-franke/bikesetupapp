@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'service_component_icon.dart';
 import 'package:bikesetupapp/common/ui/app_value_button.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,11 +27,13 @@ class ComponentDetailPage extends StatefulWidget {
       required this.currentMileageKm,
       this.mileageAvailable = true,
       this.stravaGearId});
+
   final User user;
   final ServiceComponent component;
   final double currentMileageKm;
   final bool mileageAvailable;
   final String? stravaGearId;
+
   @override
   State<ComponentDetailPage> createState() => _ComponentDetailPageState();
 }
@@ -48,12 +51,14 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
         builder: (_) => ServiceIntervalSheet(
             initial: component.interval, hours: component.usesHours));
     if (value == null || !mounted || value == component.interval) return;
+
     final saved = await presentCommand(
         context,
         () => db.maintenance.updateComponent(component.id,
             serviceIntervalKm: component.usesHours ? null : value.toInt(),
             serviceIntervalHours: component.usesHours ? value : null));
     if (!mounted || !saved) return;
+
     setState(() => component = ServiceComponent(
         id: component.id,
         bikeId: component.bikeId,
@@ -111,7 +116,9 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
     if (!mounted) {
       return;
     }
+
     if (action == 'interval') await editInterval();
+
     if (action == 'delete') await deleteComponent();
   }
 
@@ -154,9 +161,11 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
             child: const Text('Try again')),
       ]));
     }
+
     if (!history.hasData || !(rideSnapshot?.hasData ?? false)) {
-      return const Center(child: CircularProgressIndicator.adaptive());
+      return const Center(child: AppLoadingState());
     }
+
     final p = context.palette;
     final items = history.data!;
     final service = annotateService(
@@ -171,6 +180,7 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
     String amount(double value) => component.usesHours
         ? value.toStringAsFixed(1)
         : NumberFormat('#,###').format(value.round());
+
     return ListView(
         padding: EdgeInsets.fromLTRB(
             20, 16, 20, MediaQuery.paddingOf(context).bottom + 24),

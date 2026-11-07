@@ -36,11 +36,14 @@ class SetupConfiguration {
     if (encoded is! String) {
       throw const FormatException('Invalid setup configuration');
     }
+
     final data = jsonDecode(encoded);
     if (data is! Map<String, dynamic>) {
       throw const FormatException('Invalid setup configuration');
     }
+
     final fields = <String, List<String>>{};
+
     for (final entry in data.entries) {
       if (entry.value is! List ||
           (entry.value as List).any((field) => field is! String)) {
@@ -48,6 +51,7 @@ class SetupConfiguration {
       }
       fields[entry.key] = List<String>.from(entry.value as List);
     }
+
     return SetupConfiguration(fields);
   }
 }

@@ -8,6 +8,7 @@ class SettingUnitSelector extends StatelessWidget {
       required this.family,
       required this.unit,
       required this.onChanged});
+
   final UnitFamily family;
   final UnitDef unit;
   final ValueChanged<UnitDef> onChanged;

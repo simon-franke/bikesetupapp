@@ -162,6 +162,7 @@ void main() {
         await right.up();
         await tester.pumpAndSettle();
         await capture('pressure-editor-zoomed-out');
+
         for (var i = 0; i < 4; i++) {
           final first = await tester.startGesture(center - const Offset(30, 0),
               pointer: 1);
@@ -175,6 +176,7 @@ void main() {
           await second.up();
           await tester.pumpAndSettle();
         }
+
         await capture('pressure-editor-zoomed-in');
 
         // Dispose the previous Navigator with its open sheet before mounting
@@ -259,6 +261,7 @@ void main() {
               'Trail bike');
           expect(tester.takeException(), isNull);
         }
+
         await tester.pumpWidget(const SizedBox());
       });
     }
@@ -272,6 +275,7 @@ class ProviderForReview extends StatelessWidget {
       required this.dark,
       required this.scale,
       required this.child});
+
   final AppDependencies dependencies;
   final bool dark;
   final double scale;

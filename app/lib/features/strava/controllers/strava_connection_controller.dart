@@ -6,7 +6,9 @@ import '../repositories/strava_repository.dart';
 class StravaConnectionController extends OperationController {
   StravaConnectionController(this._repository, {bool Function()? canAuthorize})
       : _canAuthorize = canAuthorize;
+
   final bool Function()? _canAuthorize;
+
   void _requireAccount() {
     if (_canAuthorize?.call() == false) {
       throw const AppFailure(FailureCode.authenticationFailed);
@@ -14,7 +16,9 @@ class StravaConnectionController extends OperationController {
   }
 
   final StravaRepository _repository;
+
   Future<StravaAuth?> getAuth() => _repository.getAuth();
+
   Future<CommandResult<StravaAuth>> authorize() => share(
       'authorize',
       () => command(() async {
@@ -23,8 +27,11 @@ class StravaConnectionController extends OperationController {
             if (auth == null || isDisposed) throw const CommandAborted();
             return auth;
           }));
+
   Future<CommandResult<void>> deauthorize() => command(_repository.deauthorize);
+
   Future<DateTime?> getLastSyncTime() => _repository.getLastSyncTime();
+
   Future<double?> mileageAtDate(
       {required String gearId,
       required DateTime date,

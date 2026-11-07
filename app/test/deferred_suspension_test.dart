@@ -48,6 +48,7 @@ void main() {
       });
     }
   }
+
   testWidgets('suspension prompt supports dismissal and an explicit choice',
       (tester) async {
     String? selected;

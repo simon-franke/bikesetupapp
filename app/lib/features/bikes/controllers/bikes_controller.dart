@@ -8,10 +8,17 @@ import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart
 import 'package:uuid/uuid.dart';
 import '../models/bike_creation_draft.dart';
 
+/// Coordinates bike records, their initial setups, and the saved selection.
 class BikesController extends OperationController {
   BikesController(this._repository, this._setups);
+
   final BikesRepository _repository;
   final SetupsRepository _setups;
+
+  /// Creates the draft's setup before publishing the new bike record.
+  ///
+  /// Duplicate bike names are rejected ignoring case. These writes are sequential,
+  /// not one transaction; a failure can leave earlier writes persisted.
   Future<CommandResult<({String bikeId, String setupId})>> createFromDraft(
           BikeCreationDraft draft,
           {String setupName = 'Default'}) =>
@@ -26,13 +33,16 @@ class BikesController extends OperationController {
         (bike) => bike.name.toLowerCase() == bikeName.trim().toLowerCase())) {
       throw const AppFailure(FailureCode.duplicateName);
     }
+
     final bikeId = const Uuid().v4();
     final setupId = const Uuid().v4();
     await SetupCreationService(_setups)
         .create(bikeId, setupId, setupName, setupInformation, values: values);
     if (await getDefaultBike() == '') await _repository.setDefaultBike(bikeId);
+
     await _setups.setDefaultSetup(bikeId, setupId);
     await _repository.createBikeRecord(bikeId, bikeName.trim());
+
     return (bikeId: bikeId, setupId: setupId);
   }
 
@@ -52,15 +62,20 @@ class BikesController extends OperationController {
 
   Future<CommandResult<void>> setDefaultBike(String uBikeID) =>
       command(() => _repository.setDefaultBike(uBikeID));
+
   Future<CommandResult<void>> renameBike(String uBikeID, String bikeName) =>
       command(() => _repository.renameBike(uBikeID, bikeName));
+
   Future<CommandResult<StartupSelection?>> deleteBike(String uBikeID) =>
       command(() async {
         await _repository.deleteBike(uBikeID);
         return StartupController(_repository, _setups).loadSelection();
       });
+
   Stream<List<Bike>> getBikes() => _repository.getBikes();
+
   Future<String> getDefaultBike() => _repository.getDefaultBike();
+
   Future<String> getBikeNameFromID(String uBikeID) =>
       _repository.getBikeNameFromID(uBikeID);
 }

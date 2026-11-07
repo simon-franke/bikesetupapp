@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -56,12 +57,14 @@ class _AddFieldSheet extends StatefulWidget {
       required this.bike,
       required this.category,
       required this.setup});
+
   final List<String>? preferredFields;
   final User? user;
   final Map<String, String>? existingValues;
   final Future<CommandResult<void>> Function(String, String, UnitFamily?)?
       onSave;
   final String bike, category, setup;
+
   @override
   State<_AddFieldSheet> createState() => _AddFieldSheetState();
 }
@@ -105,6 +108,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
       _loading = true;
       _failed = false;
     });
+
     try {
       final values = await AppDependencies.of(context)
           .forUser(widget.user!.uid)
@@ -139,6 +143,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
 
   Future<void> _edit(String key, {UnitFamily? family}) async {
     if (_opening) return;
+
     final name = key.trim();
     if (name.isEmpty ||
         _existing.any((k) => k.toLowerCase() == name.toLowerCase())) {
@@ -147,6 +152,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
           : 'This setting already exists.');
       return;
     }
+
     FocusScope.of(context).unfocus();
     setState(() => _opening = true);
     var saved = false;
@@ -168,6 +174,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
       if (value.trim().isEmpty) {
         return const CommandFailure<void>(AppFailure(FailureCode.invalidInput));
       }
+
       final result = widget.onSave != null
           ? await widget.onSave!(
               name, value, family ?? kFieldMeta[name]?.family)
@@ -175,9 +182,11 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
               name, value, widget.bike, widget.category, widget.setup,
               familyName: kFieldMeta.containsKey(name) ? null : family?.name);
       saved = result.isSuccess;
+
       return result;
     });
     if (!mounted) return;
+
     if (saved) {
       Navigator.of(context).pop();
     } else {
@@ -197,6 +206,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
     }.where((key) => !_existing.contains(key));
     final showNewSetting =
         _custom || (!_loading && !_failed && suggestions.isEmpty);
+
     return Padding(
         padding: appSheetPadding(context),
         child: Column(
@@ -213,7 +223,7 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                               size: AppIconSizes.compact))
                       : null),
               if (_loading)
-                const Center(child: CircularProgressIndicator.adaptive())
+                const Center(child: AppLoadingState())
               else if (_failed)
                 AppErrorBanner(
                     message: 'Couldn’t load your settings.', onRetry: _load)
@@ -222,30 +232,32 @@ class _AddFieldSheetState extends State<_AddFieldSheet> {
                 _choice('New setting…', () => setState(() => _custom = true),
                     custom: true),
               ] else ...[
-                const AppFieldLabel('Setting name'),
-                const SizedBox(height: 8),
-                AppTextField(
-                    controller: _name,
-                    hint: 'e.g. Tire insert',
-                    autofocus: true,
-                    errorText: _nameError,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(() => _nameError = null)),
+                AppFormField(
+                    label: 'Setting name',
+                    child: AppTextField(
+                        controller: _name,
+                        hint: 'e.g. Tire insert',
+                        autofocus: true,
+                        errorText: _nameError,
+                        textInputAction: TextInputAction.next,
+                        onChanged: (_) => setState(() => _nameError = null))),
                 if (!kFieldMeta.containsKey(_name.text.trim())) ...[
                   const SizedBox(height: 20),
-                  const AppFieldLabel('Value type'),
-                  const SizedBox(height: 8),
-                  AppSelect<UnitFamily>(
+                  AppFormField(
                       label: 'Value type',
-                      value: _family,
-                      items: UnitFamily.values
-                          .map((family) => DropdownMenuItem(
-                              value: family,
-                              child: Text(_kFamilyLabel[family]!)))
-                          .toList(),
-                      onChanged: (family) {
-                        if (family != null) setState(() => _family = family);
-                      }),
+                      child: AppSelect<UnitFamily>(
+                          label: 'Value type',
+                          value: _family,
+                          items: UnitFamily.values
+                              .map((family) => DropdownMenuItem(
+                                  value: family,
+                                  child: Text(_kFamilyLabel[family]!)))
+                              .toList(),
+                          onChanged: (family) {
+                            if (family != null) {
+                              setState(() => _family = family);
+                            }
+                          })),
                 ],
                 const SizedBox(height: 24),
                 AppActionButton(

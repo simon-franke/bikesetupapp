@@ -19,6 +19,7 @@ class FieldMeta {
 }
 
 const String _kIconBase = 'assets/icons';
+
 const String _kIconGeneric = '$_kIconBase/generic.svg';
 
 const FieldMeta kDefaultFieldMeta = FieldMeta(
@@ -27,25 +28,62 @@ const FieldMeta kDefaultFieldMeta = FieldMeta(
   defaultUnitId: 'count',
 );
 
-const kTravelFieldMeta = FieldMeta(iconAsset: _kIconGeneric,
-    family: UnitFamily.length, defaultUnitId: 'mm', min: 5, max: 300);
+const kTravelFieldMeta = FieldMeta(
+    iconAsset: _kIconGeneric,
+    family: UnitFamily.length,
+    defaultUnitId: 'mm',
+    min: 5,
+    max: 300);
 
 final Map<String, FieldMeta> kFieldMeta = {
   'Travel': kTravelFieldMeta,
-  for (final field in frameFields) field: FieldMeta(iconAsset: _kIconGeneric, family: UnitFamily.freeText, defaultUnitId: ''),
-  'Stem length': FieldMeta(iconAsset: '$_kIconBase/reach.svg', family: UnitFamily.length,
-      defaultUnitId: 'mm', min: 20, max: 150),
-  'Spacer height': FieldMeta(iconAsset: '$_kIconBase/stack.svg', family: UnitFamily.length,
-      defaultUnitId: 'mm', min: 0, max: 60),
-  'Handlebar roll': FieldMeta(iconAsset: '$_kIconBase/generic.svg', family: UnitFamily.angle,
-      defaultUnitId: 'deg', min: -30, max: 30),
-  'Lever angle': FieldMeta(iconAsset: '$_kIconBase/generic.svg', family: UnitFamily.angle,
-      defaultUnitId: 'deg', min: 0, max: 90),
-  'Saddle setback': FieldMeta(iconAsset: '$_kIconBase/seat.svg', family: UnitFamily.length,
-      defaultUnitId: 'mm', min: -50, max: 100),
-  'Saddle tilt': FieldMeta(iconAsset: '$_kIconBase/seat.svg', family: UnitFamily.angle,
-      defaultUnitId: 'deg', min: -20, max: 20),
-  'Sag': FieldMeta(iconAsset: '$_kIconBase/pressure.svg', family: UnitFamily.percent, defaultUnitId: '%', min: 0, max: 50),
+  for (final field in frameFields)
+    field: FieldMeta(
+        iconAsset: _kIconGeneric,
+        family: UnitFamily.freeText,
+        defaultUnitId: ''),
+  'Stem length': FieldMeta(
+      iconAsset: '$_kIconBase/reach.svg',
+      family: UnitFamily.length,
+      defaultUnitId: 'mm',
+      min: 20,
+      max: 150),
+  'Spacer height': FieldMeta(
+      iconAsset: '$_kIconBase/stack.svg',
+      family: UnitFamily.length,
+      defaultUnitId: 'mm',
+      min: 0,
+      max: 60),
+  'Handlebar roll': FieldMeta(
+      iconAsset: '$_kIconBase/generic.svg',
+      family: UnitFamily.angle,
+      defaultUnitId: 'deg',
+      min: -30,
+      max: 30),
+  'Lever angle': FieldMeta(
+      iconAsset: '$_kIconBase/generic.svg',
+      family: UnitFamily.angle,
+      defaultUnitId: 'deg',
+      min: 0,
+      max: 90),
+  'Saddle setback': FieldMeta(
+      iconAsset: '$_kIconBase/seat.svg',
+      family: UnitFamily.length,
+      defaultUnitId: 'mm',
+      min: -50,
+      max: 100),
+  'Saddle tilt': FieldMeta(
+      iconAsset: '$_kIconBase/seat.svg',
+      family: UnitFamily.angle,
+      defaultUnitId: 'deg',
+      min: -20,
+      max: 20),
+  'Sag': FieldMeta(
+      iconAsset: '$_kIconBase/pressure.svg',
+      family: UnitFamily.percent,
+      defaultUnitId: '%',
+      min: 0,
+      max: 50),
   'Pressure': FieldMeta(
     iconAsset: '$_kIconBase/pressure.svg',
     family: UnitFamily.pressure,
@@ -144,13 +182,21 @@ final Map<String, FieldMeta> kFieldMeta = {
 class _CategoryConfig {
   final List<String> defaultKeys;
   final List<String> suggestedKeys;
+
   const _CategoryConfig(
       {required this.defaultKeys, this.suggestedKeys = const []});
 }
 
 const Map<String, _CategoryConfig> _kCategoryConfigs = {
   'Fork': _CategoryConfig(
-    defaultKeys: ['Pressure', 'Low Speed Rebound', 'High Speed Rebound', 'Low Speed Compression', 'High Speed Compression', 'Tokens'],
+    defaultKeys: [
+      'Pressure',
+      'Low Speed Rebound',
+      'High Speed Rebound',
+      'Low Speed Compression',
+      'High Speed Compression',
+      'Tokens'
+    ],
     suggestedKeys: [
       'Sag',
       'High Speed Rebound',
@@ -161,12 +207,7 @@ const Map<String, _CategoryConfig> _kCategoryConfigs = {
     ],
   ),
   'Shock': _CategoryConfig(
-    defaultKeys: [
-      'Pressure',
-      'Rebound',
-      'Compression',
-      'Tokens'
-    ],
+    defaultKeys: ['Pressure', 'Rebound', 'Compression', 'Tokens'],
     suggestedKeys: [
       'Sag',
       'High Speed Rebound',
@@ -180,9 +221,9 @@ const Map<String, _CategoryConfig> _kCategoryConfigs = {
   'Frame': _CategoryConfig(defaultKeys: frameFields),
   'Cockpit': _CategoryConfig(defaultKeys: cockpitFields),
   'Saddle': _CategoryConfig(defaultKeys: saddleFields),
-  'GeneralSettings':
-      _CategoryConfig(defaultKeys: ['Reach', 'Stack Height', 'Seat Height'],
-          suggestedKeys: [...cockpitFields, ...saddleFields]),
+  'GeneralSettings': _CategoryConfig(
+      defaultKeys: ['Reach', 'Stack Height', 'Seat Height'],
+      suggestedKeys: [...cockpitFields, ...saddleFields]),
 };
 
 // Public derived views: callers use these unchanged.
@@ -194,15 +235,24 @@ final Map<String, List<String>> kSuggestedFieldKeys = {
   for (final e in _kCategoryConfigs.entries) e.key: e.value.suggestedKeys,
 };
 
-const cockpitFields = ['Stem length', 'Spacer height', 'Handlebar roll', 'Lever angle'];
+const cockpitFields = [
+  'Stem length',
+  'Spacer height',
+  'Handlebar roll',
+  'Lever angle'
+];
+
 const saddleFields = ['Seat Height', 'Saddle setback', 'Saddle tilt'];
 
-
-
 List<String> suspensionFields(String spring, Iterable<String> adjusters) => [
-  if (spring == 'Air') ...['Pressure', 'Tokens']
-  else ...['Spring Rate', 'Preload'],
-  ...adjusters,
-];
+      if (spring == 'Air') ...[
+        'Pressure',
+        'Tokens'
+      ] else ...[
+        'Spring Rate',
+        'Preload'
+      ],
+      ...adjusters,
+    ];
 
 const frameFields = ['Flip chip', 'Headset cups'];

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'dart:async';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
@@ -67,16 +68,14 @@ class _BikeListState extends State<BikeList> {
         ),
       );
     }
+
     return StreamBuilder(
       stream: _bikesStream,
       builder: (context, AsyncSnapshot<List<Bike>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(p.accent),
-            ),
-          );
+          return const Center(child: AppLoadingState(label: 'Loading bikes…'));
         }
+
         if (snapshot.hasError) {
           return Center(
             child: Text(
@@ -85,6 +84,7 @@ class _BikeListState extends State<BikeList> {
             ),
           );
         }
+
         if (snapshot.data == null || snapshot.data!.isEmpty) {
           return Center(
             child: Text(
@@ -93,10 +93,12 @@ class _BikeListState extends State<BikeList> {
             ),
           );
         }
+
         final docs = [
           ...snapshot.data!.where((bike) => bike.id == widget.selectedBikeId),
           ...snapshot.data!.where((bike) => bike.id != widget.selectedBikeId),
         ];
+
         return ListView.separated(
           shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
@@ -137,12 +139,14 @@ class _BikeListState extends State<BikeList> {
                       return result;
                     });
                     if (!context.mounted || !success) return;
+
                     widget.onBikeSelected(
                         bike.name, bike.id, setupName, setupId);
                   },
                 ),
               );
             }
+
             return _BikeCard(
               bike: bike,
               user: widget.user!,
@@ -164,6 +168,7 @@ class _BikeListState extends State<BikeList> {
     final onDeletionStarted = widget.onDeletionStarted;
     final controller =
         AppDependencies.of(context).forUser(widget.user!.uid).bikes;
+
     return showDeleteConfirmationSheet(
       context,
       title: 'Delete ${bike.name}?',
@@ -207,6 +212,7 @@ class _BikeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Column(
       key: Key(bike.id),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -260,6 +266,7 @@ class _SetupsList extends StatefulWidget {
 
 class _SetupsListState extends State<_SetupsList> {
   late Stream<List<BikeSetup>> _stream;
+
   User get user => widget.user;
   Bike get bike => widget.bike;
   String? get selectedSetupId => widget.selectedSetupId;
@@ -293,16 +300,20 @@ class _SetupsListState extends State<_SetupsList> {
       BikeAlerts.deleteError(context, 'Setup');
       return false;
     }
+
     final defaultSetupId = await AppDependencies.of(context)
         .forUser(user.uid)
         .setups
         .getDefaultSetup(bike.id);
     if (!context.mounted) return false;
+
     if (setupId == defaultSetupId) {
       BikeAlerts.deleteError(context, 'Default Setup');
       return false;
     }
+
     if (!context.mounted) return false;
+
     final confirmed = await showDeleteConfirmationSheet(
       context,
       title: 'Delete setup',
@@ -316,6 +327,7 @@ class _SetupsListState extends State<_SetupsList> {
               .setups
               .deleteSetup(bike.id, setupId));
     }
+
     return confirmed;
   }
 
@@ -327,13 +339,10 @@ class _SetupsListState extends State<_SetupsList> {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.all(12),
-            child: Center(
-                child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))),
+            child: Center(child: AppLoadingContent(label: 'Loading setups…')),
           );
         }
+
         if (snap.hasError) {
           return Padding(
             padding: const EdgeInsets.all(12),
@@ -343,7 +352,9 @@ class _SetupsListState extends State<_SetupsList> {
             ),
           );
         }
+
         final docs = snap.data ?? <BikeSetup>[];
+
         return Padding(
           padding: EdgeInsets.zero,
           child: Column(
@@ -404,6 +415,7 @@ class _SetupRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Dismissible(
       key: Key('setup_${setup.id}'),
       direction: DismissDirection.endToStart,
@@ -443,6 +455,7 @@ class _SetupRow extends StatelessWidget {
 
 class _NewSetupRow extends StatelessWidget {
   final VoidCallback onTap;
+
   const _NewSetupRow({required this.onTap});
 
   @override

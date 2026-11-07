@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/unit_system.dart';
 import '../models/setup_configuration.dart';
@@ -20,13 +21,16 @@ class SetupCategoryView extends StatelessWidget {
       required this.setup,
       required this.category,
       required this.configuration});
+
   final User user;
   final String bike, setup, category;
   final SetupConfiguration configuration;
+
   @override
   Widget build(BuildContext context) {
     final categories =
         category == 'Tires' ? ['FrontTire', 'RearTire'] : [category];
+
     return ListView(
         padding: EdgeInsets.fromLTRB(
             20, 18, 20, MediaQuery.paddingOf(context).bottom + 24),
@@ -86,9 +90,11 @@ class _CategoryRows extends StatefulWidget {
       required this.category,
       required this.onEdit,
       required this.configuredFields});
+
   final String uid, bike, setup, category;
   final void Function(String, String, UnitFamily?) onEdit;
   final List<String> configuredFields;
+
   @override
   State<_CategoryRows> createState() => _CategoryRowsState();
 }
@@ -102,23 +108,28 @@ class _CategoryRowsState extends State<_CategoryRows> {
       .forUser(widget.uid)
       .setups
       .getSettingsMeta(widget.bike, widget.category, widget.setup);
+
   @override
   Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
       stream: metadataStream,
       builder: (context, metadata) {
         if (metadata.hasError) return const Text('Could not load settings.');
+
         if (!metadata.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoadingState());
         }
+
         return StreamBuilder<Map<String, dynamic>>(
             stream: stream,
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return const Text('Could not load settings.');
               }
+
               if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: AppLoadingState());
               }
+
               final values = snapshot.data!;
               final keys = [
                 ...widget.configuredFields,
@@ -126,6 +137,7 @@ class _CategoryRowsState extends State<_CategoryRows> {
                     .where((key) => !widget.configuredFields.contains(key))
               ].where(
                   (key) => values[key]?.toString().trim().isNotEmpty == true);
+
               return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -161,6 +173,7 @@ class _SettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+
     return Semantics(
       button: true,
       child: InkWell(

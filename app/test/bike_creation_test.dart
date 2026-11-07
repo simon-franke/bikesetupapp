@@ -180,6 +180,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       expect(find.text('24 psi'), findsOneWidget);
+
       // Navigate without entering the remaining optional measurements.
       for (var steps = 0;
           steps < 12 && find.text('Create bike').evaluate().isEmpty;
@@ -187,6 +188,7 @@ void main() {
         await tester.tap(find.text('Continue'));
         await tester.pumpAndSettle();
       }
+
       expect(find.text('Review your bike'), findsNothing);
       expect(bikes.bikes, isEmpty);
       await tester.tap(find.text('Create bike'));

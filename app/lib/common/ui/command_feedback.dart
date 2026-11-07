@@ -4,6 +4,9 @@ import 'failure_message.dart';
 
 /// Presentation boundary: expected failures get messages; unexpected failures
 /// retain their exception/stack in Flutter's error reporting and controller state.
+///
+/// Returns true only for success while the context is still mounted. Cancellation
+/// is silent; [onFailure] replaces the default snackbar when supplied.
 Future<bool> presentCommand<T>(
     BuildContext context, Future<CommandResult<T>> Function() action,
     {String fallback = 'Something went wrong. Try again.',
@@ -11,6 +14,7 @@ Future<bool> presentCommand<T>(
   try {
     final result = await action();
     if (!context.mounted) return false;
+
     final failure = result.failure;
     if (failure != null) {
       if (onFailure != null) {
@@ -21,6 +25,7 @@ Future<bool> presentCommand<T>(
             duration: const Duration(seconds: 8)));
       }
     }
+
     return result.isSuccess;
   } catch (error, stack) {
     FlutterError.reportError(FlutterErrorDetails(
@@ -33,6 +38,7 @@ Future<bool> presentCommand<T>(
             .showSnackBar(SnackBar(content: Text(fallback)));
       }
     }
+
     return false;
   }
 }

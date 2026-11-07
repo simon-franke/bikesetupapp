@@ -321,6 +321,7 @@ void main() {
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null));
+
     for (var step = 0; step < 5; step++) {
       final slider = tester.widget<Slider>(find.byType(Slider));
       expect(slider.divisions, 4);
@@ -331,6 +332,7 @@ void main() {
       expect(
           repo.records['test']!.feedback.feeling, RideFeedback.feelings[step]);
     }
+
     expect(haptics, List.filled(5, 'HapticFeedbackType.selectionClick'));
 
     tester.widget<Slider>(find.byType(Slider)).onChanged!(3);
@@ -436,11 +438,13 @@ void main() {
                     setupName: 'Dry trails')))));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Create experiment'));
+
     for (var frame = 0; frame < 30; frame++) {
       await tester.pump(const Duration(milliseconds: 16));
       expect(
           find.text('Continue experiment', skipOffstage: false), findsNothing);
     }
+
     expect(find.byTooltip('Close experiment'), findsOneWidget);
     expect(repo.records, hasLength(1));
     await tester.tap(find.byTooltip('Close experiment'));
@@ -621,6 +625,7 @@ void main() {
         await tester.tap(find.text('Roots and braking'));
         await tester.pumpAndSettle();
       }
+
       await tester.drag(find.byType(ListView), const Offset(0, -600));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

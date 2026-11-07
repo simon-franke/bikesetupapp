@@ -29,6 +29,7 @@ class BikeOnboardingState {
   final seededSteps = <OnboardingStep>{};
   String? error;
   final settings = <String, TextEditingController>{};
+
   List<OnboardingStep> get steps => [
         (kind: OnboardingStepKind.name, category: ''),
         (kind: OnboardingStepKind.parts, category: ''),
@@ -58,6 +59,7 @@ class BikeOnboardingState {
         if (saddle) 'Saddle': saddleFields,
         if (frame) 'Frame': frameFields,
       };
+
   TextEditingController setting(String category, String field) =>
       settings['$category/$field']!;
 
@@ -72,12 +74,14 @@ class BikeOnboardingState {
     final draft = initialDraft;
     if (draft != null) {
       name.text = draft.name;
+
       for (final category in draft.values.entries) {
         for (final value in category.value.entries) {
           settings['${category.key}/${value.key}'] =
               TextEditingController(text: value.value);
         }
       }
+
       final specs = draft.specifications;
       fork = draft.configuration.fields.containsKey('Fork')
           ? specs['fork'] ?? 'Air'
@@ -98,6 +102,7 @@ class BikeOnboardingState {
       frame = draft.configuration.fields.containsKey('Frame');
       cockpit = draft.configuration.fields.containsKey('Cockpit');
       saddle = draft.configuration.fields.containsKey('Saddle');
+
       for (final entry
           in {'Fork': forkAdjusters, 'Shock': shockAdjusters}.entries) {
         entry.value
@@ -121,6 +126,7 @@ class BikeOnboardingState {
     ]) {
       controller.dispose();
     }
+
     for (final controller in settings.values) {
       controller.dispose();
     }
@@ -165,6 +171,7 @@ class BikeOnboardingState {
               text: settings['FrontTire/Pressure']?.text ?? ''));
       if (rearWheel.isEmpty) rearWheel = frontWheel;
     }
+
     step = next;
     error = null;
     _initializeFields(currentCategory, currentFields);
@@ -176,6 +183,7 @@ class BikeOnboardingState {
       error = 'Enter a bike name (up to 100 characters).';
       return false;
     }
+
     if (currentStep.kind == OnboardingStepKind.controls) {
       final travel =
           (currentCategory == 'Fork' ? forkTravel : shockTravel).text.trim();
@@ -185,6 +193,7 @@ class BikeOnboardingState {
         return false;
       }
     }
+
     for (final field in currentFields) {
       final text = setting(currentCategory, field).text.trim();
       final meta = kFieldMeta[field] ?? kDefaultFieldMeta;
@@ -201,6 +210,7 @@ class BikeOnboardingState {
         }
       }
     }
+
     return true;
   }
 }

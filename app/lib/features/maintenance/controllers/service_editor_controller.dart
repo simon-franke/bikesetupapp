@@ -16,38 +16,48 @@ class ServiceEditorController extends OperationController {
       : _newId = newId ?? const Uuid().v4,
         _now = now ?? DateTime.now,
         _mileageKm = gearId == null ? null : currentMileageKm;
+
   final MaintenanceController _maintenance;
   final StravaConnectionController _connection;
+
   final ServiceComponent component;
   final double currentMileageKm;
   final String? gearId;
+
   final String Function() _newId;
   final DateTime Function() _now;
+
   double? _mileageKm;
   bool _fetchingMileage = false;
   bool _saving = false;
   Object? _mileageError;
   Object? _saveError;
+
   Object? _draft;
   String? _entryId;
   DateTime? _entryDate;
+
   double? get mileageKm => _mileageKm;
   bool get fetchingMileage => _fetchingMileage;
   bool get saving => _saving;
   Object? get mileageError => _mileageError;
   Object? get saveError => _saveError;
 
+  /// Resolves mileage for the selected date and ignores superseded requests.
+  ///
+  /// Today uses the supplied current mileage; past dates use the Strava connection.
+  /// An unlinked component has no mileage. Fetching while saving returns a failure.
   Future<CommandResult<void>> fetchMileage(DateTime date) => command(() async {
         if (_saving) throw const AppFailure(FailureCode.invalidInput);
+
         final generation = beginRequest('mileage');
         _fetchingMileage = true;
         _mileageKm = null;
         _mileageError = null;
         emit();
+
         try {
-          final now = _now();
-          final today = (date.year, date.month, date.day) ==
-              (now.year, now.month, now.day);
+          final today = _isToday(date);
           final mileage = gearId == null
               ? null
               : today
@@ -59,9 +69,11 @@ class ServiceEditorController extends OperationController {
           if (!isCurrentRequest('mileage', generation)) {
             throw const CommandAborted();
           }
+
           if (gearId != null && mileage == null) {
             throw const AppFailure(FailureCode.connectionExpired);
           }
+
           _mileageKm = mileage;
         } catch (error) {
           if (isCurrentRequest('mileage', generation) &&
@@ -77,6 +89,14 @@ class ServiceEditorController extends OperationController {
         }
       });
 
+  bool _isToday(DateTime date) {
+    final now = _now();
+    return (date.year, date.month, date.day) == (now.year, now.month, now.day);
+  }
+
+  /// Saves using the currently resolved mileage, reusing the entry ID on retry.
+  ///
+  /// Saving while mileage is being fetched returns an invalid-input failure.
   Future<CommandResult<void>> logService(
       {required DateTime date, String? note}) {
     final mileage = _mileageKm;
@@ -107,14 +127,17 @@ class ServiceEditorController extends OperationController {
                 if (_fetchingMileage) {
                   throw const AppFailure(FailureCode.invalidInput);
                 }
+
                 if (_draft != draft) {
                   _draft = draft;
                   _entryId = _newId();
                   _entryDate = _now();
                 }
+
                 _saving = true;
                 _saveError = null;
                 emit();
+
                 try {
                   (await write(_entryId!, _entryDate!)).requireValue();
                   if (isDisposed) throw const CommandAborted();

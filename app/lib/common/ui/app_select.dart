@@ -13,6 +13,7 @@ class AppSelect<T> extends StatelessWidget {
       required this.items,
       required this.onChanged,
       this.compact = false});
+
   final String label;
   final T? value;
   final List<DropdownMenuItem<T>> items;
@@ -42,6 +43,7 @@ class AppSelect<T> extends StatelessWidget {
                                 itemBuilder: (_, index) {
                                   final item = items[index];
                                   final selected = item.value == value;
+
                                   return Semantics(
                                       selected: selected,
                                       child: Material(
@@ -95,6 +97,7 @@ class AppSelect<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = items.where((item) => item.value == value).firstOrNull;
+
     return Semantics(
       button: true,
       label: label,

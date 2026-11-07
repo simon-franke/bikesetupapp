@@ -31,7 +31,9 @@ Future<String?> showAddCategorySheet(
 
 class _AddCategorySheet extends StatefulWidget {
   const _AddCategorySheet({required this.active});
+
   final Set<String> active;
+
   @override
   State<_AddCategorySheet> createState() => _AddCategorySheetState();
 }
@@ -40,12 +42,14 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
   final name = TextEditingController();
   bool custom = false;
   String? error;
+
   List<String> get suggestions => _categories
       .where((key) => key == 'Tires'
           ? !widget.active.contains('FrontTire') ||
               !widget.active.contains('RearTire')
           : !widget.active.contains(key))
       .toList();
+
   @override
   void dispose() {
     name.dispose();
@@ -78,6 +82,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
   @override
   Widget build(BuildContext context) {
     final showForm = custom || suggestions.isEmpty;
+
     return SafeArea(
         top: false,
         child: Padding(

@@ -24,10 +24,12 @@ class CreateBikeFlow extends StatefulWidget {
       required this.onCreated,
       this.initialDraft,
       this.setupName = 'Default'});
+
   final User user;
   final BikeCreationDraft? initialDraft;
   final String setupName;
   final void Function(String, String, String, String) onCreated;
+
   @override
   State<CreateBikeFlow> createState() => _CreateBikeFlowState();
 }
@@ -64,6 +66,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
 
   Future<void> create() async {
     if (saving || !acceptCurrent() || !validate()) return;
+
     final reviewed = flow.draft;
     setState(() => saving = true);
     String? bikeId, setupId;
@@ -78,6 +81,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
       return result;
     });
     if (!mounted) return;
+
     setState(() => saving = false);
     if (success && bikeId != null && setupId?.isNotEmpty == true) {
       Navigator.of(context).pop();
@@ -89,18 +93,15 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
           {String? hint, bool number = false}) =>
       Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            AppFieldLabel(title),
-            const SizedBox(height: 8),
-            AppTextField(
-                controller: controller,
-                hint: hint ?? 'Optional',
-                keyboardType: number
-                    ? const TextInputType.numberWithOptions(decimal: true)
-                    : TextInputType.text,
-                suffix: number ? 'mm' : null),
-          ]));
+          child: AppFormField(
+              label: title,
+              child: AppTextField(
+                  controller: controller,
+                  hint: hint ?? 'Optional',
+                  keyboardType: number
+                      ? const TextInputType.numberWithOptions(decimal: true)
+                      : TextInputType.text,
+                  suffix: number ? 'mm' : null)));
 
   Widget travelSelector(TextEditingController controller) =>
       field('Travel', controller, hint: 'Optional', number: true);
@@ -108,11 +109,9 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
   Widget wheel(String title, String value, ValueChanged<String> change) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          AppFieldLabel(title),
-          const SizedBox(height: 8),
-          AppSelect<String>(
+        child: AppFormField(
+          label: title,
+          child: AppSelect<String>(
               key: ValueKey(title),
               label: title,
               value: value,
@@ -127,7 +126,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                               : '$size″'))
               ],
               onChanged: (value) => setState(() => change(value!))),
-        ]),
+        ),
       );
 
   Widget adjuster(String label, Set<String> selected) {
@@ -180,6 +179,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                           ? context.palette.accentText
                           : context.palette.inkDim),
                 ]))));
+
     return Padding(
         padding: const EdgeInsets.only(bottom: 28),
         child:
@@ -204,6 +204,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                           child: item)
                   ]);
             }
+
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: choices[0]),
               const SizedBox(width: 8),
@@ -306,6 +307,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
 
   Widget optionalValue(String category, String key) {
     final value = flow.setting(category, key).text;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -364,6 +366,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
 
   Widget page() {
     final title = flow.currentCategory;
+
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (flow.step == 0) ...[
         note('What’s your bike called?'),
@@ -442,20 +445,14 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
     ]);
   }
 
-  Widget sectionHeading(String title) => Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Semantics(
-            header: true,
-            child: Text(title,
-                style: AppTextStyles.label
-                    .copyWith(color: context.palette.inkMuted))),
-      );
+  Widget sectionHeading(String title) => AppSectionLabel(title);
 
   @override
   Widget build(BuildContext context) {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final height =
         math.min(760.0, MediaQuery.sizeOf(context).height * .9 - keyboard);
+
     return PopScope(
         canPop: !saving,
         child: SafeArea(

@@ -12,11 +12,13 @@ abstract final class AppMotion {
 /// Give each state a stable key. Outgoing content cannot receive input or focus.
 class AppScreenTransition extends StatelessWidget {
   const AppScreenTransition({super.key, required this.child});
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.disableAnimationsOf(context)) return child;
+
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: AnimatedSwitcher(

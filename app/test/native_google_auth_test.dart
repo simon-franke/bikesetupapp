@@ -16,6 +16,7 @@ class FakeGoogle extends Fake implements GoogleSignIn {
   final initialized = Completer<void>();
   int initializations = 0;
   int authentications = 0;
+
   @override
   Future<void> initialize(
       {String? clientId,
@@ -40,6 +41,7 @@ class FakeCredential extends Fake implements UserCredential {}
 class FakeFirebaseAuth extends Fake implements FirebaseAuth {
   @override
   User? get currentUser => null;
+
   @override
   Future<UserCredential> signInWithCredential(
           AuthCredential credential) async =>
@@ -48,7 +50,9 @@ class FakeFirebaseAuth extends Fake implements FirebaseAuth {
 
 class SignOutRepository extends Fake implements AuthRepository {
   final List<String> events;
+
   SignOutRepository(this.events);
+
   @override
   Future<void> signOut() async {
     events.add('firebase-sign-out');

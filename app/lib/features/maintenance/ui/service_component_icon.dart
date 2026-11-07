@@ -12,6 +12,7 @@ class ServiceComponentIcon extends StatelessWidget {
       required this.color,
       this.customIcon,
       this.size = AppIconSizes.control});
+
   final ComponentType type;
   final ServiceIcon? customIcon;
   final Color color;
@@ -42,6 +43,7 @@ class ServiceComponentIcon extends StatelessWidget {
     if (asset == null) {
       return Icon(CupertinoIcons.wrench, size: size, color: color);
     }
+
     return SvgPicture.asset('assets/icons/$asset.svg',
         width: size,
         height: size,

@@ -9,6 +9,7 @@ class SharedPreferencesThemeRepository implements ThemePreferencesRepository {
       () async =>
           (await SharedPreferences.getInstance()).getString('themeMode'),
       fallback: FailureCode.loadFailed);
+
   @override
   Future<void> saveTheme(String mode) => platformOperation(() async {
         final saved = await (await SharedPreferences.getInstance())

@@ -16,10 +16,12 @@ class QuickBikeSheet extends StatefulWidget {
       required this.user,
       required this.onCreated,
       this.isSheet = true});
+
   final User user;
   final bool isSheet;
   final void Function(String, String, String, String, SetupConfiguration)
       onCreated;
+
   @override
   State<QuickBikeSheet> createState() => _QuickBikeSheetState();
 }
@@ -29,6 +31,7 @@ class _QuickBikeSheetState extends State<QuickBikeSheet> {
   bool saving = false;
   String? error;
   OverlayEntry? _loadingOverlay;
+
   @override
   void dispose() {
     _removeLoading();
@@ -66,6 +69,7 @@ class _QuickBikeSheetState extends State<QuickBikeSheet> {
         'Cockpit': cockpitFields,
         'Saddle': saddleFields,
       }));
+
   bool validateName() {
     if (name.text.trim().isEmpty || name.text.trim().length > 100) {
       setState(() => error = 'Enter a bike name of up to 100 characters.');
@@ -76,7 +80,9 @@ class _QuickBikeSheetState extends State<QuickBikeSheet> {
 
   Future<void> create() async {
     if (saving) return;
+
     if (!validateName()) return;
+
     FocusScope.of(context).unfocus();
     final reviewed = draft;
     setState(() {
@@ -97,12 +103,14 @@ class _QuickBikeSheetState extends State<QuickBikeSheet> {
       return result;
     });
     if (!mounted) return;
+
     if (success) {
       final onCreated = widget.onCreated;
       if (widget.isSheet) await dismissAppSheet(context);
       onCreated(
           reviewed.name, bikeId!, 'Baseline', setupId!, reviewed.configuration);
     }
+
     _removeLoading();
     if (mounted) setState(() => saving = false);
   }
@@ -113,12 +121,14 @@ class _QuickBikeSheetState extends State<QuickBikeSheet> {
           AppSheetHeader(
               title: widget.isSheet ? 'Add a bike' : 'What do you ride?',
               showHandle: widget.isSheet),
-          const AppFieldLabel('Bike name'),
-          const SizedBox(height: 8),
-          IgnorePointer(
-              ignoring: saving,
-              child: AppTextField(
-                  controller: name, hint: 'Name or model', errorText: error)),
+          AppFormField(
+              label: 'Bike name',
+              child: IgnorePointer(
+                  ignoring: saving,
+                  child: AppTextField(
+                      controller: name,
+                      hint: 'Name or model',
+                      errorText: error))),
         ],
       );
 

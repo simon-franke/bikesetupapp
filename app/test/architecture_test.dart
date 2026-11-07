@@ -30,12 +30,14 @@ void main() {
         expect(source, isNot(contains('FirebaseFirestore.instance')),
             reason: file.path);
       }
+
       if (file.path.contains('/ui/')) {
         expect(source, isNot(matches(r"import .*repositories/")),
             reason: file.path);
         expect(source, isNot(contains('FirebaseAuth.instance')),
             reason: file.path);
       }
+
       if (file.path.contains('/controllers/')) {
         expect(
             source,
@@ -45,12 +47,14 @@ void main() {
         expect(source, isNot(contains('ScaffoldMessenger')), reason: file.path);
         expect(source, isNot(contains('BuildContext')), reason: file.path);
       }
+
       if (file.path.contains('/models/')) {
         expect(
             source, isNot(matches(r"import .*[/](controllers|repositories)/")),
             reason: file.path);
         expect(source, isNot(contains('package:flutter/')), reason: file.path);
       }
+
       if (file.path.contains('/controllers/') ||
           file.path.contains('/repositories/') ||
           file.path.contains('/models/')) {

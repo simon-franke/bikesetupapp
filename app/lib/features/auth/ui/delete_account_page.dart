@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:flutter/material.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -5,7 +6,9 @@ import 'package:bikesetupapp/common/ui/command_feedback.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key, this.onCancel});
+
   final VoidCallback? onCancel;
+
   @override
   State<DeleteAccountPage> createState() => _DeleteAccountPageState();
 }
@@ -14,6 +17,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   final password = TextEditingController();
   bool busy = false;
   String? error;
+
   @override
   void dispose() {
     password.dispose();
@@ -22,6 +26,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
   Future<void> remove() async {
     if (busy) return;
+
     setState(() {
       busy = true;
       error = null;
@@ -45,18 +50,14 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         user?.providerData.map((p) => p.providerId).toSet() ?? <String>{};
     final needsPassword =
         providers.contains('password') && !providers.contains('apple.com');
+
     return PopScope(
         canPop: !busy,
         child: Scaffold(
-          appBar: AppBar(
-              title: const Text('Delete account'),
-              automaticallyImplyLeading: !busy,
-              leading: widget.onCancel == null
-                  ? null
-                  : IconButton(
-                      tooltip: 'Back',
-                      onPressed: busy ? null : widget.onCancel,
-                      icon: const Icon(Icons.arrow_back))),
+          appBar: buildDetailAppBar(context,
+              title: 'Delete account',
+              onBack: widget.onCancel,
+              backEnabled: !busy),
           body: SafeArea(
               child: ListView(padding: const EdgeInsets.all(24), children: [
             const Text('Delete your account?', style: AppTextStyles.heading),
@@ -71,28 +72,23 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     : 'You’ll be asked to confirm your identity with your sign-in provider.'),
             if (needsPassword) ...[
               const SizedBox(height: 20),
-              TextField(
-                  controller: password,
-                  obscureText: true,
-                  enabled: !busy,
-                  autofillHints: const [AutofillHints.password],
-                  decoration: const InputDecoration(labelText: 'Password'))
+              AppFormField(
+                  label: 'Password',
+                  child: AppTextField(
+                      controller: password,
+                      obscureText: true,
+                      autocorrect: false,
+                      enabled: !busy,
+                      autofillHints: const [AutofillHints.password])),
             ],
-            if (error != null)
-              Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Semantics(
-                      liveRegion: true,
-                      child: Text(error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error)))),
             const SizedBox(height: 28),
-            FilledButton(
-                onPressed: busy ? null : remove,
-                style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Theme.of(context).colorScheme.onError),
-                child: Text(busy ? 'Deleting account…' : 'Delete account')),
+            AppFormFooter(
+                label: 'Delete account',
+                destructive: true,
+                isLoading: busy,
+                loadingLabel: 'Deleting account…',
+                error: error,
+                onPressed: remove),
             TextButton(
                 onPressed: busy
                     ? null

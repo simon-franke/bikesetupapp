@@ -28,7 +28,9 @@ class RideFeedback {
     'Better',
     'Much better'
   ];
+
   const RideFeedback({this.feeling, this.note = '', this.time = ''});
+
   final String? feeling;
   final String note, time;
 
@@ -60,6 +62,7 @@ class RideFeedback {
 
 class TestChange {
   const TestChange(this.category, this.field, this.before, this.after);
+
   final String category, field, before, after;
 }
 
@@ -76,6 +79,7 @@ class SetupTest {
       this.rides = const [],
       this.result = '',
       this.feedback = const RideFeedback()});
+
   final String id, name, result;
   final TestStage stage;
   final int draftStep;
@@ -84,6 +88,7 @@ class SetupTest {
   final SetupValues fieldMetadata;
   final List<RideFeedback> rides;
   final RideFeedback feedback;
+
   List<TestChange> get changes => [
         for (final category in values.entries)
           for (final field in category.value.entries)
@@ -92,6 +97,7 @@ class SetupTest {
               TestChange(category.key, field.key,
                   before[category.key]?[field.key] ?? '--', field.value)
       ];
+
   SetupTest copyWith(
           {String? name,
           int? draftStep,
@@ -113,6 +119,7 @@ class SetupTest {
           rides: rides ?? this.rides,
           result: result ?? this.result,
           feedback: feedback ?? this.feedback);
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
@@ -126,6 +133,7 @@ class SetupTest {
         'feedback': feedback.toMap(),
         'result': result
       };
+
   factory SetupTest.fromMap(Map data) => SetupTest(
       id: data['id'] as String,
       name: data['name'] as String,

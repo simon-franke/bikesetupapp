@@ -14,8 +14,11 @@ const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore } = require('firebase-admin/firestore');
 const { createAccountDeletionHandler } = require('./account_handlers');
+
 initializeApp();
+
 exports.deleteAccount = onRequest({
-  region: 'us-central1', timeoutSeconds: 540,
+  region: 'us-central1',
+  timeoutSeconds: 540,
   cors: ['https://simon-franke.github.io'],
 }, createAccountDeletionHandler({ auth: getAuth(), firestore: getFirestore() }));

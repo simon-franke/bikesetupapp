@@ -5,8 +5,10 @@ import 'package:bikesetupapp/common/ui/app_sheet.dart';
 class ServiceIntervalSheet extends StatefulWidget {
   const ServiceIntervalSheet(
       {super.key, required this.initial, required this.hours});
+
   final double initial;
   final bool hours;
+
   @override
   State<ServiceIntervalSheet> createState() => _ServiceIntervalSheetState();
 }
@@ -17,6 +19,7 @@ class _ServiceIntervalSheetState extends State<ServiceIntervalSheet> {
           ? widget.initial.toInt().toString()
           : widget.initial.toString());
   String? error;
+
   @override
   void dispose() {
     text.dispose();
@@ -62,6 +65,7 @@ class _ServiceIntervalSheetState extends State<ServiceIntervalSheet> {
                         : 'Enter the distance between services.');
                     return;
                   }
+
                   Navigator.pop(context, value);
                 }),
           ]));

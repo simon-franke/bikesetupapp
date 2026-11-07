@@ -40,7 +40,7 @@ void main() {
         theme: AppTheme.darkTheme,
         home: Scaffold(
             body: SetupCategoryView(
-                  configuration: testSetupConfiguration,
+          configuration: testSetupConfiguration,
           user: SheetUser(),
           bike: 'bike',
           setup: 'setup',
@@ -104,16 +104,19 @@ void main() {
     expect(find.byType(BottomSheet), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
   for (final category in ['Fork', 'No suggestions']) {
     testWidgets('opens new setting directly for $category with no suggestions',
         (tester) async {
       final repo = FakeSetupsRepository();
+
       for (final key in {
         ...?kDefaultFieldKeys[category],
         ...?kSuggestedFieldKeys[category],
       }) {
         repo.settings['bike/setup/$category/$key'] = '1';
       }
+
       await tester.pumpWidget(Provider.value(
         value: AppDependencies(setupsRepository: (_) => repo),
         child: MaterialApp(

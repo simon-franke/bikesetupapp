@@ -24,6 +24,7 @@ class _CardDef {
   final String iconAsset;
   final UnitFamily? fallbackFamily;
   final UnitDef? fallbackUnit;
+
   const _CardDef(
       this.key, this.iconAsset, this.fallbackFamily, this.fallbackUnit);
 
@@ -132,6 +133,7 @@ Future<void> showSettingStepperSheet(
     await presentCommand(feedbackContext, () => save(value),
         onFailure: (message) {
       if (!messenger.mounted) return;
+
       messenger.showSnackBar(SnackBar(
         content: Text('$settingKey: $value wasn’t saved. $message'),
         duration: const Duration(seconds: 12),
@@ -140,6 +142,7 @@ Future<void> showSettingStepperSheet(
                 label: 'Review',
                 onPressed: () {
                   if (!context.mounted) return;
+
                   showSettingStepperSheet(context,
                       user: user,
                       onSave: onSave,
@@ -270,9 +273,12 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   }
 
   bool _saving = false;
+
   Future<void> _onSave() async {
     if (_saving) return;
+
     if (_editingNumber && !_readNumber()) return;
+
     setState(() => _saving = true);
     final stored = widget.isFreeText
         ? _textController.text.trim()
@@ -283,6 +289,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       await save(stored);
       return;
     }
+
     final saved = await presentCommand(
         context,
         () => widget.onSave != null
@@ -293,6 +300,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
                 .setSetting(widget.settingKey, stored, widget.uBikeID,
                     widget.category, widget.uSetupID));
     if (!mounted) return;
+
     if (saved) {
       Navigator.of(context).pop();
     } else {
@@ -314,6 +322,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
           () => db.setups.deleteField(widget.settingKey, widget.uBikeID,
               widget.category, widget.uSetupID));
       if (!mounted) return;
+
       if (deleted) {
         Navigator.of(context).pop();
       } else {
@@ -403,6 +412,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
             if (_readNumber()) setState(() => _editingNumber = false);
           });
     }
+
     final knownMeta = widget.knownMeta;
     double minInActive;
     double maxInActive;
@@ -414,8 +424,10 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       minInActive = 0;
       maxInActive = 100;
     }
+
     final step =
         _unit.decimals <= 0 ? 1.0 : math.pow(10, -_unit.decimals).toDouble();
+
     return SettingValueEditor(
       key: ValueKey('${widget.settingKey}-${_unit.id}'),
       initialValue: _value,
@@ -441,6 +453,7 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
 
 class _FreeTextField extends StatelessWidget {
   final TextEditingController controller;
+
   const _FreeTextField({required this.controller});
 
   @override
@@ -507,6 +520,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                 if (v is String) metaMap[k.toString()] = v;
               });
             }
+
             if (snapshot.hasError || metaSnap.hasError) {
               return Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -516,6 +530,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
                     child: const Text('Retry')),
               ]));
             }
+
             return _buildGrid(allKeys, settings, metaMap);
           },
         );
@@ -534,6 +549,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
         final card = _CardDef.fromKey(key);
         final value = settings[key]?.toString() ?? '--';
         final familyOverride = unitFamilyFromName(metaMap[key] ?? '');
+
         return _AnimatedTile(
           key: ValueKey('tile_$key'),
           child: _ControlCard(
@@ -561,6 +577,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
         return idx >= 0 ? idx : null;
       },
     );
+
     return CustomScrollView(
       shrinkWrap: true,
       physics: const BouncingScrollPhysics(),
@@ -606,6 +623,7 @@ class _ControlPanelGridState extends State<ControlPanelGrid> {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
+
   const _SectionLabel(this.text);
 
   @override
@@ -649,6 +667,7 @@ class _ControlCard extends StatelessWidget {
       displayValue = parsed.displayNumber();
       displayUnit = parsed.displayUnit();
     }
+
     final isText = parsed.isText;
 
     return Semantics(
@@ -724,6 +743,7 @@ class _ControlCard extends StatelessWidget {
 
 class _AnimatedTile extends StatefulWidget {
   final Widget child;
+
   const _AnimatedTile({super.key, required this.child});
 
   @override
