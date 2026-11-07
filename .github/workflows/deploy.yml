@@ -3,6 +3,9 @@ name: Deploy Firebase
 on:
   push:
     branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -11,6 +14,10 @@ permissions:
 concurrency:
   group: firebase-deploy
   cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: backend
 
 jobs:
   deploy-functions:
@@ -23,7 +30,7 @@ jobs:
 
       - name: Install function dependencies
         run: npm install
-        working-directory: functions
+        working-directory: backend/functions
 
       - name: Deploy Firebase Functions and rules
         run: firebase deploy --only functions,firestore:rules --project bikesetupapp-bd22a --token "$FIREBASE_TOKEN"

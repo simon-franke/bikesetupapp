@@ -1,0 +1,12 @@
+{
+  "band_to_shoe_interferences": [],
+  "rear_placement": true,
+  "sampled_compression_mm": [
+    0,
+    80,
+    160
+  ],
+  "accessory_to_approximate_fork_collisions": [],
+  "excluded": "Band routing, intentional liner contacts, screw-thread fit and accessory-to-accessory articulation; no frame, wheel or hoses.",
+  "limits": "Approximate fork. TPU compliance, retention, fork flex, steering/frame clearance and physical fit untested."
+}

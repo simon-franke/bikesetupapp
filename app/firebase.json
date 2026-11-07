@@ -1,7 +1,4 @@
 {
-  "functions": {
-    "source": "functions"
-  },
   "flutter": {
     "platforms": {
       "android": {
@@ -28,17 +25,6 @@
           }
         }
       }
-    }
-  },
-  "firestore": {
-    "rules": "firestore.rules"
-  },
-  "emulators": {
-    "firestore": {
-      "port": 8080
-    },
-    "ui": {
-      "enabled": false
     }
   }
 }

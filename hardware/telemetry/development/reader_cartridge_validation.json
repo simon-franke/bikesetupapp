@@ -1,0 +1,21 @@
+{
+  "timeline_features": 669,
+  "invalid_solids": [],
+  "unhealthy_features": [],
+  "stroke_samples": [
+    {
+      "position_mm": -80,
+      "interferences": []
+    },
+    {
+      "position_mm": 0,
+      "interferences": []
+    },
+    {
+      "position_mm": 80,
+      "interferences": []
+    }
+  ],
+  "excluded": "Screw envelopes, exploded display and original vendor source occurrence. Threads are not modelled. Internal overlaps between duplicate copper pads in the manufacturer STEP are separately excluded.",
+  "not_tested": "Physical friction, material tolerances, debris, cable forces, shock/fork mounting and flex."
+}
