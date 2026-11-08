@@ -7,7 +7,7 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_flow.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
-import 'package:bikesetupapp/features/setups/ui/control_panel_grid.dart';
+import 'package:bikesetupapp/features/setups/ui/setting_stepper_sheet.dart';
 import '../controllers/tests_controller.dart';
 import '../models/setup_test.dart';
 

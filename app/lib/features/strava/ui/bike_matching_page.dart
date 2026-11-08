@@ -90,7 +90,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 60),
         children: [
-          _SectionLabel('Strava bikes'),
+          AppSectionLabel('Strava bikes'),
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
             decoration: BoxDecoration(
@@ -117,11 +117,14 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
                   style: AppTextStyles.body.copyWith(color: p.inkMuted),
                 ),
                 const SizedBox(height: 16),
-                _OutlineButton(
-                  icon: CupertinoIcons.arrow_clockwise,
-                  label: 'Retry sync',
-                  onTap: _manualSync,
-                ),
+                SizedBox(
+                    width: double.infinity,
+                    child: AppActionButton(
+                      outlined: true,
+                      icon: CupertinoIcons.arrow_clockwise,
+                      label: 'Retry sync',
+                      onPressed: _manualSync,
+                    )),
               ],
             ),
           ),
@@ -132,7 +135,7 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 60),
       children: [
-        _SectionLabel('Strava bikes'),
+        AppSectionLabel('Strava bikes'),
         ..._stravaBikes.map((strava) => _BikeMatchCard(
               strava: strava,
               appBikes: _appBikes,
@@ -142,10 +145,10 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
               },
             )),
         const SizedBox(height: 24),
-        _PrimaryButton(
+        AppActionButton(
           icon: CupertinoIcons.link,
           label: 'Save links',
-          onTap: _saveLinks,
+          onPressed: _saveLinks,
         ),
         const SizedBox(height: 12),
         TextButton.icon(
@@ -243,53 +246,5 @@ class _BikeDropdown extends StatelessWidget {
             DropdownMenuItem<String?>(value: bike.id, child: Text(bike.name))
         ],
         onChanged: onChanged);
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String text;
-
-  const _SectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSectionLabel(text);
-  }
-}
-
-class _OutlineButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _OutlineButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-        width: double.infinity,
-        child: AppActionButton(
-            label: label, icon: icon, onPressed: onTap, outlined: true));
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  final IconData? icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _PrimaryButton({
-    required this.label,
-    required this.onTap,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppActionButton(label: label, icon: icon, onPressed: onTap);
   }
 }

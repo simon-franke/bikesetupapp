@@ -1,3 +1,5 @@
+import 'package:bikesetupapp/features/setups/ui/setup_card.dart';
+import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/unit_system.dart';
@@ -7,9 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'control_panel_grid.dart';
+import 'setting_stepper_sheet.dart';
 import 'add_field_bottom_sheet.dart';
-import 'setup_overview.dart';
 import 'setting_display.dart';
 
 /// Category content stays inside the workspace, preserving its bottom navigation.

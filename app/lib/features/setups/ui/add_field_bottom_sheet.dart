@@ -10,7 +10,7 @@ import '../../../common/ui/app_error_banner.dart';
 import '../../../common/ui/app_select.dart';
 import '../../../common/ui/app_sheet.dart';
 import '../models/unit_system.dart';
-import 'control_panel_grid.dart';
+import 'setting_stepper_sheet.dart';
 import 'field_meta.dart';
 
 Future<void> showAddFieldSheet(

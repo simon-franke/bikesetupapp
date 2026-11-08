@@ -5,6 +5,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('retained categories can be restored and tires stay grouped',
+      (tester) async {
+    String? selected;
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.darkTheme,
+      home: Scaffold(
+          body: Builder(
+              builder: (context) => TextButton(
+                    onPressed: () async =>
+                        selected = await showAddCategorySheet(
+                      context,
+                      {
+                        'Fork',
+                        'Shock',
+                        'Cockpit',
+                        'Saddle',
+                        'Frame',
+                        'GeneralSettings'
+                      },
+                      retained: {'Luggage', 'FrontTire', 'RearTire'},
+                    ),
+                    child: const Text('Open'),
+                  ))),
+    ));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tires'), findsOneWidget);
+    expect(find.text('Front tire'), findsNothing);
+    expect(find.text('Rear tire'), findsNothing);
+    await tester.tap(find.text('Luggage'));
+    await tester.pumpAndSettle();
+    expect(selected, 'Luggage');
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
       'add category shares suggestion rows and creates a named category',
       (tester) async {

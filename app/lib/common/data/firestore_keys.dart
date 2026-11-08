@@ -13,6 +13,7 @@ abstract class FirestoreKeys {
 
   // Setup document fields
   static const String setupName = 'setup_name';
+  static const String setupConfiguration = 'configuration';
 
   // Service tracking collections
   static const String serviceComponents = 'ServiceComponents';

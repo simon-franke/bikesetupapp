@@ -14,6 +14,7 @@ import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
 import 'package:bikesetupapp/features/tests/models/setup_test.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
+import 'package:bikesetupapp/features/tests/ui/experiment_detail_page.dart';
 import 'package:bikesetupapp/features/tests/ui/track_time_sheet.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_controls.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -210,7 +211,7 @@ void main() {
               result: 'Settings applied');
           experiments.records['experiment'] = experiment;
           await tester.pumpWidget(const SizedBox());
-          await mount(TestsView(
+          await mount(ExperimentDetailPage(
               uid: 'user',
               bike: 'bike',
               setup: 'setup',

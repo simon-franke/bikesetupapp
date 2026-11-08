@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'dart:async';
 
@@ -62,7 +63,7 @@ class FakeSetupsRepository implements SetupsRepository {
   Future<Map<String, dynamic>> getSetupInformation(
           String bike, String setup) async =>
       Map.of(information[setup] ??
-          {SetupConfiguration.metadataKey: testSetupConfiguration.encode()});
+          {FirestoreKeys.setupConfiguration: testSetupConfiguration.encode()});
 
   Future<void> Function(
           String key, String value, String bike, String category, String setup)?

@@ -1,7 +1,7 @@
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/dialog_helpers.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
-import 'google_sign_in.dart';
+import 'login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

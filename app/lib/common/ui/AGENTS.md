@@ -1,19 +1,23 @@
 # Shared UI conventions
 
-These rules also apply to feature UI and routing, as directed by `app/AGENTS.md`. Paths below are relative to `app/`.
+These rules apply across all features.
 
-## Existing components
+## File organization
 
-- Use `AppTheme` and controls from `lib/common/ui/`. `app_components.dart` contains `AppFormField`/`AppTextField`, `AppFormFooter`, `AppSectionLabel`/`AppSectionToolbar`, and `buildDetailAppBar`. Keep specialized measurement editors purpose-built.
-- Use `AppActionButton.isLoading` (or `AppTactileButton.isLoading`) with a short `loadingLabel` for pending actions. Use `AppLoadingState` for empty loading sections and `AppLoadingContent` for inline progress; all share the adjuster animation.
-- Theme roles: accent fills pair with `accentInk`; accent text/icons use `accentText`. Use `inkMuted`/`inkDim` without reducing opacity. See `test/contrast_test.dart`.
+Keep UI files focused on one screen or cohesive component. Extract independently meaningful sections and behavior when doing so improves readability.
+
+## Consistency and accessibility
+
+- Reuse shared controls, themes, and interaction patterns. Keep specialized measurement editors purpose-built.
+- Show progress for pending actions with short, descriptive loading labels.
+- Use semantic theme colors and preserve readable contrast, including muted text and icons.
 - Keep copy short and conversational; no em dashes.
 
 ## Transitions and pending work
 
-- Push pages with `AppRoutes.fadeSlide()` and preserve native iOS back gestures. Replace screens with `AppScreenTransition` and stable state keys, rather than adding a route.
-- Keep outgoing widget ancestry stable until dismissal; do not remount screens to disable input. Review intermediate transition frames as well as settled screens.
-- Timing and curves live in `lib/app/routing/app_motion.dart`. Respect Reduced Motion; do not invent per-screen durations.
-- Use `showAppSheet` for forms; its future completes after dismissal. When a sheet action changes the underlying screen, capture callbacks before disposal and await `dismissAppSheet` before applying the change.
-- Keep existing content visible during writes. Update synchronously when the next screen's data is already available; never delay completion to finish an animation.
-- Destructive confirmations stay open until their command completes, with progress and retry in the same sheet. Remove any covered chooser when the command starts so live deletions cannot expose an empty intermediate sheet.
+- Preserve native back gestures and screen state during transitions.
+- Keep outgoing screens stable until dismissal; do not recreate them merely to disable input. Review intermediate transition frames as well as settled screens.
+- Keep motion consistent across screens and respect Reduced Motion.
+- Finish dismissing a sheet before changing its underlying screen. Do not use callbacks or state after their owner has been disposed.
+- Keep existing content visible during writes. Update immediately when the next screen's data is already available; never delay completion to finish an animation.
+- Destructive confirmations stay open until their command completes, with progress and retry in the same sheet. Dismiss covered selection interfaces before deleting their data so they cannot expose an empty intermediate screen.

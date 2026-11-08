@@ -4,7 +4,7 @@ import 'package:bikesetupapp/common/controllers/optimistic_edits.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/controllers/setups_controller.dart';
-import 'package:bikesetupapp/features/setups/ui/control_panel_grid.dart';
+import 'package:bikesetupapp/features/setups/ui/setting_stepper_sheet.dart';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

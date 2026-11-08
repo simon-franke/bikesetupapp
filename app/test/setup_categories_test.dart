@@ -1,10 +1,84 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/controllers/setups_controller.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
+import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'support/fake_repositories.dart';
 
 void main() {
+  test('configuration retains disabled selections and validates their keys',
+      () {
+    final configuration = SetupConfiguration({
+      'Fork': ['Rebound'],
+      'Luggage': ['Weight'],
+    }, disabledCategories: {
+      'Luggage'
+    });
+    final restored = SetupConfiguration.fromInformation({
+      FirestoreKeys.setupConfiguration: configuration.encode(),
+    });
+    expect(restored.fields, {
+      'Fork': ['Rebound']
+    });
+    expect(restored.storedFields, configuration.storedFields);
+    expect(restored.disabledCategories, {'Luggage'});
+    expect(() => SetupConfiguration({}, disabledCategories: {'Unknown'}),
+        throwsFormatException);
+    expect(() => restored.disabledCategories.clear(), throwsUnsupportedError);
+    expect(() => restored.storedFields['Luggage']!.clear(),
+        throwsUnsupportedError);
+  });
+
+  test('copy preserves active and disabled custom and built-in settings',
+      () async {
+    final repo = _CopyRepository()
+      ..names['source'] = 'Original'
+      ..information['source'] = {
+        FirestoreKeys.setupConfiguration: SetupConfiguration({
+          'Fork': ['Rebound'],
+          'Luggage': ['Weight'],
+          'Cockpit': ['Stem length'],
+        }).encode(),
+      }
+      ..settings.addAll({
+        'bike/source/Fork/Rebound': '5 clicks',
+        'bike/source/Luggage/Weight': '3 kg',
+        'bike/source/Cockpit/Stem length': '40 mm',
+      })
+      ..metadata['bike/source/Luggage/Weight'] = 'mass';
+    final controller = SetupsController(repo);
+    addTearDown(controller.dispose);
+    for (final category in ['Luggage', 'Cockpit']) {
+      expect(
+          (await controller.setCategoryEnabled(
+                  'bike', 'source', category, false,
+                  addedFields: const {}))
+              .isSuccess,
+          isTrue);
+    }
+    expect(
+        (await controller.copySetup('bike', 'copy', 'Copy', 'source'))
+            .isSuccess,
+        isTrue);
+    var copied = SetupConfiguration.fromInformation(repo.information['copy']!);
+    expect(copied.fields.keys, ['Fork']);
+    expect(copied.disabledCategories, {'Luggage', 'Cockpit'});
+    expect(repo.settings['bike/copy/Luggage/Weight'], '3 kg');
+    expect(repo.settings['bike/copy/Cockpit/Stem length'], '40 mm');
+    expect(repo.settings['bike/copy/Fork/Rebound'], '5 clicks');
+    expect(repo.metadata['bike/copy/Luggage/Weight'], 'mass');
+    expect(
+        (await controller.setCategoryEnabled('bike', 'copy', 'Luggage', true,
+                addedFields: {
+              'Luggage': ['Different default']
+            }))
+            .isSuccess,
+        isTrue);
+    copied = SetupConfiguration.fromInformation(repo.information['copy']!);
+    expect(copied.fields['Luggage'], ['Weight']);
+  });
+
   test('setups require explicit configuration instead of inferred defaults',
       () {
     expect(() => SetupConfiguration.fromInformation({}), throwsFormatException);
@@ -12,7 +86,7 @@ void main() {
         throwsFormatException);
     expect(
         SetupConfiguration.fromInformation({
-          SetupConfiguration.metadataKey: SetupConfiguration({}).encode(),
+          FirestoreKeys.setupConfiguration: SetupConfiguration({}).encode(),
         }).fields,
         isEmpty);
   });
@@ -21,7 +95,7 @@ void main() {
     final repo = FakeSetupsRepository()
       ..names['setup'] = 'Default'
       ..information['setup'] = {
-        SetupConfiguration.metadataKey: SetupConfiguration({}).encode()
+        FirestoreKeys.setupConfiguration: SetupConfiguration({}).encode()
       };
     final controller = SetupsController(repo);
     addTearDown(controller.dispose);
@@ -51,7 +125,7 @@ void main() {
       ..names['setup'] = 'Default'
       ..information['setup'] = {
         'note': 'Keep this',
-        SetupConfiguration.metadataKey: testSetupConfiguration.encode()
+        FirestoreKeys.setupConfiguration: testSetupConfiguration.encode()
       }
       ..settings['bike/setup/Fork/Pressure'] = '90 psi';
     final controller = SetupsController(repo);
@@ -88,4 +162,18 @@ void main() {
             .keys,
         ['FrontTire', 'RearTire']);
   });
+}
+
+class _CopyRepository extends FakeSetupsRepository {
+  @override
+  Stream<List<BikeSetup>> getSetups(String bike) => Stream.value([
+        for (final entry in names.entries)
+          BikeSetup(id: entry.key, name: entry.value),
+      ]);
+
+  @override
+  Future<void> setSettingMeta(String key, String value, String bike,
+      String category, String setup) async {
+    metadata['$bike/$setup/$category/$key'] = value;
+  }
 }

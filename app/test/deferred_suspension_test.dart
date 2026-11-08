@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/controllers/setups_controller.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
@@ -14,7 +15,7 @@ void main() {
           () async {
         final repository = FakeSetupsRepository();
         repository.information['s'] = {
-          SetupConfiguration.metadataKey: SetupConfiguration({
+          FirestoreKeys.setupConfiguration: SetupConfiguration({
             'FrontTire': ['Pressure'],
             'RearTire': ['Pressure'],
           }).encode(),

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import '../../setups/models/setup_configuration.dart';
 
 /// Reviewable input shared by manual creation and future spec import adapters.
@@ -39,6 +40,6 @@ class BikeCreationDraft {
 
   Map<String, String> toSetupInformation() => {
         ...specifications,
-        SetupConfiguration.metadataKey: configuration.encode(),
+        FirestoreKeys.setupConfiguration: configuration.encode(),
       };
 }

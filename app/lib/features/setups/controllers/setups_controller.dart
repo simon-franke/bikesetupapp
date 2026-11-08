@@ -1,10 +1,10 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'dart:async';
 import '../../../common/controllers/optimistic_edits.dart';
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
 import '../models/setup_configuration.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'setting_save_controller.dart';
-import '../models/category.dart';
 import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
 import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
@@ -26,7 +26,7 @@ class SetupsController extends OperationController {
 
   /// Updates configured fields, treating Tires as both front and rear categories.
   ///
-  /// Disabling a category removes it from the configuration, not its stored values.
+  /// Disabling a category retains its field selection and stored values.
   Future<CommandResult<void>> setCategoryEnabled(
           String bike, String setup, String category, bool enabled,
           {String? suspensionType,
@@ -44,16 +44,18 @@ class SetupsController extends OperationController {
             final configuration =
                 SetupConfiguration.fromInformation(information);
             final fields = <String, List<String>>{
-              ...configuration.fields,
+              ...configuration.storedFields,
             };
+            final disabled = {...configuration.disabledCategories};
             final categories =
                 category == 'Tires' ? ['FrontTire', 'RearTire'] : [category];
 
             for (final key in categories) {
               if (enabled) {
                 fields.putIfAbsent(key, () => addedFields[key] ?? <String>[]);
+                disabled.remove(key);
               } else {
-                fields.remove(key);
+                if (fields.containsKey(key)) disabled.add(key);
               }
             }
 
@@ -62,8 +64,9 @@ class SetupsController extends OperationController {
               ...information,
               if (suspensionType != null)
                 category.toLowerCase(): suspensionType,
-              SetupConfiguration.metadataKey:
-                  SetupConfiguration(fields).encode(),
+              FirestoreKeys.setupConfiguration:
+                  SetupConfiguration(fields, disabledCategories: disabled)
+                      .encode(),
             });
           }));
 
@@ -91,10 +94,8 @@ class SetupsController extends OperationController {
         }
 
         final information = await _repository.getSetupInformation(bike, source);
-        final categories = {
-          ...Category.values.map((category) => category.category),
-          ...SetupConfiguration.fromInformation(information).fields.keys,
-        };
+        final categories =
+            SetupConfiguration.fromInformation(information).storedFields.keys;
 
         for (final category in categories) {
           await _copyCategorySettings(bike, source, id, category);
