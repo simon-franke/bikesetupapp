@@ -20,22 +20,6 @@ flutter run
 
 Firebase configuration stays local and is not committed. The public Strava client ID defaults to the deployed backend's ID; override it with `--dart-define=STRAVA_CLIENT_ID=...` when using a matching backend. Strava authentication keeps `STRAVA_CLIENT_SECRET` in Cloud Secret Manager. Native code exchange uses `stravaExchange` and token renewal uses `stravaRefresh`. Deploy the functions before distributing a client update. `.env` is not loaded or bundled in any build. If a previous build included a client secret, rotate it in Strava and update Cloud Secret Manager.
 
-## Contributing
-
-Run the checks before opening a pull request:
-
-```bash
-flutter analyze --fatal-infos
-flutter test
-(cd ../backend/functions && npm test)
-```
-
-See the [backend guide](../backend/README.md) for Firestore ownership-rule tests and deployment.
-
-GitHub Actions runs Flutter analysis, Flutter tests, Firestore ownership-rule tests, and Strava function tests. CI uses placeholder configuration and does not need Firebase or Strava credentials.
-
-See [AGENTS.md](AGENTS.md) for architecture, development conventions, and deployment details.
-
 ## Layout
 
 The app uses one phone layout at every window size. `PhoneViewport` caps the entire navigator at 480 logical pixels, including routes and bottom sheets. Text scaling and keyboard handling remain enabled.
