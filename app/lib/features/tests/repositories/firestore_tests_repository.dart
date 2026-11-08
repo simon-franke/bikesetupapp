@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import '../../setups/models/setup_configuration.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firebase_operation.dart';
@@ -148,7 +149,7 @@ class FirestoreTestsRepository implements TestsRepository {
               tx.set(
                   parent,
                   {
-                    SetupConfiguration.metadataKey:
+                    FirestoreKeys.setupConfiguration:
                         SetupConfiguration(fields).encode()
                   },
                   SetOptions(merge: true));
@@ -158,7 +159,7 @@ class FirestoreTestsRepository implements TestsRepository {
           if (newSetupId != null) {
             tx.set(_bike(bike).collection('SetupList').doc(newSetupId), {
               ...test.setupInformation,
-              SetupConfiguration.metadataKey: SetupConfiguration({
+              FirestoreKeys.setupConfiguration: SetupConfiguration({
                 ...SetupConfiguration.fromInformation(test.setupInformation)
                     .fields,
                 for (final entry in test.values.entries)

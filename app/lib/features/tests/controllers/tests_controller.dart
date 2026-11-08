@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import '../../../common/controllers/optimistic_edits.dart';
 import '../../setups/models/unit_system.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
@@ -120,7 +121,7 @@ class TestsController extends OperationController {
                 setupInformation: {
                   for (final entry in information.entries)
                     if (entry.value is String) entry.key: entry.value as String,
-                  SetupConfiguration.metadataKey: configuration.encode(),
+                  FirestoreKeys.setupConfiguration: configuration.encode(),
                 },
                 fieldMetadata: readValues(metadata),
                 before: readValues(values),

@@ -1,19 +1,31 @@
 import 'dart:convert';
 
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
+
 /// Required category and field selection for a setup.
 class SetupConfiguration {
-  static const metadataKey = 'setup_fields_v1';
-  final Map<String, List<String>> fields;
+  /// Includes disabled categories so their field selections survive copying.
+  final Map<String, List<String>> storedFields;
+  final Set<String> disabledCategories;
 
-  SetupConfiguration(Map<String, List<String>> fields)
-      : fields = Map.unmodifiable({
+  /// Active fields used by the workspace and experiment snapshots.
+  Map<String, List<String>> get fields => Map.unmodifiable({
+        for (final entry in storedFields.entries)
+          if (!disabledCategories.contains(entry.key)) entry.key: entry.value,
+      });
+
+  SetupConfiguration(Map<String, List<String>> fields,
+      {Set<String> disabledCategories = const {}})
+      : disabledCategories = Set.unmodifiable(disabledCategories),
+        storedFields = Map.unmodifiable({
           for (final entry in fields.entries)
             entry.key: List<String>.unmodifiable(entry.value),
         }) {
-    if (fields.entries.any((entry) =>
-        !isValidCategoryName(entry.key) ||
-        entry.value.any((key) => key.trim().isEmpty || key.length > 100) ||
-        entry.value.toSet().length != entry.value.length)) {
+    if (!fields.keys.toSet().containsAll(disabledCategories) ||
+        fields.entries.any((entry) =>
+            !isValidCategoryName(entry.key) ||
+            entry.value.any((key) => key.trim().isEmpty || key.length > 100) ||
+            entry.value.toSet().length != entry.value.length)) {
       throw const FormatException('Invalid setup field configuration');
     }
   }
@@ -29,22 +41,28 @@ class SetupConfiguration {
       !name.endsWith('_meta') &&
       !name.contains(RegExp(r'[\x00-\x1F]'));
 
-  String encode() => jsonEncode(fields);
+  String encode() => jsonEncode({
+        'fields': storedFields,
+        'disabledCategories': disabledCategories.toList(),
+      });
 
   static SetupConfiguration fromInformation(Map<String, dynamic> information) {
-    final encoded = information[metadataKey];
+    final encoded = information[FirestoreKeys.setupConfiguration];
     if (encoded is! String) {
       throw const FormatException('Invalid setup configuration');
     }
 
     final data = jsonDecode(encoded);
-    if (data is! Map<String, dynamic>) {
+    if (data is! Map<String, dynamic> ||
+        data['fields'] is! Map<String, dynamic> ||
+        data['disabledCategories'] is! List ||
+        (data['disabledCategories'] as List).any((key) => key is! String)) {
       throw const FormatException('Invalid setup configuration');
     }
 
     final fields = <String, List<String>>{};
 
-    for (final entry in data.entries) {
+    for (final entry in (data['fields'] as Map<String, dynamic>).entries) {
       if (entry.value is! List ||
           (entry.value as List).any((field) => field is! String)) {
         throw const FormatException('Invalid setup fields');
@@ -52,6 +70,8 @@ class SetupConfiguration {
       fields[entry.key] = List<String>.from(entry.value as List);
     }
 
-    return SetupConfiguration(fields);
+    return SetupConfiguration(fields,
+        disabledCategories:
+            Set<String>.from(data['disabledCategories'] as List));
   }
 }

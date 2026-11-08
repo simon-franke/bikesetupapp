@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/features/setups/ui/setup_card.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';

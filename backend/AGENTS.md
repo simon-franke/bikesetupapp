@@ -1,9 +1,7 @@
 # Backend development
 
-Use Node 22. Run `npm test` from `functions/`. See `README.md` for the Firestore emulator checks and deployment commands.
+Use the runtime version specified by the project configuration. Run `npm test` from `functions/`. Follow `README.md` for emulator checks and deployment procedures; do not bypass required checks before deployment.
 
-Preserve Firebase UID ownership, single-use OAuth state checks, sign-out cleanup, and the account-deletion marker protections. Keep the Strava secret in Cloud Secret Manager, never in the app or repository.
+Enforce authenticated ownership of user data. Preserve single-use OAuth state checks and sign-out cleanup. Prevent stale writes from recreating data during or after account deletion.
 
-Firebase configuration and rules paths are relative to this directory. CI workflows live in `../.github/workflows/`. After all CI checks pass, pushes to `main` affecting this directory or either CI/deployment workflow deploy Functions and rules. To deploy manually, run `Flutter CI` on `main`; it runs the same checks first.
-
-Deployment workflow: `.github/workflows/deploy.yml` at the repository root. Deployment secret: `FIREBASE_TOKEN`. `STRAVA_CLIENT_SECRET` belongs in Cloud Secret Manager, never client configuration.
+Keep service secrets in managed server-side secret storage, never in the app or repository. Never overwrite existing local configuration or credentials.

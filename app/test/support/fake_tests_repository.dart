@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'dart:async';
 import 'package:bikesetupapp/common/models/command_result.dart';
@@ -110,7 +111,7 @@ SetupTest testExperiment({
       result: result,
       feedback: feedback,
       setupInformation: {
-        SetupConfiguration.metadataKey: SetupConfiguration({
+        FirestoreKeys.setupConfiguration: SetupConfiguration({
           for (final entry in before.entries)
             entry.key: entry.value.keys.toList(),
         }).encode()

@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/unit_system.dart';
 import 'dart:async';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
@@ -302,7 +303,7 @@ void main() {
     final repo = _CachedFirstTests();
     final setups = FakeSetupsRepository();
     setups.information['setup'] = {
-      SetupConfiguration.metadataKey: SetupConfiguration({
+      FirestoreKeys.setupConfiguration: SetupConfiguration({
         'FrontTire': ['Pressure'],
         'Fork': ['Rebound'],
       }).encode(),

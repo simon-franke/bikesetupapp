@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:bikesetupapp/features/tests/models/setup_test.dart';
 import 'support/fake_tests_repository.dart';
 import 'package:bikesetupapp/features/tests/ui/track_time_sheet.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
+import 'package:bikesetupapp/features/tests/ui/experiment_detail_page.dart';
 import 'support/fake_repositories.dart';
 
 SetupTest sample({TestStage stage = TestStage.draft}) => testExperiment(
@@ -55,12 +57,12 @@ void main() {
         value: deps,
         child: MaterialApp(
             theme: AppTheme.darkTheme,
-            home: TestsView(
+            home: ExperimentDetailPage(
                 uid: 'user',
                 bike: 'bike',
                 setup: 'setup',
                 setupName: 'Default',
-                initialTest: repo.records['test']))));
+                initialTest: repo.records['test']!))));
     await tester.pumpAndSettle();
     expect(find.text('Discard experiment'), findsNothing);
     await tester.tap(find.byTooltip('Experiment options'));
@@ -157,7 +159,7 @@ void main() {
       'GeneralSettings': ['Stem length', 'Seat Height'],
     });
     setups.information['setup'] = {
-      SetupConfiguration.metadataKey: configuration.encode()
+      FirestoreKeys.setupConfiguration: configuration.encode()
     };
     setups.settings['bike/setup/Fork/Spring Rate'] = '65 N/mm';
     setups.metadata['bike/setup/Fork/Serial'] = 'freeText';
@@ -166,7 +168,7 @@ void main() {
     expect(result.isSuccess, isTrue);
     final draft = repo.records.values.single;
     final restored = SetupTest.fromMap(draft.copyWith(name: 'Renamed').toMap());
-    expect(restored.setupInformation[SetupConfiguration.metadataKey],
+    expect(restored.setupInformation[FirestoreKeys.setupConfiguration],
         configuration.encode());
     expect(restored.fieldMetadata['Fork']!['Serial'], 'freeText');
     expect(draft.values.keys.toSet(), configuration.fields.keys.toSet());

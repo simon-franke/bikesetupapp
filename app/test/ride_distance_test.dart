@@ -5,7 +5,7 @@ import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/features/rides/models/ride.dart';
 import 'package:bikesetupapp/features/rides/controllers/rides_controller.dart';
 import 'package:bikesetupapp/features/rides/repositories/rides_repository.dart';
-import 'package:bikesetupapp/features/rides/ui/ride_log_page.dart';
+import 'package:bikesetupapp/features/rides/ui/manual_ride_form.dart';
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';

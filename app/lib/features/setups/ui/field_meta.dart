@@ -177,18 +177,18 @@ final Map<String, FieldMeta> kFieldMeta = {
   ),
 };
 
-// Single source of truth for per-category field configuration.
-// defaultKeys doubles as requiredKeys: required fields cannot be deleted.
-class _CategoryConfig {
+/// Suggested starting fields for a built-in category, not a closed category set.
+class CategoryPreset {
+  final String? label;
   final List<String> defaultKeys;
   final List<String> suggestedKeys;
 
-  const _CategoryConfig(
-      {required this.defaultKeys, this.suggestedKeys = const []});
+  const CategoryPreset(
+      {this.label, required this.defaultKeys, this.suggestedKeys = const []});
 }
 
-const Map<String, _CategoryConfig> _kCategoryConfigs = {
-  'Fork': _CategoryConfig(
+const Map<String, CategoryPreset> categoryPresets = {
+  'Fork': CategoryPreset(
     defaultKeys: [
       'Pressure',
       'Low Speed Rebound',
@@ -206,7 +206,7 @@ const Map<String, _CategoryConfig> _kCategoryConfigs = {
       'Spring Rate'
     ],
   ),
-  'Shock': _CategoryConfig(
+  'Shock': CategoryPreset(
     defaultKeys: ['Pressure', 'Rebound', 'Compression', 'Tokens'],
     suggestedKeys: [
       'Sag',
@@ -216,23 +216,24 @@ const Map<String, _CategoryConfig> _kCategoryConfigs = {
       'Low Speed Compression'
     ],
   ),
-  'FrontTire': _CategoryConfig(defaultKeys: ['Pressure']),
-  'RearTire': _CategoryConfig(defaultKeys: ['Pressure']),
-  'Frame': _CategoryConfig(defaultKeys: frameFields),
-  'Cockpit': _CategoryConfig(defaultKeys: cockpitFields),
-  'Saddle': _CategoryConfig(defaultKeys: saddleFields),
-  'GeneralSettings': _CategoryConfig(
+  'FrontTire': CategoryPreset(label: 'Front tire', defaultKeys: ['Pressure']),
+  'RearTire': CategoryPreset(label: 'Rear tire', defaultKeys: ['Pressure']),
+  'Frame': CategoryPreset(defaultKeys: frameFields),
+  'Cockpit': CategoryPreset(defaultKeys: cockpitFields),
+  'Saddle': CategoryPreset(defaultKeys: saddleFields),
+  'GeneralSettings': CategoryPreset(
+      label: 'Bike fit',
       defaultKeys: ['Reach', 'Stack Height', 'Seat Height'],
       suggestedKeys: [...cockpitFields, ...saddleFields]),
 };
 
-// Public derived views: callers use these unchanged.
+// Field suggestions remain available to existing editors.
 final Map<String, List<String>> kDefaultFieldKeys = {
-  for (final e in _kCategoryConfigs.entries) e.key: e.value.defaultKeys,
+  for (final e in categoryPresets.entries) e.key: e.value.defaultKeys,
 };
 
 final Map<String, List<String>> kSuggestedFieldKeys = {
-  for (final e in _kCategoryConfigs.entries) e.key: e.value.suggestedKeys,
+  for (final e in categoryPresets.entries) e.key: e.value.suggestedKeys,
 };
 
 const cockpitFields = [
@@ -256,3 +257,6 @@ List<String> suspensionFields(String spring, Iterable<String> adjusters) => [
     ];
 
 const frameFields = ['Flip chip', 'Headset cups'];
+
+String categoryLabel(String category) =>
+    categoryPresets[category]?.label ?? category;

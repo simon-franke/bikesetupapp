@@ -5,7 +5,7 @@ import 'package:bikesetupapp/features/maintenance/models/service_component.dart'
 import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
 import 'package:bikesetupapp/features/strava/ui/mileage_banner.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_component_card.dart';
-import 'package:bikesetupapp/features/maintenance/ui/service_components_list.dart';
+import 'package:bikesetupapp/features/maintenance/ui/service_schedule.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

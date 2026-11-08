@@ -1,26 +1,16 @@
+import 'setup_workspace.dart';
+import 'workspace_header.dart';
 import 'package:bikesetupapp/common/ui/app_loading.dart';
-import 'package:bikesetupapp/common/ui/app_haptics.dart';
-import 'package:bikesetupapp/features/setups/ui/add_category_sheet.dart';
-import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
-import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
-import 'package:bikesetupapp/common/ui/app_glass_surface.dart';
-import 'package:bikesetupapp/common/ui/app_scroll_edge.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'workspace_transition.dart';
-import 'workspace_activity_title.dart';
 import '../../rides/ui/ride_log_page.dart';
-import 'package:bikesetupapp/features/setups/ui/setup_category_view.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../controllers/workspace_controller.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/settings/ui/settings_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
-import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/ui/bike_chooser_sheet.dart';
-import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
 import 'package:bikesetupapp/features/tests/ui/tests_view.dart';
 import 'package:bikesetupapp/features/maintenance/ui/services_view.dart';
 import 'package:bikesetupapp/features/workspace/ui/view_toggle.dart';
@@ -130,258 +120,32 @@ class _MyHomePageState extends State<MyHomePage> {
         () => _workspace.selectBike(bikeName, uBikeID, setupName, uSetupID));
   }
 
-  Widget _buildSetupView(BuildContext context, double contentWidth,
-          SetupConfiguration configuration) =>
-      SetupOverview(
-          key: ValueKey('$_uBikeID/$_uSetupID'),
-          user: widget.user!,
-          bike: _uBikeID,
-          setup: _uSetupID,
-          configuration: configuration,
-          onAddCategory: () => _addCategory(configuration),
-          onCategory: (category) => _openCategory(category, configuration));
-
-  Future<bool> _changeCategory(String category, bool enabled,
-      {String? suspensionType}) async {
-    final saved = await presentCommand(
-        context,
-        () => AppDependencies.of(context)
-                .forUser(widget.user!.uid)
-                .setups
-                .setCategoryEnabled(
-              _uBikeID,
-              _uSetupID,
-              category,
-              enabled,
-              suspensionType: suspensionType,
-              addedFields: {
-                ...kDefaultFieldKeys,
-                if (suspensionType != null)
-                  category: suspensionFields(
-                      suspensionType, ['Rebound', 'Compression']),
-              },
-            ));
-    if (saved && mounted) {
-      _configurationScope = '';
-      _bindConfiguration();
-      _workspace.selectView(_activeView);
-    }
-
-    return saved;
+  Future<SetupConfiguration?> _reloadConfiguration() {
+    _configurationScope = '';
+    _bindConfiguration();
+    _workspace.selectView(_activeView);
+    return _configurationFuture;
   }
 
-  Future<void> _addCategory(SetupConfiguration configuration) async {
-    final active = configuration.fields.keys.toSet();
-    final category = await showAddCategorySheet(context, active);
-    if (category == null || !mounted) return;
-
-    String? suspensionType;
-    if (category == 'Fork' || category == 'Shock') {
-      suspensionType = await showSuspensionTypeSheet(context, category);
-      if (suspensionType == null || !mounted) return;
-    }
-
-    if (await _changeCategory(category, true, suspensionType: suspensionType) &&
-        mounted) {
-      final configuration = await _configurationFuture;
-      if (mounted && configuration != null) {
-        _openCategory(category, configuration);
-      }
-    }
-  }
-
-  Future<void> _categoryOptions(
-      BuildContext routeContext, String category) async {
-    final action = await showAppOptionsSheet(
-      context: routeContext,
-      title: categoryLabel(category),
-      entries: const [
-        AppSheetOption(
-            value: 'remove',
-            label: 'Remove category',
-            icon: CupertinoIcons.trash,
-            destructive: true)
-      ],
-    );
-    if (action != 'remove' || !routeContext.mounted) return;
-
-    final confirmed = await showDeleteConfirmationSheet(
-      routeContext,
-      title: 'Remove ${categoryLabel(category)}?',
-      message: 'Saved settings are kept if you add it again.',
-      actionLabel: 'Remove',
-    );
-    if (!confirmed || !mounted || !routeContext.mounted) return;
-
-    if (await _changeCategory(category, false) && routeContext.mounted) {
-      Navigator.of(routeContext).pop();
-    }
-  }
-
-  void _openCategory(String category, SetupConfiguration configuration) {
-    _contentNavigator.currentState!.push(AppRoutes.fadeSlide(Builder(
-        builder: (routeContext) => Scaffold(
-              extendBody: true,
-              appBar: _buildAppBar(routeContext, category: category),
-              body: AppScrollEdge(
-                  child: SetupCategoryView(
-                      user: widget.user!,
-                      bike: _uBikeID,
-                      setup: _uSetupID,
-                      category: category,
-                      configuration: configuration)),
-            ))));
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context, {String? category}) {
-    final p = context.palette;
-    if (category != null) {
-      return buildDetailAppBar(context,
-          title: categoryLabel(category),
-          actions: [
-            IconButton(
-              tooltip: 'Category options',
-              icon: const Icon(CupertinoIcons.ellipsis),
-              onPressed:
-                  AppHaptics.wrap(() => _categoryOptions(context, category)),
-            )
-          ]);
-    }
-
-    return PreferredSize(
-      preferredSize: Size.fromHeight(
-          math.max(104, MediaQuery.textScalerOf(context).scale(28) * 2.6 + 24)),
-      child: Stack(
-        clipBehavior: Clip.none,
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [p.bg, p.bg, p.bg.withValues(alpha: 0)],
-                    stops: const [0, .7, 1],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
-              bottom: false,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: AppGlassSurface(
-                      child: Row(children: [
-                    Expanded(
-                        child: Material(
-                      color: p.ink.withValues(alpha: .07),
-                      borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(25),
-                        onTap: AppHaptics.wrap(_showBikeSelector),
-                        child: Semantics(
-                          button: true,
-                          label: _activeView == ActiveView.services
-                              ? 'Choose bike'
-                              : 'Choose bike and setup',
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                    minHeight: MediaQuery.textScalerOf(context)
-                                                .scale(24) *
-                                            1.4 +
-                                        MediaQuery.textScalerOf(context)
-                                                .scale(12) *
-                                            1.4 +
-                                        2),
-                                child: Row(children: [
-                                  Expanded(
-                                      child: WorkspaceActivityTitle(
-                                    key: ValueKey(
-                                        'activity_${widget.user?.uid}/$_uBikeID'),
-                                    uid: widget.user?.uid,
-                                    bikeId: _uBikeID,
-                                    mileageKm: _workspace.mileageKm,
-                                    bikeName: _bikeName,
-                                    setupName: _setupName,
-                                    bikeOnly:
-                                        _activeView == ActiveView.services,
-                                  )),
-                                  const SizedBox(width: 8),
-                                  Icon(CupertinoIcons.chevron_down,
-                                      color: p.inkMuted,
-                                      size: AppIconSizes.compact),
-                                ])),
-                          ),
-                        ),
-                      ),
-                    )),
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(
-                          end: _activeView == ActiveView.services ? 1 : 0),
-                      duration: MediaQuery.disableAnimationsOf(context)
-                          ? Duration.zero
-                          : const Duration(milliseconds: 280),
-                      curve: Curves.easeInOutCubic,
-                      builder: (context, progress, child) => ClipRect(
-                        child: Align(
-                          widthFactor: progress,
-                          heightFactor: 1,
-                          child: IgnorePointer(
-                            ignoring: _activeView != ActiveView.services,
-                            child: ExcludeSemantics(
-                              excluding: _activeView != ActiveView.services,
-                              child: Opacity(
-                                  opacity: progress,
-                                  child: Transform.scale(
-                                      scale: .8 + .2 * progress, child: child)),
-                            ),
-                          ),
-                        ),
-                      ),
-                      child: IconButton(
-                        tooltip: 'Ride activity',
-                        icon: Icon(Icons.auto_stories_outlined,
-                            size: AppIconSizes.control, color: p.inkMuted),
-                        onPressed: () async {
-                          await Navigator.of(context).push(AppRoutes.fadeSlide(
-                              RideLogPage(
-                                  uid: widget.user!.uid,
-                                  bikeId: _uBikeID,
-                                  bikeName: _bikeName)));
-                          if (context.mounted) {
-                            presentCommand(context, _workspace.loadMileage);
-                          }
-                        },
-                      ),
-                    ),
-                    Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: IconButton(
-                          tooltip: 'Settings',
-                          icon: const Icon(CupertinoIcons.gear_alt,
-                              size: AppIconSizes.control),
-                          onPressed: () =>
-                              Navigator.of(context, rootNavigator: true).push(
-                                  AppRoutes.fadeSlide(SettingsPage(
-                                      bikeName: _bikeName,
-                                      chosenSetup: _setupName))),
-                        )),
-                  ])),
-                ),
-              )),
-        ],
-      ),
-    );
-  }
+  PreferredSizeWidget _buildAppBar(BuildContext context) => WorkspaceHeader(
+        height: math.max(
+            104, MediaQuery.textScalerOf(context).scale(28) * 2.6 + 24),
+        uid: widget.user?.uid,
+        bikeId: _uBikeID,
+        bikeName: _bikeName,
+        setupName: _setupName,
+        mileageKm: _workspace.mileageKm,
+        activeView: _activeView,
+        onChooseBike: _showBikeSelector,
+        onRideActivity: () async {
+          await Navigator.of(context).push(AppRoutes.fadeSlide(RideLogPage(
+              uid: widget.user!.uid, bikeId: _uBikeID, bikeName: _bikeName)));
+          if (context.mounted) presentCommand(context, _workspace.loadMileage);
+        },
+        onSettings: () => Navigator.of(context, rootNavigator: true).push(
+            AppRoutes.fadeSlide(
+                SettingsPage(bikeName: _bikeName, chosenSetup: _setupName))),
+      );
 
   void _showBikeSelector() {
     final user = widget.user;
@@ -402,9 +166,12 @@ class _MyHomePageState extends State<MyHomePage> {
     if (widget.user == null) return const SizedBox.shrink();
 
     return FutureBuilder<SetupConfiguration?>(
+      key: ValueKey('${widget.user!.uid}/$_uBikeID/$_uSetupID'),
       future: _configurationFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        // Keep category actions mounted while refreshing the same setup.
+        if (snapshot.connectionState != ConnectionState.done &&
+            !snapshot.hasData) {
           return const Center(child: AppLoadingState());
         }
 
@@ -433,7 +200,14 @@ class _MyHomePageState extends State<MyHomePage> {
       child: _activeView == ActiveView.setup
           ? KeyedSubtree(
               key: ValueKey('setup_$_uBikeID'),
-              child: _buildSetupView(context, contentWidth, configuration),
+              child: SetupWorkspace(
+                  key: ValueKey('$_uBikeID/$_uSetupID'),
+                  user: widget.user!,
+                  bike: _uBikeID,
+                  setup: _uSetupID,
+                  configuration: configuration,
+                  navigatorKey: _contentNavigator,
+                  reloadConfiguration: _reloadConfiguration),
             )
           : _activeView == ActiveView.tests
               ? TestsView(

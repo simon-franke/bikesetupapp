@@ -1,3 +1,4 @@
+import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -104,8 +105,9 @@ void main() {
   test('invalid configuration is rejected before writing any values', () async {
     final setups = FakeSetupsRepository();
     await expectLater(
-        SetupCreationService(setups).create('bike', 'setup', 'Default',
-            {SetupConfiguration.metadataKey: '{"Invalid/path": ["Pressure"]}'}),
+        SetupCreationService(setups).create('bike', 'setup', 'Default', {
+          FirestoreKeys.setupConfiguration: '{"Invalid/path": ["Pressure"]}'
+        }),
         throwsFormatException);
     expect(setups.settings, isEmpty);
     expect(setups.names, isEmpty);

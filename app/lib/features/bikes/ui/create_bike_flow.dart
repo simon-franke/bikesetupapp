@@ -1,10 +1,11 @@
+import 'onboarding_adjuster_selector.dart';
+import 'onboarding_tracking_part.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/ui/app_value_button.dart';
-import '../../setups/ui/control_panel_grid.dart';
+import '../../setups/ui/setting_stepper_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_flow.dart';
 import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'dart:math' as math;
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -15,7 +16,6 @@ import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import '../models/bike_creation_draft.dart';
 import 'bike_onboarding_state.dart';
 import 'frame_settings.dart';
-import 'adjuster_dial.dart';
 
 class CreateBikeFlow extends StatefulWidget {
   const CreateBikeFlow(
@@ -129,179 +129,15 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
         ),
       );
 
-  Widget adjuster(String label, Set<String> selected) {
-    final low = 'Low Speed $label', high = 'High Speed $label';
-    final mode = selected.contains(label)
-        ? 'Single'
-        : selected.contains(low) || selected.contains(high)
-            ? 'Low / high speed'
-            : 'None';
-    Widget choice(String value, String title, int count) => Semantics(
-        selected: mode == value,
-        child: AppSelectionSurface(
-            selected: mode == value,
-            child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                    animationDuration: MediaQuery.disableAnimationsOf(context)
-                        ? Duration.zero
-                        : const Duration(milliseconds: 220),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    side: mode == value
-                        ? BorderSide(color: context.palette.accentText)
-                        : BorderSide.none,
-                    backgroundColor:
-                        mode == value ? Colors.transparent : context.palette.bg,
-                    foregroundColor: mode == value
-                        ? context.palette.accentText
-                        : context.palette.ink,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14))),
-                onPressed: () => setState(() {
-                      selected.removeAll([label, low, high]);
-                      if (value == 'Single') selected.add(label);
-                      if (value == 'Low / high speed') {
-                        selected.addAll([low, high]);
-                      }
-                    }),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  AdjusterDial(selected: mode == value, count: count),
-                  const SizedBox(height: 6),
-                  Text(title,
-                      textAlign: TextAlign.center, style: AppTextStyles.label),
-                  const SizedBox(height: 8),
-                  Icon(
-                      mode == value
-                          ? CupertinoIcons.checkmark_circle_fill
-                          : CupertinoIcons.circle,
-                      size: AppIconSizes.compact,
-                      color: mode == value
-                          ? context.palette.accentText
-                          : context.palette.inkDim),
-                ]))));
-
-    return Padding(
-        padding: const EdgeInsets.only(bottom: 28),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(label,
-              style: AppTextStyles.label.copyWith(color: context.palette.ink)),
-          const SizedBox(height: 14),
-          LayoutBuilder(builder: (context, constraints) {
-            final choices = [
-              choice('None', 'None', 0),
-              choice('Single', 'One dial', 1),
-              choice('Low / high speed', 'Low + high', 2)
-            ];
-            if (MediaQuery.textScalerOf(context).scale(13) > 20 ||
-                constraints.maxWidth < 300) {
-              return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final item in choices)
-                      Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: item)
-                  ]);
-            }
-
-            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: choices[0]),
-              const SizedBox(width: 8),
-              Expanded(child: choices[1]),
-              const SizedBox(width: 8),
-              Expanded(child: choices[2]),
-            ]);
-          }),
-        ]));
-  }
-
-  Widget trackingPart(String title, String detail, bool selected,
-      {ValueChanged<bool>? onChanged,
-      String? spring,
-      ValueChanged<String>? onSpringChanged}) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Semantics(
+  Widget adjuster(String label, Set<String> selected) =>
+      OnboardingAdjusterSelector(
+          label: label,
           selected: selected,
-          button: onChanged != null,
-          child: InkWell(
-            onTap: onChanged == null ? null : () => onChanged(!selected),
-            child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                child: Row(children: [
-                  Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text(title,
-                            style: AppTextStyles.label
-                                .copyWith(color: context.palette.ink)),
-                        if (detail.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(detail,
-                              style: AppTextStyles.caption
-                                  .copyWith(color: context.palette.inkMuted)),
-                        ],
-                      ])),
-                  const SizedBox(width: 16),
-                  if (onChanged == null)
-                    Text('Included',
-                        style: AppTextStyles.caption
-                            .copyWith(color: context.palette.inkMuted))
-                  else
-                    Icon(
-                        selected
-                            ? CupertinoIcons.checkmark_circle_fill
-                            : CupertinoIcons.circle,
-                        size: AppIconSizes.control,
-                        color: selected
-                            ? context.palette.accentText
-                            : context.palette.inkDim),
-                ])),
-          )),
-      if (spring != null)
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: selected ? 1 : 0, end: selected ? 1 : 0),
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 240),
-          curve: Curves.easeInOutCubic,
-          builder: (context, value, child) => ClipRect(
-              child: Align(
-                  alignment: Alignment.topCenter,
-                  heightFactor: value,
-                  child: SizedBox(
-                      width: double.infinity,
-                      child: Opacity(opacity: value, child: child)))),
-          child: ExcludeSemantics(
-              excluding: !selected,
-              child: IgnorePointer(
-                  ignoring: !selected,
-                  child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                      child: CupertinoSlidingSegmentedControl<String>(
-                        groupValue: spring == 'Coil' ? 'Coil' : 'Air',
-                        backgroundColor: context.palette.surface,
-                        thumbColor: context.palette.accent,
-                        children: {
-                          for (final type in ['Air', 'Coil'])
-                            type: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 16),
-                                child: Text(type,
-                                    style: AppTextStyles.body.copyWith(
-                                        color: spring == type
-                                            ? context.palette.accentInk
-                                            : context.palette.inkMuted)))
-                        },
-                        onValueChanged: (value) {
-                          if (value != null) onSpringChanged!(value);
-                        },
-                      )))),
-        ),
-    ]);
-  }
+          onChanged: (value) => setState(() {
+                selected
+                  ..clear()
+                  ..addAll(value);
+              }));
 
   Widget note(String text) => AppFlowHeading(text);
 
@@ -379,7 +215,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                 color: context.palette.bg,
                 borderRadius: BorderRadius.circular(18)),
             child: Column(children: [
-              trackingPart('Suspension fork', '', flow.fork != 'None',
+              OnboardingTrackingPart('Suspension fork', '', flow.fork != 'None',
                   onChanged: (enabled) => setState(() {
                         if (!enabled) flow.lastForkSpring = flow.fork;
                         flow.fork = enabled ? flow.lastForkSpring : 'None';
@@ -392,7 +228,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                   indent: 18,
                   endIndent: 18,
                   color: context.palette.border),
-              trackingPart('Rear shock', '', flow.shock != 'None',
+              OnboardingTrackingPart('Rear shock', '', flow.shock != 'None',
                   onChanged: (enabled) => setState(() {
                         if (!enabled) flow.lastShockSpring = flow.shock;
                         flow.shock = enabled ? flow.lastShockSpring : 'None';
@@ -405,7 +241,7 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                   indent: 18,
                   endIndent: 18,
                   color: context.palette.border),
-              trackingPart(
+              OnboardingTrackingPart(
                   'Cockpit', 'Stem, spacers and bar position', flow.cockpit,
                   onChanged: (value) => setState(() => flow.cockpit = value)),
               Divider(
@@ -413,14 +249,16 @@ class _CreateBikeFlowState extends State<CreateBikeFlow> {
                   indent: 18,
                   endIndent: 18,
                   color: context.palette.border),
-              trackingPart('Saddle', 'Height, setback and tilt', flow.saddle,
+              OnboardingTrackingPart(
+                  'Saddle', 'Height, setback and tilt', flow.saddle,
                   onChanged: (value) => setState(() => flow.saddle = value)),
               Divider(
                   height: 1,
                   indent: 18,
                   endIndent: 18,
                   color: context.palette.border),
-              trackingPart('Frame', 'Flip chip and headset cups', flow.frame,
+              OnboardingTrackingPart(
+                  'Frame', 'Flip chip and headset cups', flow.frame,
                   onChanged: (value) => setState(() => flow.frame = value)),
             ])),
       ] else if (flow.currentStep.kind == OnboardingStepKind.controls) ...[

@@ -1,5 +1,5 @@
 # Strava integration
 
-- Native OAuth and refresh use `stravaExchange` and `stravaRefresh` in `backend/functions/` at the repository root. `STRAVA_CLIENT_SECRET` stays in Cloud Secret Manager; never bundle it in the client.
-- Credentials belong to a Firebase UID. Preserve single-use OAuth state checks and sign-out cleanup; responses from a superseded session must not save credentials.
-- Historical mileage requires `activity:read_all`. Credentials without that scope require reconnection, not a zero-mileage fallback.
+- Keep OAuth client secrets server-side in managed secret storage, never in the client or repository.
+- Scope credentials to the authenticated user. Preserve single-use OAuth state checks and sign-out cleanup; responses from a superseded session must not save credentials.
+- Require the permissions needed for historical mileage. If permissions are missing, request reconnection rather than silently reporting zero mileage.

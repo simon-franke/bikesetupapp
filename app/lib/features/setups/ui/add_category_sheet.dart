@@ -4,35 +4,33 @@ import 'package:flutter/material.dart';
 import '../../../common/ui/app_components.dart';
 import '../../../common/ui/app_sheet.dart';
 import '../models/setup_configuration.dart';
-import 'setup_overview.dart';
+import 'field_meta.dart';
 
-const _categories = [
+// Tires is a single presentation group for the two stored tire categories.
+final _categories = [
   'Tires',
-  'Fork',
-  'Shock',
-  'Cockpit',
-  'Saddle',
-  'Frame',
-  'GeneralSettings'
+  ...categoryPresets.keys
+      .where((key) => key != 'FrontTire' && key != 'RearTire'),
 ];
 
-Future<String?> showAddCategorySheet(
-    BuildContext context, Set<String> active) async {
+Future<String?> showAddCategorySheet(BuildContext context, Set<String> active,
+    {Set<String> retained = const {}}) async {
   ModalRoute<dynamic>? route;
   final result = await showAppSheet<String>(
       context: context,
       builder: (context) {
         route = ModalRoute.of(context);
-        return _AddCategorySheet(active: active);
+        return _AddCategorySheet(active: active, retained: retained);
       });
   await route?.completed;
   return result;
 }
 
 class _AddCategorySheet extends StatefulWidget {
-  const _AddCategorySheet({required this.active});
+  const _AddCategorySheet({required this.active, required this.retained});
 
   final Set<String> active;
+  final Set<String> retained;
 
   @override
   State<_AddCategorySheet> createState() => _AddCategorySheetState();
@@ -43,12 +41,16 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
   bool custom = false;
   String? error;
 
-  List<String> get suggestions => _categories
-      .where((key) => key == 'Tires'
-          ? !widget.active.contains('FrontTire') ||
-              !widget.active.contains('RearTire')
-          : !widget.active.contains(key))
-      .toList();
+  List<String> get suggestions => {
+        ..._categories,
+        ...widget.retained
+            .where((key) => key != 'FrontTire' && key != 'RearTire')
+      }
+          .where((key) => key == 'Tires'
+              ? !widget.active.contains('FrontTire') ||
+                  !widget.active.contains('RearTire')
+              : !widget.active.contains(key))
+          .toList();
 
   @override
   void dispose() {
@@ -60,6 +62,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
     final value = name.text.trim();
     final existing = {
       ...widget.active,
+      ...widget.retained,
       ..._categories,
       'FrontTire',
       'RearTire',

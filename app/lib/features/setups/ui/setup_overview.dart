@@ -1,5 +1,5 @@
+import 'setup_card.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import '../models/setup_configuration.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,34 +8,6 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'field_meta.dart';
 import 'setting_display.dart';
-
-String categoryLabel(String category) => switch (category) {
-      'FrontTire' => 'Front tire',
-      'RearTire' => 'Rear tire',
-      'GeneralSettings' => 'Bike fit',
-      _ => category,
-    };
-
-class SetupCard extends StatelessWidget {
-  const SetupCard(
-      {super.key, required this.child, this.padding = 20, this.onTap});
-
-  final double padding;
-  final Widget child;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(19),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-              onTap: AppHaptics.wrap(onTap),
-              child: Padding(padding: EdgeInsets.all(padding), child: child))));
-}
 
 class SetupOverview extends StatelessWidget {
   const SetupOverview(

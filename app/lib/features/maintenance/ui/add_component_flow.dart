@@ -1,7 +1,7 @@
+import 'service_component_form_state.dart';
 import 'package:bikesetupapp/common/ui/app_loading.dart';
 import '../models/service_component.dart';
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
-import '../models/service_icon.dart';
 import 'service_icon_picker.dart';
 import 'package:bikesetupapp/common/ui/app_unit_selector.dart';
 import 'package:bikesetupapp/common/ui/app_value_button.dart';
@@ -99,134 +99,42 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
     );
   }
 
-  ComponentType? _selectedType;
-  ServiceIcon _customIcon = ServiceIcon.tools;
+  final form = ServiceComponentFormState();
   int _step = 0;
-  final Map<ComponentType,
-      (String, String, String, bool, ServiceIcon, String, String)> _drafts = {};
-  String _kmInterval = '', _hourInterval = '';
   bool _saving = false;
-  bool _hours = false, _includeIndoor = false;
-  String? _error, _nameError, _intervalError, _usageError;
-  bool _submitted = false;
-  final _initialHours = TextEditingController(text: '0');
-  final _initialKm = TextEditingController(text: '0');
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _intervalController = TextEditingController();
+  String? _error;
 
   @override
   void dispose() {
-    _initialHours.dispose();
-    _initialKm.dispose();
-    _nameController.dispose();
-    _intervalController.dispose();
+    form.dispose();
     super.dispose();
   }
 
-  void _onTypeSelected(ComponentType type) {
-    if (_selectedType != null) {
-      _rememberInterval();
-      _drafts[_selectedType!] = (
-        _nameController.text,
-        _kmInterval,
-        _hourInterval,
-        _hours,
-        _customIcon,
-        _initialHours.text,
-        _initialKm.text,
-      );
-    }
+  void _onTypeSelected(ComponentType type) => setState(() {
+        form.selectType(type);
+        _error = null;
+        _step = 1;
+      });
 
-    final draft = _drafts[type];
-    setState(() {
-      _submitted = false;
-      _nameError = _intervalError = _usageError = null;
-      _selectedType = type;
-      _customIcon = draft?.$5 ?? ServiceIcon.forType(type);
-      _initialHours.text = draft?.$6 ?? '0';
-      _initialKm.text = draft?.$7 ?? '0';
-      _nameController.text =
-          draft?.$1 ?? (type == ComponentType.other ? '' : type.label);
-      _kmInterval = draft?.$2 ?? '';
-      _hourInterval = draft?.$3 ?? '';
-      _hours = draft?.$4 ??
-          (type == ComponentType.forkServiceLower ||
-              type == ComponentType.forkServiceFull ||
-              type == ComponentType.shockService);
-      _intervalController.text = _hours ? _hourInterval : _kmInterval;
-      _error = null;
-      _step = 1;
-    });
-  }
-
-  void _rememberInterval() {
-    if (_hours) {
-      _hourInterval = _intervalController.text;
-    } else {
-      _kmInterval = _intervalController.text;
-    }
-  }
-
-  void _changeUnit(bool hours) {
-    _rememberInterval();
-    setState(() {
-      _hours = hours;
-      _intervalController.text = hours ? _hourInterval : _kmInterval;
-      _error = null;
-    });
-    if (_submitted) _validateInterval();
-  }
-
-  bool _validateInterval() {
-    final interval = double.tryParse(_intervalController.text.trim());
-    final usageText = (_hours ? _initialHours : _initialKm).text.trim();
-    final usage = usageText.isEmpty
-        ? 0.0
-        : double.tryParse(usageText.replaceAll(',', '.'));
-    setState(() {
-      _submitted = true;
-      _nameError = _nameController.text.trim().isEmpty
-          ? 'Enter a component name.'
-          : null;
-      _intervalError = interval == null ||
-              !interval.isFinite ||
-              interval <= 0 ||
-              (!_hours && interval % 1 != 0)
-          ? (_hours
-              ? 'Enter the riding time between services.'
-              : 'Enter the distance between services.')
-          : null;
-      _usageError = usage == null || !usage.isFinite || usage < 0
-          ? 'Enter how much it has already been used, or leave it blank.'
-          : null;
-    });
-
-    return _nameError == null && _intervalError == null && _usageError == null;
-  }
+  void _changeUnit(bool hours) => setState(() {
+        form.changeUnit(hours);
+        _error = null;
+      });
 
   void _revalidate(String _) {
-    if (_submitted) _validateInterval();
+    if (form.submitted) setState(form.validate);
   }
 
   Future<void> _onSave() async {
-    if (_saving || _selectedType == null) return;
+    if (_saving || form.selectedType == null) return;
 
-    final name = _nameController.text.trim();
-    final interval = double.tryParse(_intervalController.text.trim()) ?? 0;
-    final initialText = (_hours ? _initialHours : _initialKm).text.trim();
-    final initial = initialText.isEmpty
-        ? 0.0
-        : double.tryParse(initialText.replaceAll(',', '.')) ?? -1;
-    if (name.isEmpty ||
-        !interval.isFinite ||
-        interval <= 0 ||
-        (!_hours && interval != interval.roundToDouble()) ||
-        !initial.isFinite ||
-        initial < 0) {
-      setState(() => _error =
-          'Enter zero or more ${_hours ? 'hours' : 'kilometres'} already used.');
-      return;
-    }
+    bool valid = false;
+    setState(() => valid = form.validate());
+    if (!valid) return;
+
+    final name = form.nameController.text.trim();
+    final interval = form.interval;
+    final initial = form.initialUsage;
 
     setState(() {
       _saving = true;
@@ -237,14 +145,14 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
         context,
         () => db.maintenance.createComponent(
             bikeId: widget.bikeId,
-            type: _selectedType!,
-            customIcon: _customIcon,
+            type: form.selectedType!,
+            customIcon: form.customIcon,
             name: name,
-            serviceIntervalKm: _hours ? 0 : interval.toInt(),
-            serviceIntervalHours: _hours ? interval : null,
-            initialRideHours: _hours ? initial : 0,
-            initialDistanceKm: _hours ? 0 : initial,
-            includeIndoorRides: _includeIndoor,
+            serviceIntervalKm: form.hours ? 0 : interval.toInt(),
+            serviceIntervalHours: form.hours ? interval : null,
+            initialRideHours: form.hours ? initial : 0,
+            initialDistanceKm: form.hours ? 0 : initial,
+            includeIndoorRides: form.includeIndoor,
             currentMileageKm: widget.currentMileageKm),
         onFailure: (message) => setState(() => _error = message));
     if (!mounted) return;
@@ -306,22 +214,22 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                                                           14))),
                                           icon: ServiceComponentIcon(
                                               type: ComponentType.other,
-                                              customIcon: _customIcon,
+                                              customIcon: form.customIcon,
                                               color: p.ink),
                                           onPressed: () async {
                                             final icon = await pickServiceIcon(
-                                                context, _customIcon);
+                                                context, form.customIcon);
                                             if (mounted && icon != null) {
                                               setState(
-                                                  () => _customIcon = icon);
+                                                  () => form.customIcon = icon);
                                             }
                                           }),
                                       const SizedBox(width: 10),
                                       Expanded(
                                           child: AppTextField(
-                                              controller: _nameController,
+                                              controller: form.nameController,
                                               hint: 'Component name',
-                                              errorText: _nameError,
+                                              errorText: form.nameError,
                                               onChanged: _revalidate)),
                                     ])),
                                 const SizedBox(height: 24),
@@ -329,14 +237,14 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                                     label: 'Service every',
                                     child: AppTextField(
                                         key: const ValueKey('service-interval'),
-                                        controller: _intervalController,
-                                        errorText: _intervalError,
+                                        controller: form.intervalController,
+                                        errorText: form.intervalError,
                                         onChanged: _revalidate,
-                                        hint: _hours
+                                        hint: form.hours
                                             ? 'Manufacturer’s interval'
                                             : 'Distance between services',
                                         suffixWidget: AppUnitSelector(
-                                            value: _hours ? 'h' : 'km',
+                                            value: form.hours ? 'h' : 'km',
                                             options: const [
                                               AppUnitOption(
                                                   'km', 'km', 'Kilometres'),
@@ -347,31 +255,32 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                                                 _changeUnit(unit == 'h')),
                                         keyboardType:
                                             TextInputType.numberWithOptions(
-                                                decimal: _hours))),
+                                                decimal: form.hours))),
                                 const SizedBox(height: 24),
                                 AppFormField(
                                     label: 'Already used',
                                     child: AppTextField(
                                         key: const ValueKey('already-used'),
-                                        errorText: _usageError,
+                                        errorText: form.usageError,
                                         onChanged: _revalidate,
-                                        controller:
-                                            _hours ? _initialHours : _initialKm,
+                                        controller: form.hours
+                                            ? form.initialHours
+                                            : form.initialKm,
                                         hint: '0',
-                                        suffix: _hours ? 'h' : 'km',
+                                        suffix: form.hours ? 'h' : 'km',
                                         keyboardType: const TextInputType
                                             .numberWithOptions(decimal: true))),
                                 const SizedBox(height: 8),
                                 Text('Since the last service or installation.',
                                     style: AppTextStyles.body
                                         .copyWith(color: p.inkMuted)),
-                                if (_hours)
+                                if (form.hours)
                                   SwitchListTile.adaptive(
                                       contentPadding: EdgeInsets.zero,
                                       title: const Text('Include indoor rides'),
-                                      value: _includeIndoor,
+                                      value: form.includeIndoor,
                                       onChanged: (value) => setState(
-                                          () => _includeIndoor = value)),
+                                          () => form.includeIndoor = value)),
                               ],
                               const SizedBox(height: 24),
                             ])))),
@@ -386,7 +295,7 @@ class _AddServiceComponentFlowState extends State<AddServiceComponentFlow> {
                       ? null
                       : () {
                           FocusScope.of(context).unfocus();
-                          if (_validateInterval()) _onSave();
+                          _onSave();
                         }),
           ])),
         ));

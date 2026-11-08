@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
-import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
+import 'package:bikesetupapp/features/auth/ui/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

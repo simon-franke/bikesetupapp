@@ -14,7 +14,7 @@ import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/ui/quick_bike_sheet.dart';
 import 'package:bikesetupapp/features/workspace/ui/home_page.dart';
-import 'google_sign_in.dart';
+import 'login_page.dart';
 
 class SessionLanding extends StatefulWidget {
   const SessionLanding(

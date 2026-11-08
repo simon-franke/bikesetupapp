@@ -10,7 +10,7 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
-import 'package:bikesetupapp/features/auth/ui/google_sign_in.dart';
+import 'package:bikesetupapp/features/auth/ui/login_page.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
 import 'package:bikesetupapp/features/settings/controllers/settings_controller.dart';
 import 'package:bikesetupapp/features/settings/ui/settings_page.dart';

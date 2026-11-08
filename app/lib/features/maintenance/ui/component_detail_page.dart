@@ -1,3 +1,4 @@
+import 'service_history_entry.dart';
 import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'service_component_icon.dart';
 import 'package:bikesetupapp/common/ui/app_value_button.dart';
@@ -273,74 +274,11 @@ class _ComponentDetailPageState extends State<ComponentDetailPage> {
                 style: AppTextStyles.label.copyWith(color: p.ink)),
             const SizedBox(height: 16),
           ],
-          for (final entry in items) ...[
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                  child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                component.usesHours
-                                    ? DateFormat.yMMMd()
-                                        .add_Hm()
-                                        .format(entry.date.toLocal())
-                                    : DateFormat.yMMMd()
-                                        .format(entry.date.toLocal()),
-                                style:
-                                    AppTextStyles.label.copyWith(color: p.ink)),
-                            if (entry.mileageAtServiceKm != null &&
-                                !component.usesHours) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                  '${NumberFormat('#,###').format(entry.mileageAtServiceKm!.round())} km',
-                                  style: AppTextStyles.body
-                                      .copyWith(color: p.inkMuted)),
-                            ],
-                            if ((entry.initialDistanceKm ?? 0) > 0) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                  '${NumberFormat('#,###.#').format(entry.initialDistanceKm)} km already used',
-                                  style: AppTextStyles.body
-                                      .copyWith(color: p.inkMuted)),
-                            ],
-                            if ((entry.initialRideHours ?? 0) > 0) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                  '${entry.initialRideHours} hours already used',
-                                  style: AppTextStyles.body
-                                      .copyWith(color: p.inkMuted)),
-                            ],
-                            if (entry.note?.trim().isNotEmpty ?? false) ...[
-                              const SizedBox(height: 6),
-                              Text(entry.note!,
-                                  style: AppTextStyles.body
-                                      .copyWith(color: p.inkMuted)),
-                            ],
-                          ]))),
-              Builder(
-                  builder: (anchor) => IconButton(
-                      tooltip: 'Service entry options',
-                      icon: const Icon(CupertinoIcons.ellipsis),
-                      onPressed: () async {
-                        final action = await showAppOptionsSheet(
-                            context: anchor,
-                            title: 'Service entry',
-                            entries: const [
-                              AppSheetOption(
-                                  value: 'delete',
-                                  label: 'Delete entry',
-                                  icon: CupertinoIcons.trash,
-                                  destructive: true)
-                            ]);
-                        if (action == 'delete' && mounted) {
-                          await deleteEntry(entry);
-                        }
-                      })),
-            ]),
-            Divider(height: 1, color: p.border),
-          ],
+          for (final entry in items)
+            ServiceHistoryEntry(
+                entry: entry,
+                component: component,
+                onDelete: () => deleteEntry(entry)),
         ]);
   }
 }
