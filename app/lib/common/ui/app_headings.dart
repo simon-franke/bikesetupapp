@@ -1,7 +1,8 @@
 import 'app_haptics.dart';
-import 'package:flutter/cupertino.dart';
+
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A compact detail header with room for long titles and larger system text.
 AppBar buildDetailAppBar(
@@ -35,25 +36,32 @@ AppBar buildDetailAppBar(
     leading: Padding(
       padding: const EdgeInsets.only(left: 20),
       child: Builder(
-          builder: (routeContext) => IconButton(
-                tooltip:
-                    MaterialLocalizations.of(routeContext).backButtonTooltip,
-                icon: const Icon(CupertinoIcons.chevron_left,
-                    size: AppIconSizes.compact),
-                onPressed: AppHaptics.wrap(backEnabled
-                    ? onBack ?? () => Navigator.of(routeContext).maybePop()
-                    : null),
-              )),
+        builder: (routeContext) => IconButton(
+          tooltip: MaterialLocalizations.of(routeContext).backButtonTooltip,
+          icon: const Icon(
+            CupertinoIcons.chevron_left,
+            size: AppIconSizes.compact,
+          ),
+          onPressed: AppHaptics.wrap(
+            backEnabled
+                ? onBack ?? () => Navigator.of(routeContext).maybePop()
+                : null,
+          ),
+        ),
+      ),
     ),
     titleSpacing: 8,
-    title: Text(title,
-        style: style,
-        textScaler: MediaQuery.textScalerOf(context),
-        softWrap: true,
-        overflow: TextOverflow.visible),
+    title: Text(
+      title,
+      style: style,
+      textScaler: MediaQuery.textScalerOf(context),
+      softWrap: true,
+      overflow: TextOverflow.visible,
+    ),
     actionsPadding: const EdgeInsets.only(right: 20),
-    actions:
-        actions.map((action) => SizedBox(width: 48, child: action)).toList(),
+    actions: actions
+        .map((action) => SizedBox(width: 48, child: action))
+        .toList(),
   );
 }
 
@@ -64,11 +72,12 @@ class AppSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Semantics(
-            header: true,
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium)),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Semantics(
+      header: true,
+      child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+    ),
+  );
 }
 
 /// Titles and actions share a baseline and wrap together in narrow panes.
@@ -79,21 +88,25 @@ class AppSectionToolbar extends StatelessWidget {
   const AppSectionToolbar({super.key, required this.title, this.action});
 
   @override
-  Widget build(BuildContext context) =>
-      LayoutBuilder(builder: (context, constraints) {
-        if (action == null) return title;
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (action == null) return title;
 
-        if (constraints.maxWidth < 420 ||
-            MediaQuery.textScalerOf(context).scale(14) > 22) {
-          return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [title, const SizedBox(height: 8), action!]);
-        }
+      if (constraints.maxWidth < 420 ||
+          MediaQuery.textScalerOf(context).scale(14) > 22) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [title, const SizedBox(height: 8), action!],
+        );
+      }
 
-        return Row(children: [
+      return Row(
+        children: [
           Expanded(child: title),
           const SizedBox(width: 16),
-          action!
-        ]);
-      });
+          action!,
+        ],
+      );
+    },
+  );
 }

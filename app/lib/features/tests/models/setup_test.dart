@@ -2,9 +2,12 @@ import '../../setups/models/unit_system.dart';
 
 typedef SetupValues = Map<String, Map<String, String>>;
 
-SetupValues readValues(Map data) => data.map((key, value) => MapEntry(
+SetupValues readValues(Map data) => data.map(
+  (key, value) => MapEntry(
     key.toString(),
-    (value as Map).map((k, v) => MapEntry(k.toString(), v.toString()))));
+    (value as Map).map((k, v) => MapEntry(k.toString(), v.toString())),
+  ),
+);
 
 bool sameSettingValue(String? a, String? b) {
   if (a == b) return true;
@@ -26,7 +29,7 @@ class RideFeedback {
     'Worse',
     'Same',
     'Better',
-    'Much better'
+    'Much better',
   ];
 
   const RideFeedback({this.feeling, this.note = '', this.time = ''});
@@ -49,15 +52,16 @@ class RideFeedback {
       RideFeedback(feeling: feeling, note: note.trim(), time: time.trim());
 
   Map<String, String> toMap() => {
-        if (feeling != null) 'feeling': feeling!,
-        'note': note,
-        'time': time,
-      };
+    'feeling': ?feeling,
+    'note': note,
+    'time': time,
+  };
 
   factory RideFeedback.fromMap(Map data) => RideFeedback(
-      feeling: data['feeling'] as String?,
-      note: data['note'] as String? ?? '',
-      time: data['time'] as String? ?? '');
+    feeling: data['feeling'] as String?,
+    note: data['note'] as String? ?? '',
+    time: data['time'] as String? ?? '',
+  );
 }
 
 class TestChange {
@@ -67,18 +71,19 @@ class TestChange {
 }
 
 class SetupTest {
-  SetupTest(
-      {required this.id,
-      required this.name,
-      required this.before,
-      required this.values,
-      required this.setupInformation,
-      this.fieldMetadata = const {},
-      this.stage = TestStage.draft,
-      this.draftStep = 0,
-      this.rides = const [],
-      this.result = '',
-      this.feedback = const RideFeedback()});
+  SetupTest({
+    required this.id,
+    required this.name,
+    required this.before,
+    required this.values,
+    required this.setupInformation,
+    this.fieldMetadata = const {},
+    this.stage = TestStage.draft,
+    this.draftStep = 0,
+    this.rides = const [],
+    this.result = '',
+    this.feedback = const RideFeedback(),
+  });
 
   final String id, name, result;
   final TestStage stage;
@@ -90,63 +95,67 @@ class SetupTest {
   final RideFeedback feedback;
 
   List<TestChange> get changes => [
-        for (final category in values.entries)
-          for (final field in category.value.entries)
-            if (!sameSettingValue(
-                before[category.key]?[field.key], field.value))
-              TestChange(category.key, field.key,
-                  before[category.key]?[field.key] ?? '--', field.value)
-      ];
+    for (final category in values.entries)
+      for (final field in category.value.entries)
+        if (!sameSettingValue(before[category.key]?[field.key], field.value))
+          TestChange(
+            category.key,
+            field.key,
+            before[category.key]?[field.key] ?? '--',
+            field.value,
+          ),
+  ];
 
-  SetupTest copyWith(
-          {String? name,
-          int? draftStep,
-          SetupValues? values,
-          SetupValues? fieldMetadata,
-          TestStage? stage,
-          List<RideFeedback>? rides,
-          String? result,
-          RideFeedback? feedback}) =>
-      SetupTest(
-          id: id,
-          name: name ?? this.name,
-          draftStep: draftStep ?? this.draftStep,
-          before: before,
-          setupInformation: setupInformation,
-          fieldMetadata: fieldMetadata ?? this.fieldMetadata,
-          values: values ?? this.values,
-          stage: stage ?? this.stage,
-          rides: rides ?? this.rides,
-          result: result ?? this.result,
-          feedback: feedback ?? this.feedback);
+  SetupTest copyWith({
+    String? name,
+    int? draftStep,
+    SetupValues? values,
+    SetupValues? fieldMetadata,
+    TestStage? stage,
+    List<RideFeedback>? rides,
+    String? result,
+    RideFeedback? feedback,
+  }) => SetupTest(
+    id: id,
+    name: name ?? this.name,
+    draftStep: draftStep ?? this.draftStep,
+    before: before,
+    setupInformation: setupInformation,
+    fieldMetadata: fieldMetadata ?? this.fieldMetadata,
+    values: values ?? this.values,
+    stage: stage ?? this.stage,
+    rides: rides ?? this.rides,
+    result: result ?? this.result,
+    feedback: feedback ?? this.feedback,
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'before': before,
-        'setupInformation': setupInformation,
-        'fieldMetadata': fieldMetadata,
-        'values': values,
-        'stage': stage.name,
-        'draftStep': draftStep,
-        'rides': rides.map((ride) => ride.toMap()).toList(),
-        'feedback': feedback.toMap(),
-        'result': result
-      };
+    'id': id,
+    'name': name,
+    'before': before,
+    'setupInformation': setupInformation,
+    'fieldMetadata': fieldMetadata,
+    'values': values,
+    'stage': stage.name,
+    'draftStep': draftStep,
+    'rides': rides.map((ride) => ride.toMap()).toList(),
+    'feedback': feedback.toMap(),
+    'result': result,
+  };
 
   factory SetupTest.fromMap(Map data) => SetupTest(
-      id: data['id'] as String,
-      name: data['name'] as String,
-      before: readValues(data['before'] as Map),
-      setupInformation:
-          Map<String, String>.from(data['setupInformation'] as Map),
-      fieldMetadata: readValues(data['fieldMetadata'] as Map),
-      values: readValues(data['values'] as Map),
-      stage: TestStage.values.byName(data['stage'] as String),
-      draftStep: (data['draftStep'] as num).toInt(),
-      rides: (data['rides'] as List)
-          .map((r) => RideFeedback.fromMap(r as Map))
-          .toList(),
-      feedback: RideFeedback.fromMap(data['feedback'] as Map? ?? {}),
-      result: data['result'] as String? ?? '');
+    id: data['id'] as String,
+    name: data['name'] as String,
+    before: readValues(data['before'] as Map),
+    setupInformation: Map<String, String>.from(data['setupInformation'] as Map),
+    fieldMetadata: readValues(data['fieldMetadata'] as Map),
+    values: readValues(data['values'] as Map),
+    stage: TestStage.values.byName(data['stage'] as String),
+    draftStep: (data['draftStep'] as num).toInt(),
+    rides: (data['rides'] as List)
+        .map((r) => RideFeedback.fromMap(r as Map))
+        .toList(),
+    feedback: RideFeedback.fromMap(data['feedback'] as Map? ?? {}),
+    result: data['result'] as String? ?? '',
+  );
 }

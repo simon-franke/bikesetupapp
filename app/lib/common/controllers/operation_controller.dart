@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../models/command_result.dart';
 
 /// Owns command activity, failures and request validity for one controller.

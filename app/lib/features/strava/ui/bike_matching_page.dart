@@ -1,16 +1,18 @@
 import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_select.dart';
 import 'package:bikesetupapp/common/ui/bike_icon.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
+
 import '../controllers/bike_matching_controller.dart';
+
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
 import 'package:bikesetupapp/features/strava/models/strava_bike.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
 final NumberFormat _kmFormatter = NumberFormat('#,###');
@@ -81,7 +83,8 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
         height: 240,
         child: Center(
           child: AppLoadingState(
-              label: _syncing ? 'Syncing with Strava…' : 'Loading bikes…'),
+            label: _syncing ? 'Syncing with Strava…' : 'Loading bikes…',
+          ),
         ),
       );
     }
@@ -118,13 +121,14 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
-                    width: double.infinity,
-                    child: AppActionButton(
-                      outlined: true,
-                      icon: CupertinoIcons.arrow_clockwise,
-                      label: 'Retry sync',
-                      onPressed: _manualSync,
-                    )),
+                  width: double.infinity,
+                  child: AppActionButton(
+                    outlined: true,
+                    icon: CupertinoIcons.arrow_clockwise,
+                    label: 'Retry sync',
+                    onPressed: _manualSync,
+                  ),
+                ),
               ],
             ),
           ),
@@ -136,14 +140,16 @@ class _BikeMatchingPageState extends State<BikeMatchingPage> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 60),
       children: [
         AppSectionLabel('Strava bikes'),
-        ..._stravaBikes.map((strava) => _BikeMatchCard(
-              strava: strava,
-              appBikes: _appBikes,
-              linkedId: _links[strava.stravaGearId],
-              onChanged: (v) {
-                _controller.link(strava.stravaGearId, v);
-              },
-            )),
+        ..._stravaBikes.map(
+          (strava) => _BikeMatchCard(
+            strava: strava,
+            appBikes: _appBikes,
+            linkedId: _links[strava.stravaGearId],
+            onChanged: (v) {
+              _controller.link(strava.stravaGearId, v);
+            },
+          ),
+        ),
         const SizedBox(height: 24),
         AppActionButton(
           icon: CupertinoIcons.link,
@@ -192,21 +198,27 @@ class _BikeMatchCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(CupertinoIcons.flame,
-                  size: AppIconSizes.compact, color: p.accentText),
+              Icon(
+                CupertinoIcons.flame,
+                size: AppIconSizes.compact,
+                color: p.accentText,
+              ),
               const SizedBox(width: 5),
               Expanded(
-                  child: Text(
-                'Strava bike mileage',
-                style: AppTextStyles.caption.copyWith(color: p.inkDim),
-              )),
+                child: Text(
+                  'Strava bike mileage',
+                  style: AppTextStyles.caption.copyWith(color: p.inkDim),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Text(strava.name, style: AppTextStyles.label.copyWith(color: p.ink)),
           const SizedBox(height: 6),
-          Text('$kmText km',
-              style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+          Text(
+            '$kmText km',
+            style: AppTextStyles.body.copyWith(color: p.inkMuted),
+          ),
           const SizedBox(height: 12),
           Text(
             'Linked app bike'.toUpperCase(),
@@ -238,13 +250,14 @@ class _BikeDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSelect<String?>(
-        label: 'Select app bike',
-        value: value,
-        items: [
-          const DropdownMenuItem<String?>(value: null, child: Text('Skip')),
-          for (final bike in appBikes)
-            DropdownMenuItem<String?>(value: bike.id, child: Text(bike.name))
-        ],
-        onChanged: onChanged);
+      label: 'Select app bike',
+      value: value,
+      items: [
+        const DropdownMenuItem<String?>(value: null, child: Text('Skip')),
+        for (final bike in appBikes)
+          DropdownMenuItem<String?>(value: bike.id, child: Text(bike.name)),
+      ],
+      onChanged: onChanged,
+    );
   }
 }

@@ -3,11 +3,12 @@ import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
+
 import 'setups_repository.dart';
 
 class FirestoreSetupsRepository implements SetupsRepository {
   FirestoreSetupsRepository(this.userID, {FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final String userID;
   final FirebaseFirestore _firestore;
@@ -16,8 +17,12 @@ class FirestoreSetupsRepository implements SetupsRepository {
       _firestore.collection(FirestoreKeys.userBikeSetup);
 
   @override
-  Future<void> createSetupList(String uBikeID, String uSetupID,
-      String setupName, Map<String, dynamic> setupInformation) {
+  Future<void> createSetupList(
+    String uBikeID,
+    String uSetupID,
+    String setupName,
+    Map<String, dynamic> setupInformation,
+  ) {
     return firebaseOperation(() async {
       final Map<String, dynamic> setupListDocument = <String, dynamic>{};
       setupListDocument.addAll(setupInformation);
@@ -45,8 +50,13 @@ class FirestoreSetupsRepository implements SetupsRepository {
   }
 
   @override
-  Future<void> setSetting(String key, String value, String uBikeID,
-      String category, String uSetupID) {
+  Future<void> setSetting(
+    String key,
+    String value,
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) {
     return firebaseOperation(() async {
       return userBikeSetup
           .doc(userID)
@@ -116,7 +126,11 @@ class FirestoreSetupsRepository implements SetupsRepository {
 
   @override
   Future<void> deleteSetting(
-      String key, String uBikeID, String category, String uSetupID) async {
+    String key,
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) async {
     return firebaseOperation(() async {
       await userBikeSetup
           .doc(userID)
@@ -124,15 +138,18 @@ class FirestoreSetupsRepository implements SetupsRepository {
           .doc(uBikeID)
           .collection(uSetupID)
           .doc(category)
-          .update({
-        key: FieldValue.delete(),
-      });
+          .update({key: FieldValue.delete()});
     }, fallback: FailureCode.saveFailed);
   }
 
   @override
-  Future<void> setSettingMeta(String key, String familyName, String uBikeID,
-      String category, String uSetupID) {
+  Future<void> setSettingMeta(
+    String key,
+    String familyName,
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) {
     return firebaseOperation(() async {
       return userBikeSetup
           .doc(userID)
@@ -146,7 +163,11 @@ class FirestoreSetupsRepository implements SetupsRepository {
 
   @override
   Future<void> deleteSettingMeta(
-      String key, String uBikeID, String category, String uSetupID) async {
+    String key,
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) async {
     return firebaseOperation(() async {
       final ref = userBikeSetup
           .doc(userID)
@@ -163,41 +184,55 @@ class FirestoreSetupsRepository implements SetupsRepository {
 
   @override
   Stream<Map<String, dynamic>> getSettingsMeta(
-      String uBikeID, String category, String uSetupID) {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(uBikeID)
-        .collection(uSetupID)
-        .doc('${category}_meta')
-        .snapshots()
-        .map((snapshot) => snapshot.data() ?? {}));
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) {
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .collection(uSetupID)
+          .doc('${category}_meta')
+          .snapshots()
+          .map((snapshot) => snapshot.data() ?? {}),
+    );
   }
 
   @override
   Stream<Map<String, dynamic>> getSettings(
-      String uBikeID, String category, String uSetupID) {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(uBikeID)
-        .collection(uSetupID)
-        .doc(category)
-        .snapshots()
-        .map((snapshot) => snapshot.data() ?? {}));
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) {
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .collection(uSetupID)
+          .doc(category)
+          .snapshots()
+          .map((snapshot) => snapshot.data() ?? {}),
+    );
   }
 
   @override
   Stream<List<BikeSetup>> getSetups(String uBikeID) {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .doc(uBikeID)
-        .collection(FirestoreKeys.setupList)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => BikeSetup.fromMap(doc.id, doc.data()))
-            .toList()));
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .doc(uBikeID)
+          .collection(FirestoreKeys.setupList)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => BikeSetup.fromMap(doc.id, doc.data()))
+                .toList(),
+          ),
+    );
   }
 
   @override
@@ -248,7 +283,9 @@ class FirestoreSetupsRepository implements SetupsRepository {
 
   @override
   Future<Map<String, dynamic>> getSetupInformation(
-      String uBikeID, String uSetupID) {
+    String uBikeID,
+    String uSetupID,
+  ) {
     return firebaseOperation(() async {
       return userBikeSetup
           .doc(userID)

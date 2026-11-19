@@ -2,6 +2,7 @@ import 'package:bikesetupapp/features/strava/models/strava_bike.dart';
 import 'package:bikesetupapp/features/auth/controllers/auth_controller.dart';
 import 'package:bikesetupapp/features/auth/repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'dart:async';
 
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
@@ -19,7 +20,7 @@ import 'package:bikesetupapp/features/strava/controllers/strava_connection_contr
 import 'package:bikesetupapp/features/strava/controllers/strava_controller.dart';
 import 'package:bikesetupapp/features/bikes/controllers/bikes_controller.dart';
 import 'package:bikesetupapp/features/workspace/controllers/workspace_controller.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_repositories.dart';
@@ -106,38 +107,45 @@ class ThemeWrites implements ThemePreferencesRepository {
 Future<void> flush() => Future<void>.delayed(Duration.zero);
 
 void main() {
-  test('disconnect invalidates sync and deletes after an already started write',
-      () async {
-    final bikes = DelayedBikes();
-    final connection = FakeStravaRepository()
-      ..bikes = [
-        const StravaBike(
-            stravaGearId: 'gear', name: 'Bike', distanceMeters: 1000)
-      ];
-    final controller = StravaController(bikes, connection);
-    final sync = controller.sync();
-    await bikes.started.future;
-    final deletion = controller.deleteAllStravaBikes();
-    await flush();
-    expect(bikes.events, ['save started']);
-    bikes.saveGate.complete();
-    expect((await sync).isCancelled, isTrue);
-    expect((await deletion).isSuccess, isTrue);
-    expect(bikes.events, ['save started', 'saved', 'deleted']);
-    expect(bikes.bikes, isEmpty);
-    expect(connection.markedSynced, 0);
-    controller.dispose();
-  });
-
   test(
-      'auth commands share duplicate requests and order signout cleanup after signin',
-      () async {
+    'disconnect invalidates sync and deletes after an already started write',
+    () async {
+      final bikes = DelayedBikes();
+      final connection = FakeStravaRepository()
+        ..bikes = [
+          const StravaBike(
+            stravaGearId: 'gear',
+            name: 'Bike',
+            distanceMeters: 1000,
+          ),
+        ];
+      final controller = StravaController(bikes, connection);
+      final sync = controller.sync();
+      await bikes.started.future;
+      final deletion = controller.deleteAllStravaBikes();
+      await flush();
+      expect(bikes.events, ['save started']);
+      bikes.saveGate.complete();
+      expect((await sync).isCancelled, isTrue);
+      expect((await deletion).isSuccess, isTrue);
+      expect(bikes.events, ['save started', 'saved', 'deleted']);
+      expect(bikes.bikes, isEmpty);
+      expect(connection.markedSynced, 0);
+      controller.dispose();
+    },
+  );
+
+  test('auth commands share duplicate requests and order signout cleanup after signin', () async {
     final repository = AuthWrites();
-    final auth = AuthController(repository, onSigningOut: () async {
-      repository.events.add('cleanup');
-    }, onSignedOut: () {
-      repository.events.add('disposed user controllers');
-    });
+    final auth = AuthController(
+      repository,
+      onSigningOut: () async {
+        repository.events.add('cleanup');
+      },
+      onSignedOut: () {
+        repository.events.add('disposed user controllers');
+      },
+    );
     final signin = auth.signInAnonymously();
     final duplicate = auth.signInAnonymously();
     final signout = auth.signOut();
@@ -147,8 +155,12 @@ void main() {
     repository.gate.complete();
     expect((await signin).isSuccess, isTrue);
     expect((await signout).isSuccess, isTrue);
-    expect(repository.events,
-        ['signin', 'cleanup', 'signout', 'disposed user controllers']);
+    expect(repository.events, [
+      'signin',
+      'cleanup',
+      'signout',
+      'disposed user controllers',
+    ]);
     auth.dispose();
   });
 
@@ -164,34 +176,34 @@ void main() {
     controller.dispose();
   });
 
-  test(
-      'typed failure, cancellation, and unexpected error retain distinct outcomes',
-      () async {
+  test('typed failure, cancellation, and unexpected error retain distinct outcomes', () async {
     final controller = TestCommands();
     expect((await controller.execute(() async => 42)).requireValue(), 42);
     const failure = AppFailure(FailureCode.saveFailed);
-    expect((await controller.execute(() async => throw failure)).failure,
-        same(failure));
+    expect(
+      (await controller.execute(() async => throw failure)).failure,
+      same(failure),
+    );
     expect(controller.failure, same(failure));
     expect(controller.errorStackTrace, isNotNull);
     expect(
-        (await controller.execute(() async => throw const CommandAborted()))
-            .isCancelled,
-        isTrue);
+      (await controller.execute(() async => throw const CommandAborted()))
+          .isCancelled,
+      isTrue,
+    );
     expect(controller.error, isNull);
     final error = StateError('programming error');
     final stack = StackTrace.fromString('original stack');
     await expectLater(
-        controller.execute(() async => Error.throwWithStackTrace(error, stack)),
-        throwsA(same(error)));
+      controller.execute(() async => Error.throwWithStackTrace(error, stack)),
+      throwsA(same(error)),
+    );
     expect(controller.error, same(error));
     expect(controller.errorStackTrace.toString(), contains('original stack'));
     controller.dispose();
   });
 
-  test(
-      'concurrent identical commands share one write and disposal suppresses notifications',
-      () async {
+  test('concurrent identical commands share one write and disposal suppresses notifications', () async {
     final controller = TestCommands();
     final gate = Completer<void>();
     var calls = 0;
@@ -218,70 +230,82 @@ void main() {
   });
 
   test(
-      'service save shares duplicate submission and retry preserves id and date',
-      () async {
-    final repository = ServiceWrites();
-    final maintenance = MaintenanceController(repository);
-    final connection = StravaConnectionController(FakeStravaRepository());
-    final date = DateTime.utc(2026, 1, 2);
-    final component = ServiceComponent(
+    'service save shares duplicate submission and retry preserves id and date',
+    () async {
+      final repository = ServiceWrites();
+      final maintenance = MaintenanceController(repository);
+      final connection = StravaConnectionController(FakeStravaRepository());
+      final date = DateTime.utc(2026, 1, 2);
+      final component = ServiceComponent(
         id: 'component',
         bikeId: 'bike',
         type: ComponentType.values.first,
         name: 'Fork',
         serviceIntervalKm: 1000,
-        createdAt: date);
-    var ids = 0;
-    final editor = ServiceEditorController(maintenance, connection,
+        createdAt: date,
+      );
+      var ids = 0;
+      final editor = ServiceEditorController(
+        maintenance,
+        connection,
         component: component,
         currentMileageKm: 1500,
         newId: () => 'entry-${++ids}',
-        now: () => date);
-    final gate = Completer<void>();
-    repository.write = () => gate.future;
-    final first = editor.deferService(300);
-    final duplicate = editor.deferService(300);
-    expect(identical(first, duplicate), isTrue);
-    expect(repository.entries, hasLength(1));
-    gate.completeError(const AppFailure(FailureCode.saveFailed));
-    expect((await first).failure?.code, FailureCode.saveFailed);
-    expect(editor.saveError, isA<AppFailure>());
-    expect(editor.saving, isFalse);
-    repository.write = null;
-    expect((await editor.deferService(300)).isSuccess, isTrue);
-    expect(repository.entries.map((e) => e.id), ['entry-1', 'entry-1']);
-    expect(repository.entries.map((e) => e.date), [date, date]);
-    expect(repository.entries.last.mileageAtServiceKm, 800);
-    editor.dispose();
-    maintenance.dispose();
-    connection.dispose();
-    await repository.close();
-  });
+        now: () => date,
+      );
+      final gate = Completer<void>();
+      repository.write = () => gate.future;
+      final first = editor.deferService(300);
+      final duplicate = editor.deferService(300);
+      expect(identical(first, duplicate), isTrue);
+      expect(repository.entries, hasLength(1));
+      gate.completeError(const AppFailure(FailureCode.saveFailed));
+      expect((await first).failure?.code, FailureCode.saveFailed);
+      expect(editor.saveError, isA<AppFailure>());
+      expect(editor.saving, isFalse);
+      repository.write = null;
+      expect((await editor.deferService(300)).isSuccess, isTrue);
+      expect(repository.entries.map((e) => e.id), ['entry-1', 'entry-1']);
+      expect(repository.entries.map((e) => e.date), [date, date]);
+      expect(repository.entries.last.mileageAtServiceKm, 800);
+      editor.dispose();
+      maintenance.dispose();
+      connection.dispose();
+      await repository.close();
+    },
+  );
 
-  test('stream failures retain stack and cannot mutate controller collections',
-      () async {
-    final repository = FakeMaintenanceRepository();
-    final maintenance = MaintenanceController(repository);
-    final entries = ServiceEntriesController(maintenance)..watch(['component']);
-    final error = StateError('stream failed');
-    final stack = StackTrace.fromString('stream stack');
-    repository.latest['component']!.addError(error, stack);
-    await flush();
-    expect(entries.loading, isFalse);
-    expect(entries.errors['component']!.$1, same(error));
-    expect(entries.errors['component']!.$2, same(stack));
-    expect(() => entries.entries['other'] = null, throwsUnsupportedError);
-    expect(() => entries.errors.clear(), throwsUnsupportedError);
-    entries.dispose();
-    maintenance.dispose();
-    await repository.close();
-  });
+  test(
+    'stream failures retain stack and cannot mutate controller collections',
+    () async {
+      final repository = FakeMaintenanceRepository();
+      final maintenance = MaintenanceController(repository);
+      final entries = ServiceEntriesController(maintenance)
+        ..watch(['component']);
+      final error = StateError('stream failed');
+      final stack = StackTrace.fromString('stream stack');
+      repository.latest['component']!.addError(error, stack);
+      await flush();
+      expect(entries.loading, isFalse);
+      expect(entries.errors['component']!.$1, same(error));
+      expect(entries.errors['component']!.$2, same(stack));
+      expect(() => entries.entries['other'] = null, throwsUnsupportedError);
+      expect(() => entries.errors.clear(), throwsUnsupportedError);
+      entries.dispose();
+      maintenance.dispose();
+      await repository.close();
+    },
+  );
 
   test('matching exposes read-only lists and maps', () async {
-    final bikes =
-        BikesController(FakeBikesRepository(), FakeSetupsRepository());
-    final strava =
-        StravaController(FakeStravaBikesRepository(), FakeStravaRepository());
+    final bikes = BikesController(
+      FakeBikesRepository(),
+      FakeSetupsRepository(),
+    );
+    final strava = StravaController(
+      FakeStravaBikesRepository(),
+      FakeStravaRepository(),
+    );
     final matching = BikeMatchingController(bikes, strava);
     expect((await matching.load(syncIfEmpty: false)).isSuccess, isTrue);
     expect(() => matching.links['gear'] = 'bike', throwsUnsupportedError);
@@ -292,9 +316,7 @@ void main() {
     strava.dispose();
   });
 
-  test(
-      'theme persistence is ordered and only newest selection updates presentation',
-      () async {
+  test('theme persistence is ordered and only newest selection updates presentation', () async {
     final preferences = ThemeWrites();
     final theme = AppStateNotifier(ThemeMode.dark, preferences: preferences);
     final first = theme.updateTheme(ThemeMode.light);
@@ -309,17 +331,16 @@ void main() {
     theme.dispose();
   });
 
-  test(
-      'workspace ignores old bike mileage and returns cancellation after disposal',
-      () async {
+  test('workspace ignores old bike mileage and returns cancellation after disposal', () async {
     final repository = FakeStravaBikesRepository();
     final strava = StravaController(repository, FakeStravaRepository());
     final workspace = WorkspaceController(
-        bikeName: 'Old',
-        bikeId: 'old',
-        setupName: 'Default',
-        setupId: 'setup',
-        strava: strava);
+      bikeName: 'Old',
+      bikeId: 'old',
+      setupName: 'Default',
+      setupId: 'setup',
+      strava: strava,
+    );
     final old = workspace.loadMileage();
     final current = workspace.selectBike('New', 'new', 'Default', 'setup');
     repository.mileage['new']!.complete(200);

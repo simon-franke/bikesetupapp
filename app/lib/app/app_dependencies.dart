@@ -7,8 +7,10 @@ import '../features/tests/repositories/firestore_tests_repository.dart';
 import '../features/settings/repositories/theme_preferences_repository.dart';
 import '../features/settings/repositories/shared_preferences_theme_repository.dart';
 import 'startup/startup_controller.dart';
+
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+
 import '../features/bikes/controllers/bikes_controller.dart';
 import '../features/bikes/repositories/firestore_bikes_repository.dart';
 import '../features/bikes/repositories/bikes_repository.dart';
@@ -34,24 +36,24 @@ class AppDependencies {
     RidesRepository Function(String)? ridesRepository,
     TestsRepository Function(String)? testsRepository,
     ThemePreferencesRepository? themePreferences,
-    AuthRepository? authRepository,
-    StravaRepository? stravaRepository,
+    this._authRepository,
+    this._stravaRepository,
     BikesRepository Function(String)? bikesRepository,
     SetupsRepository Function(String)? setupsRepository,
     MaintenanceRepository Function(String)? maintenanceRepository,
     StravaBikesRepository Function(String)? stravaBikesRepository,
-  })  : themePreferences =
-            themePreferences ?? SharedPreferencesThemeRepository(),
-        _rides = ridesRepository ?? ((id) => FirestoreRidesRepository(id)),
-        _tests = testsRepository ?? ((id) => FirestoreTestsRepository(id)),
-        _authRepository = authRepository,
-        _stravaRepository = stravaRepository,
-        _bikes = bikesRepository ?? ((id) => FirestoreBikesRepository(id)),
-        _setups = setupsRepository ?? ((id) => FirestoreSetupsRepository(id)),
-        _maintenance = maintenanceRepository ??
-            ((id) => FirestoreMaintenanceRepository(id)),
-        _stravaBikes = stravaBikesRepository ??
-            ((id) => FirestoreStravaBikesRepository(id));
+  }) : themePreferences =
+           themePreferences ?? SharedPreferencesThemeRepository(),
+       _rides = ridesRepository ?? ((id) => FirestoreRidesRepository(id)),
+       _tests = testsRepository ?? ((id) => FirestoreTestsRepository(id)),
+       _bikes = bikesRepository ?? ((id) => FirestoreBikesRepository(id)),
+       _setups = setupsRepository ?? ((id) => FirestoreSetupsRepository(id)),
+       _maintenance =
+           maintenanceRepository ??
+           ((id) => FirestoreMaintenanceRepository(id)),
+       _stravaBikes =
+           stravaBikesRepository ??
+           ((id) => FirestoreStravaBikesRepository(id));
 
   static final instance = AppDependencies();
 
@@ -72,32 +74,41 @@ class AppDependencies {
   final SetupsRepository Function(String) _setups;
   final MaintenanceRepository Function(String) _maintenance;
   final StravaBikesRepository Function(String) _stravaBikes;
-  late final AuthController auth = _own(AuthController(
+  late final AuthController auth = _own(
+    AuthController(
       _authRepository ??
           FirebaseAuthRepository(
-              beforeAccountDeletion: () => _connection.deauthorize()),
+            beforeAccountDeletion: () => _connection.deauthorize(),
+          ),
       onSignedOut: clearUsers,
-      onSigningOut: () => _connection.clearAuth()));
-  late final StravaRepository _connection = _stravaRepository ??
+      onSigningOut: () => _connection.clearAuth(),
+    ),
+  );
+  late final StravaRepository _connection =
+      _stravaRepository ??
       PlatformStravaRepository(userId: () => auth.currentUser?.uid);
   late final StravaConnectionController stravaConnection = _own(
-      StravaConnectionController(_connection,
-          canAuthorize: () =>
-              auth.currentUser != null && !auth.currentUser!.isAnonymous));
+    StravaConnectionController(
+      _connection,
+      canAuthorize: () =>
+          auth.currentUser != null && !auth.currentUser!.isAnonymous,
+    ),
+  );
   final Map<String, UserControllers> _users = {};
 
   /// Reuses the controller bundle for a user until [clearUsers] disposes it.
   UserControllers forUser(String id) => _users.putIfAbsent(
-      id,
-      () => UserControllers(
-            ridesRepository: () => _rides(id),
-            testsRepository: () => _tests(id),
-            bikesRepository: () => _bikes(id),
-            setupsRepository: () => _setups(id),
-            maintenanceRepository: () => _maintenance(id),
-            stravaBikesRepository: () => _stravaBikes(id),
-            stravaRepository: () => _connection,
-          ));
+    id,
+    () => UserControllers(
+      ridesRepository: () => _rides(id),
+      testsRepository: () => _tests(id),
+      bikesRepository: () => _bikes(id),
+      setupsRepository: () => _setups(id),
+      maintenanceRepository: () => _maintenance(id),
+      stravaBikesRepository: () => _stravaBikes(id),
+      stravaRepository: () => _connection,
+    ),
+  );
 
   final List<ChangeNotifier> _owned = [];
 
@@ -138,13 +149,13 @@ class UserControllers {
     required MaintenanceRepository Function() maintenanceRepository,
     required StravaBikesRepository Function() stravaBikesRepository,
     required StravaRepository Function() stravaRepository,
-  })  : _rides = ridesRepository,
-        _tests = testsRepository,
-        _bikes = bikesRepository,
-        _setups = setupsRepository,
-        _maintenance = maintenanceRepository,
-        _stravaBikes = stravaBikesRepository,
-        _connection = stravaRepository;
+  }) : _rides = ridesRepository,
+       _tests = testsRepository,
+       _bikes = bikesRepository,
+       _setups = setupsRepository,
+       _maintenance = maintenanceRepository,
+       _stravaBikes = stravaBikesRepository,
+       _connection = stravaRepository;
 
   final RidesRepository Function() _rides;
   late final RidesController rides = _own(RidesController(_rides()));
@@ -165,10 +176,12 @@ class UserControllers {
   late final BikesController bikes = _own(BikesController(_bikes(), _setups()));
   late final StartupController startup = StartupController(_bikes(), _setups());
   late final SetupsController setups = _own(SetupsController(_setups()));
-  late final MaintenanceController maintenance =
-      _own(MaintenanceController(_maintenance()));
-  late final StravaController strava =
-      _own(StravaController(_stravaBikes(), _connection()));
+  late final MaintenanceController maintenance = _own(
+    MaintenanceController(_maintenance()),
+  );
+  late final StravaController strava = _own(
+    StravaController(_stravaBikes(), _connection()),
+  );
 
   void dispose() {
     for (final controller in _owned) {

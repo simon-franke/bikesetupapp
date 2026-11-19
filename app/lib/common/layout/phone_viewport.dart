@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../theme/theme_data.dart';
 
 const double kPhoneMaxWidth = 480;
@@ -11,8 +12,9 @@ class PhoneViewport extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-      color: context.palette.bg,
-      child: LayoutBuilder(builder: (context, constraints) {
+    color: context.palette.bg,
+    child: LayoutBuilder(
+      builder: (context, constraints) {
         final width = constraints.maxWidth.clamp(0.0, kPhoneMaxWidth);
         final media = MediaQuery.of(context);
 
@@ -26,5 +28,7 @@ class PhoneViewport extends StatelessWidget {
             ),
           ),
         );
-      }));
+      },
+    ),
+  );
 }

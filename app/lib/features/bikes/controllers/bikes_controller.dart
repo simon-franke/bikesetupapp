@@ -6,6 +6,7 @@ import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import 'package:bikesetupapp/features/setups/controllers/setup_creation_service.dart';
 import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart';
 import 'package:uuid/uuid.dart';
+
 import '../models/bike_creation_draft.dart';
 
 /// Coordinates bike records, their initial setups, and the saved selection.
@@ -20,17 +21,26 @@ class BikesController extends OperationController {
   /// Duplicate bike names are rejected ignoring case. These writes are sequential,
   /// not one transaction; a failure can leave earlier writes persisted.
   Future<CommandResult<({String bikeId, String setupId})>> createFromDraft(
-          BikeCreationDraft draft,
-          {String setupName = 'Default'}) =>
-      command(() => _create(draft.name, draft.toSetupInformation(),
-          values: draft.values, setupName: setupName));
+    BikeCreationDraft draft, {
+    String setupName = 'Default',
+  }) => command(
+    () => _create(
+      draft.name,
+      draft.toSetupInformation(),
+      values: draft.values,
+      setupName: setupName,
+    ),
+  );
 
   Future<({String bikeId, String setupId})> _create(
-      String bikeName, Map<String, String> setupInformation,
-      {Map<String, Map<String, String>> values = const {},
-      String setupName = 'Default'}) async {
+    String bikeName,
+    Map<String, String> setupInformation, {
+    Map<String, Map<String, String>> values = const {},
+    String setupName = 'Default',
+  }) async {
     if ((await _repository.getBikes().first).any(
-        (bike) => bike.name.toLowerCase() == bikeName.trim().toLowerCase())) {
+      (bike) => bike.name.toLowerCase() == bikeName.trim().toLowerCase(),
+    )) {
       throw const AppFailure(FailureCode.duplicateName);
     }
 

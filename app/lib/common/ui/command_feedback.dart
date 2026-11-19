@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../models/command_result.dart';
 import 'failure_message.dart';
 
@@ -8,9 +9,11 @@ import 'failure_message.dart';
 /// Returns true only for success while the context is still mounted. Cancellation
 /// is silent; [onFailure] replaces the default snackbar when supplied.
 Future<bool> presentCommand<T>(
-    BuildContext context, Future<CommandResult<T>> Function() action,
-    {String fallback = 'Something went wrong. Try again.',
-    ValueChanged<String>? onFailure}) async {
+  BuildContext context,
+  Future<CommandResult<T>> Function() action, {
+  String fallback = 'Something went wrong. Try again.',
+  ValueChanged<String>? onFailure,
+}) async {
   try {
     final result = await action();
     if (!context.mounted) return false;
@@ -20,16 +23,24 @@ Future<bool> presentCommand<T>(
       if (onFailure != null) {
         onFailure(failureMessage(failure));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(failureMessage(failure)),
-            duration: const Duration(seconds: 8)));
+            duration: const Duration(seconds: 8),
+          ),
+        );
       }
     }
 
     return result.isSuccess;
   } catch (error, stack) {
-    FlutterError.reportError(FlutterErrorDetails(
-        exception: error, stack: stack, library: 'controller command'));
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'controller command',
+      ),
+    );
     if (context.mounted) {
       if (onFailure != null) {
         onFailure(fallback);

@@ -3,7 +3,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,13 +12,15 @@ void main() {
   testWidgets('render Clickwise launch artwork', (tester) async {
     final cap = (await tester.runAsync(() async {
       final font = FontLoader('Sora');
-      font.addFont(Future.value(ByteData.sublistView(
-        File('assets/fonts/Sora.ttf').readAsBytesSync(),
-      )));
+      font.addFont(
+        Future.value(
+          ByteData.sublistView(File('assets/fonts/Sora.ttf').readAsBytesSync()),
+        ),
+      );
       await font.load();
-      final codec = await ui.instantiateImageCodec(File(
-        'ios/Runner/AppIcon.icon/Assets/top-cap.png',
-      ).readAsBytesSync());
+      final codec = await ui.instantiateImageCodec(
+        File('ios/Runner/AppIcon.icon/Assets/top-cap.png').readAsBytesSync(),
+      );
       final image = (await codec.getNextFrame()).image;
       codec.dispose();
 
@@ -28,36 +30,42 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final previewKey = GlobalKey();
     final key = GlobalKey();
-    await tester.pumpWidget(Directionality(
+    await tester.pumpWidget(
+      Directionality(
         textDirection: TextDirection.ltr,
         child: RepaintBoundary(
-            key: previewKey,
-            child: ColoredBox(
-              color: const Color(0xFF0D2035),
-              child: Center(
-                child: RepaintBoundary(
-                  key: key,
-                  child: SizedBox(
-                    width: 240,
-                    height: 192,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        RawImage(image: cap, width: 136, height: 136),
-                        const SizedBox(height: 12),
-                        const Text('Clickwise',
-                            style: TextStyle(
-                              fontFamily: 'Sora',
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFFEDF5FC),
-                            )),
-                      ],
-                    ),
+          key: previewKey,
+          child: ColoredBox(
+            color: const Color(0xFF0D2035),
+            child: Center(
+              child: RepaintBoundary(
+                key: key,
+                child: SizedBox(
+                  width: 240,
+                  height: 192,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      RawImage(image: cap, width: 136, height: 136),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Clickwise',
+                        style: TextStyle(
+                          fontFamily: 'Sora',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFEDF5FC),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ))));
+            ),
+          ),
+        ),
+      ),
+    );
     final boundary =
         key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     await tester.runAsync(() async {
@@ -67,8 +75,9 @@ void main() {
             .buffer
             .asUint8List();
         final suffix = scale == 1 ? '' : '@${scale}x';
-        File('ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage$suffix.png')
-            .writeAsBytesSync(bytes);
+        File(
+          'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage$suffix.png',
+        ).writeAsBytesSync(bytes);
         if (scale == 3) {
           final dir = Directory('android/app/src/main/res/drawable-xxhdpi')
             ..createSync(recursive: true);
@@ -79,9 +88,10 @@ void main() {
       }
     });
     await tester.runAsync(() async {
-      final preview = await (previewKey.currentContext!.findRenderObject()!
-              as RenderRepaintBoundary)
-          .toImage();
+      final preview =
+          await (previewKey.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary)
+              .toImage();
       final data = await preview.toByteData(format: ui.ImageByteFormat.png);
       Directory('assets/app-icon/previews').createSync(recursive: true);
       File('assets/app-icon/previews/ClickwiseLaunch.png')

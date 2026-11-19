@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shared timing for navigation, sheets and replacement screens.
 abstract final class AppMotion {
@@ -30,14 +30,15 @@ class AppScreenTransition extends StatelessWidget {
         layoutBuilder: (current, previous) => Stack(
           fit: StackFit.expand,
           children: [
-            for (final page in [...previous, if (current != null) current])
+            for (final page in [...previous, ?current])
               ExcludeFocus(
-                  key: page.key,
+                key: page.key,
+                excluding: page != current,
+                child: ExcludeSemantics(
                   excluding: page != current,
-                  child: ExcludeSemantics(
-                      excluding: page != current,
-                      child: IgnorePointer(
-                          ignoring: page != current, child: page))),
+                  child: IgnorePointer(ignoring: page != current, child: page),
+                ),
+              ),
           ],
         ),
         child: child,

@@ -1,8 +1,11 @@
 import 'service_schedule.dart';
+
 import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_load_error.dart';
+
 import '../../rides/models/ride.dart';
 import '../controllers/service_entries_controller.dart';
+
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/controllers/maintenance_controller.dart';
 
@@ -10,7 +13,7 @@ import 'package:bikesetupapp/features/maintenance/models/service_component.dart'
 import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_component_card.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_status.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ServiceComponentsList extends StatefulWidget {
   final VoidCallback? onAdd;
@@ -165,24 +168,28 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const Padding(
-                  padding: EdgeInsets.all(20),
-                  child:
-                      Text('Could not load rides. Reopen Service to retry.'));
+                padding: EdgeInsets.all(20),
+                child: Text('Could not load rides. Reopen Service to retry.'),
+              );
             }
 
             if (!snapshot.hasData) {
               return const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: AppLoadingState()));
+                padding: EdgeInsets.all(32),
+                child: Center(child: AppLoadingState()),
+              );
             }
 
             return _content(context, snapshot.data);
-          });
+          },
+        );
 
   Widget _content(BuildContext context, List<Ride>? rides) {
     if (_entries.hasError) {
       return _LoadError(
-          message: 'Could not load service history.', onRetry: _entries.retry);
+        message: 'Could not load service history.',
+        onRetry: _entries.retry,
+      );
     }
 
     if (_entries.loading) {
@@ -193,13 +200,15 @@ class _ComponentListWithEntriesState extends State<_ComponentListWithEntries> {
     }
 
     final services = widget.components
-        .map((component) => annotateService(
-              component: component,
-              rides: rides,
-              currentMileageKm: widget.currentMileageKm,
-              latestEntry: _latestEntries[component.id],
-              mileageAvailable: widget.mileageAvailable,
-            ))
+        .map(
+          (component) => annotateService(
+            component: component,
+            rides: rides,
+            currentMileageKm: widget.currentMileageKm,
+            latestEntry: _latestEntries[component.id],
+            mileageAvailable: widget.mileageAvailable,
+          ),
+        )
         .toList();
     final hasAlert = services.any((s) => s.status == ServiceStatus.red);
     if (_lastAlert != hasAlert) {
@@ -238,7 +247,7 @@ class _LoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: AppLoadError(message: message, onRetry: onRetry),
-      );
+    padding: const EdgeInsets.all(20),
+    child: AppLoadError(message: message, onRetry: onRetry),
+  );
 }

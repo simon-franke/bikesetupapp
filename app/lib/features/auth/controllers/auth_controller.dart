@@ -1,30 +1,32 @@
 import 'dart:async';
+
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
+
 import '../repositories/auth_repository.dart';
 
 /// Serializes session changes and shares duplicate in-flight authentication requests.
 ///
 /// Session callbacks let the composition root clear account-specific state.
 class AuthController extends OperationController {
-  AuthController(this._repository,
-      {void Function()? onSignedOut, Future<void> Function()? onSigningOut})
-      : _onSignedOut = onSignedOut,
-        _onSigningOut = onSigningOut {
+  AuthController(this._repository, {this._onSignedOut, this._onSigningOut}) {
     if (_repository case final AuthSessionEvents events) {
       var previousUid = _repository.currentUser?.uid;
-      _subscription = events.userChanges.listen((user) {
-        if (previousUid != null && previousUid != user?.uid) {
-          _onSignedOut?.call();
-        }
-        previousUid = user?.uid;
-        emit();
-      }, onError: (Object error, StackTrace stack) {
-        // SDK stream errors are reported; command failures retain their own UI.
-        Zone.current.handleUncaughtError(error, stack);
-      });
+      _subscription = events.userChanges.listen(
+        (user) {
+          if (previousUid != null && previousUid != user?.uid) {
+            _onSignedOut?.call();
+          }
+          previousUid = user?.uid;
+          emit();
+        },
+        onError: (Object error, StackTrace stack) {
+          // SDK stream errors are reported; command failures retain their own UI.
+          Zone.current.handleUncaughtError(error, stack);
+        },
+      );
     }
   }
 
@@ -42,13 +44,17 @@ class AuthController extends OperationController {
   final WriteQueue _sessions = WriteQueue();
 
   Future<CommandResult<T>> _session<T>(
-          Object key, Future<T> Function() action) =>
-      share(
-          key,
-          () => command(() => _sessions.enqueue(() {
-                if (isDisposed) throw const CommandAborted();
-                return action();
-              })));
+    Object key,
+    Future<T> Function() action,
+  ) => share(
+    key,
+    () => command(
+      () => _sessions.enqueue(() {
+        if (isDisposed) throw const CommandAborted();
+        return action();
+      }),
+    ),
+  );
 
   User? get currentUser => _repository.currentUser;
 
@@ -62,14 +68,22 @@ class AuthController extends OperationController {
       _session('anonymous', _repository.signInAnonymously);
 
   Future<CommandResult<UserCredential>> signInWithEmail(
-          String email, String password) =>
-      _session(('email', email, password),
-          () => _repository.signInWithEmail(email, password));
+    String email,
+    String password,
+  ) => _session((
+    'email',
+    email,
+    password,
+  ), () => _repository.signInWithEmail(email, password));
 
   Future<CommandResult<UserCredential>> signUpWithEmail(
-          String email, String password) =>
-      _session(('signup', email, password),
-          () => _repository.signUpWithEmail(email, password));
+    String email,
+    String password,
+  ) => _session((
+    'signup',
+    email,
+    password,
+  ), () => _repository.signUpWithEmail(email, password));
 
   Future<CommandResult<void>> resetPassword(String email) =>
       _session(('reset', email), () => _repository.resetPassword(email));
@@ -84,8 +98,8 @@ class AuthController extends OperationController {
   ///
   /// If cleanup or repository sign-out fails, the command reports that failure.
   Future<CommandResult<void>> signOut() => _session('signout', () async {
-        await _onSigningOut?.call();
-        await _repository.signOut();
-        _onSignedOut?.call();
-      });
+    await _onSigningOut?.call();
+    await _repository.signOut();
+    _onSignedOut?.call();
+  });
 }

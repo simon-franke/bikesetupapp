@@ -1,7 +1,8 @@
 import 'dart:io';
+
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +31,9 @@ class _Repository extends Fake implements MaintenanceRepository {
 
   @override
   Future<void> createComponentWithBaseline(
-      ServiceComponent component, ServiceEntry baseline) async {
+    ServiceComponent component,
+    ServiceEntry baseline,
+  ) async {
     saves++;
     throw const AppFailure(FailureCode.saveFailed);
   }
@@ -59,26 +62,28 @@ void main() {
       final name = file.uri.pathSegments.last;
       if (!name.startsWith('Inter_') || !name.endsWith('.ttf')) continue;
       final parts = name.split('_');
-      await (FontLoader('${parts[0]}_${parts[1]}')
-            ..addFont(
-                Future.value(ByteData.sublistView(file.readAsBytesSync()))))
+      await (FontLoader('${parts[0]}_${parts[1]}')..addFont(
+            Future.value(ByteData.sublistView(file.readAsBytesSync())),
+          ))
           .load();
     }
 
-    await (FontLoader('MaterialIcons')
-          ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
-        .load();
-    await (FontLoader('packages/cupertino_icons/CupertinoIcons')
-          ..addFont(rootBundle
-              .load('packages/cupertino_icons/assets/CupertinoIcons.ttf')))
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+          rootBundle.load('packages/cupertino_icons/assets/CupertinoIcons.ttf'),
+        ))
         .load();
   });
 
   Future<void> capture(WidgetTester tester, String name) async {
     final directory = Platform.environment['ERROR_PREVIEW_OUTPUT'];
     if (directory != null) {
-      await expectLater(find.byKey(_screen),
-          matchesGoldenFile(Uri.file('$directory/$name.png')));
+      await expectLater(
+        find.byKey(_screen),
+        matchesGoldenFile(Uri.file('$directory/$name.png')),
+      );
     }
   }
 
@@ -89,93 +94,122 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final deps = AppDependencies(maintenanceRepository: (_) => repo);
     addTearDown(deps.dispose);
-    await tester.pumpWidget(Provider.value(
+    await tester.pumpWidget(
+      Provider.value(
         value: deps,
         child: MaterialApp(
-            theme: AppTheme.darkTheme,
-            builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                    padding: const EdgeInsets.only(top: 44, bottom: 24)),
-                child: RepaintBoundary(key: _screen, child: child!)),
-            home: page)));
+          theme: AppTheme.darkTheme,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(padding: const EdgeInsets.only(top: 44, bottom: 24)),
+            child: RepaintBoundary(key: _screen, child: child!),
+          ),
+          home: page,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('field validation stays by its input and clears after correction',
-      (tester) async {
-    final repo = _Repository();
-    await mount(
+  testWidgets(
+    'field validation stays by its input and clears after correction',
+    (tester) async {
+      final repo = _Repository();
+      await mount(
         tester,
         repo,
         const AddServiceComponentFlow(
-            uid: 'user', bikeId: 'bike', currentMileageKm: null));
-    await tester.tap(find.text('Chain'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Add component'));
-    await tester.pumpAndSettle();
-    expect(find.text('Enter the distance between services.'), findsOneWidget);
-    expect(find.byType(AppErrorBanner), findsNothing);
-    expect(repo.saves, 0);
-    await capture(tester, '01-field-validation');
-    await tester.enterText(
-        find.byKey(const ValueKey('service-interval')), '1000');
-    await tester.pumpAndSettle();
-    expect(find.text('Enter the distance between services.'), findsNothing);
-  });
+          uid: 'user',
+          bikeId: 'bike',
+          currentMileageKm: null,
+        ),
+      );
+      await tester.tap(find.text('Chain'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add component'));
+      await tester.pumpAndSettle();
+      expect(find.text('Enter the distance between services.'), findsOneWidget);
+      expect(find.byType(AppErrorBanner), findsNothing);
+      expect(repo.saves, 0);
+      await capture(tester, '01-field-validation');
+      await tester.enterText(
+        find.byKey(const ValueKey('service-interval')),
+        '1000',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Enter the distance between services.'), findsNothing);
+    },
+  );
 
   testWidgets(
-      'save banner preserves inputs, persists and retries without a toast',
-      (tester) async {
-    final repo = _Repository();
-    await mount(
+    'save banner preserves inputs, persists and retries without a toast',
+    (tester) async {
+      final repo = _Repository();
+      await mount(
         tester,
         repo,
         const AddServiceComponentFlow(
-            uid: 'user', bikeId: 'bike', currentMileageKm: null));
-    await tester.tap(find.text('Chain'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-        find.byKey(const ValueKey('service-interval')), '1000');
-    await tester.tap(find.text('Add component'));
-    await tester.pumpAndSettle();
-    expect(find.byType(AppErrorBanner), findsOneWidget);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(find.text('1000'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 10));
-    expect(find.byType(AppErrorBanner), findsOneWidget);
-    await capture(tester, '02-save-error');
-    await tester.tap(find.text('Add component'));
-    await tester.pumpAndSettle();
-    expect(repo.saves, 2);
-    await tester.tap(find.byTooltip('Dismiss error'));
-    await tester.pumpAndSettle();
-    expect(find.byType(AppErrorBanner), findsNothing);
-  });
+          uid: 'user',
+          bikeId: 'bike',
+          currentMileageKm: null,
+        ),
+      );
+      await tester.tap(find.text('Chain'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('service-interval')),
+        '1000',
+      );
+      await tester.tap(find.text('Add component'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppErrorBanner), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('1000'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 10));
+      expect(find.byType(AppErrorBanner), findsOneWidget);
+      await capture(tester, '02-save-error');
+      await tester.tap(find.text('Add component'));
+      await tester.pumpAndSettle();
+      expect(repo.saves, 2);
+      await tester.tap(find.byTooltip('Dismiss error'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppErrorBanner), findsNothing);
+    },
+  );
 
   testWidgets('section load error offers a working retry', (tester) async {
     final repo = _Repository()..failLoads = true;
     await mount(
-        tester,
-        repo,
-        Scaffold(
-            body: SafeArea(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+      tester,
+      repo,
+      Scaffold(
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-                  child: Text('Service', style: AppTextStyles.body)),
+                padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
+                child: Text('Service', style: AppTextStyles.body),
+              ),
               Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                  child: Text('My bike', style: AppTextStyles.heading)),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: Text('My bike', style: AppTextStyles.heading),
+              ),
               const ServiceComponentsList(
-                  userID: 'user',
-                  bikeId: 'bike',
-                  currentMileageKm: 0,
-                  mileageAvailable: false),
-            ]))));
-    expect(find.text('Your components couldn’t load. Give it another try.'),
-        findsOneWidget);
+                userID: 'user',
+                bikeId: 'bike',
+                currentMileageKm: 0,
+                mileageAvailable: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(
+      find.text('Your components couldn’t load. Give it another try.'),
+      findsOneWidget,
+    );
     await capture(tester, '03-loading-error');
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();

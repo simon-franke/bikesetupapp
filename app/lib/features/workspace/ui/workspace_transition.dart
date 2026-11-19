@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Retains visited tabs so switching back preserves data and scroll position.
 class WorkspaceTransition extends StatelessWidget {
@@ -46,24 +46,29 @@ class _WorkspaceTransitionState extends State<_RetainedPages> {
         ? Duration.zero
         : const Duration(milliseconds: 220);
 
-    return Stack(fit: StackFit.expand, children: [
-      for (final entry in _pages.entries)
-        Positioned.fill(
-          key: ValueKey(('retained-page', entry.key)),
-          child: IgnorePointer(
-            ignoring: entry.key != active,
-            child: ExcludeSemantics(
-              excluding: entry.key != active,
-              child: AnimatedOpacity(
-                opacity: entry.key == _visible ? 1 : 0,
-                duration: duration,
-                curve: Curves.easeInOut,
-                child: TickerMode(
-                    enabled: entry.key == active, child: entry.value),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (final entry in _pages.entries)
+          Positioned.fill(
+            key: ValueKey(('retained-page', entry.key)),
+            child: IgnorePointer(
+              ignoring: entry.key != active,
+              child: ExcludeSemantics(
+                excluding: entry.key != active,
+                child: AnimatedOpacity(
+                  opacity: entry.key == _visible ? 1 : 0,
+                  duration: duration,
+                  curve: Curves.easeInOut,
+                  child: TickerMode(
+                    enabled: entry.key == active,
+                    child: entry.value,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-    ]);
+      ],
+    );
   }
 }

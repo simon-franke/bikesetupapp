@@ -4,7 +4,7 @@ class ServiceEntry {
   final String id;
   final String componentId;
   final double?
-      mileageAtServiceKm; // null when mileage at service time is unknown
+  mileageAtServiceKm; // null when mileage at service time is unknown
   final double? initialRideHours;
   final double? initialDistanceKm;
   final DateTime date;
@@ -24,8 +24,8 @@ class ServiceEntry {
     return ServiceEntry(
       id: id,
       componentId: data[FirestoreKeys.componentId] as String? ?? '',
-      mileageAtServiceKm:
-          (data[FirestoreKeys.mileageAtServiceKm] as num?)?.toDouble(),
+      mileageAtServiceKm: (data[FirestoreKeys.mileageAtServiceKm] as num?)
+          ?.toDouble(),
       date: (data[FirestoreKeys.serviceDate] as DateTime?) ?? DateTime.now(),
       initialDistanceKm: (data['initialDistanceKm'] as num?)?.toDouble(),
       initialRideHours: (data['initialRideHours'] as num?)?.toDouble(),

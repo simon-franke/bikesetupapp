@@ -26,8 +26,11 @@ abstract final class AppHaptics {
   }
 
   /// Preserve disabled controls and run actions without waiting for the device.
-  static VoidCallback? wrap(VoidCallback? callback,
-      {bool selection = false, bool emphasized = false}) {
+  static VoidCallback? wrap(
+    VoidCallback? callback, {
+    bool selection = false,
+    bool emphasized = false,
+  }) {
     if (callback == null) return null;
 
     return () {

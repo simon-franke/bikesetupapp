@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:crypto/crypto.dart';
+
 import 'ride.dart';
 
 // FIT protocol message, field and enum identifiers used by this decoder.
@@ -117,7 +119,8 @@ class FitActivityDecoder {
 
     for (var i = 0; i < count; i++) {
       fields.add(
-          _Field(reader.readByte(), reader.readByte(), reader.readByte() & 31));
+        _Field(reader.readByte(), reader.readByte(), reader.readByte() & 31),
+      );
     }
 
     var developerSize = 0;
@@ -133,8 +136,11 @@ class FitActivityDecoder {
     return _Definition(global, endian, fields, developerSize);
   }
 
-  static Map<int, int> _readFields(_FitReader reader, _Definition definition,
-      {required bool compressed}) {
+  static Map<int, int> _readFields(
+    _FitReader reader,
+    _Definition definition, {
+    required bool compressed,
+  }) {
     final values = <int, int>{};
 
     for (final field in definition.fields) {
@@ -165,7 +171,8 @@ class FitActivityDecoder {
     final start = values[_startTimeField], timer = values[_timerTimeField];
     if (start == null || timer == null || timer <= 0) {
       _invalid(
-          'A cycling session is missing its start time or active timer duration.');
+        'A cycling session is missing its start time or active timer duration.',
+      );
     }
 
     final elapsed = values[_elapsedTimeField];
@@ -174,8 +181,9 @@ class FitActivityDecoder {
     }
 
     final date = DateTime.fromMillisecondsSinceEpoch(
-        (start + _fitEpochSeconds) * 1000,
-        isUtc: true);
+      (start + _fitEpochSeconds) * 1000,
+      isUtc: true,
+    );
     if (date.isAfter(DateTime.now().toUtc())) {
       _invalid('The ride date is in the future.');
     }
@@ -184,14 +192,17 @@ class FitActivityDecoder {
     final id = 'fit_${sha256.convert(utf8.encode('$start:$timer:cycling'))}';
 
     return Ride(
-        id: id,
-        bikeId: '',
-        startedAt: date,
-        durationSeconds: (timer / 1000).round(),
-        source: 'fit',
-        name: 'Imported ride',
-        indoor: const [_indoorCycling, _virtualActivity]
-            .contains(values[_subSportField]));
+      id: id,
+      bikeId: '',
+      startedAt: date,
+      durationSeconds: (timer / 1000).round(),
+      source: 'fit',
+      name: 'Imported ride',
+      indoor: const [
+        _indoorCycling,
+        _virtualActivity,
+      ].contains(values[_subSportField]),
+    );
   }
 
   static int crc(Uint8List bytes, int start, int end) {
@@ -209,7 +220,7 @@ class FitActivityDecoder {
 /// Bounds checks apply to every read and skip within the declared data section.
 class _FitReader {
   _FitReader(Uint8List bytes, this._position, this._end)
-      : _data = ByteData.sublistView(bytes);
+    : _data = ByteData.sublistView(bytes);
 
   final ByteData _data;
   final int _end;

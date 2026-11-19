@@ -1,6 +1,8 @@
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
+
 import 'dart:async';
+
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/features/tests/models/setup_test.dart';
 import 'package:bikesetupapp/features/tests/repositories/tests_repository.dart';
@@ -34,9 +36,13 @@ class MemoryTests implements TestsRepository {
   }
 
   @override
-  Future<void> update(String bike, String setup, String id,
-      {required TestStage expectedStage,
-      required SetupTest Function(SetupTest) change}) async {
+  Future<void> update(
+    String bike,
+    String setup,
+    String id, {
+    required TestStage expectedStage,
+    required SetupTest Function(SetupTest) change,
+  }) async {
     _checkFailure();
     final current = records[id];
     if (current == null ||
@@ -55,11 +61,15 @@ class MemoryTests implements TestsRepository {
   }
 
   @override
-  Future<void> finish(String bike, String setup, String id,
-      {bool apply = false,
-      String? newSetupId,
-      String? newSetupName,
-      bool onlyIfUnchanged = false}) async {
+  Future<void> finish(
+    String bike,
+    String setup,
+    String id, {
+    bool apply = false,
+    String? newSetupId,
+    String? newSetupName,
+    bool onlyIfUnchanged = false,
+  }) async {
     _checkFailure();
     final current = records[id];
     if (current == null) throw const AppFailure(FailureCode.saveFailed);
@@ -79,8 +89,10 @@ class MemoryTests implements TestsRepository {
     if (current.stage == TestStage.draft) {
       records.remove(id);
     } else {
-      records[id] =
-          current.copyWith(stage: TestStage.finished, result: 'Baseline kept');
+      records[id] = current.copyWith(
+        stage: TestStage.finished,
+        result: 'Baseline kept',
+      );
     }
 
     updates.add(null);
@@ -98,22 +110,20 @@ SetupTest testExperiment({
   List<RideFeedback> rides = const [],
   String result = '',
   RideFeedback feedback = const RideFeedback(),
-}) =>
-    SetupTest(
-      id: id,
-      name: name,
-      before: before,
-      values: values,
-      fieldMetadata: fieldMetadata,
-      stage: stage,
-      draftStep: draftStep,
-      rides: rides,
-      result: result,
-      feedback: feedback,
-      setupInformation: {
-        FirestoreKeys.setupConfiguration: SetupConfiguration({
-          for (final entry in before.entries)
-            entry.key: entry.value.keys.toList(),
-        }).encode()
-      },
-    );
+}) => SetupTest(
+  id: id,
+  name: name,
+  before: before,
+  values: values,
+  fieldMetadata: fieldMetadata,
+  stage: stage,
+  draftStep: draftStep,
+  rides: rides,
+  result: result,
+  feedback: feedback,
+  setupInformation: {
+    FirestoreKeys.setupConfiguration: SetupConfiguration({
+      for (final entry in before.entries) entry.key: entry.value.keys.toList(),
+    }).encode(),
+  },
+);

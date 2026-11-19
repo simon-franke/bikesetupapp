@@ -1,23 +1,27 @@
 import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('discard waits until the menu has finished closing',
-      (tester) async {
+  testWidgets('discard waits until the menu has finished closing', (
+    tester,
+  ) async {
     var discarded = false;
-    await tester.pumpWidget(MaterialApp(
-      theme: AppTheme.darkTheme,
-      home: Scaffold(
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
           body: AppObjectMenu(
-        tooltip: 'Experiment options',
-        onRename: null,
-        onDiscard: () => discarded = true,
-      )),
-    ));
+            tooltip: 'Experiment options',
+            onRename: null,
+            onDiscard: () => discarded = true,
+          ),
+        ),
+      ),
+    );
     await tester.tap(find.byTooltip('Experiment options'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Discard draft'));
@@ -31,34 +35,39 @@ void main() {
   });
 
   for (final width in [320.0, 1440.0]) {
-    testWidgets('object menu stays in phone viewport and dismisses at $width',
-        (tester) async {
+    testWidgets('object menu stays in phone viewport and dismisses at $width', (
+      tester,
+    ) async {
       tester.view.physicalSize = Size(width, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       var renamed = 0;
       var discarded = 0;
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.darkTheme,
-        builder: (context, child) => PhoneViewport(
-          child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          builder: (context, child) => PhoneViewport(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(
                 textScaler: const TextScaler.linear(2),
-                disableAnimations: true),
-            child: child!,
+                disableAnimations: true,
+              ),
+              child: child!,
+            ),
           ),
-        ),
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.bottomRight,
-            child: AppObjectMenu(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomRight,
+              child: AppObjectMenu(
                 tooltip: 'Experiment options',
                 onRename: () => renamed++,
-                onDiscard: () => discarded++),
+                onDiscard: () => discarded++,
+              ),
+            ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.byTooltip('Experiment options'));
       await tester.pumpAndSettle();
       final action = find.widgetWithText(TextButton, 'Rename');

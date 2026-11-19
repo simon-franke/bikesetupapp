@@ -1,76 +1,86 @@
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/workspace/ui/view_toggle.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import 'dart:ui' show SemanticsAction, Tristate;
+
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
-      'labeled tabs change view and announce selection and service alerts',
-      (tester) async {
-    final semantics = tester.ensureSemantics();
-    var activeView = ActiveView.setup;
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: const [AppPalette.light]),
-        home: Scaffold(
-          body: StatefulBuilder(
-            builder: (context, setState) => ViewToggle(
-              activeView: activeView,
-              showServiceAlert: true,
-              onChanged: (view) => setState(() => activeView = view),
+    'labeled tabs change view and announce selection and service alerts',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      var activeView = ActiveView.setup;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [AppPalette.light]),
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => ViewToggle(
+                activeView: activeView,
+                showServiceAlert: true,
+                onChanged: (view) => setState(() => activeView = view),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(find.text('Setup'), findsOneWidget);
-    expect(find.text('Service'), findsOneWidget);
-    expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isTrue);
-    expect(
+      expect(find.text('Setup'), findsOneWidget);
+      expect(find.text('Service'), findsOneWidget);
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isTrue);
+      expect(
         tester
             .getSemantics(find.bySemanticsLabel(RegExp(r'^Setup')))
             .getSemanticsData()
             .flagsCollection
             .isSelected,
-        Tristate.isTrue);
+        Tristate.isTrue,
+      );
 
-    expect(
+      expect(
         tester
             .getSemantics(
-                find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
+              find.bySemanticsLabel(RegExp(r'^Service, maintenance due')),
+            )
             .getSemanticsData()
             .hasAction(SemanticsAction.tap),
-        isTrue);
+        isTrue,
+      );
 
-    await tester.tap(find.text('Service'));
-    await tester.pump();
-    expect(activeView, ActiveView.services);
-    expect(
+      await tester.tap(find.text('Service'));
+      await tester.pump();
+      expect(activeView, ActiveView.services);
+      expect(
         tester
             .getSemantics(
-                find.bySemanticsLabel(RegExp(r'^Service, maintenance due')))
+              find.bySemanticsLabel(RegExp(r'^Service, maintenance due')),
+            )
             .getSemanticsData()
             .flagsCollection
             .isSelected,
-        Tristate.isTrue);
-    expect(
+        Tristate.isTrue,
+      );
+      expect(
         tester
             .getSemantics(find.bySemanticsLabel(RegExp(r'^Setup')))
             .getSemanticsData()
             .flagsCollection
             .isSelected,
-        Tristate.isFalse);
+        Tristate.isFalse,
+      );
 
-    await tester.tap(find.text('Setup'));
-    await tester.pump();
-    expect(activeView, ActiveView.setup);
-    semantics.dispose();
-  });
+      await tester.tap(find.text('Setup'));
+      await tester.pump();
+      expect(activeView, ActiveView.setup);
+      semantics.dispose();
+    },
+  );
 
-  testWidgets('tabs fit a narrow phone with enlarged text and usable targets',
-      (tester) async {
+  testWidgets('tabs fit a narrow phone with enlarged text and usable targets', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(extensions: const [AppPalette.dark]),
@@ -96,8 +106,10 @@ void main() {
     expect(tester.takeException(), isNull);
 
     for (final target in tester.widgetList<InkWell>(find.byType(InkWell))) {
-      expect(tester.getSize(find.byWidget(target)).height,
-          greaterThanOrEqualTo(44));
+      expect(
+        tester.getSize(find.byWidget(target)).height,
+        greaterThanOrEqualTo(44),
+      );
     }
   });
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:bikesetupapp/features/auth/repositories/auth_repository.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:firebase_auth/firebase_auth.dart';

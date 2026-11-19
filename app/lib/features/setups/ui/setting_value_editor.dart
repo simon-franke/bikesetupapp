@@ -6,7 +6,7 @@ import 'package:flutter/semantics.dart';
 
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/models/unit_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 
 const double _tickWidth = 12;
@@ -110,8 +110,12 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _alignmentScheduled = false;
       if (!mounted || !_controller.hasClients) return;
-      _controller.jumpTo((_indexFor(_zoomAnchor) * _tickSpacing)
-          .clamp(0.0, _controller.position.maxScrollExtent));
+      _controller.jumpTo(
+        (_indexFor(_zoomAnchor) * _tickSpacing).clamp(
+          0.0,
+          _controller.position.maxScrollExtent,
+        ),
+      );
       if (!_pinching) {
         _zoomHold?.cancel();
         _zoomHold = null;
@@ -153,9 +157,11 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
     final index = (clamped / _tickSpacing).round();
     final newValue = _valueFor(index);
     if ((newValue - _currentValue).abs() >= _step / 2) {
-      final wasAtBoundary = (_currentValue - _effectiveMin).abs() < _step / 2 ||
+      final wasAtBoundary =
+          (_currentValue - _effectiveMin).abs() < _step / 2 ||
           (_currentValue - _effectiveMax).abs() < _step / 2;
-      final isAtBoundary = (newValue - _effectiveMin).abs() < _step / 2 ||
+      final isAtBoundary =
+          (newValue - _effectiveMin).abs() < _step / 2 ||
           (newValue - _effectiveMax).abs() < _step / 2;
       if (isAtBoundary && !wasAtBoundary) {
         AppHaptics.action();
@@ -170,13 +176,14 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
 
   Widget _valueHeader({required List<Widget> children}) =>
       widget.centerValueAccessory
-          ? Column(mainAxisSize: MainAxisSize.min, children: children)
-          : Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: children);
+      ? Column(mainAxisSize: MainAxisSize.min, children: children)
+      : Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: children,
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -198,29 +205,32 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Flex(
-                      direction: Axis.vertical,
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        if (widget.valueLabel != null)
-                          Text(widget.valueLabel!,
-                              style:
-                                  AppTextStyles.heading.copyWith(color: p.ink))
-                        else
-                          _RollingValue(
-                            value: _currentValue,
-                            decimals: widget.decimals,
+                    direction: Axis.vertical,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      if (widget.valueLabel != null)
+                        Text(
+                          widget.valueLabel!,
+                          style: AppTextStyles.heading.copyWith(color: p.ink),
+                        )
+                      else
+                        _RollingValue(
+                          value: _currentValue,
+                          decimals: widget.decimals,
+                        ),
+                      if (widget.valueAccessory == null)
+                        SizedBox(height: 4, width: 0),
+                      if (widget.valueAccessory == null)
+                        Text(
+                          widget.unitLabel,
+                          style: AppTextStyles.caption.copyWith(
+                            color: p.inkMuted,
                           ),
-                        if (widget.valueAccessory == null)
-                          SizedBox(height: 4, width: 0),
-                        if (widget.valueAccessory == null)
-                          Text(
-                            widget.unitLabel,
-                            style: AppTextStyles.caption
-                                .copyWith(color: p.inkMuted),
-                          ),
-                      ]),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -260,11 +270,14 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                             ? const NeverScrollableScrollPhysics()
                             : _SnapScrollPhysics(
                                 itemWidth: _tickSpacing,
-                                momentum:
-                                    !MediaQuery.disableAnimationsOf(context)),
+                                momentum: !MediaQuery.disableAnimationsOf(
+                                  context,
+                                ),
+                              ),
                         child: Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: halfViewport),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: halfViewport,
+                          ),
                           child: SizedBox(
                             width: contentWidth,
                             height: _rulerHeight,
@@ -279,14 +292,14 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                               final offset = _aligningZoom
                                   ? _indexFor(_zoomAnchor) * _tickSpacing
                                   : _controller.hasClients
-                                      ? _controller.offset
-                                      : _controller.initialScrollOffset;
+                                  ? _controller.offset
+                                  : _controller.initialScrollOffset;
 
                               return Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Positioned.fill(
-                                        child: CustomPaint(
+                                alignment: Alignment.center,
+                                children: [
+                                  Positioned.fill(
+                                    child: CustomPaint(
                                       painter: _RulerPainter(
                                         tickCount: tickCount,
                                         minValue: _effectiveMin,
@@ -298,13 +311,16 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
                                         edgeColor: p.surface,
                                         labelColor: p.inkMuted,
                                       ),
-                                    )),
-                                    _FlexiblePointer(
-                                        color: p.accent,
-                                        scroll: _controller,
-                                        tickWidth: _tickSpacing,
-                                        enabled: !_aligningZoom),
-                                  ]);
+                                    ),
+                                  ),
+                                  _FlexiblePointer(
+                                    color: p.accent,
+                                    scroll: _controller,
+                                    tickWidth: _tickSpacing,
+                                    enabled: !_aligningZoom,
+                                  ),
+                                ],
+                              );
                             },
                           ),
                         ),
@@ -316,8 +332,10 @@ class _SettingValueEditorState extends State<SettingValueEditor> {
             ),
           ),
         ),
-        Text('Pinch to zoom',
-            style: AppTextStyles.caption.copyWith(color: p.inkDim)),
+        Text(
+          'Pinch to zoom',
+          style: AppTextStyles.caption.copyWith(color: p.inkDim),
+        ),
       ],
     );
   }
@@ -339,52 +357,60 @@ class _RollingValue extends StatelessWidget {
     return Semantics(
       label: text,
       child: ExcludeSemantics(
-        child: LayoutBuilder(builder: (context, constraints) {
-          final scaler = MediaQuery.textScalerOf(context);
-          var style = AppTextStyles.pickerValue;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final scaler = MediaQuery.textScalerOf(context);
+            var style = AppTextStyles.pickerValue;
 
-          for (final candidate in [
-            AppTextStyles.pickerValue,
-            AppTextStyles.value,
-            AppTextStyles.heading
-          ]) {
-            style = candidate;
-            final measure = TextPainter(
+            for (final candidate in [
+              AppTextStyles.pickerValue,
+              AppTextStyles.value,
+              AppTextStyles.heading,
+            ]) {
+              style = candidate;
+              final measure = TextPainter(
                 text: TextSpan(text: text, style: style),
                 textScaler: scaler,
-                textDirection: TextDirection.ltr)
-              ..layout();
-            final fits = measure.width <= constraints.maxWidth;
-            measure.dispose();
-            if (fits) break;
-          }
+                textDirection: TextDirection.ltr,
+              )..layout();
+              final fits = measure.width <= constraints.maxWidth;
+              measure.dispose();
+              if (fits) break;
+            }
 
-          style = style.copyWith(
+            style = style.copyWith(
               color: context.palette.ink,
-              fontFeatures: const [FontFeature.tabularFigures()]);
+              fontFeatures: const [FontFeature.tabularFigures()],
+            );
 
-          return Row(mainAxisSize: MainAxisSize.min, children: [
-            for (var i = 0; i < text.length; i++)
-              _RollingDigit(
-                  key: ValueKey(text.length - i),
-                  digit: text[i],
-                  value: value,
-                  style: style,
-                  reduced: reduced),
-          ]);
-        }),
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < text.length; i++)
+                  _RollingDigit(
+                    key: ValueKey(text.length - i),
+                    digit: text[i],
+                    value: value,
+                    style: style,
+                    reduced: reduced,
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
 class _RollingDigit extends StatefulWidget {
-  const _RollingDigit(
-      {super.key,
-      required this.digit,
-      required this.value,
-      required this.style,
-      required this.reduced});
+  const _RollingDigit({
+    super.key,
+    required this.digit,
+    required this.value,
+    required this.style,
+    required this.reduced,
+  });
 
   final String digit;
   final double value;
@@ -422,33 +448,43 @@ class _RollingDigitState extends State<_RollingDigit> {
           final incoming = child.key == ValueKey(widget.digit);
 
           return AnimatedBuilder(
-              animation: animation,
-              builder: (context, _) {
-                final travel = 1 - animation.value;
-                return ImageFiltered(
-                  enabled: travel > 0.01,
-                  imageFilter:
-                      ui.ImageFilter.blur(sigmaX: 0, sigmaY: 0.8 * travel),
-                  child: FractionalTranslation(
-                      translation: Offset(0,
-                          (incoming ? direction : -direction) * travel * 0.3),
-                      child: Opacity(opacity: animation.value, child: child)),
-                );
-              });
+            animation: animation,
+            builder: (context, _) {
+              final travel = 1 - animation.value;
+              return ImageFiltered(
+                enabled: travel > 0.01,
+                imageFilter: ui.ImageFilter.blur(
+                  sigmaX: 0,
+                  sigmaY: 0.8 * travel,
+                ),
+                child: FractionalTranslation(
+                  translation: Offset(
+                    0,
+                    (incoming ? direction : -direction) * travel * 0.3,
+                  ),
+                  child: Opacity(opacity: animation.value, child: child),
+                ),
+              );
+            },
+          );
         },
-        child: Text(widget.digit,
-            key: ValueKey(widget.digit), style: widget.style),
+        child: Text(
+          widget.digit,
+          key: ValueKey(widget.digit),
+          style: widget.style,
+        ),
       ),
     );
   }
 }
 
 class _FlexiblePointer extends StatefulWidget {
-  const _FlexiblePointer(
-      {required this.color,
-      required this.scroll,
-      required this.tickWidth,
-      required this.enabled});
+  const _FlexiblePointer({
+    required this.color,
+    required this.scroll,
+    required this.tickWidth,
+    required this.enabled,
+  });
 
   final Color color;
   final ScrollController scroll;
@@ -461,8 +497,9 @@ class _FlexiblePointer extends StatefulWidget {
 
 class _FlexiblePointerState extends State<_FlexiblePointer>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _bend =
-      AnimationController.unbounded(vsync: this);
+  late final AnimationController _bend = AnimationController.unbounded(
+    vsync: this,
+  );
   late double _lastOffset = widget.scroll.hasClients
       ? widget.scroll.offset
       : widget.scroll.initialScrollOffset;
@@ -494,9 +531,11 @@ class _FlexiblePointerState extends State<_FlexiblePointer>
     // A slower turn barely flexes the pointer. Release quickly removes the
     // load, including when the user pauses midway between two ticks.
     _bend.value = -delta.sign * math.sin(math.pi * phase) * 4 * speed;
-    _bend.animateTo(0,
-        duration: const Duration(milliseconds: 110),
-        curve: Curves.easeOutCubic);
+    _bend.animateTo(
+      0,
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -509,14 +548,15 @@ class _FlexiblePointerState extends State<_FlexiblePointer>
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 24,
-        height: _rulerHeight,
-        child: AnimatedBuilder(
-            animation: _bend,
-            builder: (context, _) => CustomPaint(
-                painter:
-                    _PointerPainter(color: widget.color, bend: _bend.value))),
-      );
+    width: 24,
+    height: _rulerHeight,
+    child: AnimatedBuilder(
+      animation: _bend,
+      builder: (context, _) => CustomPaint(
+        painter: _PointerPainter(color: widget.color, bend: _bend.value),
+      ),
+    ),
+  );
 }
 
 class _PointerPainter extends CustomPainter {
@@ -534,12 +574,13 @@ class _PointerPainter extends CustomPainter {
       ..moveTo(cx, 8)
       ..cubicTo(cx, 16, cx + bend * 0.25, 24, cx + bend, 34);
     canvas.drawPath(
-        pointer,
-        Paint()
-          ..color = color
-          ..strokeWidth = 3
-          ..strokeCap = StrokeCap.round
-          ..style = PaintingStyle.stroke);
+      pointer,
+      Paint()
+        ..color = color
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
+    );
   }
 
   @override
@@ -588,11 +629,14 @@ class _RulerPainter extends CustomPainter {
     final majorInterval = niceInterval(labelSpacing / tickWidth);
     final midInterval = math.max(minorInterval, majorInterval ~/ 2);
     final first = math.max(
-        0,
-        ((offset - radius * arcLimit) / tickWidth / minorInterval).floor() *
-            minorInterval);
+      0,
+      ((offset - radius * arcLimit) / tickWidth / minorInterval).floor() *
+          minorInterval,
+    );
     final last = math.min(
-        tickCount - 1, ((offset + radius * arcLimit) / tickWidth).ceil());
+      tickCount - 1,
+      ((offset + radius * arcLimit) / tickWidth).ceil(),
+    );
     canvas.save();
     canvas.clipRect(Offset.zero & size);
     var lastLabelRight = -double.infinity;
@@ -619,7 +663,10 @@ class _RulerPainter extends CustomPainter {
       final height = (major ? 21.0 : (mid ? 15.0 : 7.0)) * depth;
       final tick = Paint()
         ..color = Color.lerp(
-            edgeColor, tickColor, depth * depth * visibility * edgeFade)!
+          edgeColor,
+          tickColor,
+          depth * depth * visibility * edgeFade,
+        )!
         ..strokeWidth = major ? 3 : (mid ? 2 : 1.5)
         ..strokeCap = StrokeCap.round;
       if (depth < 0.65) {
@@ -634,8 +681,9 @@ class _RulerPainter extends CustomPainter {
           text: TextSpan(
             text: formatNumber(minValue + i * step, decimals),
             style: AppTextStyles.caption.copyWith(
-                color: labelColor,
-                fontFeatures: const [FontFeature.tabularFigures()]),
+              color: labelColor,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
@@ -672,17 +720,23 @@ class _SnapScrollPhysics extends ScrollPhysics {
   final double itemWidth;
   final bool momentum;
 
-  const _SnapScrollPhysics(
-      {required this.itemWidth, this.momentum = true, super.parent});
+  const _SnapScrollPhysics({
+    required this.itemWidth,
+    this.momentum = true,
+    super.parent,
+  });
 
   @override
   _SnapScrollPhysics applyTo(ScrollPhysics? ancestor) => _SnapScrollPhysics(
-      itemWidth: itemWidth, momentum: momentum, parent: buildParent(ancestor));
+    itemWidth: itemWidth,
+    momentum: momentum,
+    parent: buildParent(ancestor),
+  );
 
   double _targetPixels(ScrollMetrics position, double velocity) {
     final coast = momentum
         ? FrictionSimulation(0.08, position.pixels, velocity).finalX -
-            position.pixels
+              position.pixels
         : 0.0;
     // A quick flick should cover nearby adjustments, not race across the
     // entire measurement range. Direct entry handles large changes.
@@ -694,7 +748,9 @@ class _SnapScrollPhysics extends ScrollPhysics {
 
   @override
   Simulation? createBallisticSimulation(
-      ScrollMetrics position, double velocity) {
+    ScrollMetrics position,
+    double velocity,
+  ) {
     velocity = velocity.clamp(-1200.0, 1200.0);
     final tolerance = toleranceFor(position);
     final target = _targetPixels(position, velocity);
@@ -713,9 +769,6 @@ class _SnapScrollPhysics extends ScrollPhysics {
   }
 
   @override
-  SpringDescription get spring => SpringDescription.withDampingRatio(
-        mass: 0.5,
-        stiffness: 100,
-        ratio: 1.0,
-      );
+  SpringDescription get spring =>
+      SpringDescription.withDampingRatio(mass: 0.5, stiffness: 100, ratio: 1.0);
 }

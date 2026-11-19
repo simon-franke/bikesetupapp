@@ -1,9 +1,11 @@
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/dialog_helpers.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
+
 import 'login_page.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class AuthAlerts {
   static Future<bool?> signOutAnonymous(BuildContext context, User user) async {
@@ -18,12 +20,15 @@ class AuthAlerts {
           ),
           actions: [
             AppActionButton(
-                label: 'Save to an account',
-                onPressed: () {
-                  Navigator.of(ctx).pop(false);
-                  Navigator.of(context, rootNavigator: true).push(
-                      AppRoutes.fadeSlide(const LoginPage(upgrade: true)));
-                }),
+              label: 'Save to an account',
+              onPressed: () {
+                Navigator.of(ctx).pop(false);
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).push(AppRoutes.fadeSlide(const LoginPage(upgrade: true)));
+              },
+            ),
             TextButton(
               child: const Text('Stay here'),
               onPressed: () => Navigator.of(ctx).pop(false),

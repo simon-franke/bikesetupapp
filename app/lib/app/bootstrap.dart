@@ -12,18 +12,21 @@ import 'app_dependencies.dart';
 /// Startup failures propagate; the app is not mounted with partial initialization.
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final dependencies = AppDependencies.instance;
   final savedTheme = await dependencies.themePreferences.readTheme();
 
-  runApp(Provider<AppDependencies>.value(
+  runApp(
+    Provider<AppDependencies>.value(
       value: dependencies,
       child: ChangeNotifierProvider<AppStateNotifier>(
-          create: (context) => AppStateNotifier(
-              AppStateNotifier.fromSaved(savedTheme),
-              preferences: dependencies.themePreferences),
-          child: const MyApp())));
+        create: (context) => AppStateNotifier(
+          AppStateNotifier.fromSaved(savedTheme),
+          preferences: dependencies.themePreferences,
+        ),
+        child: const MyApp(),
+      ),
+    ),
+  );
 }

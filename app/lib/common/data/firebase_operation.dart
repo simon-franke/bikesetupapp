@@ -1,9 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
+
 import '../models/command_result.dart';
 
 /// Translate known SDK failures at the persistence boundary; programming errors propagate.
-Future<T> firebaseOperation<T>(Future<T> Function() action,
-    {FailureCode fallback = FailureCode.loadFailed}) async {
+Future<T> firebaseOperation<T>(
+  Future<T> Function() action, {
+  FailureCode fallback = FailureCode.loadFailed,
+}) async {
   try {
     return await action();
   } on FirebaseException catch (error, stack) {
@@ -11,7 +14,7 @@ Future<T> firebaseOperation<T>(Future<T> Function() action,
       'popup-closed-by-user',
       'cancelled-popup-request',
       'web-context-cancelled',
-      'canceled'
+      'canceled',
     ].contains(error.code)) {
       throw const CommandAborted();
     }
@@ -24,12 +27,10 @@ Future<T> firebaseOperation<T>(Future<T> Function() action,
       'invalid-credential' ||
       'invalid-email' ||
       'user-mismatch' ||
-      'requires-recent-login' =>
-        FailureCode.invalidCredentials,
+      'requires-recent-login' => FailureCode.invalidCredentials,
       'email-already-in-use' ||
       'credential-already-in-use' ||
-      'account-exists-with-different-credential' =>
-        FailureCode.emailInUse,
+      'account-exists-with-different-credential' => FailureCode.emailInUse,
       'weak-password' => FailureCode.weakPassword,
       'too-many-requests' || 'resource-exhausted' => FailureCode.rateLimited,
       _ => fallback,

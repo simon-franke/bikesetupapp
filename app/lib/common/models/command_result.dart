@@ -50,18 +50,18 @@ sealed class CommandResult<T> {
   bool get isSuccess => this is CommandSuccess<T>;
   bool get isCancelled => this is CommandCancelled<T>;
   AppFailure? get failure => switch (this) {
-        CommandFailure<T>(:final reason) => reason,
-        _ => null,
-      };
+    CommandFailure<T>(:final reason) => reason,
+    _ => null,
+  };
 
   /// Returns the value, or throws the failure or [CommandAborted].
   ///
   /// Use when composing commands so a failed inner command stops the outer one.
   T requireValue() => switch (this) {
-        CommandSuccess<T>(:final value) => value,
-        CommandFailure<T>(:final reason) => throw reason,
-        CommandCancelled<T>() => throw const CommandAborted(),
-      };
+    CommandSuccess<T>(:final value) => value,
+    CommandFailure<T>(:final reason) => throw reason,
+    CommandCancelled<T>() => throw const CommandAborted(),
+  };
 }
 
 class CommandSuccess<T> extends CommandResult<T> {

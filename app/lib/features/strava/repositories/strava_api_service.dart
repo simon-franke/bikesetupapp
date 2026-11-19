@@ -1,8 +1,12 @@
 import 'dart:async';
+
 import 'package:bikesetupapp/common/models/command_result.dart';
+
 import '../models/strava_exception.dart';
 export '../models/strava_exception.dart';
+
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:bikesetupapp/features/strava/models/strava_bike.dart';
@@ -13,12 +17,16 @@ StravaApiException _exceptionFromResponse(http.Response response) {
   try {
     final body = jsonDecode(response.body);
     if (body is Map && body['errors'] is List) {
-      inactive = (body['errors'] as List).any((error) =>
-          error is Map &&
-          error['resource'].toString().toLowerCase() == 'application' &&
-          error['code'].toString().toLowerCase() == 'inactive');
+      inactive = (body['errors'] as List).any(
+        (error) =>
+            error is Map &&
+            error['resource'].toString().toLowerCase() == 'application' &&
+            error['code'].toString().toLowerCase() == 'inactive',
+      );
     }
-  } on FormatException {/* Non-JSON failures still have an HTTP status. */}
+  } on FormatException {
+    /* Non-JSON failures still have an HTTP status. */
+  }
 
   final code = inactive
       ? FailureCode.stravaInactive
@@ -35,7 +43,7 @@ StravaApiException _exceptionFromResponse(http.Response response) {
 class StravaApiService {
   final http.Client? _client;
 
-  StravaApiService({http.Client? client}) : _client = client;
+  StravaApiService({this._client});
 
   Future<http.Response> _get(Uri uri, String accessToken) {
     final headers = {'Authorization': 'Bearer $accessToken'};
@@ -67,20 +75,35 @@ class StravaApiService {
     } on StravaApiException {
       rethrow;
     } on TimeoutException catch (error, stack) {
-      throw StravaApiException(FailureCode.network,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.network,
+        cause: error,
+        stackTrace: stack,
+      );
     } on http.ClientException catch (error, stack) {
-      throw StravaApiException(FailureCode.network,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.network,
+        cause: error,
+        stackTrace: stack,
+      );
     } on FormatException catch (error, stack) {
-      throw StravaApiException(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     } on TypeError catch (error, stack) {
-      throw StravaApiException(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     } on RangeError catch (error, stack) {
-      throw StravaApiException(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -104,7 +127,7 @@ class StravaApiService {
     // conservative and avoids needing a time-of-day from the user.
     final afterTimestamp =
         DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/
-            1000;
+        1000;
 
     double distanceAfterMeters = 0.0;
     int page = 1;
@@ -141,11 +164,13 @@ class StravaApiService {
     required int page,
   }) async {
     try {
-      final uri = Uri.parse(_activitiesUrl).replace(queryParameters: {
-        'after': afterTimestamp.toString(),
-        'per_page': '200',
-        'page': page.toString(),
-      });
+      final uri = Uri.parse(_activitiesUrl).replace(
+        queryParameters: {
+          'after': afterTimestamp.toString(),
+          'per_page': '200',
+          'page': page.toString(),
+        },
+      );
 
       final response = await _get(uri, accessToken);
 
@@ -169,17 +194,29 @@ class StravaApiService {
     } on AppFailure {
       rethrow;
     } on TimeoutException catch (error, stack) {
-      throw StravaApiException(FailureCode.network,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.network,
+        cause: error,
+        stackTrace: stack,
+      );
     } on http.ClientException catch (error, stack) {
-      throw StravaApiException(FailureCode.network,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.network,
+        cause: error,
+        stackTrace: stack,
+      );
     } on FormatException catch (error, stack) {
-      throw StravaApiException(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     } on TypeError catch (error, stack) {
-      throw StravaApiException(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw StravaApiException(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     }
   }
 }

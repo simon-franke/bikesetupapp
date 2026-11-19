@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Clips scrolling content beneath a fixed header without decoration.
 class AppScrollEdge extends StatelessWidget {

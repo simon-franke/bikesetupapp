@@ -49,8 +49,10 @@ class GuestFirebase extends Fake implements FirebaseAuth {
   }
 
   @override
-  Future<UserCredential> createUserWithEmailAndPassword(
-      {required String email, required String password}) async {
+  Future<UserCredential> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     replacements++;
     throw StateError('Must link, never replace a guest session');
   }
@@ -61,23 +63,29 @@ void main() {
     final guest = Guest();
     final firebase = GuestFirebase(guest);
     final repository = FirebaseAuthRepository(auth: firebase);
-    final result =
-        await repository.signUpWithEmail('rider@example.com', 'password');
+    final result = await repository.signUpWithEmail(
+      'rider@example.com',
+      'password',
+    );
     expect(result.user!.uid, 'guest-with-bikes');
     expect(result.user!.isAnonymous, isFalse);
     expect(guest.links, 1);
     expect(firebase.replacements, 0);
   });
-  test(
-      'an existing-account collision preserves the guest and reports a recoverable failure',
-      () async {
+  test('an existing-account collision preserves the guest and reports a recoverable failure', () async {
     final guest = Guest()..conflict = true;
     final firebase = GuestFirebase(guest);
     final repository = FirebaseAuthRepository(auth: firebase);
     await expectLater(
-        repository.signUpWithEmail('existing@example.com', 'password'),
-        throwsA(isA<AppFailure>().having(
-            (failure) => failure.code, 'code', FailureCode.emailInUse)));
+      repository.signUpWithEmail('existing@example.com', 'password'),
+      throwsA(
+        isA<AppFailure>().having(
+          (failure) => failure.code,
+          'code',
+          FailureCode.emailInUse,
+        ),
+      ),
+    );
     expect(repository.currentUser!.uid, 'guest-with-bikes');
     expect(repository.currentUser!.isAnonymous, isTrue);
     expect(firebase.replacements, 0);

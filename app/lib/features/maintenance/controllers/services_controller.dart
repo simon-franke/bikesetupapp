@@ -8,7 +8,7 @@ import 'package:bikesetupapp/features/strava/controllers/strava_connection_contr
 /// Request generations prevent superseded loads from publishing stale results.
 class ServicesController extends OperationController {
   ServicesController(this._strava, this._connection, String bikeId)
-      : _bikeId = bikeId;
+    : _bikeId = bikeId;
 
   final StravaController _strava;
   final StravaConnectionController _connection;
@@ -35,9 +35,9 @@ class ServicesController extends OperationController {
   }
 
   Future<CommandResult<void>> load() => command(() async {
-        final generation = beginRequest('load');
-        await _load(generation);
-      });
+    final generation = beginRequest('load');
+    await _load(generation);
+  });
 
   Future<void> _load(int generation) async {
     final id = _bikeId;
@@ -95,14 +95,15 @@ class ServicesController extends OperationController {
   }
 
   Future<CommandResult<void>> connect() => share(
-      'connect',
-      () => command(() async {
-            final generation = beginRequest('load');
-            final result = await _connection.authorize();
-            _check(generation);
-            result.requireValue();
-            _connected = true;
-            emit();
-            await _sync();
-          }));
+    'connect',
+    () => command(() async {
+      final generation = beginRequest('load');
+      final result = await _connection.authorize();
+      _check(generation);
+      result.requireValue();
+      _connected = true;
+      emit();
+      await _sync();
+    }),
+  );
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../common/layout/phone_viewport.dart';
@@ -50,21 +50,22 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) => Consumer<AppStateNotifier>(
-        builder: (context, appState, child) => MaterialApp(
-          navigatorKey: _navigatorKey,
-          debugShowCheckedModeBanner: false,
-          builder: (context, child) => PhoneViewport(child: child!),
-          title: 'Clickwise',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: appState.themeMode,
-          themeAnimationDuration: const Duration(milliseconds: 240),
-          themeAnimationCurve: Curves.easeOutCubic,
-          home: SessionLanding(
-              key: ValueKey(_session),
-              user: auth.currentUser,
-              deleteAccount: _deleteAccount,
-              onCancelDeletion: () => setState(() => _deleteAccount = false)),
-        ),
-      );
+    builder: (context, appState, child) => MaterialApp(
+      navigatorKey: _navigatorKey,
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) => PhoneViewport(child: child!),
+      title: 'Clickwise',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: appState.themeMode,
+      themeAnimationDuration: const Duration(milliseconds: 240),
+      themeAnimationCurve: Curves.easeOutCubic,
+      home: SessionLanding(
+        key: ValueKey(_session),
+        user: auth.currentUser,
+        deleteAccount: _deleteAccount,
+        onCancelDeletion: () => setState(() => _deleteAccount = false),
+      ),
+    ),
+  );
 }

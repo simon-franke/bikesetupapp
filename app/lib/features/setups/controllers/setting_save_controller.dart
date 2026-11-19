@@ -8,7 +8,7 @@ class SettingWriteQueue extends WriteQueue {}
 /// Tracks an editor's latest save while preserving the order of accepted writes.
 class SettingSaveController extends OperationController {
   SettingSaveController({SettingWriteQueue? writes})
-      : _writes = writes ?? SettingWriteQueue();
+    : _writes = writes ?? SettingWriteQueue();
 
   final SettingWriteQueue _writes;
   bool _saving = false;
@@ -22,30 +22,30 @@ class SettingSaveController extends OperationController {
   /// Only the latest request updates saving and failure indicators. Older requests
   /// can return cancellation after their writes have completed.
   Future<CommandResult<void>> save(
-          String value, Future<void> Function(String) write) =>
-      command(() async {
-        final generation = beginRequest('save');
-        _saving = true;
-        _failed = false;
-        emit();
+    String value,
+    Future<void> Function(String) write,
+  ) => command(() async {
+    final generation = beginRequest('save');
+    _saving = true;
+    _failed = false;
+    emit();
 
-        try {
-          // Accepted edits must persist even if the user switches fields.
-          await _writes.enqueue(() => write(value));
-          if (!isCurrentRequest('save', generation)) {
-            throw const CommandAborted();
-          }
-        } catch (error) {
-          if (isCurrentRequest('save', generation) &&
-              error is! CommandAborted) {
-            _failed = true;
-          }
-          rethrow;
-        } finally {
-          if (isCurrentRequest('save', generation)) {
-            _saving = false;
-            emit();
-          }
-        }
-      });
+    try {
+      // Accepted edits must persist even if the user switches fields.
+      await _writes.enqueue(() => write(value));
+      if (!isCurrentRequest('save', generation)) {
+        throw const CommandAborted();
+      }
+    } catch (error) {
+      if (isCurrentRequest('save', generation) && error is! CommandAborted) {
+        _failed = true;
+      }
+      rethrow;
+    } finally {
+      if (isCurrentRequest('save', generation)) {
+        _saving = false;
+        emit();
+      }
+    }
+  });
 }

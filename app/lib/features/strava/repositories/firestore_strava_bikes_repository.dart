@@ -4,11 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/strava/models/strava_bike.dart';
 import 'package:bikesetupapp/common/data/firestore_codec.dart';
+
 import 'strava_bikes_repository.dart';
 
 class FirestoreStravaBikesRepository implements StravaBikesRepository {
   FirestoreStravaBikesRepository(this.userID, {FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final String userID;
   final FirebaseFirestore _firestore;
@@ -26,7 +27,10 @@ class FirestoreStravaBikesRepository implements StravaBikesRepository {
             .collection(FirestoreKeys.stravaBikes)
             .doc(bike.stravaGearId);
         batch.set(
-            ref, encodeFirestoreMap(bike.toMap()), SetOptions(merge: true));
+          ref,
+          encodeFirestoreMap(bike.toMap()),
+          SetOptions(merge: true),
+        );
       }
       await batch.commit();
     }, fallback: FailureCode.saveFailed);
@@ -34,13 +38,19 @@ class FirestoreStravaBikesRepository implements StravaBikesRepository {
 
   @override
   Stream<List<StravaBike>> getStravaBikes() {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.stravaBikes)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => StravaBike.fromMap(d.id, decodeFirestoreMap(d.data())))
-            .toList()));
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.stravaBikes)
+          .snapshots()
+          .map(
+            (snap) => snap.docs
+                .map(
+                  (d) => StravaBike.fromMap(d.id, decodeFirestoreMap(d.data())),
+                )
+                .toList(),
+          ),
+    );
   }
 
   @override
@@ -90,7 +100,9 @@ class FirestoreStravaBikesRepository implements StravaBikesRepository {
           .get();
       if (snap.docs.isEmpty) return null;
       final bike = StravaBike.fromMap(
-          snap.docs.first.id, decodeFirestoreMap(snap.docs.first.data()));
+        snap.docs.first.id,
+        decodeFirestoreMap(snap.docs.first.data()),
+      );
       return bike.distanceKm;
     });
   }

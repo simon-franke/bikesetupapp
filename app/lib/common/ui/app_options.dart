@@ -1,8 +1,11 @@
 import 'app_haptics.dart';
-import 'package:flutter/cupertino.dart';
+
+import 'package:cupertino_ui/cupertino_ui.dart';
+
 import 'app_sheet.dart';
+
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Keeps secondary object actions out of the content hierarchy.
 class AppObjectMenu extends StatelessWidget {
@@ -25,25 +28,31 @@ class AppObjectMenu extends StatelessWidget {
 
   Future<void> _open(BuildContext context) async {
     final selected = await showAppOptionsSheet(
-        context: context,
-        title: title ?? tooltip,
-        entries: [
-          if (onRename != null)
-            const AppSheetOption(
-                value: 'rename', label: 'Rename', icon: CupertinoIcons.pencil),
-          if (onDiscard != null)
-            const AppSheetOption(
-                value: 'discard',
-                label: 'Discard draft',
-                icon: CupertinoIcons.trash,
-                destructive: true),
-          if (onDelete != null)
-            AppSheetOption(
-                value: 'delete',
-                label: deleteLabel,
-                icon: CupertinoIcons.trash,
-                destructive: true),
-        ]);
+      context: context,
+      title: title ?? tooltip,
+      entries: [
+        if (onRename != null)
+          const AppSheetOption(
+            value: 'rename',
+            label: 'Rename',
+            icon: CupertinoIcons.pencil,
+          ),
+        if (onDiscard != null)
+          const AppSheetOption(
+            value: 'discard',
+            label: 'Discard draft',
+            icon: CupertinoIcons.trash,
+            destructive: true,
+          ),
+        if (onDelete != null)
+          AppSheetOption(
+            value: 'delete',
+            label: deleteLabel,
+            icon: CupertinoIcons.trash,
+            destructive: true,
+          ),
+      ],
+    );
     if (!context.mounted) return;
 
     if (selected == 'rename') onRename?.call();
@@ -55,26 +64,27 @@ class AppObjectMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-        tooltip: tooltip,
-        onPressed: onRename == null && onDiscard == null && onDelete == null
-            ? null
-            : AppHaptics.wrap(() => _open(context)),
-        style: IconButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          foregroundColor: context.palette.inkMuted,
-        ).copyWith(splashFactory: NoSplash.splashFactory),
-        icon: const Icon(Icons.more_horiz),
-      );
+    tooltip: tooltip,
+    onPressed: onRename == null && onDiscard == null && onDelete == null
+        ? null
+        : AppHaptics.wrap(() => _open(context)),
+    style: IconButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      foregroundColor: context.palette.inkMuted,
+    ).copyWith(splashFactory: NoSplash.splashFactory),
+    icon: const Icon(Icons.more_horiz),
+  );
 }
 
 class AppSheetOption {
-  const AppSheetOption(
-      {required this.value,
-      required this.label,
-      this.icon,
-      this.destructive = false,
-      this.selected = false,
-      this.count = 0});
+  const AppSheetOption({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.destructive = false,
+    this.selected = false,
+    this.count = 0,
+  });
 
   final String value, label;
   final IconData? icon;
@@ -119,38 +129,50 @@ Future<String?> showAppOptionsSheet({
                     },
                     style: TextButton.styleFrom(
                       alignment: Alignment.centerLeft,
-                      minimumSize:
-                          Size(double.infinity, entry.icon == null ? 56 : 64),
+                      minimumSize: Size(
+                        double.infinity,
+                        entry.icon == null ? 56 : 64,
+                      ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 14),
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
                       foregroundColor: entry.destructive ? p.red : p.ink,
                       backgroundColor: entry.destructive
                           ? p.red.withValues(alpha: .10)
                           : Colors.transparent,
                       textStyle: AppTextStyles.label,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: Semantics(
                       selected: entry.selected,
-                      child: Row(children: [
-                        if (entry.icon != null) ...[
-                          Icon(entry.icon,
+                      child: Row(
+                        children: [
+                          if (entry.icon != null) ...[
+                            Icon(
+                              entry.icon,
                               size: AppIconSizes.control,
-                              color: entry.destructive ? p.red : p.accentText),
-                          const SizedBox(width: 20),
+                              color: entry.destructive ? p.red : p.accentText,
+                            ),
+                            const SizedBox(width: 20),
+                          ],
+                          Expanded(child: Text(entry.label)),
+                          if (entry.count > 0) ...[
+                            const SizedBox(width: 12),
+                            Text('${entry.count}'),
+                          ],
+                          if (entry.selected) ...[
+                            const SizedBox(width: 12),
+                            Icon(
+                              Icons.check_rounded,
+                              size: AppIconSizes.control,
+                              color: p.accentText,
+                            ),
+                          ],
                         ],
-                        Expanded(child: Text(entry.label)),
-                        if (entry.count > 0) ...[
-                          const SizedBox(width: 12),
-                          Text('${entry.count}'),
-                        ],
-                        if (entry.selected) ...[
-                          const SizedBox(width: 12),
-                          Icon(Icons.check_rounded,
-                              size: AppIconSizes.control, color: p.accentText),
-                        ],
-                      ]),
+                      ),
                     ),
                   ),
                 ),
@@ -168,8 +190,11 @@ Future<String?> showAppOptionsSheet({
 
 /// A quiet, flat selection highlight shared by option controls.
 class AppSelectionSurface extends StatelessWidget {
-  const AppSelectionSurface(
-      {super.key, required this.selected, required this.child});
+  const AppSelectionSurface({
+    super.key,
+    required this.selected,
+    required this.child,
+  });
 
   final bool selected;
   final Widget child;
@@ -189,11 +214,12 @@ class AppSelectionSurface extends StatelessWidget {
 
 /// Shared suggestion row for adding settings and categories.
 class AppSuggestionTile extends StatelessWidget {
-  const AppSuggestionTile(
-      {super.key,
-      required this.label,
-      required this.onTap,
-      this.isNew = false});
+  const AppSuggestionTile({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.isNew = false,
+  });
 
   final String label;
   final VoidCallback? onTap;
@@ -201,28 +227,32 @@ class AppSuggestionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Material(
-          color: context.palette.surface2,
-          borderRadius: BorderRadius.circular(14),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-              onTap: AppHaptics.wrap(onTap, selection: true),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                child: Row(children: [
-                  if (isNew) ...[
-                    const Icon(CupertinoIcons.plus, size: AppIconSizes.compact),
-                    const SizedBox(width: 12)
-                  ],
-                  Expanded(child: Text(label, style: AppTextStyles.body)),
-                  const SizedBox(width: 12),
-                  Icon(CupertinoIcons.chevron_right,
-                      size: AppIconSizes.compact,
-                      color: context.palette.inkMuted),
-                ]),
-              )),
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Material(
+      color: context.palette.surface2,
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: AppHaptics.wrap(onTap, selection: true),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Row(
+            children: [
+              if (isNew) ...[
+                const Icon(CupertinoIcons.plus, size: AppIconSizes.compact),
+                const SizedBox(width: 12),
+              ],
+              Expanded(child: Text(label, style: AppTextStyles.body)),
+              const SizedBox(width: 12),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: AppIconSizes.compact,
+                color: context.palette.inkMuted,
+              ),
+            ],
+          ),
         ),
-      );
+      ),
+    ),
+  );
 }

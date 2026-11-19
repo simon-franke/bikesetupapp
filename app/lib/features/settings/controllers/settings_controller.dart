@@ -7,7 +7,7 @@ import 'package:bikesetupapp/features/strava/controllers/strava_connection_contr
 
 class SettingsController extends OperationController {
   SettingsController(this._auth, this._connection, this._stravaForUser)
-      : _user = _auth.currentUser;
+    : _user = _auth.currentUser;
 
   final AuthController _auth;
   final StravaConnectionController _connection;
@@ -50,54 +50,58 @@ class SettingsController extends OperationController {
   }
 
   Future<CommandResult<void>> connect() => share(
-      'connect',
-      () => command(() async {
-            _requireAccount();
-            final generation = beginRequest('state');
-            final auth = (await _connection.authorize()).requireValue();
-            _check(generation);
-            _connected = true;
-            _athleteId = auth.athleteId;
-            emit();
-            final currentUser = _user;
-            if (currentUser != null) {
-              final result = await _stravaForUser(currentUser.uid).sync();
-              _check(generation);
-              if (result.isCancelled) throw const CommandAborted();
-              await _load(generation);
-              result.requireValue();
-            }
-          }));
+    'connect',
+    () => command(() async {
+      _requireAccount();
+      final generation = beginRequest('state');
+      final auth = (await _connection.authorize()).requireValue();
+      _check(generation);
+      _connected = true;
+      _athleteId = auth.athleteId;
+      emit();
+      final currentUser = _user;
+      if (currentUser != null) {
+        final result = await _stravaForUser(currentUser.uid).sync();
+        _check(generation);
+        if (result.isCancelled) throw const CommandAborted();
+        await _load(generation);
+        result.requireValue();
+      }
+    }),
+  );
 
   Future<CommandResult<void>> disconnect() => share(
-      'disconnect',
-      () => command(() async {
-            final generation = beginRequest('state');
-            final currentUser = _user;
-            (await _connection.deauthorize()).requireValue();
-            _check(generation);
-            if (currentUser != null) {
-              (await _stravaForUser(currentUser.uid).deleteAllStravaBikes())
-                  .requireValue();
-              _check(generation);
-            }
+    'disconnect',
+    () => command(() async {
+      final generation = beginRequest('state');
+      final currentUser = _user;
+      (await _connection.deauthorize()).requireValue();
+      _check(generation);
+      if (currentUser != null) {
+        (await _stravaForUser(
+          currentUser.uid,
+        ).deleteAllStravaBikes()).requireValue();
+        _check(generation);
+      }
 
-            _connected = false;
-            _athleteId = null;
-            _bikeCount = 0;
-            emit();
-          }));
+      _connected = false;
+      _athleteId = null;
+      _bikeCount = 0;
+      emit();
+    }),
+  );
 
   Future<CommandResult<void>> signOut() => share(
-      'signOut',
-      () => command(() async {
-            final generation = beginRequest('state');
-            (await _auth.signOut()).requireValue();
-            _check(generation);
-            _user = null;
-            _connected = false;
-            _athleteId = null;
-            _bikeCount = 0;
-            emit();
-          }));
+    'signOut',
+    () => command(() async {
+      final generation = beginRequest('state');
+      (await _auth.signOut()).requireValue();
+      _check(generation);
+      _user = null;
+      _connected = false;
+      _athleteId = null;
+      _bikeCount = 0;
+      emit();
+    }),
+  );
 }

@@ -1,17 +1,21 @@
 import 'package:bikesetupapp/common/theme/theme_data.dart';
+
 import '../models/service_icon.dart';
-import 'package:flutter/cupertino.dart';
+
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../models/component_type.dart';
 
 /// Component silhouettes shared by the picker and service overview.
 class ServiceComponentIcon extends StatelessWidget {
-  const ServiceComponentIcon(
-      {super.key,
-      required this.type,
-      required this.color,
-      this.customIcon,
-      this.size = AppIconSizes.control});
+  const ServiceComponentIcon({
+    super.key,
+    required this.type,
+    required this.color,
+    this.customIcon,
+    this.size = AppIconSizes.control,
+  });
 
   final ComponentType type;
   final ServiceIcon? customIcon;
@@ -44,10 +48,12 @@ class ServiceComponentIcon extends StatelessWidget {
       return Icon(CupertinoIcons.wrench, size: size, color: color);
     }
 
-    return SvgPicture.asset('assets/icons/$asset.svg',
-        width: size,
-        height: size,
-        excludeFromSemantics: true,
-        colorFilter: ColorFilter.mode(color, BlendMode.srcIn));
+    return SvgPicture.asset(
+      'assets/icons/$asset.svg',
+      width: size,
+      height: size,
+      excludeFromSemantics: true,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    );
   }
 }

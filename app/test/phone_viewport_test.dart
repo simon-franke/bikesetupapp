@@ -1,6 +1,9 @@
 import 'support/fake_auth_repository.dart';
+
 import 'package:bikesetupapp/app/app_dependencies.dart';
+
 import 'dart:math' as math;
+
 import 'package:bikesetupapp/app/app.dart';
 import 'package:bikesetupapp/features/settings/controllers/app_state_notifier.dart';
 import 'package:provider/provider.dart';
@@ -8,12 +11,13 @@ import 'package:bikesetupapp/common/layout/phone_viewport.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/features/auth/ui/login_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('app root constrains the navigator on wide screens',
-      (tester) async {
+  testWidgets('app root constrains the navigator on wide screens', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -22,14 +26,20 @@ void main() {
     final dependencies = AppDependencies(authRepository: auth);
     addTearDown(dependencies.dispose);
     addTearDown(auth.events.close);
-    await tester.pumpWidget(Provider.value(
+    await tester.pumpWidget(
+      Provider.value(
         value: dependencies,
         child: ChangeNotifierProvider(
-            create: (_) => AppStateNotifier(ThemeMode.light),
-            child: const MyApp())));
+          create: (_) => AppStateNotifier(ThemeMode.light),
+          child: const MyApp(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(tester.getRect(find.byType(Scaffold)),
-        const Rect.fromLTWH(480, 0, 480, 900));
+    expect(
+      tester.getRect(find.byType(Scaffold)),
+      const Rect.fromLTWH(480, 0, 480, 900),
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -38,38 +48,51 @@ void main() {
     const Size(390, 844),
     const Size(768, 1024),
     const Size(1440, 900),
-    const Size(1024, 320)
+    const Size(1024, 320),
   ]) {
-    testWidgets('phone viewport bounds routes and sheets at $size',
-        (tester) async {
+    testWidgets('phone viewport bounds routes and sheets at $size', (
+      tester,
+    ) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       Size? logicalSize;
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.lightTheme,
-        builder: (context, child) => PhoneViewport(child: child!),
-        home: Builder(builder: (context) {
-          logicalSize = MediaQuery.sizeOf(context);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          builder: (context, child) => PhoneViewport(child: child!),
+          home: Builder(
+            builder: (context) {
+              logicalSize = MediaQuery.sizeOf(context);
 
-          return Scaffold(
-              key: const Key('home'),
-              body: TextButton(
+              return Scaffold(
+                key: const Key('home'),
+                body: TextButton(
                   onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                          builder: (context) => Scaffold(
-                              key: const Key('route'),
-                              body: TextButton(
-                                  onPressed: () => showAppSheet<void>(
-                                      context: context,
-                                      builder: (_) => const SizedBox(
-                                          height: 100,
-                                          child: Text('Sheet content'))),
-                                  child: const Text('Open sheet'))))),
-                  child: const Text('Next route')));
-        }),
-      ));
+                    MaterialPageRoute<void>(
+                      builder: (context) => Scaffold(
+                        key: const Key('route'),
+                        body: TextButton(
+                          onPressed: () => showAppSheet<void>(
+                            context: context,
+                            builder: (_) => const SizedBox(
+                              height: 100,
+                              child: Text('Sheet content'),
+                            ),
+                          ),
+                          child: const Text('Open sheet'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  child: const Text('Next route'),
+                ),
+              );
+            },
+          ),
+        ),
+      );
       final width = math.min(size.width, kPhoneMaxWidth);
       expect(logicalSize, Size(width, size.height));
       final home = tester.getRect(find.byKey(const Key('home')));
@@ -92,17 +115,23 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           theme: AppTheme.lightTheme,
           builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: const TextScaler.linear(2)),
-              child: PhoneViewport(child: child!)),
-          home: const LoginPage()));
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2)),
+            child: PhoneViewport(child: child!),
+          ),
+          home: const LoginPage(),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Clickwise'), findsOneWidget);
-      expect(tester.getSize(find.byType(Scaffold)).width,
-          math.min(size.width, kPhoneMaxWidth));
+      expect(
+        tester.getSize(find.byType(Scaffold)).width,
+        math.min(size.width, kPhoneMaxWidth),
+      );
       expect(tester.takeException(), isNull);
     });
   }

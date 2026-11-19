@@ -26,24 +26,21 @@ enum ServiceIcon {
   final String label;
 
   static ServiceIcon forType(ComponentType type) => switch (type) {
-        ComponentType.chain => ServiceIcon.chain,
-        ComponentType.brakePadsFront ||
-        ComponentType.brakePadsRear ||
-        ComponentType.brakeBleeding =>
-          ServiceIcon.brakes,
-        ComponentType.tiresFront ||
-        ComponentType.tiresRear ||
-        ComponentType.tires =>
-          ServiceIcon.wheel,
-        ComponentType.forkServiceLower ||
-        ComponentType.forkServiceFull =>
-          ServiceIcon.fork,
-        ComponentType.shockService => ServiceIcon.shock,
-        ComponentType.wheelBearings => ServiceIcon.bearing,
-        ComponentType.headsetBearing => ServiceIcon.headset,
-        ComponentType.bottomBracket => ServiceIcon.crank,
-        ComponentType.other => ServiceIcon.tools,
-      };
+    ComponentType.chain => ServiceIcon.chain,
+    ComponentType.brakePadsFront ||
+    ComponentType.brakePadsRear ||
+    ComponentType.brakeBleeding => ServiceIcon.brakes,
+    ComponentType.tiresFront ||
+    ComponentType.tiresRear ||
+    ComponentType.tires => ServiceIcon.wheel,
+    ComponentType.forkServiceLower ||
+    ComponentType.forkServiceFull => ServiceIcon.fork,
+    ComponentType.shockService => ServiceIcon.shock,
+    ComponentType.wheelBearings => ServiceIcon.bearing,
+    ComponentType.headsetBearing => ServiceIcon.headset,
+    ComponentType.bottomBracket => ServiceIcon.crank,
+    ComponentType.other => ServiceIcon.tools,
+  };
 
   static ServiceIcon? fromName(String? name) {
     for (final icon in values) {

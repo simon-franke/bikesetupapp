@@ -1,25 +1,28 @@
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
 import 'package:bikesetupapp/common/ui/app_glass_surface.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+
 import 'workspace_activity_title.dart';
+
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/workspace/ui/view_toggle.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class WorkspaceHeader extends StatelessWidget implements PreferredSizeWidget {
-  const WorkspaceHeader(
-      {super.key,
-      required this.height,
-      required this.uid,
-      required this.bikeId,
-      required this.bikeName,
-      required this.setupName,
-      required this.mileageKm,
-      required this.activeView,
-      required this.onChooseBike,
-      required this.onRideActivity,
-      required this.onSettings});
+  const WorkspaceHeader({
+    super.key,
+    required this.height,
+    required this.uid,
+    required this.bikeId,
+    required this.bikeName,
+    required this.setupName,
+    required this.mileageKm,
+    required this.activeView,
+    required this.onChooseBike,
+    required this.onRideActivity,
+    required this.onSettings,
+  });
 
   final double height;
   final String? uid;
@@ -55,99 +58,126 @@ class WorkspaceHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           SafeArea(
-              bottom: false,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: AppGlassSurface(
-                      child: Row(children: [
-                    Expanded(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Align(
+                alignment: Alignment.center,
+                child: AppGlassSurface(
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Material(
-                      color: p.ink.withValues(alpha: .07),
-                      borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(25),
-                        onTap: AppHaptics.wrap(onChooseBike),
-                        child: Semantics(
-                          button: true,
-                          label: activeView == ActiveView.services
-                              ? 'Choose bike'
-                              : 'Choose bike and setup',
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                    minHeight: MediaQuery.textScalerOf(context)
+                          color: p.ink.withValues(alpha: .07),
+                          borderRadius: BorderRadius.circular(25),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(25),
+                            onTap: AppHaptics.wrap(onChooseBike),
+                            child: Semantics(
+                              button: true,
+                              label: activeView == ActiveView.services
+                                  ? 'Choose bike'
+                                  : 'Choose bike and setup',
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight:
+                                        MediaQuery.textScalerOf(context)
                                                 .scale(24) *
                                             1.4 +
                                         MediaQuery.textScalerOf(context)
                                                 .scale(12) *
                                             1.4 +
-                                        2),
-                                child: Row(children: [
-                                  Expanded(
-                                      child: WorkspaceActivityTitle(
-                                    key: ValueKey('activity_$uid/$bikeId'),
-                                    uid: uid,
-                                    bikeId: bikeId,
-                                    mileageKm: mileageKm,
-                                    bikeName: bikeName,
-                                    setupName: setupName,
-                                    bikeOnly: activeView == ActiveView.services,
-                                  )),
-                                  const SizedBox(width: 8),
-                                  Icon(CupertinoIcons.chevron_down,
-                                      color: p.inkMuted,
-                                      size: AppIconSizes.compact),
-                                ])),
-                          ),
-                        ),
-                      ),
-                    )),
-                    TweenAnimationBuilder<double>(
-                      tween:
-                          Tween(end: activeView == ActiveView.services ? 1 : 0),
-                      duration: MediaQuery.disableAnimationsOf(context)
-                          ? Duration.zero
-                          : const Duration(milliseconds: 280),
-                      curve: Curves.easeInOutCubic,
-                      builder: (context, progress, child) => ClipRect(
-                        child: Align(
-                          widthFactor: progress,
-                          heightFactor: 1,
-                          child: IgnorePointer(
-                            ignoring: activeView != ActiveView.services,
-                            child: ExcludeSemantics(
-                              excluding: activeView != ActiveView.services,
-                              child: Opacity(
-                                  opacity: progress,
-                                  child: Transform.scale(
-                                      scale: .8 + .2 * progress, child: child)),
+                                        2,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: WorkspaceActivityTitle(
+                                          key: ValueKey(
+                                            'activity_$uid/$bikeId',
+                                          ),
+                                          uid: uid,
+                                          bikeId: bikeId,
+                                          mileageKm: mileageKm,
+                                          bikeName: bikeName,
+                                          setupName: setupName,
+                                          bikeOnly:
+                                              activeView == ActiveView.services,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        CupertinoIcons.chevron_down,
+                                        color: p.inkMuted,
+                                        size: AppIconSizes.compact,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      child: IconButton(
-                        tooltip: 'Ride activity',
-                        icon: Icon(Icons.auto_stories_outlined,
-                            size: AppIconSizes.control, color: p.inkMuted),
-                        onPressed: onRideActivity,
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(
+                          end: activeView == ActiveView.services ? 1 : 0,
+                        ),
+                        duration: MediaQuery.disableAnimationsOf(context)
+                            ? Duration.zero
+                            : const Duration(milliseconds: 280),
+                        curve: Curves.easeInOutCubic,
+                        builder: (context, progress, child) => ClipRect(
+                          child: Align(
+                            widthFactor: progress,
+                            heightFactor: 1,
+                            child: IgnorePointer(
+                              ignoring: activeView != ActiveView.services,
+                              child: ExcludeSemantics(
+                                excluding: activeView != ActiveView.services,
+                                child: Opacity(
+                                  opacity: progress,
+                                  child: Transform.scale(
+                                    scale: .8 + .2 * progress,
+                                    child: child,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        child: IconButton(
+                          tooltip: 'Ride activity',
+                          icon: Icon(
+                            Icons.auto_stories_outlined,
+                            size: AppIconSizes.control,
+                            color: p.inkMuted,
+                          ),
+                          onPressed: onRideActivity,
+                        ),
                       ),
-                    ),
-                    Padding(
+                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: IconButton(
                           tooltip: 'Settings',
-                          icon: const Icon(CupertinoIcons.gear_alt,
-                              size: AppIconSizes.control),
+                          icon: const Icon(
+                            CupertinoIcons.gear_alt,
+                            size: AppIconSizes.control,
+                          ),
                           onPressed: onSettings,
-                        )),
-                  ])),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );

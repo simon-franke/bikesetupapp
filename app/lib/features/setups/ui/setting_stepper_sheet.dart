@@ -1,19 +1,21 @@
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
+
 import 'setting_unit_selector.dart';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
+
 import 'dart:math' as math;
 
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
 import 'package:bikesetupapp/features/setups/models/unit_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> showSettingStepperSheet(
@@ -81,42 +83,51 @@ Future<void> showSettingStepperSheet(
   final setups = onSave == null
       ? AppDependencies.of(context).forUser(user!.uid).setups
       : null;
-  final save = onSave ??
+  final save =
+      onSave ??
       (String value) =>
           setups!.setSetting(settingKey, value, uBikeID, category, uSetupID);
   final feedbackContext = Navigator.of(context, rootNavigator: true).context;
   final messenger = ScaffoldMessenger.of(context);
   Future<void> saveOptimistically(String value) async {
-    await presentCommand(feedbackContext, () => save(value),
-        onFailure: (message) {
-      if (!messenger.mounted) return;
+    await presentCommand(
+      feedbackContext,
+      () => save(value),
+      onFailure: (message) {
+        if (!messenger.mounted) return;
 
-      messenger.showSnackBar(SnackBar(
-        content: Text('$settingKey: $value wasn’t saved. $message'),
-        duration: const Duration(seconds: 12),
-        action: context.mounted
-            ? SnackBarAction(
-                label: 'Review',
-                onPressed: () {
-                  if (!context.mounted) return;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('$settingKey: $value wasn’t saved. $message'),
+            duration: const Duration(seconds: 12),
+            action: context.mounted
+                ? SnackBarAction(
+                    label: 'Review',
+                    onPressed: () {
+                      if (!context.mounted) return;
 
-                  showSettingStepperSheet(context,
-                      user: user,
-                      onSave: onSave,
-                      uBikeID: uBikeID,
-                      category: category,
-                      uSetupID: uSetupID,
-                      settingKey: settingKey,
-                      currentValue: value,
-                      canDelete: canDelete,
-                      familyOverride: familyOverride,
-                      saveLabel: saveLabel,
-                      onClear: onClear,
-                      optimistic: optimistic);
-                })
-            : null,
-      ));
-    });
+                      showSettingStepperSheet(
+                        context,
+                        user: user,
+                        onSave: onSave,
+                        uBikeID: uBikeID,
+                        category: category,
+                        uSetupID: uSetupID,
+                        settingKey: settingKey,
+                        currentValue: value,
+                        canDelete: canDelete,
+                        familyOverride: familyOverride,
+                        saveLabel: saveLabel,
+                        onClear: onClear,
+                        optimistic: optimistic,
+                      );
+                    },
+                  )
+                : null,
+          ),
+        );
+      },
+    );
   }
 
   return showAppSheet<void>(
@@ -248,14 +259,20 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
     }
 
     final saved = await presentCommand(
-        context,
-        () => widget.onSave != null
-            ? widget.onSave!(stored)
-            : AppDependencies.of(context)
+      context,
+      () => widget.onSave != null
+          ? widget.onSave!(stored)
+          : AppDependencies.of(context)
                 .forUser(widget.user!.uid)
                 .setups
-                .setSetting(widget.settingKey, stored, widget.uBikeID,
-                    widget.category, widget.uSetupID));
+                .setSetting(
+                  widget.settingKey,
+                  stored,
+                  widget.uBikeID,
+                  widget.category,
+                  widget.uSetupID,
+                ),
+    );
     if (!mounted) return;
 
     if (saved) {
@@ -275,9 +292,14 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       setState(() => _saving = true);
       final db = AppDependencies.of(context).forUser(widget.user!.uid);
       final deleted = await presentCommand(
-          context,
-          () => db.setups.deleteField(widget.settingKey, widget.uBikeID,
-              widget.category, widget.uSetupID));
+        context,
+        () => db.setups.deleteField(
+          widget.settingKey,
+          widget.uBikeID,
+          widget.category,
+          widget.uSetupID,
+        ),
+      );
       if (!mounted) return;
 
       if (deleted) {
@@ -294,10 +316,11 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       title: 'Setting options',
       entries: const [
         AppSheetOption(
-            value: 'delete',
-            label: 'Delete field',
-            icon: CupertinoIcons.trash,
-            destructive: true),
+          value: 'delete',
+          label: 'Delete field',
+          icon: CupertinoIcons.trash,
+          destructive: true,
+        ),
       ],
     );
     if (action == 'delete' && mounted && !_saving) await _onDelete();
@@ -313,14 +336,16 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
         mainAxisSize: MainAxisSize.min,
         children: [
           AppSheetHeader(
-              title:
-                  '${categoryLabel(widget.category)} ${widget.settingKey.toLowerCase()}',
-              action: widget.canDelete
-                  ? IconButton(
-                      tooltip: 'Setting options',
-                      onPressed: _saving ? null : _showOptions,
-                      icon: const Icon(CupertinoIcons.ellipsis))
-                  : null),
+            title:
+                '${categoryLabel(widget.category)} ${widget.settingKey.toLowerCase()}',
+            action: widget.canDelete
+                ? IconButton(
+                    tooltip: 'Setting options',
+                    onPressed: _saving ? null : _showOptions,
+                    icon: const Icon(CupertinoIcons.ellipsis),
+                  )
+                : null,
+          ),
           if (widget.isFreeText)
             _FreeTextField(controller: _textController)
           else
@@ -330,8 +355,10 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
             width: double.infinity,
             child: AppTactileButton(
               onPressed: _saving ? null : _onSave,
-              child: Text(widget.saveLabel ??
-                  (widget.onSave == null ? 'Save' : 'Save to experiment')),
+              child: Text(
+                widget.saveLabel ??
+                    (widget.onSave == null ? 'Save' : 'Save to experiment'),
+              ),
             ),
           ),
           if (widget.onClear != null) ...[
@@ -343,8 +370,10 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
                       widget.onClear!();
                       Navigator.of(context).pop();
                     },
-              child: Text('Clear value',
-                  style: AppTextStyles.label.copyWith(color: p.red)),
+              child: Text(
+                'Clear value',
+                style: AppTextStyles.label.copyWith(color: p.red),
+              ),
             ),
           ],
         ],
@@ -355,19 +384,24 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
   Widget _buildEditor() {
     if (_editingNumber) {
       return TextField(
-          controller: _numberController,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          textAlign: TextAlign.center,
-          style: AppTextStyles.value.copyWith(color: context.palette.ink),
-          decoration: InputDecoration(
-              labelText: widget.settingKey,
-              suffixIcon: SettingUnitSelector(
-                  family: widget.family, unit: _unit, onChanged: _onChipTap),
-              errorText: _numberError),
-          onSubmitted: (_) {
-            if (_readNumber()) setState(() => _editingNumber = false);
-          });
+        controller: _numberController,
+        autofocus: true,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textAlign: TextAlign.center,
+        style: AppTextStyles.value.copyWith(color: context.palette.ink),
+        decoration: InputDecoration(
+          labelText: widget.settingKey,
+          suffixIcon: SettingUnitSelector(
+            family: widget.family,
+            unit: _unit,
+            onChanged: _onChipTap,
+          ),
+          errorText: _numberError,
+        ),
+        onSubmitted: (_) {
+          if (_readNumber()) setState(() => _editingNumber = false);
+        },
+      );
     }
 
     final knownMeta = widget.knownMeta;
@@ -382,8 +416,9 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       maxInActive = 100;
     }
 
-    final step =
-        _unit.decimals <= 0 ? 1.0 : math.pow(10, -_unit.decimals).toDouble();
+    final step = _unit.decimals <= 0
+        ? 1.0
+        : math.pow(10, -_unit.decimals).toDouble();
 
     return SettingValueEditor(
       key: ValueKey('${widget.settingKey}-${_unit.id}'),
@@ -392,7 +427,9 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       onValueTap: () => setState(() {
         _numberController.text = formatNumber(_value, _unit.decimals);
         _numberController.selection = TextSelection(
-            baseOffset: 0, extentOffset: _numberController.text.length);
+          baseOffset: 0,
+          extentOffset: _numberController.text.length,
+        );
         _editingNumber = true;
         _numberError = null;
       }),
@@ -402,7 +439,10 @@ class _StepperSheetContentState extends State<_StepperSheetContent> {
       decimals: _unit.decimals,
       unitLabel: _unit.label,
       valueAccessory: SettingUnitSelector(
-          family: widget.family, unit: _unit, onChanged: _onChipTap),
+        family: widget.family,
+        unit: _unit,
+        onChanged: _onChipTap,
+      ),
       onChanged: (v) => _value = v,
     );
   }
@@ -416,6 +456,9 @@ class _FreeTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppTextField(
-        controller: controller, hint: 'Enter value', autofocus: true);
+      controller: controller,
+      hint: 'Enter value',
+      autofocus: true,
+    );
   }
 }

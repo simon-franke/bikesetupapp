@@ -1,7 +1,7 @@
 import 'package:bikesetupapp/common/ui/app_loading.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
 class MileageBanner extends StatelessWidget {
@@ -49,9 +49,10 @@ class MileageBanner extends StatelessWidget {
           style: AppTextStyles.heading.copyWith(color: ink),
         ),
         const SizedBox(height: 4),
-        Text(_syncLabel(),
-            style:
-                AppTextStyles.body.copyWith(color: context.palette.inkMuted)),
+        Text(
+          _syncLabel(),
+          style: AppTextStyles.body.copyWith(color: context.palette.inkMuted),
+        ),
       ],
     );
     final action = TextButton.icon(
@@ -69,12 +70,15 @@ class MileageBanner extends StatelessWidget {
               isConnected
                   ? CupertinoIcons.arrow_2_circlepath
                   : CupertinoIcons.link,
-              size: AppIconSizes.compact),
-      label: Text(isLoading
-          ? 'Syncing'
-          : isConnected
-              ? 'Sync Strava'
-              : 'Connect Strava'),
+              size: AppIconSizes.compact,
+            ),
+      label: Text(
+        isLoading
+            ? 'Syncing'
+            : isConnected
+            ? 'Sync Strava'
+            : 'Connect Strava',
+      ),
     );
 
     return Container(
@@ -82,13 +86,13 @@ class MileageBanner extends StatelessWidget {
       margin: margin,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(12)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        details,
-        const SizedBox(height: 16),
-        action,
-      ]),
+        color: context.palette.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [details, const SizedBox(height: 16), action],
+      ),
     );
   }
 }

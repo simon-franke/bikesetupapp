@@ -5,11 +5,12 @@ import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_entry.dart';
 import 'package:bikesetupapp/common/data/firestore_codec.dart';
+
 import 'maintenance_repository.dart';
 
 class FirestoreMaintenanceRepository implements MaintenanceRepository {
   FirestoreMaintenanceRepository(this.userID, {FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final String userID;
   final FirebaseFirestore _firestore;
@@ -19,36 +20,55 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
 
   @override
   Stream<List<ServiceComponent>> getComponentsForBike(String bikeId) {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.serviceComponents)
-        .where(FirestoreKeys.bikeId, isEqualTo: bikeId)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) =>
-                ServiceComponent.fromMap(d.id, decodeFirestoreMap(d.data())))
-            .toList()));
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.serviceComponents)
+          .where(FirestoreKeys.bikeId, isEqualTo: bikeId)
+          .snapshots()
+          .map(
+            (snap) => snap.docs
+                .map(
+                  (d) => ServiceComponent.fromMap(
+                    d.id,
+                    decodeFirestoreMap(d.data()),
+                  ),
+                )
+                .toList(),
+          ),
+    );
   }
 
   @override
   Future<void> createComponentWithBaseline(
-          ServiceComponent component, ServiceEntry baseline) =>
-      firebaseOperation(() async {
-        final ref = userBikeSetup
-            .doc(userID)
-            .collection(FirestoreKeys.serviceComponents)
-            .doc(component.id);
-        final batch = _firestore.batch();
-        batch.set(ref, encodeFirestoreMap(component.toMap()),
-            SetOptions(merge: true));
-        batch.set(ref.collection(FirestoreKeys.serviceEntries).doc(baseline.id),
-            encodeFirestoreMap(baseline.toMap()), SetOptions(merge: true));
-        await batch.commit();
-      }, fallback: FailureCode.saveFailed);
+    ServiceComponent component,
+    ServiceEntry baseline,
+  ) => firebaseOperation(() async {
+    final ref = userBikeSetup
+        .doc(userID)
+        .collection(FirestoreKeys.serviceComponents)
+        .doc(component.id);
+    final batch = _firestore.batch();
+    batch.set(
+      ref,
+      encodeFirestoreMap(component.toMap()),
+      SetOptions(merge: true),
+    );
+    batch.set(
+      ref.collection(FirestoreKeys.serviceEntries).doc(baseline.id),
+      encodeFirestoreMap(baseline.toMap()),
+      SetOptions(merge: true),
+    );
+    await batch.commit();
+  }, fallback: FailureCode.saveFailed);
 
   @override
-  Future<void> updateComponent(String componentId,
-      {String? name, int? serviceIntervalKm, double? serviceIntervalHours}) {
+  Future<void> updateComponent(
+    String componentId, {
+    String? name,
+    int? serviceIntervalKm,
+    double? serviceIntervalHours,
+  }) {
     return firebaseOperation(() async {
       final Map<String, dynamic> updates = {};
       if (serviceIntervalHours != null) {
@@ -93,17 +113,23 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
 
   @override
   Stream<List<ServiceEntry>> getEntriesForComponent(String componentId) {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.serviceComponents)
-        .doc(componentId)
-        .collection(FirestoreKeys.serviceEntries)
-        .orderBy(FirestoreKeys.serviceDate, descending: true)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map(
-                (d) => ServiceEntry.fromMap(d.id, decodeFirestoreMap(d.data())))
-            .toList()));
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.serviceComponents)
+          .doc(componentId)
+          .collection(FirestoreKeys.serviceEntries)
+          .orderBy(FirestoreKeys.serviceDate, descending: true)
+          .snapshots()
+          .map(
+            (snap) => snap.docs
+                .map(
+                  (d) =>
+                      ServiceEntry.fromMap(d.id, decodeFirestoreMap(d.data())),
+                )
+                .toList(),
+          ),
+    );
   }
 
   @override
@@ -134,17 +160,23 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
 
   @override
   Stream<ServiceEntry?> streamLatestEntryForComponent(String componentId) {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.serviceComponents)
-        .doc(componentId)
-        .collection(FirestoreKeys.serviceEntries)
-        .orderBy(FirestoreKeys.serviceDate, descending: true)
-        .limit(1)
-        .snapshots()
-        .map((snap) => snap.docs.isEmpty
-            ? null
-            : ServiceEntry.fromMap(snap.docs.first.id,
-                decodeFirestoreMap(snap.docs.first.data()))));
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.serviceComponents)
+          .doc(componentId)
+          .collection(FirestoreKeys.serviceEntries)
+          .orderBy(FirestoreKeys.serviceDate, descending: true)
+          .limit(1)
+          .snapshots()
+          .map(
+            (snap) => snap.docs.isEmpty
+                ? null
+                : ServiceEntry.fromMap(
+                    snap.docs.first.id,
+                    decodeFirestoreMap(snap.docs.first.data()),
+                  ),
+          ),
+    );
   }
 }

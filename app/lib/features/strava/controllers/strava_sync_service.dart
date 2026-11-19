@@ -1,12 +1,13 @@
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
+
 import '../repositories/strava_repository.dart';
 import '../repositories/strava_bikes_repository.dart';
 
 /// Stateless workflow; its caller owns loading and failure presentation.
 class StravaSyncService {
   StravaSyncService(this._db, this._connection, {WriteQueue? writes})
-      : _writes = writes ?? WriteQueue();
+    : _writes = writes ?? WriteQueue();
 
   final WriteQueue _writes;
   final StravaBikesRepository _db;

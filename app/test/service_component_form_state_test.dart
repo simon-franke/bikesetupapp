@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late ServiceComponentFormState form;
-  setUp(() =>
-      form = ServiceComponentFormState()..selectType(ComponentType.chain));
+  setUp(
+    () => form = ServiceComponentFormState()..selectType(ComponentType.chain),
+  );
   tearDown(() => form.dispose());
 
   test('rejects nonfinite, nonpositive and fractional distance intervals', () {

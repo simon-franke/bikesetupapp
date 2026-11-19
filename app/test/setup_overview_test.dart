@@ -3,9 +3,10 @@ import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/ui/setup_overview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
 import 'support/fake_repositories.dart';
 
 class OverviewUser extends Fake implements User {
@@ -26,20 +27,23 @@ void main() {
         'bike/setup/Fork/High Speed Rebound': '1 clicks',
       });
     final opened = <String>[];
-    await tester.pumpWidget(Provider.value(
-      value: AppDependencies(setupsRepository: (_) => repository),
-      child: MaterialApp(
-        theme: AppTheme.darkTheme,
-        home: Scaffold(
+    await tester.pumpWidget(
+      Provider.value(
+        value: AppDependencies(setupsRepository: (_) => repository),
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: Scaffold(
             body: SetupOverview(
-          configuration: testSetupConfiguration,
-          user: OverviewUser(),
-          bike: 'bike',
-          setup: 'setup',
-          onCategory: opened.add,
-        )),
+              configuration: testSetupConfiguration,
+              user: OverviewUser(),
+              bike: 'bike',
+              setup: 'setup',
+              onCategory: opened.add,
+            ),
+          ),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     for (final text in ['27 psi', '38 psi']) {
@@ -54,10 +58,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened, ['Tires', 'Tires', 'Tires', 'Fork']);
     expect(find.byType(BottomSheet), findsNothing);
-    expect(find.textContaining('LSC  4 clicks', findRichText: true),
-        findsOneWidget);
-    expect(find.textContaining('HSR  1 clicks', findRichText: true),
-        findsOneWidget);
+    expect(
+      find.textContaining('LSC  4 clicks', findRichText: true),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('HSR  1 clicks', findRichText: true),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

@@ -1,4 +1,5 @@
 import 'service_icon.dart';
+
 import 'package:bikesetupapp/features/maintenance/models/component_type.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 
@@ -35,7 +36,8 @@ class ServiceComponent {
       id: id,
       bikeId: data[FirestoreKeys.bikeId] as String? ?? '',
       type: ComponentType.fromString(
-          data[FirestoreKeys.componentType] as String? ?? ''),
+        data[FirestoreKeys.componentType] as String? ?? '',
+      ),
       customIcon: ServiceIcon.fromName(data['customIcon'] as String?),
       name: data[FirestoreKeys.componentName] as String? ?? '',
       serviceIntervalKm:

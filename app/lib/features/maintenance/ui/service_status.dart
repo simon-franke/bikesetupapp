@@ -1,5 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+
 import '../models/service_schedule.dart';
+
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:intl/intl.dart';
 

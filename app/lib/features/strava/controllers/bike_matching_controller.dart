@@ -2,6 +2,7 @@ import 'package:bikesetupapp/common/controllers/operation_controller.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:bikesetupapp/features/bikes/controllers/bikes_controller.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
+
 import '../models/strava_bike.dart';
 import '../models/bike_link_suggestions.dart';
 import 'strava_controller.dart';
@@ -81,28 +82,29 @@ class BikeMatchingController extends OperationController {
   }
 
   Future<CommandResult<void>> sync() => share(
-      'sync',
-      () => command(() async {
-            final generation = beginRequest('load');
-            _syncing = true;
-            emit();
+    'sync',
+    () => command(() async {
+      final generation = beginRequest('load');
+      _syncing = true;
+      emit();
 
-            try {
-              final result = await _strava.sync();
-              if (!isCurrentRequest('load', generation)) {
-                throw const CommandAborted();
-              }
-              if (result.isCancelled) throw const CommandAborted();
-              await _load(generation, syncIfEmpty: false);
-              result.requireValue();
-            } finally {
-              if (isCurrentRequest('load', generation)) {
-                _loading = false;
-                _syncing = false;
-                emit();
-              }
-            }
-          }));
+      try {
+        final result = await _strava.sync();
+        if (!isCurrentRequest('load', generation)) {
+          throw const CommandAborted();
+        }
+        if (result.isCancelled) throw const CommandAborted();
+        await _load(generation, syncIfEmpty: false);
+        result.requireValue();
+      } finally {
+        if (isCurrentRequest('load', generation)) {
+          _loading = false;
+          _syncing = false;
+          emit();
+        }
+      }
+    }),
+  );
 
   void link(String gearId, String? bikeId) {
     if (isDisposed ||
@@ -115,22 +117,24 @@ class BikeMatchingController extends OperationController {
   }
 
   Future<CommandResult<void>> save() => share(
-      'save',
-      () => command(() async {
-            final incoming = List.of(_stravaBikes);
-            final links = Map.of(_links);
+    'save',
+    () => command(() async {
+      final incoming = List.of(_stravaBikes);
+      final links = Map.of(_links);
 
-            for (final strava in incoming) {
-              if (isDisposed) throw const CommandAborted();
-              final id = links[strava.stravaGearId];
-              if (id != null) {
-                (await _strava.linkStravaBike(strava.stravaGearId, id))
-                    .requireValue();
-              } else if (strava.linkedBikeId != null) {
-                (await _strava.unlinkStravaBike(strava.stravaGearId))
-                    .requireValue();
-              }
-              if (isDisposed) throw const CommandAborted();
-            }
-          }));
+      for (final strava in incoming) {
+        if (isDisposed) throw const CommandAborted();
+        final id = links[strava.stravaGearId];
+        if (id != null) {
+          (await _strava.linkStravaBike(
+            strava.stravaGearId,
+            id,
+          )).requireValue();
+        } else if (strava.linkedBikeId != null) {
+          (await _strava.unlinkStravaBike(strava.stravaGearId)).requireValue();
+        }
+        if (isDisposed) throw const CommandAborted();
+      }
+    }),
+  );
 }

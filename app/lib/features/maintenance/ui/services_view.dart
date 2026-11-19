@@ -1,13 +1,16 @@
 import 'add_component_flow.dart';
+
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
+
 import '../controllers/services_controller.dart';
+
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/features/maintenance/ui/component_detail_page.dart';
 import 'package:bikesetupapp/app/routing/app_routes.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_component.dart';
 import 'package:bikesetupapp/features/maintenance/ui/service_components_list.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ServicesView extends StatefulWidget {
   final User user;
@@ -36,10 +39,10 @@ class _ServicesViewState extends State<ServicesView> {
   void _createController() {
     final dependencies = AppDependencies.of(context);
     _controller = ServicesController(
-        dependencies.forUser(widget.user.uid).strava,
-        dependencies.stravaConnection,
-        widget.uBikeID)
-      ..addListener(_changed);
+      dependencies.forUser(widget.user.uid).strava,
+      dependencies.stravaConnection,
+      widget.uBikeID,
+    )..addListener(_changed);
     presentCommand(context, _controller.load);
   }
 
@@ -90,17 +93,24 @@ class _ServicesViewState extends State<ServicesView> {
             if (_mileageError)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(children: [
-                  const Expanded(child: Text('Could not load bike mileage.')),
-                  TextButton(onPressed: _loadState, child: const Text('Retry')),
-                ]),
+                child: Row(
+                  children: [
+                    const Expanded(child: Text('Could not load bike mileage.')),
+                    TextButton(
+                      onPressed: _loadState,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
               ),
             const SizedBox(height: 12),
             ServiceComponentsList(
-              onAdd: () => showAddComponentFlow(context,
-                  user: widget.user,
-                  uBikeID: widget.uBikeID,
-                  currentMileageKm: _mileageKm),
+              onAdd: () => showAddComponentFlow(
+                context,
+                user: widget.user,
+                uBikeID: widget.uBikeID,
+                currentMileageKm: _mileageKm,
+              ),
               userID: widget.user.uid,
               bikeId: widget.uBikeID,
               currentMileageKm: _mileageKm ?? 0,

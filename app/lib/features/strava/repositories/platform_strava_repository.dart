@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/strava_auth.dart';
 import '../models/strava_bike.dart';
 import 'strava_repository.dart';
@@ -6,13 +7,13 @@ import 'strava_auth_service.dart';
 import 'strava_api_service.dart';
 
 class PlatformStravaRepository implements StravaRepository {
-  PlatformStravaRepository(
-      {required String? Function() userId,
-      StravaAuthService? auth,
-      StravaApiService? api})
-      : _userId = userId,
-        _auth = auth ?? StravaAuthService(userId: userId),
-        _api = api ?? StravaApiService();
+  PlatformStravaRepository({
+    required String? Function() userId,
+    StravaAuthService? auth,
+    StravaApiService? api,
+  }) : _userId = userId,
+       _auth = auth ?? StravaAuthService(userId: userId),
+       _api = api ?? StravaApiService();
 
   final String? Function() _userId;
   final StravaAuthService _auth;
@@ -46,17 +47,19 @@ class PlatformStravaRepository implements StravaRepository {
       _api.fetchAthleteBikes(token);
 
   @override
-  Future<double?> fetchMileageAtDate(
-      {required String gearId,
-      required DateTime date,
-      required double currentTotalKm}) async {
+  Future<double?> fetchMileageAtDate({
+    required String gearId,
+    required DateTime date,
+    required double currentTotalKm,
+  }) async {
     final token = await _auth.getMileageToken();
     if (token == null) return null;
     return _api.fetchMileageAtDate(
-        accessToken: token,
-        gearId: gearId,
-        date: date,
-        currentTotalKm: currentTotalKm);
+      accessToken: token,
+      gearId: gearId,
+      date: date,
+      currentTotalKm: currentTotalKm,
+    );
   }
 
   @override
@@ -75,7 +78,9 @@ class PlatformStravaRepository implements StravaRepository {
     final owner = _userId();
     if (owner == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt("${_lastSyncKey}_$owner",
-        DateTime.now().toUtc().millisecondsSinceEpoch);
+    await prefs.setInt(
+      "${_lastSyncKey}_$owner",
+      DateTime.now().toUtc().millisecondsSinceEpoch,
+    );
   }
 }
