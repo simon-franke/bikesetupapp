@@ -14,10 +14,11 @@ abstract interface class StravaRepository {
 
   Future<List<StravaBike>> fetchAthleteBikes(String token);
 
-  Future<double?> fetchMileageAtDate(
-      {required String gearId,
-      required DateTime date,
-      required double currentTotalKm});
+  Future<double?> fetchMileageAtDate({
+    required String gearId,
+    required DateTime date,
+    required double currentTotalKm,
+  });
 
   Future<DateTime?> getLastSyncTime();
 

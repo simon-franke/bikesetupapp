@@ -7,7 +7,7 @@ import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
 import 'package:bikesetupapp/features/bikes/ui/new_bike_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 Future<void> showBikeInfoSheet(
   BuildContext context,
@@ -198,14 +198,8 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.caption.copyWith(color: p.inkDim),
-          ),
-          Text(
-            value,
-            style: AppTextStyles.label.copyWith(color: p.ink),
-          ),
+          Text(label, style: AppTextStyles.caption.copyWith(color: p.inkDim)),
+          Text(value, style: AppTextStyles.label.copyWith(color: p.ink)),
         ],
       ),
     );

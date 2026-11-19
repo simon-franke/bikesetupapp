@@ -21,8 +21,9 @@ class OptimisticEdits<K, V> {
   void complete(K key, Object token, {required bool success}) {
     final field = _fields[key];
     if (field == null) return;
-    final edit =
-        field.pending.where((entry) => identical(entry.$1, token)).firstOrNull;
+    final edit = field.pending
+        .where((entry) => identical(entry.$1, token))
+        .firstOrNull;
     if (edit == null) return;
     if (success) field.confirmed = edit.$2;
     field.pending.remove(edit);

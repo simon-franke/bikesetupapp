@@ -1,5 +1,5 @@
 import 'package:bikesetupapp/common/ui/app_select.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
@@ -7,6 +7,7 @@ import 'package:bikesetupapp/common/ui/app_sheet.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/features/bikes/models/new_bike_mode.dart';
+
 import 'quick_bike_sheet.dart';
 
 Future<void> showNewBikeSheet(
@@ -18,32 +19,35 @@ Future<void> showNewBikeSheet(
   String uSetupID = '',
   String setupName = '',
   required void Function(String, String, String, String) onBikeSelected,
-}) =>
-    showAppSheet<void>(
-        context: context,
-        builder: (_) => mode == NewBikeMode.newBike
-            ? QuickBikeSheet(
-                user: user,
-                onCreated: (name, bike, setupName, setup, configuration) =>
-                    onBikeSelected(name, bike, setupName, setup))
-            : _SetupSheet(
-                user: user,
-                mode: mode,
-                bike: uBikeID,
-                bikeName: bikeName,
-                setup: uSetupID,
-                name: setupName,
-                onSelected: onBikeSelected));
+}) => showAppSheet<void>(
+  context: context,
+  builder: (_) => mode == NewBikeMode.newBike
+      ? QuickBikeSheet(
+          user: user,
+          onCreated: (name, bike, setupName, setup, configuration) =>
+              onBikeSelected(name, bike, setupName, setup),
+        )
+      : _SetupSheet(
+          user: user,
+          mode: mode,
+          bike: uBikeID,
+          bikeName: bikeName,
+          setup: uSetupID,
+          name: setupName,
+          onSelected: onBikeSelected,
+        ),
+);
 
 class _SetupSheet extends StatefulWidget {
-  const _SetupSheet(
-      {required this.user,
-      required this.mode,
-      required this.bike,
-      required this.bikeName,
-      required this.setup,
-      required this.name,
-      required this.onSelected});
+  const _SetupSheet({
+    required this.user,
+    required this.mode,
+    required this.bike,
+    required this.bikeName,
+    required this.setup,
+    required this.name,
+    required this.onSelected,
+  });
 
   final User user;
   final NewBikeMode mode;
@@ -55,10 +59,12 @@ class _SetupSheet extends StatefulWidget {
 }
 
 class _SetupSheetState extends State<_SetupSheet> {
-  late final name =
-      TextEditingController(text: widget.mode.isEdit ? widget.name : '');
-  late final setups =
-      AppDependencies.of(context).forUser(widget.user.uid).setups;
+  late final name = TextEditingController(
+    text: widget.mode.isEdit ? widget.name : '',
+  );
+  late final setups = AppDependencies.of(context)
+      .forUser(widget.user.uid)
+      .setups;
   late final stream = setups.getSetups(widget.bike);
   late String source = widget.setup;
   bool saving = false;
@@ -85,10 +91,11 @@ class _SetupSheetState extends State<_SetupSheet> {
     });
     final id = widget.mode.isEdit ? widget.setup : const Uuid().v4();
     final saved = await presentCommand(
-        context,
-        () => widget.mode.isEdit
-            ? setups.updateSetupInformation(widget.bike, id, value, {})
-            : setups.copySetup(widget.bike, id, value, source));
+      context,
+      () => widget.mode.isEdit
+          ? setups.updateSetupInformation(widget.bike, id, value, {})
+          : setups.copySetup(widget.bike, id, value, source),
+    );
     if (!mounted) return;
 
     setState(() => saving = false);
@@ -100,66 +107,77 @@ class _SetupSheetState extends State<_SetupSheet> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-      canPop: !saving,
-      child: Padding(
-        padding: appSheetPadding(context),
-        child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppSheetHeader(
-                  title: widget.mode.isEdit ? 'Rename setup' : 'Add setup',
-                  subtitle: widget.bikeName),
-              AppFormField(
-                  label: 'Setup name',
-                  child: AppTextField(
-                      controller: name,
-                      hint: 'Name your setup',
-                      errorText: error)),
-              if (!widget.mode.isEdit) ...[
-                const SizedBox(height: 24),
-                AppFormField(
+    canPop: !saving,
+    child: Padding(
+      padding: appSheetPadding(context),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSheetHeader(
+            title: widget.mode.isEdit ? 'Rename setup' : 'Add setup',
+            subtitle: widget.bikeName,
+          ),
+          AppFormField(
+            label: 'Setup name',
+            child: AppTextField(
+              controller: name,
+              hint: 'Name your setup',
+              errorText: error,
+            ),
+          ),
+          if (!widget.mode.isEdit) ...[
+            const SizedBox(height: 24),
+            AppFormField(
+              label: 'Start from',
+              child: StreamBuilder(
+                stream: stream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Text(
+                      'Could not load setups. Reopen this form to retry.',
+                    );
+                  }
+
+                  if (!snapshot.hasData) {
+                    return const LinearProgressIndicator();
+                  }
+
+                  if (!snapshot.data!.any((setup) => setup.id == source)) {
+                    source = '';
+                  }
+
+                  return AppSelect<String>(
                     label: 'Start from',
-                    child: StreamBuilder(
-                        stream: stream,
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return const Text(
-                                'Could not load setups. Reopen this form to retry.');
-                          }
-
-                          if (!snapshot.hasData) {
-                            return const LinearProgressIndicator();
-                          }
-
-                          if (!snapshot.data!
-                              .any((setup) => setup.id == source)) {
-                            source = '';
-                          }
-
-                          return AppSelect<String>(
-                              label: 'Start from',
-                              value: source,
-                              items: [
-                                const DropdownMenuItem(
-                                    value: '',
-                                    child: Text('Same parts, blank values')),
-                                for (final setup in snapshot.data!)
-                                  DropdownMenuItem(
-                                      value: setup.id,
-                                      child: Text('Copy ${setup.name}')),
-                              ],
-                              onChanged: saving
-                                  ? null
-                                  : (value) => setState(() => source = value!));
-                        })),
-              ],
-              const SizedBox(height: 24),
-              AppActionButton(
-                  isLoading: saving,
-                  loadingLabel: 'Saving…',
-                  label: 'Save setup',
-                  onPressed: saving ? null : save),
-            ]),
-      ));
+                    value: source,
+                    items: [
+                      const DropdownMenuItem(
+                        value: '',
+                        child: Text('Same parts, blank values'),
+                      ),
+                      for (final setup in snapshot.data!)
+                        DropdownMenuItem(
+                          value: setup.id,
+                          child: Text('Copy ${setup.name}'),
+                        ),
+                    ],
+                    onChanged: saving
+                        ? null
+                        : (value) => setState(() => source = value!),
+                  );
+                },
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          AppActionButton(
+            isLoading: saving,
+            loadingLabel: 'Saving…',
+            label: 'Save setup',
+            onPressed: saving ? null : save,
+          ),
+        ],
+      ),
+    ),
+  );
 }

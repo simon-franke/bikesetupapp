@@ -8,8 +8,10 @@ class WriteQueue {
   /// and queued work is not cancelled when its caller stops awaiting it.
   Future<T> enqueue<T>(Future<T> Function() write) {
     final result = _tail.then((_) => write());
-    _tail =
-        result.then<void>((_) {}, onError: (Object error, StackTrace stack) {});
+    _tail = result.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stack) {},
+    );
     return result;
   }
 }

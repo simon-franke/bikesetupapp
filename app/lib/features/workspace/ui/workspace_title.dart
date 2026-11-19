@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../../../common/theme/theme_data.dart';
 
 /// Keeps bike identity prominent while the selected tab changes its context.
 class WorkspaceTitle extends StatelessWidget {
-  const WorkspaceTitle(
-      {super.key,
-      required this.bikeName,
-      required this.setupName,
-      required this.bikeOnly,
-      this.activitySummary,
-      this.mileageKm,
-      this.hours});
+  const WorkspaceTitle({
+    super.key,
+    required this.bikeName,
+    required this.setupName,
+    required this.bikeOnly,
+    this.activitySummary,
+    this.mileageKm,
+    this.hours,
+  });
 
   final String bikeName;
   final String setupName;
@@ -30,8 +32,12 @@ class WorkspaceTitle extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(bikeName,
-            style: titleStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          bikeName,
+          style: titleStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 2),
         AnimatedSwitcher(
           duration: MediaQuery.disableAnimationsOf(context)
@@ -39,20 +45,23 @@ class WorkspaceTitle extends StatelessWidget {
               : const Duration(milliseconds: 180),
           layoutBuilder: (current, previous) => Stack(
             alignment: Alignment.centerLeft,
-            children: [...previous, if (current != null) current],
+            children: [...previous, ?current],
           ),
           child:
               bikeOnly && (mileageKm != null || (hours != null && hours! > 0))
-                  ? _ActivityOdometerTitle(
-                      key: const ValueKey('activity-odometer'),
-                      mileageKm: mileageKm,
-                      hours: hours,
-                      style: AppTextStyles.caption.copyWith(color: p.inkMuted))
-                  : Text(value,
-                      key: ValueKey(value),
-                      style: AppTextStyles.caption.copyWith(color: p.inkMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+              ? _ActivityOdometerTitle(
+                  key: const ValueKey('activity-odometer'),
+                  mileageKm: mileageKm,
+                  hours: hours,
+                  style: AppTextStyles.caption.copyWith(color: p.inkMuted),
+                )
+              : Text(
+                  value,
+                  key: ValueKey(value),
+                  style: AppTextStyles.caption.copyWith(color: p.inkMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
         ),
       ],
     );
@@ -60,19 +69,20 @@ class WorkspaceTitle extends StatelessWidget {
 }
 
 class _ActivityOdometerTitle extends StatelessWidget {
-  const _ActivityOdometerTitle(
-      {super.key,
-      required this.mileageKm,
-      required this.hours,
-      required this.style});
+  const _ActivityOdometerTitle({
+    super.key,
+    required this.mileageKm,
+    required this.hours,
+    required this.style,
+  });
 
   final double? mileageKm, hours;
   final TextStyle style;
 
   String label(double? distance) => [
-        if (distance != null) '${distance.round()} km',
-        if (hours != null && hours! > 0) '${hours!.toStringAsFixed(1)} h',
-      ].join('   ');
+    if (distance != null) '${distance.round()} km',
+    if (hours != null && hours! > 0) '${hours!.toStringAsFixed(1)} h',
+  ].join('   ');
 
   @override
   Widget build(BuildContext context) {
@@ -116,12 +126,13 @@ class _ActivityOdometerTitle extends StatelessWidget {
 
 /// Each fixed-width wheel makes one turn and eases onto its final digit.
 class _OdometerPainter extends CustomPainter {
-  _OdometerPainter(
-      {required this.label,
-      required this.progress,
-      required this.style,
-      required this.textScaler,
-      required this.textDirection});
+  _OdometerPainter({
+    required this.label,
+    required this.progress,
+    required this.style,
+    required this.textScaler,
+    required this.textDirection,
+  });
 
   final String label;
   final double progress;
@@ -131,12 +142,12 @@ class _OdometerPainter extends CustomPainter {
 
   TextPainter text(String value, {double maxWidth = double.infinity}) =>
       TextPainter(
-          text: TextSpan(text: value, style: style),
-          textDirection: textDirection,
-          textScaler: textScaler,
-          maxLines: 1,
-          ellipsis: '…')
-        ..layout(maxWidth: maxWidth);
+        text: TextSpan(text: value, style: style),
+        textDirection: textDirection,
+        textScaler: textScaler,
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: maxWidth);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -145,9 +156,9 @@ class _OdometerPainter extends CustomPainter {
     canvas.clipRect(Offset.zero & size);
     var x = 0.0;
 
-    for (final character in RegExp(r'[0-9]|[^0-9]+')
-        .allMatches(label)
-        .map((match) => match.group(0)!)) {
+    for (final character in RegExp(
+      r'[0-9]|[^0-9]+',
+    ).allMatches(label).map((match) => match.group(0)!)) {
       final target = int.tryParse(character);
       if (target == null) {
         final glyph = text(character);

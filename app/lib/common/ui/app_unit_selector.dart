@@ -1,6 +1,7 @@
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
+
 import 'app_components.dart';
 
 class AppUnitOption {
@@ -13,11 +14,12 @@ class AppUnitOption {
 
 /// A value's unit, with the same selection sheet wherever units are editable.
 class AppUnitSelector extends StatelessWidget {
-  const AppUnitSelector(
-      {super.key,
-      required this.value,
-      required this.options,
-      required this.onChanged});
+  const AppUnitSelector({
+    super.key,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
 
   final String value;
   final List<AppUnitOption> options;
@@ -26,8 +28,10 @@ class AppUnitSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = options.firstWhere((option) => option.id == value);
-    final label = Text(selected.symbol,
-        style: AppTextStyles.body.copyWith(color: context.palette.inkMuted));
+    final label = Text(
+      selected.symbol,
+      style: AppTextStyles.body.copyWith(color: context.palette.inkMuted),
+    );
     if (options.length < 2) return label;
 
     return Semantics(
@@ -43,25 +47,32 @@ class AppUnitSelector extends StatelessWidget {
         onPressed: () async {
           AppHaptics.action();
           final result = await showAppOptionsSheet(
-              context: context,
-              title: 'Unit',
-              entries: [
-                for (final option in options)
-                  AppSheetOption(
-                      value: option.id,
-                      label: option.label,
-                      selected: option.id == value)
-              ]);
+            context: context,
+            title: 'Unit',
+            entries: [
+              for (final option in options)
+                AppSheetOption(
+                  value: option.id,
+                  label: option.label,
+                  selected: option.id == value,
+                ),
+            ],
+          );
           if (context.mounted && result != null && result != value) {
             onChanged(result);
           }
         },
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          label,
-          const SizedBox(width: 4),
-          const Icon(Icons.keyboard_arrow_down_rounded,
-              size: AppIconSizes.compact)
-        ]),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            label,
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: AppIconSizes.compact,
+            ),
+          ],
+        ),
       ),
     );
   }

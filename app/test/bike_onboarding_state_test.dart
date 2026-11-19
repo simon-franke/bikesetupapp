@@ -14,8 +14,12 @@ void main() {
 
     state.setting('FrontTire', 'Pressure').text = 'invalid';
     expect(state.validate(), isFalse);
-    state.go(state.steps
-        .indexOf((kind: OnboardingStepKind.controls, category: 'Fork')));
+    state.go(
+      state.steps.indexOf((
+        kind: OnboardingStepKind.controls,
+        category: 'Fork',
+      )),
+    );
     state.forkTravel.text = '400';
     expect(state.validate(), isTrue);
     state.forkTravel.text = 'invalid';
@@ -91,24 +95,26 @@ void main() {
     expect(state.draft.values['RearTire'], isEmpty);
     expect(state.steps.last.kind, OnboardingStepKind.settings);
   });
-  test('fork and shock settings stay independent and edits survive navigation',
-      () {
-    final state = BikeOnboardingState()
-      ..fork = 'Air'
-      ..shock = 'Air';
-    addTearDown(state.dispose);
-    void enter(String category, OnboardingStepKind kind) =>
-        state.go(state.steps.indexOf((kind: kind, category: category)));
-    enter('Fork', OnboardingStepKind.controls);
-    expect(state.forkTravel.text, isEmpty);
-    enter('Fork', OnboardingStepKind.settings);
-    state.setting('Fork', 'Rebound').text = '7 clicks';
-    enter('Shock', OnboardingStepKind.settings);
-    expect(state.setting('Shock', 'Rebound').text, isEmpty);
-    state.setting('Shock', 'Rebound').text = '4 clicks';
-    enter('Fork', OnboardingStepKind.settings);
-    expect(state.setting('Fork', 'Rebound').text, '7 clicks');
-    enter('Shock', OnboardingStepKind.settings);
-    expect(state.setting('Shock', 'Rebound').text, '4 clicks');
-  });
+  test(
+    'fork and shock settings stay independent and edits survive navigation',
+    () {
+      final state = BikeOnboardingState()
+        ..fork = 'Air'
+        ..shock = 'Air';
+      addTearDown(state.dispose);
+      void enter(String category, OnboardingStepKind kind) =>
+          state.go(state.steps.indexOf((kind: kind, category: category)));
+      enter('Fork', OnboardingStepKind.controls);
+      expect(state.forkTravel.text, isEmpty);
+      enter('Fork', OnboardingStepKind.settings);
+      state.setting('Fork', 'Rebound').text = '7 clicks';
+      enter('Shock', OnboardingStepKind.settings);
+      expect(state.setting('Shock', 'Rebound').text, isEmpty);
+      state.setting('Shock', 'Rebound').text = '4 clicks';
+      enter('Fork', OnboardingStepKind.settings);
+      expect(state.setting('Fork', 'Rebound').text, '7 clicks');
+      enter('Shock', OnboardingStepKind.settings);
+      expect(state.setting('Shock', 'Rebound').text, '4 clicks');
+    },
+  );
 }

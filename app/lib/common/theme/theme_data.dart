@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class AppColors {
   AppColors._();
@@ -146,24 +146,23 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? green,
     Color? amber,
     Color? red,
-  }) =>
-      AppPalette(
-        bg: bg ?? this.bg,
-        surface: surface ?? this.surface,
-        surface2: surface2 ?? this.surface2,
-        card: card ?? this.card,
-        cardInk: cardInk ?? this.cardInk,
-        ink: ink ?? this.ink,
-        inkMuted: inkMuted ?? this.inkMuted,
-        inkDim: inkDim ?? this.inkDim,
-        border: border ?? this.border,
-        borderStrong: borderStrong ?? this.borderStrong,
-        accent: accent ?? this.accent,
-        accentInk: accentInk ?? this.accentInk,
-        green: green ?? this.green,
-        amber: amber ?? this.amber,
-        red: red ?? this.red,
-      );
+  }) => AppPalette(
+    bg: bg ?? this.bg,
+    surface: surface ?? this.surface,
+    surface2: surface2 ?? this.surface2,
+    card: card ?? this.card,
+    cardInk: cardInk ?? this.cardInk,
+    ink: ink ?? this.ink,
+    inkMuted: inkMuted ?? this.inkMuted,
+    inkDim: inkDim ?? this.inkDim,
+    border: border ?? this.border,
+    borderStrong: borderStrong ?? this.borderStrong,
+    accent: accent ?? this.accent,
+    accentInk: accentInk ?? this.accentInk,
+    green: green ?? this.green,
+    amber: amber ?? this.amber,
+    red: red ?? this.red,
+  );
 
   @override
   AppPalette lerp(ThemeExtension<AppPalette>? other, double t) {
@@ -193,43 +192,49 @@ class AppPalette extends ThemeExtension<AppPalette> {
 /// spacing here; callers may adapt color and numeric alignment only.
 abstract final class AppTextStyles {
   static const heading = TextStyle(
-      fontFamily: 'Sora',
-      fontSize: 24,
-      fontWeight: FontWeight.w600,
-      height: 1.25,
-      letterSpacing: -0.3);
+    fontFamily: 'Sora',
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    height: 1.25,
+    letterSpacing: -0.3,
+  );
   static const label = TextStyle(
-      fontFamily: 'Sora',
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      height: 1.35,
-      letterSpacing: 0);
+    fontFamily: 'Sora',
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 1.35,
+    letterSpacing: 0,
+  );
   static const body = TextStyle(
-      fontFamily: 'Sora',
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.45,
-      letterSpacing: 0);
+    fontFamily: 'Sora',
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.45,
+    letterSpacing: 0,
+  );
   static const caption = TextStyle(
-      fontFamily: 'Sora',
-      fontSize: 12,
-      fontWeight: FontWeight.w500,
-      height: 1.4,
-      letterSpacing: 0);
+    fontFamily: 'Sora',
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+    letterSpacing: 0,
+  );
   static const pickerValue = TextStyle(
-      fontFamily: 'Sora',
-      fontSize: 64,
-      fontWeight: FontWeight.w600,
-      height: 1.1,
-      letterSpacing: 0,
-      fontFeatures: [FontFeature.tabularFigures()]);
+    fontFamily: 'Sora',
+    fontSize: 64,
+    fontWeight: FontWeight.w600,
+    height: 1.1,
+    letterSpacing: 0,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
   static const value = TextStyle(
-      fontFamily: 'Sora',
-      fontSize: 48,
-      fontWeight: FontWeight.w600,
-      height: 1.1,
-      letterSpacing: -0.5,
-      fontFeatures: [FontFeature.tabularFigures()]);
+    fontFamily: 'Sora',
+    fontSize: 48,
+    fontWeight: FontWeight.w600,
+    height: 1.1,
+    letterSpacing: -0.5,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
 }
 
 /// Visible icon sizes; interactive targets remain at least 48 logical pixels.
@@ -242,8 +247,10 @@ abstract final class AppIconSizes {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData _build(
-      {required Brightness brightness, required AppPalette p}) {
+  static ThemeData _build({
+    required Brightness brightness,
+    required AppPalette p,
+  }) {
     final textTheme = TextTheme(
       displayLarge: AppTextStyles.value,
       displayMedium: AppTextStyles.value,
@@ -318,61 +325,78 @@ class AppTheme {
         floatingLabelStyle: AppTextStyles.label.copyWith(color: p.accentText),
         suffixStyle: AppTextStyles.body.copyWith(color: p.inkMuted),
         errorStyle: AppTextStyles.body.copyWith(color: p.red),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: UnderlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: UnderlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
         focusedBorder: UnderlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: p.accentText, width: 2)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: p.accentText, width: 2),
+        ),
         errorBorder: UnderlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: p.red)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: p.red),
+        ),
         focusedErrorBorder: UnderlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: p.red, width: 2)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: p.red, width: 2),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-        iconSize: AppIconSizes.control,
-        backgroundColor: p.accent,
-        foregroundColor: p.accentInk,
-        disabledBackgroundColor: p.surface2,
-        disabledForegroundColor: p.inkMuted,
-        minimumSize: const Size(48, 48),
-        textStyle: textTheme.labelLarge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ).copyWith(overlayColor: _pressOverlay)),
+        style: FilledButton.styleFrom(
+          iconSize: AppIconSizes.control,
+          backgroundColor: p.accent,
+          foregroundColor: p.accentInk,
+          disabledBackgroundColor: p.surface2,
+          disabledForegroundColor: p.inkMuted,
+          minimumSize: const Size(48, 48),
+          textStyle: textTheme.labelLarge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ).copyWith(overlayColor: _pressOverlay),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-        iconSize: AppIconSizes.control,
-        backgroundColor: p.accent,
-        foregroundColor: p.accentInk,
-        elevation: 0,
-        minimumSize: const Size(48, 48),
-        textStyle: textTheme.labelLarge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ).copyWith(overlayColor: _pressOverlay)),
+        style: ElevatedButton.styleFrom(
+          iconSize: AppIconSizes.control,
+          backgroundColor: p.accent,
+          foregroundColor: p.accentInk,
+          elevation: 0,
+          minimumSize: const Size(48, 48),
+          textStyle: textTheme.labelLarge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ).copyWith(overlayColor: _pressOverlay),
+      ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-        iconSize: AppIconSizes.control,
-        foregroundColor: p.ink,
-        side: BorderSide(color: p.borderStrong),
-        minimumSize: const Size(48, 48),
-        textStyle: textTheme.labelLarge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ).copyWith(overlayColor: _pressOverlay)),
+        style: OutlinedButton.styleFrom(
+          iconSize: AppIconSizes.control,
+          foregroundColor: p.ink,
+          side: BorderSide(color: p.borderStrong),
+          minimumSize: const Size(48, 48),
+          textStyle: textTheme.labelLarge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ).copyWith(overlayColor: _pressOverlay),
+      ),
       textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-        iconSize: AppIconSizes.control,
-        foregroundColor: p.accentText,
-        minimumSize: const Size(48, 48),
-        textStyle: textTheme.labelLarge,
-      ).copyWith(overlayColor: _pressOverlay)),
+        style: TextButton.styleFrom(
+          iconSize: AppIconSizes.control,
+          foregroundColor: p.accentText,
+          minimumSize: const Size(48, 48),
+          textStyle: textTheme.labelLarge,
+        ).copyWith(overlayColor: _pressOverlay),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: p.surface,
         selectedColor: p.surface2,
@@ -382,26 +406,32 @@ class AppTheme {
         showCheckmark: false,
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
-          style: ButtonStyle(
-        overlayColor: _pressOverlay,
-        minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
-        side: WidgetStatePropertyAll(BorderSide(color: p.borderStrong)),
-        shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-        textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
-        backgroundColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
+        style: ButtonStyle(
+          overlayColor: _pressOverlay,
+          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+          side: WidgetStatePropertyAll(BorderSide(color: p.borderStrong)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
                 ? p.card
-                : Colors.transparent),
-        foregroundColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? p.cardInk : p.inkMuted),
-      )),
+                : Colors.transparent,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected) ? p.cardInk : p.inkMuted,
+          ),
+        ),
+      ),
       iconButtonTheme: IconButtonThemeData(
-          style: IconButton.styleFrom(
-        foregroundColor: p.inkMuted,
-        iconSize: AppIconSizes.control,
-        minimumSize: const Size(48, 48),
-      ).copyWith(overlayColor: _pressOverlay)),
+        style: IconButton.styleFrom(
+          foregroundColor: p.inkMuted,
+          iconSize: AppIconSizes.control,
+          minimumSize: const Size(48, 48),
+        ).copyWith(overlayColor: _pressOverlay),
+      ),
       iconTheme: IconThemeData(color: p.ink, size: AppIconSizes.control),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         splashColor: Colors.transparent,
@@ -440,5 +470,6 @@ class AppTheme {
 }
 
 // Suppress touch overlays while retaining the default keyboard focus feedback.
-final _pressOverlay = WidgetStateProperty.resolveWith<Color?>((states) =>
-    states.contains(WidgetState.pressed) ? Colors.transparent : null);
+final _pressOverlay = WidgetStateProperty.resolveWith<Color?>(
+  (states) => states.contains(WidgetState.pressed) ? Colors.transparent : null,
+);

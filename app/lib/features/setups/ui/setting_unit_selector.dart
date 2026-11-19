@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:bikesetupapp/common/ui/app_unit_selector.dart';
+
 import '../models/unit_system.dart';
 
 class SettingUnitSelector extends StatelessWidget {
-  const SettingUnitSelector(
-      {super.key,
-      required this.family,
-      required this.unit,
-      required this.onChanged});
+  const SettingUnitSelector({
+    super.key,
+    required this.family,
+    required this.unit,
+    required this.onChanged,
+  });
 
   final UnitFamily family;
   final UnitDef unit;
@@ -15,13 +17,13 @@ class SettingUnitSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AppUnitSelector(
-        value: unit.id,
-        options: [
-          for (final item in kUnitFamilies[family] ?? [unit])
-            AppUnitOption(item.id, item.label, _names[item.id] ?? item.label)
-        ],
-        onChanged: (id) => onChanged(unitDefById(family, id)),
-      );
+    value: unit.id,
+    options: [
+      for (final item in kUnitFamilies[family] ?? [unit])
+        AppUnitOption(item.id, item.label, _names[item.id] ?? item.label),
+    ],
+    onChanged: (id) => onChanged(unitDefById(family, id)),
+  );
 }
 
 const _names = {

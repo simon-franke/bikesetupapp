@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Lucide bicycle glyph, with a stroke weight matching our outline controls.
@@ -16,7 +16,9 @@ class BikeIcon extends StatelessWidget {
       width: size ?? theme.size ?? 24,
       height: size ?? theme.size ?? 24,
       colorFilter: ColorFilter.mode(
-          color ?? theme.color ?? Colors.black, BlendMode.srcIn),
+        color ?? theme.color ?? Colors.black,
+        BlendMode.srcIn,
+      ),
       excludeFromSemantics: true,
     );
   }

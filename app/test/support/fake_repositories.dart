@@ -1,5 +1,6 @@
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/setups/models/setup_configuration.dart';
+
 import 'dart:async';
 
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
@@ -48,12 +49,14 @@ class FakeSetupsRepository implements SetupsRepository {
 
   @override
   Stream<Map<String, dynamic>> getSettingsMeta(
-          String bike, String category, String setup) =>
-      Stream.value({
-        for (final entry in metadata.entries)
-          if (entry.key.startsWith('$bike/$setup/$category/'))
-            entry.key.split('/').last: entry.value,
-      });
+    String bike,
+    String category,
+    String setup,
+  ) => Stream.value({
+    for (final entry in metadata.entries)
+      if (entry.key.startsWith('$bike/$setup/$category/'))
+        entry.key.split('/').last: entry.value,
+  });
 
   final Map<String, String> defaults = {};
   final Map<String, String> names = {};
@@ -61,24 +64,41 @@ class FakeSetupsRepository implements SetupsRepository {
 
   @override
   Future<Map<String, dynamic>> getSetupInformation(
-          String bike, String setup) async =>
-      Map.of(information[setup] ??
-          {FirestoreKeys.setupConfiguration: testSetupConfiguration.encode()});
+    String bike,
+    String setup,
+  ) async => Map.of(
+    information[setup] ??
+        {FirestoreKeys.setupConfiguration: testSetupConfiguration.encode()},
+  );
 
   Future<void> Function(
-          String key, String value, String bike, String category, String setup)?
-      onWrite;
+    String key,
+    String value,
+    String bike,
+    String category,
+    String setup,
+  )?
+  onWrite;
 
   @override
-  Future<void> setSetting(String key, String value, String bike,
-      String category, String setup) async {
+  Future<void> setSetting(
+    String key,
+    String value,
+    String bike,
+    String category,
+    String setup,
+  ) async {
     if (onWrite != null) await onWrite!(key, value, bike, category, setup);
     settings['$bike/$setup/$category/$key'] = value;
   }
 
   @override
-  Future<void> createSetupList(String bike, String setup, String name,
-      Map<String, dynamic> information) async {
+  Future<void> createSetupList(
+    String bike,
+    String setup,
+    String name,
+    Map<String, dynamic> information,
+  ) async {
     names[setup] = name;
     this.information[setup] = Map.of(information);
   }
@@ -97,12 +117,14 @@ class FakeSetupsRepository implements SetupsRepository {
 
   @override
   Stream<Map<String, dynamic>> getSettings(
-          String bike, String category, String setup) =>
-      Stream.value({
-        for (final entry in settings.entries)
-          if (entry.key.startsWith('$bike/$setup/$category/'))
-            entry.key.split('/').last: entry.value,
-      });
+    String bike,
+    String category,
+    String setup,
+  ) => Stream.value({
+    for (final entry in settings.entries)
+      if (entry.key.startsWith('$bike/$setup/$category/'))
+        entry.key.split('/').last: entry.value,
+  });
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -193,7 +215,7 @@ final testSetupConfiguration = SetupConfiguration({
     'Tokens',
     'Low Speed Rebound',
     'High Speed Rebound',
-    'Compression'
+    'Compression',
   ],
   'Shock': ['Pressure', 'Rebound'],
   'GeneralSettings': ['Reach', 'Stack Height'],

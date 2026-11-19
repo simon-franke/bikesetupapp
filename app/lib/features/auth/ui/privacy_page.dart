@@ -1,5 +1,5 @@
 import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class PrivacyPage extends StatelessWidget {
   const PrivacyPage({super.key});

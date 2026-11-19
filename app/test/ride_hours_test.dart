@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'package:bikesetupapp/features/rides/controllers/rides_controller.dart';
 import 'package:bikesetupapp/features/rides/repositories/rides_repository.dart';
 import 'package:bikesetupapp/features/maintenance/models/service_schedule.dart';
@@ -9,13 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bikesetupapp/features/rides/models/fit_activity_decoder.dart';
 import 'package:bikesetupapp/features/rides/models/ride.dart';
 
-Uint8List fit(
-    {int sport = 2,
-    int timer = 3600000,
-    int subSport = 0,
-    bool bigEndian = false,
-    bool developer = false,
-    bool duplicate = false}) {
+Uint8List fit({
+  int sport = 2,
+  int timer = 3600000,
+  int subSport = 0,
+  bool bigEndian = false,
+  bool developer = false,
+  bool duplicate = false,
+}) {
   final endian = bigEndian ? Endian.big : Endian.little;
   List<int> uint32(int value) =>
       (ByteData(4)..setUint32(0, value, endian)).buffer.asUint8List();
@@ -40,7 +42,7 @@ Uint8List fit(
     8,
     4,
     0x86,
-    if (developer) ...[1, 0, 2, 0]
+    if (developer) ...[1, 0, 2, 0],
   ];
   final session = [
     1,
@@ -49,7 +51,7 @@ Uint8List fit(
     subSport,
     ...uint32(7200000),
     ...uint32(timer),
-    if (developer) ...[4, 5]
+    if (developer) ...[4, 5],
   ];
   final body = [
     0x40,
@@ -65,7 +67,7 @@ Uint8List fit(
     4,
     ...definition,
     ...session,
-    if (duplicate) ...session
+    if (duplicate) ...session,
   ];
   final bytes = Uint8List(14 + body.length + 2);
   final data = ByteData.sublistView(bytes);
@@ -75,8 +77,11 @@ Uint8List fit(
   bytes.setRange(8, 12, '.FIT'.codeUnits);
   data.setUint16(12, FitActivityDecoder.crc(bytes, 0, 12), Endian.little);
   bytes.setRange(14, 14 + body.length, body);
-  data.setUint16(bytes.length - 2,
-      FitActivityDecoder.crc(bytes, 0, bytes.length - 2), Endian.little);
+  data.setUint16(
+    bytes.length - 2,
+    FitActivityDecoder.crc(bytes, 0, bytes.length - 2),
+    Endian.little,
+  );
 
   return bytes;
 }
@@ -107,84 +112,96 @@ class MemoryRides implements RidesRepository {
 }
 
 void main() {
-  test('ride imports are idempotent and invalid durations never write',
-      () async {
-    final repository = MemoryRides();
-    final controller = RidesController(repository);
-    final ride = FitActivityDecoder.decode(fit()).single.forBike('bike');
-    expect((await controller.save([ride])).requireValue(), 1);
-    expect((await controller.save([ride, ride])).requireValue(), 0);
-    await controller.save([
-      Ride(
+  test(
+    'ride imports are idempotent and invalid durations never write',
+    () async {
+      final repository = MemoryRides();
+      final controller = RidesController(repository);
+      final ride = FitActivityDecoder.decode(fit()).single.forBike('bike');
+      expect((await controller.save([ride])).requireValue(), 1);
+      expect((await controller.save([ride, ride])).requireValue(), 0);
+      await controller.save([
+        Ride(
           id: 'invalid',
           bikeId: 'bike',
           startedAt: DateTime(2026),
           durationSeconds: -1,
-          source: 'manual')
-    ]);
-    expect(repository.data, hasLength(1));
-    expect(await controller.watch('other').first, isEmpty);
-    controller.dispose();
-  });
-  test(
-      'hour maintenance uses initial hours, resets after service, and survives old maps',
-      () {
+          source: 'manual',
+        ),
+      ]);
+      expect(repository.data, hasLength(1));
+      expect(await controller.watch('other').first, isEmpty);
+      controller.dispose();
+    },
+  );
+  test('hour maintenance uses initial hours, resets after service, and survives old maps', () {
     final date = DateTime(2026, 10, 1);
     final component = ServiceComponent(
-        id: 'fork',
-        bikeId: 'bike',
-        type: ComponentType.forkServiceLower,
-        name: 'Fork',
-        serviceIntervalKm: 0,
-        serviceIntervalHours: 50,
-        createdAt: date);
+      id: 'fork',
+      bikeId: 'bike',
+      type: ComponentType.forkServiceLower,
+      name: 'Fork',
+      serviceIntervalKm: 0,
+      serviceIntervalHours: 50,
+      createdAt: date,
+    );
     final ride = Ride(
-        id: 'ride',
-        bikeId: 'bike',
-        startedAt: date.add(const Duration(days: 1)),
-        durationSeconds: 7200,
-        source: 'manual');
+      id: 'ride',
+      bikeId: 'bike',
+      startedAt: date.add(const Duration(days: 1)),
+      durationSeconds: 7200,
+      source: 'manual',
+    );
     final baseline = ServiceEntry(
-        id: 'initial', componentId: 'fork', date: date, initialRideHours: 35);
+      id: 'initial',
+      componentId: 'fork',
+      date: date,
+      initialRideHours: 35,
+    );
     final usage = annotateService(
-        component: component,
-        currentMileageKm: 10000,
-        latestEntry: baseline,
-        rides: [ride]);
+      component: component,
+      currentMileageKm: 10000,
+      latestEntry: baseline,
+      rides: [ride],
+    );
     expect(usage.usage, 37);
     expect(usage.remaining, 13);
     expect(usage.status, ServiceStatus.amber);
     final service = ServiceEntry(
-        id: 'reset',
-        componentId: 'fork',
-        date: date.add(const Duration(days: 2)),
-        initialRideHours: 0);
+      id: 'reset',
+      componentId: 'fork',
+      date: date.add(const Duration(days: 2)),
+      initialRideHours: 0,
+    );
     expect(
-        annotateService(
-            component: component,
-            currentMileageKm: 10000,
-            latestEntry: service,
-            rides: [ride]).usage,
-        0);
+      annotateService(
+        component: component,
+        currentMileageKm: 10000,
+        latestEntry: service,
+        rides: [ride],
+      ).usage,
+      0,
+    );
     expect(
-        annotateService(
-                component: component,
-                currentMileageKm: 10000,
-                latestEntry: baseline)
-            .status,
-        ServiceStatus.unknown);
+      annotateService(
+        component: component,
+        currentMileageKm: 10000,
+        latestEntry: baseline,
+      ).status,
+      ServiceStatus.unknown,
+    );
     expect(
-        ServiceComponent.fromMap('fork', component.toMap())
-            .serviceIntervalHours,
-        50);
+      ServiceComponent.fromMap('fork', component.toMap()).serviceIntervalHours,
+      50,
+    );
     final withoutOptionalField = Map<String, dynamic>.from(component.toMap())
       ..remove('serviceIntervalHours');
-    expect(ServiceComponent.fromMap('old', withoutOptionalField).usesHours,
-        isFalse);
+    expect(
+      ServiceComponent.fromMap('old', withoutOptionalField).usesHours,
+      isFalse,
+    );
   });
-  test(
-      'FIT uses active timer rather than elapsed time, without duplicate sessions',
-      () {
+  test('FIT uses active timer rather than elapsed time, without duplicate sessions', () {
     final rides = FitActivityDecoder.decode(fit(duplicate: true));
     expect(rides, hasLength(1));
     expect(rides.single.hours, 1);
@@ -193,10 +210,11 @@ void main() {
   });
   test('FIT reads big endian sessions and skips developer data', () {
     expect(
-        FitActivityDecoder.decode(fit(bigEndian: true, developer: true))
-            .single
-            .hours,
-        1);
+      FitActivityDecoder.decode(fit(bigEndian: true, developer: true))
+          .single
+          .hours,
+      1,
+    );
     expect(FitActivityDecoder.decode(fit(subSport: 6)).single.indoor, isTrue);
     expect(FitActivityDecoder.decode(fit(subSport: 58)).single.indoor, isTrue);
   });
@@ -207,7 +225,7 @@ void main() {
       corrupt,
       fit(sport: 1),
       fit(timer: 0xffffffff),
-      Uint8List(4)
+      Uint8List(4),
     ]) {
       expect(() => FitActivityDecoder.decode(bytes), throwsFormatException);
     }
@@ -215,17 +233,18 @@ void main() {
   test('hours reset at service date and indoor rides are opt-in', () {
     final service = DateTime(2026, 10, 20);
     Ride ride(String id, DateTime date, {bool indoor = false}) => Ride(
-        id: id,
-        bikeId: 'bike',
-        startedAt: date,
-        durationSeconds: 5400,
-        source: 'manual',
-        indoor: indoor);
+      id: id,
+      bikeId: 'bike',
+      startedAt: date,
+      durationSeconds: 5400,
+      source: 'manual',
+      indoor: indoor,
+    );
     final rides = [
       ride('before', service.subtract(const Duration(seconds: 1))),
       ride('at', service),
       ride('after', service.add(const Duration(days: 1))),
-      ride('indoor', service, indoor: true)
+      ride('indoor', service, indoor: true),
     ];
     expect(hoursSince(rides, service), 3);
     expect(hoursSince(rides, service, includeIndoor: true), 4.5);

@@ -1,18 +1,21 @@
 import 'app_haptics.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../theme/theme_data.dart';
 import 'app_sheet.dart';
 
 /// A shared selector with a scrollable choice sheet instead of a popup menu.
 class AppSelect<T> extends StatelessWidget {
-  const AppSelect(
-      {super.key,
-      required this.label,
-      required this.value,
-      required this.items,
-      required this.onChanged,
-      this.compact = false});
+  const AppSelect({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.compact = false,
+  });
 
   final String label;
   final T? value;
@@ -23,75 +26,82 @@ class AppSelect<T> extends StatelessWidget {
   Future<void> open(BuildContext context) async {
     FocusScope.of(context).unfocus();
     await showAppSheet<void>(
-        context: context,
-        builder: (sheet) => Padding(
-              padding: appSheetPadding(sheet),
-              child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(sheet).height * .7),
-                  child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AppSheetHeader(title: label),
-                        Flexible(
-                            child: ListView.separated(
-                                shrinkWrap: true,
-                                itemCount: items.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 4),
-                                itemBuilder: (_, index) {
-                                  final item = items[index];
-                                  final selected = item.value == value;
+      context: context,
+      builder: (sheet) => Padding(
+        padding: appSheetPadding(sheet),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheet).height * .7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppSheetHeader(title: label),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
+                  itemBuilder: (_, index) {
+                    final item = items[index];
+                    final selected = item.value == value;
 
-                                  return Semantics(
-                                      selected: selected,
-                                      child: Material(
-                                          color: sheet.palette.bg,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          child: ListTile(
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          12)),
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 16,
-                                                      vertical: 4),
-                                              title: DefaultTextStyle(
-                                                  style: (selected
-                                                          ? AppTextStyles.label
-                                                          : AppTextStyles.body)
-                                                      .copyWith(
-                                                          color: selected
-                                                              ? sheet.palette
-                                                                  .accentText
-                                                              : sheet
-                                                                  .palette.ink),
-                                                  child: item.child),
-                                              trailing: selected
-                                                  ? Icon(
-                                                      CupertinoIcons.checkmark,
-                                                      size: AppIconSizes.control,
-                                                      color: sheet.palette.accentText)
-                                                  : null,
-                                              enabled: item.enabled,
-                                              onTap: item.enabled
-                                                  ? () {
-                                                      if (!selected) {
-                                                        AppHaptics.selection();
-                                                      }
-                                                      Navigator.of(sheet).pop();
-                                                      if (context.mounted) {
-                                                        onChanged
-                                                            ?.call(item.value);
-                                                      }
-                                                    }
-                                                  : null)));
-                                })),
-                      ])),
-            ));
+                    return Semantics(
+                      selected: selected,
+                      child: Material(
+                        color: sheet.palette.bg,
+                        borderRadius: BorderRadius.circular(12),
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          title: DefaultTextStyle(
+                            style:
+                                (selected
+                                        ? AppTextStyles.label
+                                        : AppTextStyles.body)
+                                    .copyWith(
+                                      color: selected
+                                          ? sheet.palette.accentText
+                                          : sheet.palette.ink,
+                                    ),
+                            child: item.child,
+                          ),
+                          trailing: selected
+                              ? Icon(
+                                  CupertinoIcons.checkmark,
+                                  size: AppIconSizes.control,
+                                  color: sheet.palette.accentText,
+                                )
+                              : null,
+                          enabled: item.enabled,
+                          onTap: item.enabled
+                              ? () {
+                                  if (!selected) {
+                                    AppHaptics.selection();
+                                  }
+                                  Navigator.of(sheet).pop();
+                                  if (context.mounted) {
+                                    onChanged?.call(item.value);
+                                  }
+                                }
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -107,25 +117,35 @@ class AppSelect<T> extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap:
-              onChanged == null ? null : AppHaptics.wrap(() => open(context)),
+          onTap: onChanged == null
+              ? null
+              : AppHaptics.wrap(() => open(context)),
           child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: compact ? 8 : 16, vertical: 14),
-              child: Row(
-                  mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-                  children: [
-                    Flexible(
-                        fit: compact ? FlexFit.loose : FlexFit.tight,
-                        child: DefaultTextStyle(
-                            style: AppTextStyles.body
-                                .copyWith(color: context.palette.ink),
-                            child: selected?.child ?? Text(label))),
-                    const SizedBox(width: 12),
-                    Icon(CupertinoIcons.chevron_down,
-                        size: AppIconSizes.compact,
-                        color: context.palette.inkMuted),
-                  ])),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 8 : 16,
+              vertical: 14,
+            ),
+            child: Row(
+              mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+              children: [
+                Flexible(
+                  fit: compact ? FlexFit.loose : FlexFit.tight,
+                  child: DefaultTextStyle(
+                    style: AppTextStyles.body.copyWith(
+                      color: context.palette.ink,
+                    ),
+                    child: selected?.child ?? Text(label),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Icon(
+                  CupertinoIcons.chevron_down,
+                  size: AppIconSizes.compact,
+                  color: context.palette.inkMuted,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

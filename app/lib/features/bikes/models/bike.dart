@@ -7,9 +7,6 @@ class Bike {
   const Bike({required this.id, required this.name});
 
   factory Bike.fromMap(String id, Map<String, dynamic> data) {
-    return Bike(
-      id: id,
-      name: data[FirestoreKeys.bikeName] as String? ?? '',
-    );
+    return Bike(id: id, name: data[FirestoreKeys.bikeName] as String? ?? '');
   }
 }

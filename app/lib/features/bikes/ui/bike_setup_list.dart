@@ -1,8 +1,10 @@
 import 'package:bikesetupapp/common/ui/app_loading.dart';
+
 import 'dart:async';
+
 import 'package:bikesetupapp/common/ui/app_error_banner.dart';
 import 'package:bikesetupapp/common/ui/delete_confirmation_sheet.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/ui/command_feedback.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -54,8 +56,10 @@ class _BikeSetupListState extends State<BikeSetupList> {
   }
 
   void _connect() {
-    _stream =
-        AppDependencies.of(context).forUser(user.uid).setups.getSetups(bike.id);
+    _stream = AppDependencies.of(context)
+        .forUser(user.uid)
+        .setups
+        .getSetups(bike.id);
   }
 
   @override
@@ -67,7 +71,10 @@ class _BikeSetupListState extends State<BikeSetupList> {
   }
 
   Future<bool> _confirmDeleteSetup(
-      BuildContext context, String setupId, int total) async {
+    BuildContext context,
+    String setupId,
+    int total,
+  ) async {
     if (total <= 1) {
       BikeAlerts.deleteError(context, 'Setup');
       return false;
@@ -93,11 +100,13 @@ class _BikeSetupListState extends State<BikeSetupList> {
     );
     if (confirmed && context.mounted) {
       return presentCommand(
-          context,
-          () => AppDependencies.of(context)
-              .forUser(user.uid)
-              .setups
-              .deleteSetup(bike.id, setupId));
+        context,
+        () =>
+            AppDependencies.of(context)
+                .forUser(user.uid)
+                .setups
+                .deleteSetup(bike.id, setupId),
+      );
     }
 
     return confirmed;
@@ -204,7 +213,9 @@ class _SetupRow extends StatelessWidget {
         onSelect: () async {
           final db = AppDependencies.of(context).forUser(user.uid);
           final selected = await presentCommand(
-              context, () => db.bikes.selectSetup(bike.id, setup.id));
+            context,
+            () => db.bikes.selectSetup(bike.id, setup.id),
+          );
           if (!context.mounted || !selected) return;
           onSelect(bike.name, bike.id, setup.name, setup.id);
         },

@@ -9,7 +9,7 @@ This project targets native apps. GitHub Pages hosting and the web platform have
 
 ## Run locally
 
-Install Flutter and configure a Firebase project with Firestore and the sign-in methods you want to use.
+Install Flutter **3.50.0 stable**, which includes Dart **3.14.0**, to match CI. Dart is bundled with Flutter; a separate Dart installation is not needed. Configure a Firebase project with Firestore and the sign-in methods you want to use.
 
 ```bash
 flutter pub get

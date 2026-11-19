@@ -1,9 +1,5 @@
 enum ComponentType {
-  chain(
-    label: 'Chain',
-    icon: 'link',
-    defaultIntervalKm: 2000,
-  ),
+  chain(label: 'Chain', icon: 'link', defaultIntervalKm: 2000),
   brakePadsFront(
     label: 'Brake Pads Front',
     icon: 'brake',
@@ -14,21 +10,9 @@ enum ComponentType {
     icon: 'brake',
     defaultIntervalKm: 1000,
   ),
-  tiresFront(
-    label: 'Front Tire',
-    icon: 'tire',
-    defaultIntervalKm: 3000,
-  ),
-  tiresRear(
-    label: 'Rear Tire',
-    icon: 'tire',
-    defaultIntervalKm: 3000,
-  ),
-  tires(
-    label: 'Tires',
-    icon: 'tire',
-    defaultIntervalKm: 3000,
-  ),
+  tiresFront(label: 'Front Tire', icon: 'tire', defaultIntervalKm: 3000),
+  tiresRear(label: 'Rear Tire', icon: 'tire', defaultIntervalKm: 3000),
+  tires(label: 'Tires', icon: 'tire', defaultIntervalKm: 3000),
   forkServiceLower(
     label: 'Fork Lower Leg Service',
     icon: 'fork',
@@ -39,11 +23,7 @@ enum ComponentType {
     icon: 'fork',
     defaultIntervalKm: 5000,
   ),
-  shockService(
-    label: 'Shock Service',
-    icon: 'shock',
-    defaultIntervalKm: 5000,
-  ),
+  shockService(label: 'Shock Service', icon: 'shock', defaultIntervalKm: 5000),
   wheelBearings(
     label: 'Wheel Bearings',
     icon: 'bearing',
@@ -64,11 +44,7 @@ enum ComponentType {
     icon: 'brake',
     defaultIntervalKm: 3000,
   ),
-  other(
-    label: 'Other',
-    icon: 'other',
-    defaultIntervalKm: 0,
-  );
+  other(label: 'Other', icon: 'other', defaultIntervalKm: 0);
 
   final String label;
   final String icon;

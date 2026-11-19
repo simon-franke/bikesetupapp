@@ -19,8 +19,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.3 <4.0.0'
-  #sdk: '3.4.3'
+  sdk: '>=3.14.0 <4.0.0'
+  flutter: '>=3.50.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -53,6 +53,8 @@ dependencies:
   file_selector: ^1.1.0
   crypto: ^3.0.8
   cupertino_liquid_glass: ^0.7.2
+  material_ui: ^0.0.1
+  cupertino_ui: ^0.0.1
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +67,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
+  path_provider_platform_interface: ^2.1.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

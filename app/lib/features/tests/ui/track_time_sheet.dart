@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
@@ -15,13 +15,16 @@ class TrackTimeSheet extends StatefulWidget {
 
 class _TrackTimeSheetState extends State<TrackTimeSheet> {
   late final minutes = TextEditingController(
-      text: widget.initial.isEmpty ? '' : widget.initial.split(':').first);
+    text: widget.initial.isEmpty ? '' : widget.initial.split(':').first,
+  );
   late final seconds = TextEditingController(
-      text: widget.initial.isEmpty
-          ? ''
-          : widget.initial.split(':').last.split('.').first);
+    text: widget.initial.isEmpty
+        ? ''
+        : widget.initial.split(':').last.split('.').first,
+  );
   late final milliseconds = TextEditingController(
-      text: widget.initial.contains('.') ? widget.initial.split('.').last : '');
+    text: widget.initial.contains('.') ? widget.initial.split('.').last : '',
+  );
   final minuteFocus = FocusNode();
   final secondFocus = FocusNode();
   final millisecondFocus = FocusNode();
@@ -45,70 +48,88 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
       selectAll(seconds);
       return;
     }
-    Navigator.pop(context,
-        '${minutes.text.padLeft(2, '0')}:${seconds.text.padLeft(2, '0')}.${milliseconds.text.padLeft(3, '0')}');
+    Navigator.pop(
+      context,
+      '${minutes.text.padLeft(2, '0')}:${seconds.text.padLeft(2, '0')}.${milliseconds.text.padLeft(3, '0')}',
+    );
   }
 
   void selectAll(TextEditingController controller) {
-    controller.selection =
-        TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+    controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: controller.text.length,
+    );
   }
 
-  Widget segment(String label, String hint, TextEditingController controller,
-      FocusNode focus, int length,
-      {FocusNode? next, bool expanded = true}) {
+  Widget segment(
+    String label,
+    String hint,
+    TextEditingController controller,
+    FocusNode focus,
+    int length, {
+    FocusNode? next,
+    bool expanded = true,
+  }) {
     final p = context.palette;
-    final field = Column(children: [
-      TextField(
-        key: ValueKey(label),
-        controller: controller,
-        focusNode: focus,
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        textInputAction:
-            next == null ? TextInputAction.done : TextInputAction.next,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(length,
-              maxLengthEnforcement: MaxLengthEnforcement.enforced),
-        ],
-        style: AppTextStyles.heading
-            .copyWith(color: p.ink)
-            .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-        cursorColor: p.accentText,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: AppTextStyles.heading
-              .copyWith(color: p.inkMuted)
+    final field = Column(
+      children: [
+        TextField(
+          key: ValueKey(label),
+          controller: controller,
+          focusNode: focus,
+          textAlign: TextAlign.center,
+          keyboardType: TextInputType.number,
+          textInputAction: next == null
+              ? TextInputAction.done
+              : TextInputAction.next,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(
+              length,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            ),
+          ],
+          style: AppTextStyles.heading
+              .copyWith(color: p.ink)
               .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-          filled: false,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder:
-              UnderlineInputBorder(borderSide: BorderSide(color: p.accentText)),
+          cursorColor: p.accentText,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTextStyles.heading
+                .copyWith(color: p.inkMuted)
+                .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+            filled: false,
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 2,
+            ),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: p.accentText),
+            ),
+          ),
+          onTap: () => selectAll(controller),
+          onChanged: (value) {
+            if (error != null) setState(() => error = null);
+            if (next != null && value.length == length) {
+              next.requestFocus();
+              selectAll(next == secondFocus ? seconds : milliseconds);
+            }
+          },
+          onSubmitted: (_) {
+            if (next == null) {
+              submit();
+            } else {
+              next.requestFocus();
+              selectAll(next == secondFocus ? seconds : milliseconds);
+            }
+          },
         ),
-        onTap: () => selectAll(controller),
-        onChanged: (value) {
-          if (error != null) setState(() => error = null);
-          if (next != null && value.length == length) {
-            next.requestFocus();
-            selectAll(next == secondFocus ? seconds : milliseconds);
-          }
-        },
-        onSubmitted: (_) {
-          if (next == null) {
-            submit();
-          } else {
-            next.requestFocus();
-            selectAll(next == secondFocus ? seconds : milliseconds);
-          }
-        },
-      ),
-      const SizedBox(height: 4),
-      Text(label, style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
-    ]);
+        const SizedBox(height: 4),
+        Text(label, style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
+      ],
+    );
 
     return expanded ? Expanded(child: field) : field;
   }
@@ -126,42 +147,82 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
           AppSheetHeader(
             title: 'Track time',
             action: TextButton(
-                onPressed: () => Navigator.pop(context, ''),
-                child: const Text('Clear')),
+              onPressed: () => Navigator.pop(context, ''),
+              child: const Text('Clear'),
+            ),
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
             decoration: BoxDecoration(
-                color: p.surface2, borderRadius: BorderRadius.circular(14)),
-            child: LayoutBuilder(builder: (context, constraints) {
-              // Keep every digit visible at enlarged text sizes.
-              final minimumWidth =
-                  MediaQuery.textScalerOf(context).scale(26) * 6 + 40;
-              if (constraints.maxWidth < minimumWidth) {
-                return Column(children: [
-                  segment('min', '00', minutes, minuteFocus, 3,
-                      next: secondFocus, expanded: false),
-                  const SizedBox(height: 12),
-                  segment('sec', '00', seconds, secondFocus, 2,
-                      next: millisecondFocus, expanded: false),
-                  const SizedBox(height: 12),
-                  segment('ms', '000', milliseconds, millisecondFocus, 3,
-                      expanded: false),
-                ]);
-              }
+              color: p.surface2,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Keep every digit visible at enlarged text sizes.
+                final minimumWidth =
+                    MediaQuery.textScalerOf(context).scale(26) * 6 + 40;
+                if (constraints.maxWidth < minimumWidth) {
+                  return Column(
+                    children: [
+                      segment(
+                        'min',
+                        '00',
+                        minutes,
+                        minuteFocus,
+                        3,
+                        next: secondFocus,
+                        expanded: false,
+                      ),
+                      const SizedBox(height: 12),
+                      segment(
+                        'sec',
+                        '00',
+                        seconds,
+                        secondFocus,
+                        2,
+                        next: millisecondFocus,
+                        expanded: false,
+                      ),
+                      const SizedBox(height: 12),
+                      segment(
+                        'ms',
+                        '000',
+                        milliseconds,
+                        millisecondFocus,
+                        3,
+                        expanded: false,
+                      ),
+                    ],
+                  );
+                }
 
-              return Row(
+                return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    segment('min', '00', minutes, minuteFocus, 3,
-                        next: secondFocus),
+                    segment(
+                      'min',
+                      '00',
+                      minutes,
+                      minuteFocus,
+                      3,
+                      next: secondFocus,
+                    ),
                     separator(':'),
-                    segment('sec', '00', seconds, secondFocus, 2,
-                        next: millisecondFocus),
+                    segment(
+                      'sec',
+                      '00',
+                      seconds,
+                      secondFocus,
+                      2,
+                      next: millisecondFocus,
+                    ),
                     separator('.'),
                     segment('ms', '000', milliseconds, millisecondFocus, 3),
-                  ]);
-            }),
+                  ],
+                );
+              },
+            ),
           ),
           if (error != null) ...[
             const SizedBox(height: 12),
@@ -175,9 +236,10 @@ class _TrackTimeSheetState extends State<TrackTimeSheet> {
   }
 
   Widget separator(String text) => Padding(
-        padding: const EdgeInsets.only(top: 12),
-        child: Text(text,
-            style: AppTextStyles.heading
-                .copyWith(color: context.palette.inkMuted)),
-      );
+    padding: const EdgeInsets.only(top: 12),
+    child: Text(
+      text,
+      style: AppTextStyles.heading.copyWith(color: context.palette.inkMuted),
+    ),
+  );
 }

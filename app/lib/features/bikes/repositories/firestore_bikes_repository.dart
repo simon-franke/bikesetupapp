@@ -3,11 +3,12 @@ import 'package:bikesetupapp/common/models/command_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
+
 import 'bikes_repository.dart';
 
 class FirestoreBikesRepository implements BikesRepository {
   FirestoreBikesRepository(this.userID, {FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final String userID;
   final FirebaseFirestore _firestore;
@@ -18,9 +19,9 @@ class FirestoreBikesRepository implements BikesRepository {
   @override
   Future<void> setDefaultBike(String uBikeID) {
     return firebaseOperation(() async {
-      return userBikeSetup
-          .doc(userID)
-          .set({FirestoreKeys.defaultBike: uBikeID}, SetOptions(merge: true));
+      return userBikeSetup.doc(userID).set({
+        FirestoreKeys.defaultBike: uBikeID,
+      }, SetOptions(merge: true));
     }, fallback: FailureCode.saveFailed);
   }
 
@@ -75,9 +76,9 @@ class FirestoreBikesRepository implements BikesRepository {
         if (remaining.docs.isNotEmpty) {
           await setDefaultBike(remaining.docs.first.id);
         } else {
-          await userBikeSetup
-              .doc(userID)
-              .update({FirestoreKeys.defaultBike: FieldValue.delete()});
+          await userBikeSetup.doc(userID).update({
+            FirestoreKeys.defaultBike: FieldValue.delete(),
+          });
         }
       }
     }, fallback: FailureCode.saveFailed);
@@ -119,13 +120,17 @@ class FirestoreBikesRepository implements BikesRepository {
 
   @override
   Stream<List<Bike>> getBikes() {
-    return firebaseStream(userBikeSetup
-        .doc(userID)
-        .collection(FirestoreKeys.bikes)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Bike.fromMap(doc.id, doc.data()))
-            .toList()));
+    return firebaseStream(
+      userBikeSetup
+          .doc(userID)
+          .collection(FirestoreKeys.bikes)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => Bike.fromMap(doc.id, doc.data()))
+                .toList(),
+          ),
+    );
   }
 
   @override

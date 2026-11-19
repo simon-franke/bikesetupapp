@@ -10,22 +10,27 @@ class SetupConfiguration {
 
   /// Active fields used by the workspace and experiment snapshots.
   Map<String, List<String>> get fields => Map.unmodifiable({
-        for (final entry in storedFields.entries)
-          if (!disabledCategories.contains(entry.key)) entry.key: entry.value,
-      });
+    for (final entry in storedFields.entries)
+      if (!disabledCategories.contains(entry.key)) entry.key: entry.value,
+  });
 
-  SetupConfiguration(Map<String, List<String>> fields,
-      {Set<String> disabledCategories = const {}})
-      : disabledCategories = Set.unmodifiable(disabledCategories),
-        storedFields = Map.unmodifiable({
-          for (final entry in fields.entries)
-            entry.key: List<String>.unmodifiable(entry.value),
-        }) {
+  SetupConfiguration(
+    Map<String, List<String>> fields, {
+    Set<String> disabledCategories = const {},
+  }) : disabledCategories = Set.unmodifiable(disabledCategories),
+       storedFields = Map.unmodifiable({
+         for (final entry in fields.entries)
+           entry.key: List<String>.unmodifiable(entry.value),
+       }) {
     if (!fields.keys.toSet().containsAll(disabledCategories) ||
-        fields.entries.any((entry) =>
-            !isValidCategoryName(entry.key) ||
-            entry.value.any((key) => key.trim().isEmpty || key.length > 100) ||
-            entry.value.toSet().length != entry.value.length)) {
+        fields.entries.any(
+          (entry) =>
+              !isValidCategoryName(entry.key) ||
+              entry.value.any(
+                (key) => key.trim().isEmpty || key.length > 100,
+              ) ||
+              entry.value.toSet().length != entry.value.length,
+        )) {
       throw const FormatException('Invalid setup field configuration');
     }
   }
@@ -42,9 +47,9 @@ class SetupConfiguration {
       !name.contains(RegExp(r'[\x00-\x1F]'));
 
   String encode() => jsonEncode({
-        'fields': storedFields,
-        'disabledCategories': disabledCategories.toList(),
-      });
+    'fields': storedFields,
+    'disabledCategories': disabledCategories.toList(),
+  });
 
   static SetupConfiguration fromInformation(Map<String, dynamic> information) {
     final encoded = information[FirestoreKeys.setupConfiguration];
@@ -70,8 +75,9 @@ class SetupConfiguration {
       fields[entry.key] = List<String>.from(entry.value as List);
     }
 
-    return SetupConfiguration(fields,
-        disabledCategories:
-            Set<String>.from(data['disabledCategories'] as List));
+    return SetupConfiguration(
+      fields,
+      disabledCategories: Set<String>.from(data['disabledCategories'] as List),
+    );
   }
 }

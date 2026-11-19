@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
+
 import '../models/service_entry.dart';
 import 'maintenance_controller.dart';
 
@@ -45,17 +47,21 @@ class ServiceEntriesController extends OperationController {
     _errors.clear();
 
     for (final id in _ids) {
-      _subscriptions[id] =
-          _maintenance.streamLatestEntryForComponent(id).listen((entry) {
-        if (!isCurrentRequest('entries', generation)) return;
-        _entries[id] = entry;
-        _errors.remove(id);
-        emit();
-      }, onError: (Object error, StackTrace stack) {
-        if (!isCurrentRequest('entries', generation)) return;
-        _errors[id] = (error, stack);
-        emit();
-      });
+      _subscriptions[id] = _maintenance
+          .streamLatestEntryForComponent(id)
+          .listen(
+            (entry) {
+              if (!isCurrentRequest('entries', generation)) return;
+              _entries[id] = entry;
+              _errors.remove(id);
+              emit();
+            },
+            onError: (Object error, StackTrace stack) {
+              if (!isCurrentRequest('entries', generation)) return;
+              _errors[id] = (error, stack);
+              emit();
+            },
+          );
     }
 
     emit();

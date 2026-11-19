@@ -2,11 +2,12 @@ import 'package:bikesetupapp/features/bikes/repositories/bikes_repository.dart';
 import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart';
 
 class StartupSelection {
-  const StartupSelection(
-      {required this.bikeId,
-      required this.bikeName,
-      required this.setupId,
-      required this.setupName});
+  const StartupSelection({
+    required this.bikeId,
+    required this.bikeName,
+    required this.setupId,
+    required this.setupName,
+  });
 
   final String bikeId;
   final String bikeName;
@@ -36,9 +37,10 @@ class StartupController {
     if (setupName.isEmpty) return null;
 
     return StartupSelection(
-        bikeId: bikeId,
-        bikeName: await _bikes.getBikeNameFromID(bikeId),
-        setupId: setupId,
-        setupName: setupName);
+      bikeId: bikeId,
+      bikeName: await _bikes.getBikeNameFromID(bikeId),
+      setupId: setupId,
+      setupName: setupName,
+    );
   }
 }

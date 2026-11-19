@@ -1,8 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:bikesetupapp/common/models/command_result.dart';
+
 import 'dart:convert';
 import 'dart:math';
+
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:bikesetupapp/features/strava/models/strava_auth.dart';
@@ -14,22 +17,25 @@ import 'package:bikesetupapp/features/strava/repositories/strava_token_storage.d
 /// Token exchanges use backend endpoints. Ownership and generation checks reject
 /// responses from superseded authorization attempts or changed sessions.
 class StravaAuthService {
-  StravaAuthService(
-      {required String? Function() userId,
-      http.Client? client,
-      Future<String> Function(
-              {required String url, required String callbackUrlScheme})?
-          authenticate,
-      DateTime Function()? now})
-      : _userId = userId,
-        _client = client,
-        _authenticate = authenticate ?? FlutterWebAuth2.authenticate,
-        _now = now ?? DateTime.now;
+  StravaAuthService({
+    required this._userId,
+    this._client,
+    Future<String> Function({
+      required String url,
+      required String callbackUrlScheme,
+    })?
+    authenticate,
+    DateTime Function()? now,
+  }) : _authenticate = authenticate ?? FlutterWebAuth2.authenticate,
+       _now = now ?? DateTime.now;
 
   final String? Function() _userId;
   final http.Client? _client;
-  final Future<String> Function(
-      {required String url, required String callbackUrlScheme}) _authenticate;
+  final Future<String> Function({
+    required String url,
+    required String callbackUrlScheme,
+  })
+  _authenticate;
   final DateTime Function() _now;
   int _generation = 0;
   final Map<String, Future<StravaAuth?>> _refreshes = {};
@@ -41,8 +47,10 @@ class StravaAuthService {
       'https://us-central1-bikesetupapp-bd22a.cloudfunctions.net';
   static const _requestedScopes = 'read,profile:read_all,activity:read_all';
 
-  static const _clientId =
-      String.fromEnvironment('STRAVA_CLIENT_ID', defaultValue: '214695');
+  static const _clientId = String.fromEnvironment(
+    'STRAVA_CLIENT_ID',
+    defaultValue: '214695',
+  );
 
   Future<http.Response> _post(Uri uri, Map<String, String> body) async {
     try {
@@ -85,8 +93,9 @@ class StravaAuthService {
 
     try {
       final result = await _authenticate(
-          url: _authUrl(_redirectUri, state),
-          callbackUrlScheme: _callbackScheme);
+        url: _authUrl(_redirectUri, state),
+        callbackUrlScheme: _callbackScheme,
+      );
       final callback = Uri.parse(result);
       if (_userId() != owner ||
           generation != _generation ||
@@ -102,16 +111,21 @@ class StravaAuthService {
       final code = callback.queryParameters['code'];
       if (code == null || code.isEmpty) return null;
 
-      final response = await _post(
-          Uri.parse('$_functionBase/stravaExchange'), {'code': code});
+      final response = await _post(Uri.parse('$_functionBase/stravaExchange'), {
+        'code': code,
+      });
       if (response.statusCode != 200) {
-        throw AppFailure(FailureCode.connectionExpired,
-            statusCode: response.statusCode);
+        throw AppFailure(
+          FailureCode.connectionExpired,
+          statusCode: response.statusCode,
+        );
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final auth = StravaAuth.fromTokenResponse(json,
-          scopes: StravaAuth.parseScopes(callback.queryParameters['scope']));
+      final auth = StravaAuth.fromTokenResponse(
+        json,
+        scopes: StravaAuth.parseScopes(callback.queryParameters['scope']),
+      );
       if (_userId() != owner || generation != _generation) return null;
 
       await StravaTokenStorage.saveAuth(auth, userId: owner);
@@ -119,14 +133,23 @@ class StravaAuthService {
       return auth;
     } on PlatformException catch (error, stack) {
       if (error.code.toLowerCase().contains('cancel')) return null;
-      throw AppFailure(FailureCode.authenticationFailed,
-          cause: error, stackTrace: stack);
+      throw AppFailure(
+        FailureCode.authenticationFailed,
+        cause: error,
+        stackTrace: stack,
+      );
     } on FormatException catch (error, stack) {
-      throw AppFailure(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw AppFailure(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     } on TypeError catch (error, stack) {
-      throw AppFailure(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw AppFailure(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -137,38 +160,51 @@ class StravaAuthService {
     final owner = _userId();
     if (owner == null) return Future.value(null);
     return _refreshes.putIfAbsent(
-        owner,
-        () => _refreshToken(current, owner, _generation).whenComplete(() {
-              _refreshes.remove(owner);
-            }));
+      owner,
+      () => _refreshToken(current, owner, _generation).whenComplete(() {
+        _refreshes.remove(owner);
+      }),
+    );
   }
 
   Future<StravaAuth?> _refreshToken(
-      StravaAuth current, String owner, int generation) async {
+    StravaAuth current,
+    String owner,
+    int generation,
+  ) async {
     try {
       final response = await _post(Uri.parse('$_functionBase/stravaRefresh'), {
         'refresh_token': current.refreshToken,
       });
       if (response.statusCode != 200) {
-        throw AppFailure(FailureCode.connectionExpired,
-            statusCode: response.statusCode);
+        throw AppFailure(
+          FailureCode.connectionExpired,
+          statusCode: response.statusCode,
+        );
       }
 
       final auth = StravaAuth.fromTokenResponse(
-          jsonDecode(response.body) as Map<String, dynamic>,
-          athleteId: current.athleteId,
-          scopes: current.scopes);
+        jsonDecode(response.body) as Map<String, dynamic>,
+        athleteId: current.athleteId,
+        scopes: current.scopes,
+      );
       if (_userId() != owner || generation != _generation) return null;
 
       await StravaTokenStorage.saveAuth(auth, userId: owner);
 
       return auth;
     } on FormatException catch (error, stack) {
-      throw AppFailure(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw AppFailure(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     } on TypeError catch (error, stack) {
-      throw AppFailure(FailureCode.invalidResponse,
-          cause: error, stackTrace: stack);
+      throw AppFailure(
+        FailureCode.invalidResponse,
+        cause: error,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -200,15 +236,18 @@ class StravaAuthService {
     return _userId() == owner ? token : null;
   }
 
-  String _authUrl(String redirect, String state) =>
-      Uri.parse(_authorizeUrl).replace(queryParameters: {
-        'client_id': _clientId,
-        'response_type': 'code',
-        'redirect_uri': redirect,
-        'scope': _requestedScopes,
-        'approval_prompt': 'force',
-        'state': state
-      }).toString();
+  String _authUrl(String redirect, String state) => Uri.parse(_authorizeUrl)
+      .replace(
+        queryParameters: {
+          'client_id': _clientId,
+          'response_type': 'code',
+          'redirect_uri': redirect,
+          'scope': _requestedScopes,
+          'approval_prompt': 'force',
+          'state': state,
+        },
+      )
+      .toString();
 
   /// Invalidates in-flight authorization work and removes local credentials.
   ///
@@ -229,9 +268,12 @@ class StravaAuthService {
     await clearAuth();
     if (auth != null) {
       try {
-        await _post(
-            Uri.parse(_deauthorizeUrl), {'access_token': auth.accessToken});
-      } on AppFailure {/* Local credentials are already cleared. */}
+        await _post(Uri.parse(_deauthorizeUrl), {
+          'access_token': auth.accessToken,
+        });
+      } on AppFailure {
+        /* Local credentials are already cleared. */
+      }
     }
   }
 }

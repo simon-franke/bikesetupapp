@@ -1,8 +1,9 @@
 import 'app_haptics.dart';
 import 'app_loading.dart';
-import 'package:flutter/cupertino.dart';
+
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// App-specific compositions of Material controls. Visual defaults live in
 /// AppTheme so focus, disabled states, sizing and semantics stay consistent.
@@ -42,13 +43,16 @@ class AppActionButton extends StatelessWidget {
               onPressed: AppHaptics.wrap(action),
               style: isLoading
                   ? OutlinedButton.styleFrom(
-                      disabledForegroundColor: context.palette.ink)
+                      disabledForegroundColor: context.palette.ink,
+                    )
                   : null,
-              child: child)
+              child: child,
+            )
           : OutlinedButton.icon(
               onPressed: AppHaptics.wrap(action),
               icon: Icon(icon),
-              label: child);
+              label: child,
+            );
     }
 
     final content = icon == null || isLoading
@@ -58,7 +62,7 @@ class AppActionButton extends StatelessWidget {
             children: [
               Icon(icon, size: AppIconSizes.control),
               const SizedBox(width: 8),
-              Flexible(child: child)
+              Flexible(child: child),
             ],
           );
     if (destructive || color == context.palette.red) {
@@ -70,19 +74,21 @@ class AppActionButton extends StatelessWidget {
           backgroundColor: context.palette.red.withValues(alpha: .10),
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: content,
       );
     }
 
     return AppTactileButton(
-        onPressed: onPressed,
-        color: color,
-        isLoading: isLoading,
-        loadingLabel: loadingLabel,
-        child: content);
+      onPressed: onPressed,
+      color: color,
+      isLoading: isLoading,
+      loadingLabel: loadingLabel,
+      child: content,
+    );
   }
 }
 
@@ -119,15 +125,16 @@ class AppEditButton extends StatelessWidget {
 /// A button face that depresses onto a solid base while retaining native
 /// keyboard, focus, cancellation, and disabled-button behavior.
 class AppTactileButton extends StatefulWidget {
-  const AppTactileButton(
-      {super.key,
-      required this.onPressed,
-      required this.child,
-      this.tooltip,
-      this.color,
-      this.isLoading = false,
-      this.loadingLabel = 'Saving…',
-      this.compact = false});
+  const AppTactileButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.tooltip,
+    this.color,
+    this.isLoading = false,
+    this.loadingLabel = 'Saving…',
+    this.compact = false,
+  });
 
   final VoidCallback? onPressed;
   final Widget child;
@@ -187,50 +194,61 @@ class _AppTactileButtonState extends State<AppTactileButton> {
     final pressed =
         _activating || (enabled && _states.value.contains(WidgetState.pressed));
     final radius = BorderRadius.circular(10);
-    final button = Stack(fit: StackFit.passthrough, children: [
-      Positioned.fill(
-        top: 6,
-        child: DecoratedBox(
+    final button = Stack(
+      fit: StackFit.passthrough,
+      children: [
+        Positioned.fill(
+          top: 6,
+          child: DecoratedBox(
             decoration: BoxDecoration(
-          color: enabled ? Color.lerp(face, Colors.black, .4) : p.surface2,
-          borderRadius: radius,
-        )),
-      ),
-      Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: AnimatedContainer(
-          duration: pressed || MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 120),
-          transform: Matrix4.translationValues(0, pressed ? 6 : 0, 0),
-          child: ElevatedButton(
-            statesController: _states,
-            onPressed: enabled ? _activate : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: face,
-              foregroundColor: ink,
-              disabledBackgroundColor: p.surface2,
-              disabledForegroundColor: widget.isLoading ? p.ink : p.inkDim,
-              minimumSize: const Size(48, 48),
-              padding: widget.compact
-                  ? EdgeInsets.zero
-                  : const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: radius),
-            ).copyWith(
-              elevation: const WidgetStatePropertyAll(0),
-              overlayColor: WidgetStateProperty.resolveWith((states) =>
-                  states.contains(WidgetState.pressed)
-                      ? Colors.transparent
-                      : null),
-              splashFactory: NoSplash.splashFactory,
+              color: enabled ? Color.lerp(face, Colors.black, .4) : p.surface2,
+              borderRadius: radius,
             ),
-            child: widget.isLoading
-                ? AppLoadingContent(label: widget.loadingLabel)
-                : widget.child,
           ),
         ),
-      ),
-    ]);
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: AnimatedContainer(
+            duration: pressed || MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 120),
+            transform: Matrix4.translationValues(0, pressed ? 6 : 0, 0),
+            child: ElevatedButton(
+              statesController: _states,
+              onPressed: enabled ? _activate : null,
+              style:
+                  ElevatedButton.styleFrom(
+                    backgroundColor: face,
+                    foregroundColor: ink,
+                    disabledBackgroundColor: p.surface2,
+                    disabledForegroundColor: widget.isLoading
+                        ? p.ink
+                        : p.inkDim,
+                    minimumSize: const Size(48, 48),
+                    padding: widget.compact
+                        ? EdgeInsets.zero
+                        : const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                    shape: RoundedRectangleBorder(borderRadius: radius),
+                  ).copyWith(
+                    elevation: const WidgetStatePropertyAll(0),
+                    overlayColor: WidgetStateProperty.resolveWith(
+                      (states) => states.contains(WidgetState.pressed)
+                          ? Colors.transparent
+                          : null,
+                    ),
+                    splashFactory: NoSplash.splashFactory,
+                  ),
+              child: widget.isLoading
+                  ? AppLoadingContent(label: widget.loadingLabel)
+                  : widget.child,
+            ),
+          ),
+        ),
+      ],
+    );
 
     return widget.tooltip == null
         ? button
@@ -243,8 +261,12 @@ class _AppTactileButtonState extends State<AppTactileButton> {
 
 /// A consistent, quiet entry point below a list; confirmation stays in the form.
 class AppAddButton extends StatelessWidget {
-  const AppAddButton(
-      {super.key, required this.label, required this.onPressed, this.tooltip});
+  const AppAddButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.tooltip,
+  });
 
   final String label;
   final VoidCallback? onPressed;

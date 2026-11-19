@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:bikesetupapp/common/ui/bike_icon.dart';
 import 'package:bikesetupapp/common/ui/app_components.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
@@ -50,8 +50,8 @@ class StravaSettings extends StatelessWidget {
                   Text(
                     isConnected
                         ? (bikeCount > 0
-                            ? 'Connected with $bikeCount bike${bikeCount == 1 ? '' : 's'} synced'
-                            : 'Connected')
+                              ? 'Connected with $bikeCount bike${bikeCount == 1 ? '' : 's'} synced'
+                              : 'Connected')
                         : 'Not connected',
                     style: AppTextStyles.caption.copyWith(color: p.inkMuted),
                   ),
@@ -71,13 +71,14 @@ class StravaSettings extends StatelessWidget {
         const SizedBox(height: 12),
         if (isConnected) ...[
           SizedBox(
-              width: double.infinity,
-              child: AppActionButton(
-                outlined: true,
-                icon: CupertinoIcons.arrow_right_arrow_left,
-                label: 'Manage Strava bikes',
-                onPressed: onManageBikes,
-              )),
+            width: double.infinity,
+            child: AppActionButton(
+              outlined: true,
+              icon: CupertinoIcons.arrow_right_arrow_left,
+              label: 'Manage Strava bikes',
+              onPressed: onManageBikes,
+            ),
+          ),
           const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
@@ -93,9 +94,10 @@ class StravaSettings extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: AppActionButton(
-                label: 'Connect Strava',
-                icon: CupertinoIcons.link,
-                onPressed: onConnect),
+              label: 'Connect Strava',
+              icon: CupertinoIcons.link,
+              onPressed: onConnect,
+            ),
           ),
       ],
     );

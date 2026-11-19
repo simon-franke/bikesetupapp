@@ -1,15 +1,17 @@
 import 'package:cupertino_liquid_glass/cupertino_liquid_glass.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../theme/theme_data.dart';
 
 /// Shared floating surface for the workspace navigation and header.
 class AppGlassSurface extends StatelessWidget {
-  const AppGlassSurface(
-      {super.key,
-      required this.child,
-      this.showShadow = true,
-      this.tintColor,
-      this.tintOpacity = .78});
+  const AppGlassSurface({
+    super.key,
+    required this.child,
+    this.showShadow = true,
+    this.tintColor,
+    this.tintOpacity = .78,
+  });
 
   final Widget child;
   final bool showShadow;
@@ -23,9 +25,10 @@ class AppGlassSurface extends StatelessWidget {
     return CupertinoLiquidGlass(
       theme: (dark ? LiquidGlassThemeData.dark() : LiquidGlassThemeData.light())
           .copyWith(
-              tintColor: tintColor ?? context.palette.surface,
-              tintOpacity: tintOpacity,
-              shadows: showShadow ? null : const <BoxShadow>[]),
+            tintColor: tintColor ?? context.palette.surface,
+            tintOpacity: tintOpacity,
+            shadows: showShadow ? null : const <BoxShadow>[],
+          ),
       borderRadius: BorderRadius.circular(30),
       padding: const EdgeInsets.all(5),
       effectIntensity: .25,

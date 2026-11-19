@@ -1,7 +1,8 @@
 import 'app_error_banner.dart';
+
 import 'package:flutter/services.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'app_buttons.dart';
 
@@ -68,21 +69,26 @@ class AppTextField extends StatelessWidget {
           style: theme.textTheme.bodyLarge,
           cursorColor: context.palette.accentText,
           decoration: InputDecoration(
-              hintText: hint,
-              enabledBorder:
-                  invalid ? theme.inputDecorationTheme.errorBorder : null,
-              focusedBorder: invalid
-                  ? theme.inputDecorationTheme.focusedErrorBorder
-                  : null,
-              suffixText: suffix,
-              suffixIcon: suffixWidget),
+            hintText: hint,
+            enabledBorder: invalid
+                ? theme.inputDecorationTheme.errorBorder
+                : null,
+            focusedBorder: invalid
+                ? theme.inputDecorationTheme.focusedErrorBorder
+                : null,
+            suffixText: suffix,
+            suffixIcon: suffixWidget,
+          ),
         ),
         if (invalid) ...[
           const SizedBox(height: 8),
           Semantics(
-              liveRegion: true,
-              child: Text(errorText!,
-                  style: theme.inputDecorationTheme.errorStyle)),
+            liveRegion: true,
+            child: Text(
+              errorText!,
+              style: theme.inputDecorationTheme.errorStyle,
+            ),
+          ),
         ],
       ],
     );
@@ -95,10 +101,8 @@ class AppFieldLabel extends StatelessWidget {
   const AppFieldLabel(this.label, {super.key});
 
   @override
-  Widget build(BuildContext context) => Text(
-        label,
-        style: Theme.of(context).textTheme.titleSmall,
-      );
+  Widget build(BuildContext context) =>
+      Text(label, style: Theme.of(context).textTheme.titleSmall);
 }
 
 /// A visible field label and its control, with consistent spacing and semantics.
@@ -110,14 +114,14 @@ class AppFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ExcludeSemantics(child: AppFieldLabel(label)),
-          const SizedBox(height: 8),
-          Semantics(label: label, child: child),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ExcludeSemantics(child: AppFieldLabel(label)),
+      const SizedBox(height: 8),
+      Semantics(label: label, child: child),
+    ],
+  );
 }
 
 /// Shared submission feedback; the caller owns saving, retries, and dismissal.
@@ -141,20 +145,20 @@ class AppFormFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (error != null) ...[
-            AppErrorBanner(message: error!),
-            const SizedBox(height: 16),
-          ],
-          AppActionButton(
-            label: label,
-            onPressed: onPressed,
-            isLoading: isLoading,
-            loadingLabel: loadingLabel,
-            destructive: destructive,
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (error != null) ...[
+        AppErrorBanner(message: error!),
+        const SizedBox(height: 16),
+      ],
+      AppActionButton(
+        label: label,
+        onPressed: onPressed,
+        isLoading: isLoading,
+        loadingLabel: loadingLabel,
+        destructive: destructive,
+      ),
+    ],
+  );
 }

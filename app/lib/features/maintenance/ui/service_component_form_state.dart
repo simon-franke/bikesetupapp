@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../models/component_type.dart';
 import '../models/service_icon.dart';
 
 class ServiceComponentDraft {
-  const ServiceComponentDraft(
-      {required this.name,
-      required this.kmInterval,
-      required this.hourInterval,
-      required this.hours,
-      required this.icon,
-      required this.initialHours,
-      required this.initialKm});
+  const ServiceComponentDraft({
+    required this.name,
+    required this.kmInterval,
+    required this.hourInterval,
+    required this.hours,
+    required this.icon,
+    required this.initialHours,
+    required this.initialKm,
+  });
 
   final String name, kmInterval, hourInterval, initialHours, initialKm;
   final bool hours;
@@ -62,7 +64,8 @@ class ServiceComponentFormState {
         draft?.name ?? (type == ComponentType.other ? '' : type.label);
     _kmInterval = draft?.kmInterval ?? '';
     _hourInterval = draft?.hourInterval ?? '';
-    hours = draft?.hours ??
+    hours =
+        draft?.hours ??
         (type == ComponentType.forkServiceLower ||
             type == ComponentType.forkServiceFull ||
             type == ComponentType.shockService);
@@ -91,15 +94,17 @@ class ServiceComponentFormState {
         ? 0.0
         : double.tryParse(usageText.replaceAll(',', '.'));
     submitted = true;
-    nameError =
-        nameController.text.trim().isEmpty ? 'Enter a component name.' : null;
-    intervalError = interval == null ||
+    nameError = nameController.text.trim().isEmpty
+        ? 'Enter a component name.'
+        : null;
+    intervalError =
+        interval == null ||
             !interval.isFinite ||
             interval <= 0 ||
             (!hours && interval % 1 != 0)
         ? (hours
-            ? 'Enter the riding time between services.'
-            : 'Enter the distance between services.')
+              ? 'Enter the riding time between services.'
+              : 'Enter the distance between services.')
         : null;
     usageError = usage == null || !usage.isFinite || usage < 0
         ? 'Enter how much it has already been used, or leave it blank.'

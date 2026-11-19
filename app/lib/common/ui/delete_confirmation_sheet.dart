@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+
+import 'package:material_ui/material_ui.dart';
+
 import '../models/command_result.dart';
 import 'command_feedback.dart';
 import 'app_error_banner.dart';
@@ -19,21 +21,23 @@ Future<bool> showDeleteConfirmationSheet<T>(
       context: context,
       dismissible: onConfirm == null,
       builder: (_) => _DeleteConfirmation<T>(
-          title: title,
-          message: message,
-          actionLabel: actionLabel,
-          onConfirm: onConfirm,
-          onConfirmed: onConfirmed),
+        title: title,
+        message: message,
+        actionLabel: actionLabel,
+        onConfirm: onConfirm,
+        onConfirmed: onConfirmed,
+      ),
     ) ??
     false;
 
 class _DeleteConfirmation<T> extends StatefulWidget {
-  const _DeleteConfirmation(
-      {required this.title,
-      required this.message,
-      required this.actionLabel,
-      this.onConfirm,
-      this.onConfirmed});
+  const _DeleteConfirmation({
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    this.onConfirm,
+    this.onConfirmed,
+  });
 
   final String title, message, actionLabel;
   final Future<CommandResult<T>> Function()? onConfirm;
@@ -76,44 +80,46 @@ class _DeleteConfirmationState<T> extends State<_DeleteConfirmation<T>> {
 
   @override
   Widget build(BuildContext ctx) => PopScope(
-      canPop: !deleting,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const AppSheetHandle(),
-              const SizedBox(height: 24),
-              Text(widget.title, style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Text(widget.message,
-                  style:
-                      AppTextStyles.body.copyWith(color: ctx.palette.inkMuted)),
-              const SizedBox(height: 28),
-              if (error != null) ...[
-                AppErrorBanner(message: error!),
-                const SizedBox(height: 16),
-              ],
-              AppActionButton(
-                label: deleting ? 'Deleting…' : widget.actionLabel,
-                textStyle: AppTextStyles.label,
-                destructive: true,
-                onPressed: deleting ? null : confirm,
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: deleting ? null : () => Navigator.pop(ctx, false),
-                style: TextButton.styleFrom(
-                  foregroundColor: ctx.palette.ink,
-                  textStyle: AppTextStyles.label,
-                ),
-                child: const Text('Cancel'),
-              ),
+    canPop: !deleting,
+    child: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppSheetHandle(),
+            const SizedBox(height: 24),
+            Text(widget.title, style: Theme.of(ctx).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            Text(
+              widget.message,
+              style: AppTextStyles.body.copyWith(color: ctx.palette.inkMuted),
+            ),
+            const SizedBox(height: 28),
+            if (error != null) ...[
+              AppErrorBanner(message: error!),
+              const SizedBox(height: 16),
             ],
-          ),
+            AppActionButton(
+              label: deleting ? 'Deleting…' : widget.actionLabel,
+              textStyle: AppTextStyles.label,
+              destructive: true,
+              onPressed: deleting ? null : confirm,
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: deleting ? null : () => Navigator.pop(ctx, false),
+              style: TextButton.styleFrom(
+                foregroundColor: ctx.palette.ink,
+                textStyle: AppTextStyles.label,
+              ),
+              child: const Text('Cancel'),
+            ),
+          ],
         ),
-      ));
+      ),
+    ),
+  );
 }

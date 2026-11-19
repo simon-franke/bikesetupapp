@@ -2,26 +2,30 @@ import 'package:bikesetupapp/features/setups/ui/setup_card.dart';
 import 'package:bikesetupapp/features/setups/ui/field_meta.dart';
 import 'package:bikesetupapp/common/ui/app_loading.dart';
 import 'package:bikesetupapp/common/ui/app_haptics.dart';
+
 import '../models/unit_system.dart';
 import '../models/setup_configuration.dart';
+
 import 'package:bikesetupapp/common/ui/app_components.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikesetupapp/app/app_dependencies.dart';
 import 'package:bikesetupapp/common/theme/theme_data.dart';
+
 import 'setting_stepper_sheet.dart';
 import 'add_field_bottom_sheet.dart';
 import 'setting_display.dart';
 
 /// Category content stays inside the workspace, preserving its bottom navigation.
 class SetupCategoryView extends StatelessWidget {
-  const SetupCategoryView(
-      {super.key,
-      required this.user,
-      required this.bike,
-      required this.setup,
-      required this.category,
-      required this.configuration});
+  const SetupCategoryView({
+    super.key,
+    required this.user,
+    required this.bike,
+    required this.setup,
+    required this.category,
+    required this.configuration,
+  });
 
   final User user;
   final String bike, setup, category;
@@ -29,68 +33,80 @@ class SetupCategoryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories =
-        category == 'Tires' ? ['FrontTire', 'RearTire'] : [category];
+    final categories = category == 'Tires'
+        ? ['FrontTire', 'RearTire']
+        : [category];
 
     return ListView(
-        padding: EdgeInsets.fromLTRB(
-            20, 18, 20, MediaQuery.paddingOf(context).bottom + 24),
-        children: [
-          for (final category in categories)
-            SetupCard(
-                padding: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (categories.length > 1) ...[
-                      Text(categoryLabel(category), style: AppTextStyles.label),
-                      const SizedBox(height: 8),
-                    ],
-                    _CategoryRows(
-                        key: ValueKey(category),
-                        uid: user.uid,
-                        bike: bike,
-                        setup: setup,
-                        category: category,
-                        configuredFields:
-                            configuration.fields[category] ?? const [],
-                        onEdit: (key, value, family) {
-                          showSettingStepperSheet(context,
-                              user: user,
-                              uBikeID: bike,
-                              uSetupID: setup,
-                              category: category,
-                              settingKey: key,
-                              currentValue: value,
-                              familyOverride: family,
-                              canDelete: true);
-                        }),
-                    AppAddButton(
-                      label: 'Add setting',
-                      tooltip:
-                          'Add ${categoryLabel(category).toLowerCase()} setting',
-                      onPressed: () => showAddFieldSheet(context,
-                          user: user,
-                          uBikeID: bike,
-                          uSetupID: setup,
-                          category: category,
-                          preferredFields: configuration.fields[category]),
-                    ),
-                  ],
-                )),
-        ]);
+      padding: EdgeInsets.fromLTRB(
+        20,
+        18,
+        20,
+        MediaQuery.paddingOf(context).bottom + 24,
+      ),
+      children: [
+        for (final category in categories)
+          SetupCard(
+            padding: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (categories.length > 1) ...[
+                  Text(categoryLabel(category), style: AppTextStyles.label),
+                  const SizedBox(height: 8),
+                ],
+                _CategoryRows(
+                  key: ValueKey(category),
+                  uid: user.uid,
+                  bike: bike,
+                  setup: setup,
+                  category: category,
+                  configuredFields: configuration.fields[category] ?? const [],
+                  onEdit: (key, value, family) {
+                    showSettingStepperSheet(
+                      context,
+                      user: user,
+                      uBikeID: bike,
+                      uSetupID: setup,
+                      category: category,
+                      settingKey: key,
+                      currentValue: value,
+                      familyOverride: family,
+                      canDelete: true,
+                    );
+                  },
+                ),
+                AppAddButton(
+                  label: 'Add setting',
+                  tooltip:
+                      'Add ${categoryLabel(category).toLowerCase()} setting',
+                  onPressed: () => showAddFieldSheet(
+                    context,
+                    user: user,
+                    uBikeID: bike,
+                    uSetupID: setup,
+                    category: category,
+                    preferredFields: configuration.fields[category],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 }
 
 class _CategoryRows extends StatefulWidget {
-  const _CategoryRows(
-      {super.key,
-      required this.uid,
-      required this.bike,
-      required this.setup,
-      required this.category,
-      required this.onEdit,
-      required this.configuredFields});
+  const _CategoryRows({
+    super.key,
+    required this.uid,
+    required this.bike,
+    required this.setup,
+    required this.category,
+    required this.onEdit,
+    required this.configuredFields,
+  });
 
   final String uid, bike, setup, category;
   final void Function(String, String, UnitFamily?) onEdit;
@@ -112,52 +128,58 @@ class _CategoryRowsState extends State<_CategoryRows> {
 
   @override
   Widget build(BuildContext context) => StreamBuilder<Map<String, dynamic>>(
-      stream: metadataStream,
-      builder: (context, metadata) {
-        if (metadata.hasError) return const Text('Could not load settings.');
+    stream: metadataStream,
+    builder: (context, metadata) {
+      if (metadata.hasError) return const Text('Could not load settings.');
 
-        if (!metadata.hasData) {
-          return const Center(child: AppLoadingState());
-        }
+      if (!metadata.hasData) {
+        return const Center(child: AppLoadingState());
+      }
 
-        return StreamBuilder<Map<String, dynamic>>(
-            stream: stream,
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const Text('Could not load settings.');
-              }
+      return StreamBuilder<Map<String, dynamic>>(
+        stream: stream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Text('Could not load settings.');
+          }
 
-              if (!snapshot.hasData) {
-                return const Center(child: AppLoadingState());
-              }
+          if (!snapshot.hasData) {
+            return const Center(child: AppLoadingState());
+          }
 
-              final values = snapshot.data!;
-              final keys = [
-                ...widget.configuredFields,
-                ...values.keys
-                    .where((key) => !widget.configuredFields.contains(key))
-              ].where(
-                  (key) => values[key]?.toString().trim().isNotEmpty == true);
+          final values = snapshot.data!;
+          final keys = [
+            ...widget.configuredFields,
+            ...values.keys.where(
+              (key) => !widget.configuredFields.contains(key),
+            ),
+          ].where((key) => values[key]?.toString().trim().isNotEmpty == true);
 
-              return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final key in keys)
-                      _SettingRow(
-                        label: key,
-                        value: settingDisplayValue(
-                            key, values[key]?.toString() ?? '',
-                            familyOverride: unitFamilyFromName(
-                                metadata.data![key]?.toString() ?? '')),
-                        onTap: () => widget.onEdit(
-                            key,
-                            values[key]?.toString() ?? '',
-                            unitFamilyFromName(
-                                metadata.data![key]?.toString() ?? '')),
-                      ),
-                  ]);
-            });
-      });
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final key in keys)
+                _SettingRow(
+                  label: key,
+                  value: settingDisplayValue(
+                    key,
+                    values[key]?.toString() ?? '',
+                    familyOverride: unitFamilyFromName(
+                      metadata.data![key]?.toString() ?? '',
+                    ),
+                  ),
+                  onTap: () => widget.onEdit(
+                    key,
+                    values[key]?.toString() ?? '',
+                    unitFamilyFromName(metadata.data![key]?.toString() ?? ''),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
 
 /// Every setting uses the same label/value hierarchy and full-width tap target.
@@ -185,8 +207,10 @@ class _SettingRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+              Text(
+                label,
+                style: AppTextStyles.body.copyWith(color: p.inkMuted),
+              ),
               const SizedBox(height: 6),
               Text(value, style: AppTextStyles.label.copyWith(color: p.ink)),
             ],

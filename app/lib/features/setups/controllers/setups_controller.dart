@@ -1,13 +1,21 @@
 import 'package:bikesetupapp/common/data/firestore_keys.dart';
+
 import 'dart:async';
+
 import '../../../common/controllers/optimistic_edits.dart';
+
 import 'package:bikesetupapp/common/controllers/write_queue.dart';
+
 import '../models/setup_configuration.dart';
+
 import 'package:bikesetupapp/common/models/command_result.dart';
+
 import 'setting_save_controller.dart';
+
 import 'package:bikesetupapp/features/setups/models/bike_setup.dart';
 import 'package:bikesetupapp/features/setups/repositories/setups_repository.dart';
 import 'package:bikesetupapp/common/controllers/operation_controller.dart';
+
 import 'setup_creation_service.dart';
 
 /// Coordinates setup configuration and keeps local setting edits visible while saving.
@@ -28,84 +36,96 @@ class SetupsController extends OperationController {
   ///
   /// Disabling a category retains its field selection and stored values.
   Future<CommandResult<void>> setCategoryEnabled(
-          String bike, String setup, String category, bool enabled,
-          {String? suspensionType,
-          required Map<String, List<String>> addedFields}) =>
-      command(() => _categoryWrites.enqueue(() async {
-            if (suspensionType != null &&
-                (!enabled ||
-                    !['Fork', 'Shock'].contains(category) ||
-                    !['Air', 'Coil'].contains(suspensionType))) {
-              throw const AppFailure(FailureCode.invalidInput);
-            }
+    String bike,
+    String setup,
+    String category,
+    bool enabled, {
+    String? suspensionType,
+    required Map<String, List<String>> addedFields,
+  }) => command(
+    () => _categoryWrites.enqueue(() async {
+      if (suspensionType != null &&
+          (!enabled ||
+              !['Fork', 'Shock'].contains(category) ||
+              !['Air', 'Coil'].contains(suspensionType))) {
+        throw const AppFailure(FailureCode.invalidInput);
+      }
 
-            final information =
-                await _repository.getSetupInformation(bike, setup);
-            final configuration =
-                SetupConfiguration.fromInformation(information);
-            final fields = <String, List<String>>{
-              ...configuration.storedFields,
-            };
-            final disabled = {...configuration.disabledCategories};
-            final categories =
-                category == 'Tires' ? ['FrontTire', 'RearTire'] : [category];
+      final information = await _repository.getSetupInformation(bike, setup);
+      final configuration = SetupConfiguration.fromInformation(information);
+      final fields = <String, List<String>>{...configuration.storedFields};
+      final disabled = {...configuration.disabledCategories};
+      final categories = category == 'Tires'
+          ? ['FrontTire', 'RearTire']
+          : [category];
 
-            for (final key in categories) {
-              if (enabled) {
-                fields.putIfAbsent(key, () => addedFields[key] ?? <String>[]);
-                disabled.remove(key);
-              } else {
-                if (fields.containsKey(key)) disabled.add(key);
-              }
-            }
+      for (final key in categories) {
+        if (enabled) {
+          fields.putIfAbsent(key, () => addedFields[key] ?? <String>[]);
+          disabled.remove(key);
+        } else {
+          if (fields.containsKey(key)) disabled.add(key);
+        }
+      }
 
-            final name = await _repository.getSetupNameFromID(bike, setup);
-            await _repository.createSetupList(bike, setup, name, {
-              ...information,
-              if (suspensionType != null)
-                category.toLowerCase(): suspensionType,
-              FirestoreKeys.setupConfiguration:
-                  SetupConfiguration(fields, disabledCategories: disabled)
-                      .encode(),
-            });
-          }));
+      final name = await _repository.getSetupNameFromID(bike, setup);
+      await _repository.createSetupList(bike, setup, name, {
+        ...information,
+        category.toLowerCase(): ?suspensionType,
+        FirestoreKeys.setupConfiguration: SetupConfiguration(
+          fields,
+          disabledCategories: disabled,
+        ).encode(),
+      });
+    }),
+  );
 
-  Future<CommandResult<void>> updateSetupInformation(String bike, String setup,
-          String name, Map<String, String> information) =>
-      command(
-          () => _repository.createSetupList(bike, setup, name, information));
+  Future<CommandResult<void>> updateSetupInformation(
+    String bike,
+    String setup,
+    String name,
+    Map<String, String> information,
+  ) => command(
+    () => _repository.createSetupList(bike, setup, name, information),
+  );
 
   /// Copies stored values and metadata, then publishes the destination setup.
   ///
   /// An empty [source] creates configured fields using the default setup's
   /// information. Duplicate names return a failure; copying is not atomic.
   Future<CommandResult<void>> copySetup(
-          String bike, String id, String name, String source) =>
-      command(() async {
-        final setups = await _repository.getSetups(bike).first;
-        if (setups
-            .any((s) => s.name.toLowerCase() == name.trim().toLowerCase())) {
-          throw const AppFailure(FailureCode.duplicateName);
-        }
+    String bike,
+    String id,
+    String name,
+    String source,
+  ) => command(() async {
+    final setups = await _repository.getSetups(bike).first;
+    if (setups.any((s) => s.name.toLowerCase() == name.trim().toLowerCase())) {
+      throw const AppFailure(FailureCode.duplicateName);
+    }
 
-        if (source.isEmpty) {
-          await _createSetupFromDefault(bike, id, name);
-          return;
-        }
+    if (source.isEmpty) {
+      await _createSetupFromDefault(bike, id, name);
+      return;
+    }
 
-        final information = await _repository.getSetupInformation(bike, source);
-        final categories =
-            SetupConfiguration.fromInformation(information).storedFields.keys;
+    final information = await _repository.getSetupInformation(bike, source);
+    final categories = SetupConfiguration.fromInformation(information)
+        .storedFields
+        .keys;
 
-        for (final category in categories) {
-          await _copyCategorySettings(bike, source, id, category);
-        }
+    for (final category in categories) {
+      await _copyCategorySettings(bike, source, id, category);
+    }
 
-        await _repository.createSetupList(bike, id, name.trim(), information);
-      });
+    await _repository.createSetupList(bike, id, name.trim(), information);
+  });
 
   Future<void> _createSetupFromDefault(
-      String bike, String id, String name) async {
+    String bike,
+    String id,
+    String name,
+  ) async {
     final current = await _repository.getDefaultSetup(bike);
     final information = current.isEmpty
         ? <String, dynamic>{}
@@ -117,19 +137,34 @@ class SetupsController extends OperationController {
   }
 
   Future<void> _copyCategorySettings(
-      String bike, String source, String id, String category) async {
+    String bike,
+    String source,
+    String id,
+    String category,
+  ) async {
     final values = await _repository.getSettings(bike, category, source).first;
-    final meta =
-        await _repository.getSettingsMeta(bike, category, source).first;
+    final meta = await _repository
+        .getSettingsMeta(bike, category, source)
+        .first;
 
     for (final field in values.entries) {
       await _repository.setSetting(
-          field.key, field.value.toString(), bike, category, id);
+        field.key,
+        field.value.toString(),
+        bike,
+        category,
+        id,
+      );
     }
 
     for (final field in meta.entries) {
       await _repository.setSettingMeta(
-          field.key, field.value.toString(), bike, category, id);
+        field.key,
+        field.value.toString(),
+        bike,
+        category,
+        id,
+      );
     }
   }
 
@@ -137,24 +172,38 @@ class SetupsController extends OperationController {
   ///
   /// Failed edits roll back without hiding newer pending edits. Successful values
   /// remain visible until the settings stream catches up.
-  Future<CommandResult<void>> setSetting(String key, String value,
-      String uBikeID, String category, String uSetupID) async {
+  Future<CommandResult<void>> setSetting(
+    String key,
+    String value,
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) async {
     if (isDisposed) return const CommandCancelled();
 
     final scope = (uBikeID, uSetupID, category);
     final field = (uBikeID, uSetupID, category, key);
-    final token =
-        _localEdits.begin(field, _lastSettings[scope]?[key]?.toString(), value);
+    final token = _localEdits.begin(
+      field,
+      _lastSettings[scope]?[key]?.toString(),
+      value,
+    );
     emit();
     var success = false;
 
     try {
       final result = await command(
-          () => _writes.putIfAbsent(field, SettingWriteQueue.new).enqueue(() {
-                if (isDisposed) throw const CommandAborted();
-                return _repository.setSetting(
-                    key, value, uBikeID, category, uSetupID);
-              }));
+        () => _writes.putIfAbsent(field, SettingWriteQueue.new).enqueue(() {
+          if (isDisposed) throw const CommandAborted();
+          return _repository.setSetting(
+            key,
+            value,
+            uBikeID,
+            category,
+            uSetupID,
+          );
+        }),
+      );
       success = result.isSuccess;
       return result;
     } finally {
@@ -167,64 +216,73 @@ class SetupsController extends OperationController {
       command(() => _repository.deleteSetup(uBikeID, uSetupID));
 
   Future<CommandResult<void>> addField(
-          String key, String value, String bike, String category, String setup,
-          {String? familyName}) =>
-      command(() async {
-        await _repository.setSetting(key, value, bike, category, setup);
-        if (familyName != null) {
-          await _repository.setSettingMeta(
-              key, familyName, bike, category, setup);
-        }
-      });
+    String key,
+    String value,
+    String bike,
+    String category,
+    String setup, {
+    String? familyName,
+  }) => command(() async {
+    await _repository.setSetting(key, value, bike, category, setup);
+    if (familyName != null) {
+      await _repository.setSettingMeta(key, familyName, bike, category, setup);
+    }
+  });
 
   Future<CommandResult<void>> deleteField(
-          String key, String bike, String category, String setup) =>
-      command(() async {
-        await _repository.deleteSetting(key, bike, category, setup);
-        await _repository.deleteSettingMeta(key, bike, category, setup);
-      });
+    String key,
+    String bike,
+    String category,
+    String setup,
+  ) => command(() async {
+    await _repository.deleteSetting(key, bike, category, setup);
+    await _repository.deleteSettingMeta(key, bike, category, setup);
+  });
 
   Stream<Map<String, dynamic>> getSettingsMeta(
-          String uBikeID, String category, String uSetupID) =>
-      _repository.getSettingsMeta(uBikeID, category, uSetupID);
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) => _repository.getSettingsMeta(uBikeID, category, uSetupID);
 
   Stream<Map<String, dynamic>> getSettings(
-          String uBikeID, String category, String uSetupID) =>
-      Stream.multi((sink) {
-        final scope = (uBikeID, uSetupID, category);
-        Map<String, dynamic>? remote;
-        void publish() {
-          if (remote == null || isDisposed) return;
+    String uBikeID,
+    String category,
+    String uSetupID,
+  ) => Stream.multi((sink) {
+    final scope = (uBikeID, uSetupID, category);
+    Map<String, dynamic>? remote;
+    void publish() {
+      if (remote == null || isDisposed) return;
 
-          final visible = Map<String, dynamic>.from(remote!);
+      final visible = Map<String, dynamic>.from(remote!);
 
-          for (final field in _localEdits.keys.toList()) {
-            if ((field.$1, field.$2, field.$3) != scope) continue;
-            final value =
-                _localEdits.resolve(field, remote![field.$4]?.toString());
-            if (value == null) {
-              visible.remove(field.$4);
-            } else {
-              visible[field.$4] = value;
-            }
-          }
-
-          sink.add(visible);
+      for (final field in _localEdits.keys.toList()) {
+        if ((field.$1, field.$2, field.$3) != scope) continue;
+        final value = _localEdits.resolve(field, remote![field.$4]?.toString());
+        if (value == null) {
+          visible.remove(field.$4);
+        } else {
+          visible[field.$4] = value;
         }
+      }
 
-        addListener(publish);
-        final subscription = _repository
-            .getSettings(uBikeID, category, uSetupID)
-            .listen((values) {
+      sink.add(visible);
+    }
+
+    addListener(publish);
+    final subscription = _repository
+        .getSettings(uBikeID, category, uSetupID)
+        .listen((values) {
           remote = Map<String, dynamic>.from(values);
           _lastSettings[scope] = remote!;
           publish();
         }, onError: sink.addError);
-        sink.onCancel = () {
-          removeListener(publish);
-          unawaited(subscription.cancel());
-        };
-      });
+    sink.onCancel = () {
+      removeListener(publish);
+      unawaited(subscription.cancel());
+    };
+  });
 
   @override
   void dispose() {
@@ -243,6 +301,7 @@ class SetupsController extends OperationController {
       _repository.getSetupNameFromID(uBikeID, uSetupID);
 
   Future<Map<String, dynamic>> getSetupInformation(
-          String uBikeID, String uSetupID) =>
-      _repository.getSetupInformation(uBikeID, uSetupID);
+    String uBikeID,
+    String uSetupID,
+  ) => _repository.getSetupInformation(uBikeID, uSetupID);
 }

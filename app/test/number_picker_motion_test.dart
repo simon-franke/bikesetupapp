@@ -1,35 +1,43 @@
 import 'package:bikesetupapp/common/theme/theme_data.dart';
 import 'package:bikesetupapp/features/setups/ui/setting_value_editor.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Future<void> mount(WidgetTester tester, ValueChanged<double> onChanged,
-      {bool reduced = false,
-      VoidCallback? onTap,
-      double initial = 24,
-      double step = 0.5,
-      int decimals = 1}) async {
-    await tester.pumpWidget(MaterialApp(
-      theme: AppTheme.darkTheme,
-      home: MediaQuery(
-        data: MediaQueryData(disableAnimations: reduced),
-        child: Scaffold(
+  Future<void> mount(
+    WidgetTester tester,
+    ValueChanged<double> onChanged, {
+    bool reduced = false,
+    VoidCallback? onTap,
+    double initial = 24,
+    double step = 0.5,
+    int decimals = 1,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: reduced),
+          child: Scaffold(
             body: Center(
-                child: SizedBox(
-          width: 320,
-          child: SettingValueEditor(
-              initialValue: initial,
-              min: 0,
-              max: 100,
-              step: step,
-              decimals: decimals,
-              unitLabel: 'psi',
-              onChanged: onChanged,
-              onValueTap: onTap),
-        ))),
+              child: SizedBox(
+                width: 320,
+                child: SettingValueEditor(
+                  initialValue: initial,
+                  min: 0,
+                  max: 100,
+                  step: step,
+                  decimals: decimals,
+                  unitLabel: 'psi',
+                  onChanged: onChanged,
+                  onValueTap: onTap,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-    ));
+    );
   }
 
   testWidgets('flick coasts then snaps to a valid half-step', (tester) async {
@@ -45,13 +53,16 @@ void main() {
     expect(value * 2, (value * 2).roundToDouble());
     expect(value, inInclusiveRange(0, 100));
     final position = tester.widget<SingleChildScrollView>(ruler).controller!;
-    expect(position.offset / 12,
-        closeTo((position.offset / 12).roundToDouble(), 0.01));
+    expect(
+      position.offset / 12,
+      closeTo((position.offset / 12).roundToDouble(), 0.01),
+    );
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('changed digits animate and direct entry stays available',
-      (tester) async {
+  testWidgets('changed digits animate and direct entry stays available', (
+    tester,
+  ) async {
     var tapped = false;
     await mount(tester, (_) {}, onTap: () => tapped = true);
     await tester.tap(find.byType(InkWell));
@@ -61,8 +72,9 @@ void main() {
     expect(find.byType(ImageFiltered), findsWidgets);
     await tester.pumpAndSettle();
 
-    for (final filter
-        in tester.widgetList<ImageFiltered>(find.byType(ImageFiltered))) {
+    for (final filter in tester.widgetList<ImageFiltered>(
+      find.byType(ImageFiltered),
+    )) {
       expect(filter.enabled, isFalse);
     }
 
@@ -80,12 +92,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   Future<void> pinch(WidgetTester tester, double factor) async {
-    final center =
-        tester.getCenter(find.byKey(const ValueKey('zoomable-ruler')));
-    final first =
-        await tester.startGesture(center - const Offset(60, 0), pointer: 1);
-    final second =
-        await tester.startGesture(center + const Offset(60, 0), pointer: 2);
+    final center = tester.getCenter(
+      find.byKey(const ValueKey('zoomable-ruler')),
+    );
+    final first = await tester.startGesture(
+      center - const Offset(60, 0),
+      pointer: 1,
+    );
+    final second = await tester.startGesture(
+      center + const Offset(60, 0),
+      pointer: 2,
+    );
     await tester.pump();
     await first.moveTo(center - Offset(60 * factor, 0));
     await second.moveTo(center + Offset(60 * factor, 0));
@@ -95,8 +112,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('pinching changes scale without changing the selected value',
-      (tester) async {
+  testWidgets('pinching changes scale without changing the selected value', (
+    tester,
+  ) async {
     final values = <double>[];
     await mount(tester, values.add);
     final ruler = find.byType(SingleChildScrollView);
@@ -137,11 +155,18 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('zoom limits preserve boundary values and whole clicks',
-      (tester) async {
+  testWidgets('zoom limits preserve boundary values and whole clicks', (
+    tester,
+  ) async {
     final changes = <double>[];
-    await mount(tester, changes.add,
-        initial: 100, step: 1, decimals: 0, reduced: true);
+    await mount(
+      tester,
+      changes.add,
+      initial: 100,
+      step: 1,
+      decimals: 0,
+      reduced: true,
+    );
 
     for (var i = 0; i < 4; i++) {
       await pinch(tester, 0.5);

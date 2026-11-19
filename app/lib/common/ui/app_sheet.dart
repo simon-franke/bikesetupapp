@@ -1,6 +1,7 @@
 import '../../app/routing/app_motion.dart';
+
 import 'package:bikesetupapp/common/theme/theme_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shows a form using the phone bottom-sheet presentation.
 ///
@@ -22,18 +23,24 @@ Future<T?> showAppSheet<T>({
     sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
         ? AnimationStyle.noAnimation
         : const AnimationStyle(
-            duration: AppMotion.forward, reverseDuration: AppMotion.reverse),
+            duration: AppMotion.forward,
+            reverseDuration: AppMotion.reverse,
+          ),
     useSafeArea: true,
     backgroundColor: context.palette.surface,
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+    ),
     builder: (context) {
       sheetRoute = ModalRoute.of(context);
       return fullHeight
           ? LayoutBuilder(
               builder: (context, constraints) => SizedBox(
-                  height: constraints.maxHeight, child: builder(context)))
+                height: constraints.maxHeight,
+                child: builder(context),
+              ),
+            )
           : SingleChildScrollView(child: Builder(builder: builder));
     },
   );
@@ -55,15 +62,15 @@ class AppSheetHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: context.palette.borderStrong,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      );
+    child: Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: context.palette.borderStrong,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
 }
 
 /// Shared title rhythm for task sheets. The caller owns the outer padding.
@@ -84,37 +91,43 @@ class AppSheetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (showHandle) ...[const AppSheetHandle(), const SizedBox(height: 20)],
+      Row(
         children: [
-          if (showHandle) ...[
-            const AppSheetHandle(),
-            const SizedBox(height: 20),
-          ],
-          Row(children: [
-            if (leading != null) leading!,
-            Expanded(
-                child: Semantics(
-                    header: true,
-                    child: Text(title,
-                        style: AppTextStyles.heading
-                            .copyWith(color: context.palette.ink)))),
-            if (action != null) action!,
-          ]),
-          if (subtitle != null) ...[
-            const SizedBox(height: 8),
-            Text(subtitle!,
-                style: AppTextStyles.body
-                    .copyWith(color: context.palette.inkMuted)),
-          ],
-          const SizedBox(height: 24),
+          ?leading,
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: AppTextStyles.heading.copyWith(
+                  color: context.palette.ink,
+                ),
+              ),
+            ),
+          ),
+          ?action,
         ],
-      );
+      ),
+      if (subtitle != null) ...[
+        const SizedBox(height: 8),
+        Text(
+          subtitle!,
+          style: AppTextStyles.body.copyWith(color: context.palette.inkMuted),
+        ),
+      ],
+      const SizedBox(height: 24),
+    ],
+  );
 }
 
 EdgeInsets appSheetPadding(BuildContext context) => EdgeInsets.fromLTRB(
-    24,
-    16,
-    24,
-    MediaQuery.viewInsetsOf(context).bottom +
-        MediaQuery.paddingOf(context).bottom +
-        24);
+  24,
+  16,
+  24,
+  MediaQuery.viewInsetsOf(context).bottom +
+      MediaQuery.paddingOf(context).bottom +
+      24,
+);

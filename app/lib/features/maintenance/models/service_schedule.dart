@@ -8,11 +8,12 @@ enum ServiceUnit { kilometres, hours }
 
 /// Usage and interval in one unit, with availability kept separate from zero usage.
 class ServiceUsage {
-  const ServiceUsage(
-      {required this.unit,
-      required this.used,
-      required this.interval,
-      required this.available});
+  const ServiceUsage({
+    required this.unit,
+    required this.used,
+    required this.interval,
+    required this.available,
+  });
 
   final ServiceUnit unit;
   final double used, interval;
@@ -30,10 +31,11 @@ class ServiceUsage {
 }
 
 class AnnotatedService {
-  const AnnotatedService(
-      {required this.component,
-      required this.measurement,
-      required this.lastServicedAt});
+  const AnnotatedService({
+    required this.component,
+    required this.measurement,
+    required this.lastServicedAt,
+  });
 
   final ServiceComponent component;
   final ServiceUsage measurement;
@@ -63,8 +65,11 @@ AnnotatedService annotateService({
       unit: ServiceUnit.hours,
       used: latestEntry != null && rides != null
           ? (latestEntry.initialRideHours ?? 0) +
-              hoursSince(rides, latestEntry.date,
-                  includeIndoor: component.includeIndoorRides)
+                hoursSince(
+                  rides,
+                  latestEntry.date,
+                  includeIndoor: component.includeIndoorRides,
+                )
           : 0,
       interval: component.interval,
       available: rides != null && latestEntry != null && component.interval > 0,
@@ -73,27 +78,35 @@ AnnotatedService annotateService({
     final hasStravaBaseline =
         mileageAvailable && latestEntry?.mileageAtServiceKm != null;
     final loggedDistance = latestEntry != null && rides != null
-        ? distanceSince(rides, latestEntry.date,
+        ? distanceSince(
+            rides,
+            latestEntry.date,
             hasStravaBaseline: hasStravaBaseline,
-            includeIndoor: component.includeIndoorRides)
+            includeIndoor: component.includeIndoorRides,
+          )
         : 0.0;
     measurement = ServiceUsage(
       unit: ServiceUnit.kilometres,
-      used: (latestEntry?.initialDistanceKm ?? 0) +
+      used:
+          (latestEntry?.initialDistanceKm ?? 0) +
           loggedDistance +
           (hasStravaBaseline
-              ? (currentMileageKm - latestEntry!.mileageAtServiceKm!)
-                  .clamp(0, double.infinity)
+              ? (currentMileageKm - latestEntry!.mileageAtServiceKm!).clamp(
+                  0,
+                  double.infinity,
+                )
               : 0),
       interval: component.interval,
-      available: component.interval > 0 &&
+      available:
+          component.interval > 0 &&
           latestEntry != null &&
           (hasStravaBaseline || rides != null),
     );
   }
 
   return AnnotatedService(
-      component: component,
-      measurement: measurement,
-      lastServicedAt: latestEntry?.date);
+    component: component,
+    measurement: measurement,
+    lastServicedAt: latestEntry?.date,
+  );
 }

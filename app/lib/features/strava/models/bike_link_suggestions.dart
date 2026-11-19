@@ -1,9 +1,12 @@
 import 'package:bikesetupapp/features/bikes/models/bike.dart';
+
 import 'strava_bike.dart';
 
 /// Existing valid links win; otherwise suggest the first name match.
 Map<String, String?> suggestBikeLinks(
-    Iterable<StravaBike> stravaBikes, Iterable<Bike> appBikes) {
+  Iterable<StravaBike> stravaBikes,
+  Iterable<Bike> appBikes,
+) {
   final bikes = appBikes.toList();
   final ids = bikes.map((bike) => bike.id).toSet();
   final suggestions = <String, String?>{};

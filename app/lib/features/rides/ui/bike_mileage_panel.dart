@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../../../app/app_dependencies.dart';
 import '../../../common/ui/command_feedback.dart';
 import '../../maintenance/controllers/services_controller.dart';
@@ -20,8 +21,11 @@ class _BikeMileagePanelState extends State<BikeMileagePanel> {
   void initState() {
     super.initState();
     final dependencies = AppDependencies.of(context);
-    controller = ServicesController(dependencies.forUser(widget.uid).strava,
-        dependencies.stravaConnection, widget.bikeId);
+    controller = ServicesController(
+      dependencies.forUser(widget.uid).strava,
+      dependencies.stravaConnection,
+      widget.bikeId,
+    );
     presentCommand(context, controller.load);
   }
 
@@ -33,15 +37,15 @@ class _BikeMileagePanelState extends State<BikeMileagePanel> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) => MileageBanner(
-          margin: EdgeInsets.zero,
-          mileageKm: controller.mileageKm,
-          lastSyncTime: controller.lastSyncTime,
-          isLoading: controller.syncing,
-          isConnected: controller.connected,
-          onSync: () => presentCommand(context, controller.sync),
-          onConnect: () => presentCommand(context, controller.connect),
-        ),
-      );
+    listenable: controller,
+    builder: (context, _) => MileageBanner(
+      margin: EdgeInsets.zero,
+      mileageKm: controller.mileageKm,
+      lastSyncTime: controller.lastSyncTime,
+      isLoading: controller.syncing,
+      isConnected: controller.connected,
+      onSync: () => presentCommand(context, controller.sync),
+      onConnect: () => presentCommand(context, controller.connect),
+    ),
+  );
 }

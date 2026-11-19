@@ -5,10 +5,16 @@ abstract interface class MaintenanceRepository {
   Stream<List<ServiceComponent>> getComponentsForBike(String bikeId);
 
   Future<void> createComponentWithBaseline(
-      ServiceComponent component, ServiceEntry baseline);
+    ServiceComponent component,
+    ServiceEntry baseline,
+  );
 
-  Future<void> updateComponent(String componentId,
-      {String? name, int? serviceIntervalKm, double? serviceIntervalHours});
+  Future<void> updateComponent(
+    String componentId, {
+    String? name,
+    int? serviceIntervalKm,
+    double? serviceIntervalHours,
+  });
 
   Future<void> deleteComponent(String componentId);
 
